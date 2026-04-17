@@ -32,4 +32,4 @@ function _compliance_from_B_ribbon(crack::RibbonCrack, B, ε)
 end
 
 _compliance_from_B(crack::EllipticCrack, B, ε) = _compliance_from_B_elliptic(crack, B, ε)
-_compliance_from_B(crack::RibbonCrack,  B, ε) = _compliance_from_B_ribbon(crack,  B, ε)
+_compliance_from_B(crack::RibbonCrack, B, ε) = _compliance_from_B_ribbon(crack, B, ε)

@@ -18,8 +18,8 @@ function _hill_order2_2d_iso(ell::Ellipsoid{2, Elliptic}, K₀)
     k = K₀.data[1]
     ρ = T(ell.semi_axes[2] / ell.semi_axes[1])
     P_arr = zeros(T, 2, 2)
-    P_arr[1,1] = ρ / (k * (1 + ρ))
-    P_arr[2,2] = one(T) / (k * (1 + ρ))
+    P_arr[1, 1] = ρ / (k * (1 + ρ))
+    P_arr[2, 2] = one(T) / (k * (1 + ρ))
     return TensND.change_tens_canon(TensND.Tens(P_arr, ell.basis))
 end
 
@@ -30,38 +30,38 @@ end
 conductor.  Closed-form formula.
 """
 function _hill_order2_2d(ell::Ellipsoid{2}, K₀)
-    T  = promote_type(eltype(ell.semi_axes), eltype(K₀))
-    ρ  = T(ell.semi_axes[2] / ell.semi_axes[1])
+    T = promote_type(eltype(ell.semi_axes), eltype(K₀))
+    ρ = T(ell.semi_axes[2] / ell.semi_axes[1])
     ρ2 = ρ * ρ
 
     K_princ = TensND.change_tens(K₀, ell.basis)
-    k11 = K_princ[1,1]; k12 = K_princ[1,2]; k22 = K_princ[2,2]
+    k11 = K_princ[1, 1]; k12 = K_princ[1, 2]; k22 = K_princ[2, 2]
 
-    t1  = k11 * k22
-    t5  = k12 * k12
-    t3  = ρ2 * t1
-    t4  = k22 * k22
-    t6  = ρ2 * t5
+    t1 = k11 * k22
+    t5 = k12 * k12
+    t3 = ρ2 * t1
+    t4 = k22 * k22
+    t6 = ρ2 * t5
     t19 = k11 * k11
     t20 = ρ2 * ρ2
     den = 4 * t6 + t4 - 2 * t3 + t20 * t19
 
     P_arr = zeros(T, 2, 2)
-    tol   = T(1e-6)
+    tol = T(1.0e-6)
 
     if abs(den) < tol * abs(t19 + t4)
-        P_arr[1,1] = 1 / (2 * k11)
-        P_arr[2,2] = 1 / (2 * k22)
+        P_arr[1, 1] = 1 / (2 * k11)
+        P_arr[2, 2] = 1 / (2 * k22)
     else
         t10 = sqrt(t1 - t5)
         t12 = ρ * ρ2
         t23 = 1 / den
         t24 = 1 / t10
         t28 = k11 * ρ2
-        P_arr[1,1] = t24 * t23 * (-t3 + t4 + 2*t6 - t10*k22*ρ + t10*k11*t12) * ρ
-        P_arr[1,2] = -t24 * t23 * (k22 + t28 - 2*t10*ρ) * ρ * k12
-        P_arr[2,1] = P_arr[1,2]
-        P_arr[2,2] = t24 * t23 * (t12*t19 - ρ*k11*k22 + 2*t5*ρ - t10*t28 + t10*k22)
+        P_arr[1, 1] = t24 * t23 * (-t3 + t4 + 2 * t6 - t10 * k22 * ρ + t10 * k11 * t12) * ρ
+        P_arr[1, 2] = -t24 * t23 * (k22 + t28 - 2 * t10 * ρ) * ρ * k12
+        P_arr[2, 1] = P_arr[1, 2]
+        P_arr[2, 2] = t24 * t23 * (t12 * t19 - ρ * k11 * k22 + 2 * t5 * ρ - t10 * t28 + t10 * k22)
     end
 
     return TensND.change_tens_canon(TensND.Tens(P_arr, ell.basis))

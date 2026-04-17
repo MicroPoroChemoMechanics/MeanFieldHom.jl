@@ -14,7 +14,7 @@ Extract Young's modulus `E` and Poisson's ratio `ν` from an isotropic
 4th-order stiffness `TensISO{4,3}`.  The internal TensND convention is
 ``C_0 = 3k\\,\\mathbb J + 2μ\\,\\mathbb K`` i.e. `C₀.data = (3k, 2μ)`.
 """
-function extract_iso_moduli(C₀::TensND.TensISO{4,3})
+function extract_iso_moduli(C₀::TensND.TensISO{4, 3})
     α, β = C₀.data           # α = 3k, β = 2μ
     k = α / 3
     μ = β / 2
@@ -31,7 +31,7 @@ end
 storage is dimension-agnostic (`TensISO{4,d}` stores the same
 `(α, β) = (3k, 2μ)` pair).
 """
-function extract_iso_moduli(C₀::TensND.TensISO{4,2})
+function extract_iso_moduli(C₀::TensND.TensISO{4, 2})
     α, β = C₀.data
     k = α / 3
     μ = β / 2
@@ -62,14 +62,16 @@ function extract_ti_moduli(C₀, n̂)
     𝕊 = inv(C₀)
     ℬ_current = TensND.getbasis(𝕊)
     𝕊_rot = TensND.tensbasis(ℬ_current, 3) == n̂ ? 𝕊 :
-            TensND.change_tens(𝕊,
-                TensND.Basis(TensND.angles(TensND.components_canon(n̂))...))
-    E  = inv(𝕊_rot[1, 1, 1, 1])
-    H  = inv(𝕊_rot[3, 3, 3, 3] * E)
+        TensND.change_tens(
+            𝕊,
+            TensND.Basis(TensND.angles(TensND.components_canon(n̂))...)
+        )
+    E = inv(𝕊_rot[1, 1, 1, 1])
+    H = inv(𝕊_rot[3, 3, 3, 3] * E)
     ν₁ = -E * 𝕊_rot[1, 1, 2, 2]
     ν₂ = -E * 𝕊_rot[1, 1, 3, 3]
-    Γ  = inv(𝕊_rot[2, 3, 2, 3]) * (one(E) + ν₁) / (2 * E)
-    return (E=E, H=H, ν₁=ν₁, ν₂=ν₂, Γ=Γ)
+    Γ = inv(𝕊_rot[2, 3, 2, 3]) * (one(E) + ν₁) / (2 * E)
+    return (E = E, H = H, ν₁ = ν₁, ν₂ = ν₂, Γ = Γ)
 end
 
 """
@@ -78,5 +80,5 @@ end
 Extract the (scalar) conductivity coefficient of an isotropic 2nd-order
 transport tensor `TensISO{2,d}` (``K_0 = k \\cdot \\delta``).
 """
-extract_iso_conductivity(K₀::TensND.TensISO{2,3}) = K₀.data[1]
-extract_iso_conductivity(K₀::TensND.TensISO{2,2}) = K₀.data[1]
+extract_iso_conductivity(K₀::TensND.TensISO{2, 3}) = K₀.data[1]
+extract_iso_conductivity(K₀::TensND.TensISO{2, 2}) = K₀.data[1]

@@ -8,28 +8,36 @@
 
 # ── 2nd-order, 3D (conductivity) ─────────────────────────────────────────────
 
-function Elasticity._kernel(ell::Elasticity.Ellipsoid{3},
-                            K₀::TensND.TensISO{2,3},
-                            ::MFH_Core.Analytical; kw...)
+function Elasticity._kernel(
+        ell::Elasticity.Ellipsoid{3},
+        K₀::TensND.TensISO{2, 3},
+        ::MFH_Core.Analytical; kw...
+    )
     return _hill_order2_3d_iso(ell, K₀)
 end
 
-function Elasticity._kernel(ell::Elasticity.Ellipsoid{3},
-                            K₀::TensND.AbstractTens{2,3},
-                            ::MFH_Core.Analytical; kw...)
+function Elasticity._kernel(
+        ell::Elasticity.Ellipsoid{3},
+        K₀::TensND.AbstractTens{2, 3},
+        ::MFH_Core.Analytical; kw...
+    )
     return _hill_order2_3d_aniso(ell, K₀)
 end
 
 # ── 2nd-order, 2D (conductivity) ─────────────────────────────────────────────
 
-function Elasticity._kernel(ell::Elasticity.Ellipsoid{2},
-                            K₀::TensND.TensISO{2,2},
-                            ::MFH_Core.Analytical; kw...)
+function Elasticity._kernel(
+        ell::Elasticity.Ellipsoid{2},
+        K₀::TensND.TensISO{2, 2},
+        ::MFH_Core.Analytical; kw...
+    )
     return _hill_order2_2d_iso(ell, K₀)
 end
 
-function Elasticity._kernel(ell::Elasticity.Ellipsoid{2},
-                            K₀::TensND.AbstractTens{2,2},
-                            ::MFH_Core.Analytical; kw...)
+function Elasticity._kernel(
+        ell::Elasticity.Ellipsoid{2},
+        K₀::TensND.AbstractTens{2, 2},
+        ::MFH_Core.Analytical; kw...
+    )
     return _hill_order2_2d(ell, K₀)
 end

@@ -41,9 +41,11 @@ coefficients of the wave-vector parametrisation `ζ(z) = α₀ζ + α₁ζ · z`
 Each `Aₖ` is a 3×3 matrix of real scalars ; they are assembled below
 into `ComplexF64` polynomial entries before root finding.
 """
-function _build_acoustic_coeffs(C::AbstractArray{<:Real,4},
-                                α₀ζ::AbstractVector{<:Real},
-                                α₁ζ::AbstractVector{<:Real})
+function _build_acoustic_coeffs(
+        C::AbstractArray{<:Real, 4},
+        α₀ζ::AbstractVector{<:Real},
+        α₁ζ::AbstractVector{<:Real}
+    )
     A₀ = zeros(Float64, 3, 3)
     A₁ = zeros(Float64, 3, 3)
     A₂ = zeros(Float64, 3, 3)
@@ -72,23 +74,25 @@ All polynomial entries are `Polynomial{ComplexF64,:z}` (so that complex
 roots can be handled uniformly). The roots filter keeps only points
 with `imag(zr) > 1e-8`.
 """
-function _build_poly_system(C::AbstractArray{<:Real,4},
-                            α₀ζ::AbstractVector{<:Real},
-                            α₁ζ::AbstractVector{<:Real})
+function _build_poly_system(
+        C::AbstractArray{<:Real, 4},
+        α₀ζ::AbstractVector{<:Real},
+        α₁ζ::AbstractVector{<:Real}
+    )
     A₀, A₁, A₂ = _build_acoustic_coeffs(C, α₀ζ, α₁ζ)
 
     poly(coefs) = Polynomial(ComplexF64.(coefs), :z)
-    K_poly = Matrix{Polynomial{ComplexF64,:z}}(undef, 3, 3)
+    K_poly = Matrix{Polynomial{ComplexF64, :z}}(undef, 3, 3)
     @inbounds for j in 1:3, i in 1:3
         K_poly[i, j] = poly([A₀[i, j], A₁[i, j], A₂[i, j]])
     end
 
-    adj_poly = Matrix{Polynomial{ComplexF64,:z}}(undef, 3, 3)
+    adj_poly = Matrix{Polynomial{ComplexF64, :z}}(undef, 3, 3)
     @inbounds for j in 1:3, i in 1:3
         rows = setdiff(1:3, [j])
         cols = setdiff(1:3, [i])
         minor = K_poly[rows[1], cols[1]] * K_poly[rows[2], cols[2]] -
-                K_poly[rows[1], cols[2]] * K_poly[rows[2], cols[1]]
+            K_poly[rows[1], cols[2]] * K_poly[rows[2], cols[1]]
         adj_poly[i, j] = isodd(i + j) ? -minor : minor
     end
 
@@ -99,13 +103,13 @@ function _build_poly_system(C::AbstractArray{<:Real,4},
     dQ = derivative(Q)
 
     Q_coeffs = coeffs(Q)
-    while length(Q_coeffs) > 1 && abs(Q_coeffs[end]) < 1e-14 * abs(Q_coeffs[1])
+    while length(Q_coeffs) > 1 && abs(Q_coeffs[end]) < 1.0e-14 * abs(Q_coeffs[1])
         pop!(Q_coeffs)
     end
     roots_all = PolynomialRoots.roots(Q_coeffs)
-    roots_uhp = ComplexF64[zr for zr in roots_all if imag(zr) > 1e-8]
+    roots_uhp = ComplexF64[zr for zr in roots_all if imag(zr) > 1.0e-8]
 
-    return (K_poly=K_poly, adj_poly=adj_poly, Q=Q, dQ=dQ, roots_uhp=roots_uhp)
+    return (K_poly = K_poly, adj_poly = adj_poly, Q = Q, dQ = dQ, roots_uhp = roots_uhp)
 end
 
 # ─── Masson log factor (Hill-style) ──────────────────────────────────────────
@@ -118,8 +122,8 @@ Used by the Hill residue algorithm to fold the analytic continuation of
 the 1-D integral of the Green kernel back onto the real axis.
 """
 @inline function _masson_log(z::ComplexF64)
-    t2  = 1.0 + z * z
-    t3  = sqrt(t2)
-    t9  = log(z + t3)
+    t2 = 1.0 + z * z
+    t3 = sqrt(t2)
+    t9 = log(z + t3)
     return -(2.0 * t9 - im * π)
 end

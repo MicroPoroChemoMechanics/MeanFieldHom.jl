@@ -59,7 +59,7 @@ export AbstractInclusion, AbstractEllipsoidalInclusion, AbstractCrack
 export AbstractLayeredInclusion
 export AbstractAlgorithm, Analytical, Residue, DECUHR, Auto
 export MaterialSymmetry, IsotropicSym, TransverselyIsotropicSym,
-       OrthotropicSym, GeneralAnisotropicSym
+    OrthotropicSym, GeneralAnisotropicSym
 export material_symmetry, dimension, inclusion_basis, shape_trait
 
 # ── Elasticity ───────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ export compliance_contribution
 export sif, dif
 
 # ── Backwards-compat aliases ─────────────────────────────────────────────────
-const HillAlgorithm  = AbstractAlgorithm
+const HillAlgorithm = AbstractAlgorithm
 const CrackAlgorithm = AbstractAlgorithm
 export HillAlgorithm, CrackAlgorithm
 

@@ -32,47 +32,47 @@
 
 # ─── TensISO (any kind) → Analytical — most specific on symmetry ───────────
 
-_resolve_algo(::Val,           ::AbstractInclusion, ::TensND.TensISO) = Analytical()
-_resolve_algo(::Val{:auto},    ::AbstractInclusion, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val, ::AbstractInclusion, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val{:auto}, ::AbstractInclusion, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:residue}, ::AbstractInclusion, ::TensND.TensISO) = Analytical()
-_resolve_algo(::Val{:decuhr},  ::AbstractInclusion, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val{:decuhr}, ::AbstractInclusion, ::TensND.TensISO) = Analytical()
 
 # Specific inclusion + TensISO — keep the same rule (needed to avoid
 # ambiguity with the inclusion-refined 3D-aniso methods below).
-_resolve_algo(::Val,           ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
-_resolve_algo(::Val{:auto},    ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val, ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val{:auto}, ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:residue}, ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
-_resolve_algo(::Val{:decuhr},  ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val{:decuhr}, ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
 
-_resolve_algo(::Val,           ::AbstractCrack, ::TensND.TensISO) = Analytical()
-_resolve_algo(::Val{:auto},    ::AbstractCrack, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val, ::AbstractCrack, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val{:auto}, ::AbstractCrack, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:residue}, ::AbstractCrack, ::TensND.TensISO) = Analytical()
-_resolve_algo(::Val{:decuhr},  ::AbstractCrack, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val{:decuhr}, ::AbstractCrack, ::TensND.TensISO) = Analytical()
 
 # ─── 2D elasticity → Analytical ──────────────────────────────────────────────
 
-_resolve_algo(::Val, ::AbstractInclusion,               ::TensND.AbstractTens{4,2}) = Analytical()
-_resolve_algo(::Val, ::AbstractEllipsoidalInclusion,    ::TensND.AbstractTens{4,2}) = Analytical()
+_resolve_algo(::Val, ::AbstractInclusion, ::TensND.AbstractTens{4, 2}) = Analytical()
+_resolve_algo(::Val, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 2}) = Analytical()
 
 # ─── Conductivity (2nd-order) → Analytical ───────────────────────────────────
 
-_resolve_algo(::Val, ::AbstractInclusion,              ::TensND.AbstractTens{2,3}) = Analytical()
-_resolve_algo(::Val, ::AbstractEllipsoidalInclusion,   ::TensND.AbstractTens{2,3}) = Analytical()
-_resolve_algo(::Val, ::AbstractInclusion,              ::TensND.AbstractTens{2,2}) = Analytical()
-_resolve_algo(::Val, ::AbstractEllipsoidalInclusion,   ::TensND.AbstractTens{2,2}) = Analytical()
+_resolve_algo(::Val, ::AbstractInclusion, ::TensND.AbstractTens{2, 3}) = Analytical()
+_resolve_algo(::Val, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{2, 3}) = Analytical()
+_resolve_algo(::Val, ::AbstractInclusion, ::TensND.AbstractTens{2, 2}) = Analytical()
+_resolve_algo(::Val, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{2, 2}) = Analytical()
 
 # ─── 3D anisotropic elasticity ───────────────────────────────────────────────
 
 # Ellipsoidal inclusions — 3D anisotropic default is the residue algorithm
-_resolve_algo(::Val{:auto},    ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4,3}) = Residue()
-_resolve_algo(::Val{:residue}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4,3}) = Residue()
-_resolve_algo(::Val{:decuhr},  ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4,3}) = DECUHR()
+_resolve_algo(::Val{:auto}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
+_resolve_algo(::Val{:residue}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
+_resolve_algo(::Val{:decuhr}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = DECUHR()
 
 # Generic inclusion fallback (also used by `AbstractCrack` before the
 # TI-aligned refinement injected from the `Cracks` sub-module).
-_resolve_algo(::Val{:auto},    ::AbstractInclusion, ::TensND.AbstractTens{4,3}) = Residue()
-_resolve_algo(::Val{:residue}, ::AbstractInclusion, ::TensND.AbstractTens{4,3}) = Residue()
-_resolve_algo(::Val{:decuhr},  ::AbstractInclusion, ::TensND.AbstractTens{4,3}) = DECUHR()
+_resolve_algo(::Val{:auto}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
+_resolve_algo(::Val{:residue}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
+_resolve_algo(::Val{:decuhr}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = DECUHR()
 
 # Plain catch-all for the cases where a sub-module passes `method` symbols
 # we don't know about (e.g. a user extension): default to Analytical.

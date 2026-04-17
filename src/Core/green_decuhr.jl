@@ -23,7 +23,7 @@ Element type is the supplied `T = promote_type(...)`.
 """
 function _A_and_Tn(C::AbstractArray, n̂::AbstractVector, ::Type{T}) where {T}
     Tn = Array{T}(undef, 3, 3, 3)
-    A  = Matrix{T}(undef, 3, 3)
+    A = Matrix{T}(undef, 3, 3)
     @inbounds for q in 1:3, p in 1:3, i in 1:3
         s = zero(T)
         for α in 1:3
@@ -51,11 +51,13 @@ in-plane unit direction):
   * `Ks[i, j]  = Σ_{k,l} C_{i k j l} ξshat_k ξshat_l        = K(ξshat)`
   * `Kns[i, j] = Σ_{k,l} C_{i k j l} (n̂_k ξshat_l + ξshat_k n̂_l)`
 """
-function _phi_cache(C::AbstractArray, Tn::AbstractArray,
-                    n̂::AbstractVector, ξshat::AbstractVector,
-                    ::Type{T}) where {T}
-    Vs  = Matrix{T}(undef, 3, 3)
-    Ks  = Matrix{T}(undef, 3, 3)
+function _phi_cache(
+        C::AbstractArray, Tn::AbstractArray,
+        n̂::AbstractVector, ξshat::AbstractVector,
+        ::Type{T}
+    ) where {T}
+    Vs = Matrix{T}(undef, 3, 3)
+    Ks = Matrix{T}(undef, 3, 3)
     Kns = Matrix{T}(undef, 3, 3)
     @inbounds for p in 1:3, i in 1:3
         s = zero(T)
@@ -68,10 +70,10 @@ function _phi_cache(C::AbstractArray, Tn::AbstractArray,
         sk = zero(T); skn = zero(T)
         for k in 1:3, l in 1:3
             cc = T(C[i, k, j, l])
-            sk  += cc * ξshat[k] * ξshat[l]
+            sk += cc * ξshat[k] * ξshat[l]
             skn += cc * (n̂[k] * ξshat[l] + ξshat[k] * n̂[l])
         end
-        Ks[i, j]  = sk
+        Ks[i, j] = sk
         Kns[i, j] = skn
     end
     return Vs, Ks, Kns
@@ -87,13 +89,15 @@ given the pre-computed φ-only quantities (`A, Vs, Ks, Kns`) and the
 
 Operates in-place on `out`.
 """
-@inline function _qnn_pair_components!(out::AbstractMatrix{T},
-                                       A::AbstractMatrix{T},
-                                       Vs::AbstractMatrix{T},
-                                       Ks::AbstractMatrix{T},
-                                       Kns::AbstractMatrix{T},
-                                       ca::T, sa::T,
-                                       scale::T) where {T}
+@inline function _qnn_pair_components!(
+        out::AbstractMatrix{T},
+        A::AbstractMatrix{T},
+        Vs::AbstractMatrix{T},
+        Ks::AbstractMatrix{T},
+        Kns::AbstractMatrix{T},
+        ca::T, sa::T,
+        scale::T
+    ) where {T}
     cs = ca * sa
     ca² = ca * ca
     sa² = sa * sa
@@ -106,7 +110,7 @@ Operates in-place on `out`.
     Bp = (Vp * iKp) * transpose(Vp)
     Bm = (Vm * iKm) * transpose(Vm)
     @inbounds for j in 1:3, i in 1:3
-        out[i,j] = (2*A[i,j] - Bp[i,j] - Bm[i,j]) * scale
+        out[i, j] = (2 * A[i, j] - Bp[i, j] - Bm[i, j]) * scale
     end
-    out
+    return out
 end

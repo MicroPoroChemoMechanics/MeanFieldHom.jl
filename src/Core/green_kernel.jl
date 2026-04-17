@@ -20,8 +20,10 @@ stiffness `C` (component array) and a wave vector `ξ`.  Symmetric when
 `C` has the minor / major symmetries.  Element type follows
 `promote_type(eltype(C), eltype(ξ))`.
 """
-@inline function _acoustic_tensor(C::AbstractArray{TC,4},
-                                  ξ::AbstractVector{Tξ}) where {TC<:Number, Tξ<:Number}
+@inline function _acoustic_tensor(
+        C::AbstractArray{TC, 4},
+        ξ::AbstractVector{Tξ}
+    ) where {TC <: Number, Tξ <: Number}
     T = promote_type(TC, Tξ)
     K = zeros(T, 3, 3)
     @inbounds for i in 1:3, j in 1:3
@@ -42,25 +44,25 @@ Avoids the overhead of `inv`/LU factorisation on tiny matrices and is
 fully ForwardDiff-compatible (uses only `+`, `-`, `*`, `/`).
 """
 @inline function _inv3(K::AbstractMatrix{T}) where {T}
-    @inbounds begin
-        a11 = K[1,1]; a12 = K[1,2]; a13 = K[1,3]
-        a21 = K[2,1]; a22 = K[2,2]; a23 = K[2,3]
-        a31 = K[3,1]; a32 = K[3,2]; a33 = K[3,3]
-        c11 = a22*a33 - a23*a32
-        c12 = a13*a32 - a12*a33
-        c13 = a12*a23 - a13*a22
-        c21 = a23*a31 - a21*a33
-        c22 = a11*a33 - a13*a31
-        c23 = a13*a21 - a11*a23
-        c31 = a21*a32 - a22*a31
-        c32 = a12*a31 - a11*a32
-        c33 = a11*a22 - a12*a21
-        det = a11*c11 + a12*c21 + a13*c31
+    return @inbounds begin
+        a11 = K[1, 1]; a12 = K[1, 2]; a13 = K[1, 3]
+        a21 = K[2, 1]; a22 = K[2, 2]; a23 = K[2, 3]
+        a31 = K[3, 1]; a32 = K[3, 2]; a33 = K[3, 3]
+        c11 = a22 * a33 - a23 * a32
+        c12 = a13 * a32 - a12 * a33
+        c13 = a12 * a23 - a13 * a22
+        c21 = a23 * a31 - a21 * a33
+        c22 = a11 * a33 - a13 * a31
+        c23 = a13 * a21 - a11 * a23
+        c31 = a21 * a32 - a22 * a31
+        c32 = a12 * a31 - a11 * a32
+        c33 = a11 * a22 - a12 * a21
+        det = a11 * c11 + a12 * c21 + a13 * c31
         invd = inv(det)
         iK = Matrix{T}(undef, 3, 3)
-        iK[1,1] = c11*invd; iK[1,2] = c12*invd; iK[1,3] = c13*invd
-        iK[2,1] = c21*invd; iK[2,2] = c22*invd; iK[2,3] = c23*invd
-        iK[3,1] = c31*invd; iK[3,2] = c32*invd; iK[3,3] = c33*invd
+        iK[1, 1] = c11 * invd; iK[1, 2] = c12 * invd; iK[1, 3] = c13 * invd
+        iK[2, 1] = c21 * invd; iK[2, 2] = c22 * invd; iK[2, 3] = c23 * invd
+        iK[3, 1] = c31 * invd; iK[3, 2] = c32 * invd; iK[3, 3] = c33 * invd
         iK
     end
 end
@@ -76,11 +78,13 @@ Element type is `promote_type(eltype(C), eltype(ξ), eltype(n̂))` —
 ForwardDiff- and SymPy-compatible.  For `‖ξ‖ = 0` the acoustic tensor
 becomes singular; the caller must handle this.
 """
-function _Qnn_direct(C::AbstractArray{TC,4},
-                     ξ::AbstractVector{Tξ},
-                     n̂::AbstractVector{Tn}) where {TC<:Number, Tξ<:Number, Tn<:Number}
+function _Qnn_direct(
+        C::AbstractArray{TC, 4},
+        ξ::AbstractVector{Tξ},
+        n̂::AbstractVector{Tn}
+    ) where {TC <: Number, Tξ <: Number, Tn <: Number}
     T = promote_type(TC, Tξ, Tn)
-    K    = _acoustic_tensor(C, ξ)
+    K = _acoustic_tensor(C, ξ)
     Kinv = _inv3(K)
     A = zeros(T, 3, 3)
     @inbounds for i in 1:3, k in 1:3
@@ -94,10 +98,12 @@ function _Qnn_direct(C::AbstractArray{TC,4},
     @inbounds for i in 1:3, k in 1:3
         s = zero(T)
         for p in 1:3, q in 1:3, r in 1:3, s2 in 1:3, α in 1:3, β in 1:3
-            Γ = (ξ[q] * Kinv[p, r] * ξ[s2] +
-                 ξ[q] * Kinv[p, s2] * ξ[r] +
-                 ξ[p] * Kinv[q, r] * ξ[s2] +
-                 ξ[p] * Kinv[q, s2] * ξ[r]) / 4
+            Γ = (
+                ξ[q] * Kinv[p, r] * ξ[s2] +
+                    ξ[q] * Kinv[p, s2] * ξ[r] +
+                    ξ[p] * Kinv[q, r] * ξ[s2] +
+                    ξ[p] * Kinv[q, s2] * ξ[r]
+            ) / 4
             s += C[i, α, p, q] * Γ * C[r, s2, k, β] * n̂[α] * n̂[β]
         end
         B[i, k] = s

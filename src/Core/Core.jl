@@ -41,7 +41,7 @@ include("dispatch.jl")
 
 # Abstractions
 export AbstractInclusion, AbstractEllipsoidalInclusion,
-       AbstractCrack, AbstractLayeredInclusion
+    AbstractCrack, AbstractLayeredInclusion
 export dimension, element_type, inclusion_basis, shape_trait
 
 # Traits — algorithms
@@ -49,7 +49,7 @@ export AbstractAlgorithm, Analytical, Residue, DECUHR, Auto
 
 # Traits — material symmetry
 export MaterialSymmetry, IsotropicSym, TransverselyIsotropicSym,
-       OrthotropicSym, GeneralAnisotropicSym, material_symmetry
+    OrthotropicSym, GeneralAnisotropicSym, material_symmetry
 
 # Modulus extractors (public — consumed by sub-modules and users)
 export extract_iso_moduli, extract_ti_moduli, extract_iso_conductivity

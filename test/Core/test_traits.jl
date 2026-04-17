@@ -8,6 +8,6 @@ using TensND
 
     # Analytical / Residue / DECUHR singletons
     @test MeanFieldHom.Analytical() isa MeanFieldHom.AbstractAlgorithm
-    @test MeanFieldHom.Residue()    isa MeanFieldHom.AbstractAlgorithm
-    @test MeanFieldHom.DECUHR()     isa MeanFieldHom.AbstractAlgorithm
+    @test MeanFieldHom.Residue() isa MeanFieldHom.AbstractAlgorithm
+    @test MeanFieldHom.DECUHR() isa MeanFieldHom.AbstractAlgorithm
 end

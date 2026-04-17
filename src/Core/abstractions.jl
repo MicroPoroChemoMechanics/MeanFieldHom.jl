@@ -34,7 +34,7 @@ geometric scalars (semi-axes, half-widths, …) and propagates through
 every tensor produced by the package, supporting `Float64`,
 `ForwardDiff.Dual`, `SymPy.Sym`, `Symbolics.Num`, …
 """
-abstract type AbstractInclusion{T<:Number} end
+abstract type AbstractInclusion{T <: Number} end
 
 """
     AbstractEllipsoidalInclusion{dim,T} <: AbstractInclusion{T}
@@ -43,7 +43,7 @@ Supertype for ellipsoidal inclusions — solid ellipsoids (and their
 degenerate limits: spheres, cylinders, discs …).  The first type
 parameter `dim` encodes the spatial dimension (2 or 3).
 """
-abstract type AbstractEllipsoidalInclusion{dim,T} <: AbstractInclusion{T} end
+abstract type AbstractEllipsoidalInclusion{dim, T} <: AbstractInclusion{T} end
 
 """
     AbstractCrack{T} <: AbstractInclusion{T}
@@ -62,7 +62,7 @@ Scaffold supertype for multi-layer inclusions (spheres with concentric
 shells, cylinders with coatings, …).  No concrete subtype is shipped
 yet; see `docs/src/developer/roadmap.md`.
 """
-abstract type AbstractLayeredInclusion{dim,T} <: AbstractInclusion{T} end
+abstract type AbstractLayeredInclusion{dim, T} <: AbstractInclusion{T} end
 
 # ─── Minimal interface ───────────────────────────────────────────────────────
 

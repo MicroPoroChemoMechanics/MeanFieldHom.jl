@@ -13,10 +13,15 @@ function cod_from_compliance(H, ℬ = TensND.getbasis(H))
     T = eltype(H)
     newH = TensND.change_tens(H, ℬ)
     return TensND.Tens(
-        Tensors.SymmetricTensor{2,3}((i, j) ->
+        Tensors.SymmetricTensor{2, 3}(
+            (i, j) ->
             16 * newH[i, 3, j, 3] /
-            (3 * (one(T) + MFH_Core._δ(i, 3, T) + MFH_Core._δ(j, 3, T) +
-                  MFH_Core._δ(i, 3, T) * MFH_Core._δ(j, 3, T)))
+                (
+                3 * (
+                    one(T) + MFH_Core._δ(i, 3, T) + MFH_Core._δ(j, 3, T) +
+                        MFH_Core._δ(i, 3, T) * MFH_Core._δ(j, 3, T)
+                )
+            )
         ),
         ℬ,
     )
@@ -38,17 +43,21 @@ function compliance_from_cod(B, ℬ = TensND.getbasis(B))
         j = 3
         l = 3
         v = newB[i, k] * 3 *
-            (one(T) + MFH_Core._δ(i, 3, T) + MFH_Core._δ(k, 3, T) +
-             MFH_Core._δ(i, 3, T) * MFH_Core._δ(k, 3, T)) /
+            (
+            one(T) + MFH_Core._δ(i, 3, T) + MFH_Core._δ(k, 3, T) +
+                MFH_Core._δ(i, 3, T) * MFH_Core._δ(k, 3, T)
+        ) /
             16
         data[i, j, k, l] = v
     end
     sym = zeros(T, 3, 3, 3, 3)
     @inbounds for i in 1:3, j in 1:3, k in 1:3, l in 1:3
-        sym[i,j,k,l] = (data[i,j,k,l] + data[j,i,k,l] +
-                        data[i,j,l,k] + data[j,i,l,k] +
-                        data[k,l,i,j] + data[l,k,i,j] +
-                        data[k,l,j,i] + data[l,k,j,i]) / 8
+        sym[i, j, k, l] = (
+            data[i, j, k, l] + data[j, i, k, l] +
+                data[i, j, l, k] + data[j, i, l, k] +
+                data[k, l, i, j] + data[l, k, i, j] +
+                data[k, l, j, i] + data[l, k, j, i]
+        ) / 8
     end
     return TensND.Tens(sym, ℬ)
 end
@@ -65,10 +74,13 @@ function cod_from_deltaS(ΔS, ε, ℬ = TensND.getbasis(ΔS))
     T = eltype(ΔS)
     newS = TensND.change_tens(ΔS / (T(π) * ε), ℬ)
     return TensND.Tens(
-        Tensors.SymmetricTensor{2,3}((i, j) ->
+        Tensors.SymmetricTensor{2, 3}(
+            (i, j) ->
             4 * newS[i, 3, j, 3] /
-            (one(T) + MFH_Core._δ(i, 3, T) + MFH_Core._δ(j, 3, T) +
-             MFH_Core._δ(i, 3, T) * MFH_Core._δ(j, 3, T))
+                (
+                one(T) + MFH_Core._δ(i, 3, T) + MFH_Core._δ(j, 3, T) +
+                    MFH_Core._δ(i, 3, T) * MFH_Core._δ(j, 3, T)
+            )
         ),
         ℬ,
     )

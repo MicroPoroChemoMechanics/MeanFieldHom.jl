@@ -12,8 +12,8 @@ Promote integer element types to their floating-point counterpart (so that
 `Integer`-valued semi-axes become `Float64` or `BigFloat`) while leaving
 every `AbstractFloat`, `ForwardDiff.Dual` or symbolic type untouched.
 """
-_floatlike(::Type{T}) where {T<:Integer} = float(T)
-_floatlike(::Type{T}) where {T<:Number}  = T
+_floatlike(::Type{T}) where {T <: Integer} = float(T)
+_floatlike(::Type{T}) where {T <: Number} = T
 
 """
     _basis_eltype(::Type{T})
@@ -24,8 +24,8 @@ historical TensND default); non-real scalars (SymPy, Symbolics, …) keep
 their own element type so that the `CanonicalBasis` and the tensor data
 share the same element type.
 """
-_basis_eltype(::Type{T}) where {T<:Real}  = Float64
-_basis_eltype(::Type{T}) where {T<:Number} = T
+_basis_eltype(::Type{T}) where {T <: Real} = Float64
+_basis_eltype(::Type{T}) where {T <: Number} = T
 
 """
     _basis_col(basis, m::Int) -> NTuple
@@ -60,10 +60,10 @@ Build the default TensND basis associated with a set of ZYZ Euler
 angles: `CanonicalBasis{3,_basis_eltype(T)}` when all angles are zero,
 `RotatedBasis(euler_angles...)` otherwise.
 """
-function _default_basis(::Type{T}, euler_angles::NTuple{3,<:Real}) where {T}
+function _default_basis(::Type{T}, euler_angles::NTuple{3, <:Real}) where {T}
     Tbasis = _basis_eltype(T)
     return all(iszero, euler_angles) ? TensND.CanonicalBasis{3, Tbasis}() :
-                                       TensND.RotatedBasis(euler_angles...)
+        TensND.RotatedBasis(euler_angles...)
 end
 
 # ─── Shape classification helpers ─────────────────────────────────────────────
@@ -85,17 +85,21 @@ Returns an integer code instead of a type to avoid circular references:
 """
 function _classify_shape_3d(::Type{T}, a, b, c) where {T}
     if T <: Real
-        tol  = max(a, b, c) * (1e-10 * one(T))
+        tol = max(a, b, c) * (1.0e-10 * one(T))
         AeqB = (a - b) ≤ tol
         BeqC = (b - c) ≤ tol
     else
         AeqB = isequal(a, b)
         BeqC = isequal(b, c)
     end
-    if     AeqB &&  BeqC; return 1   # Spherical
-    elseif !AeqB &&  BeqC; return 2   # Prolate
-    elseif  AeqB && !BeqC; return 3   # Oblate
-    else;                   return 4  # Triaxial
+    if AeqB &&  BeqC
+        return 1   # Spherical
+    elseif !AeqB &&  BeqC
+        return 2   # Prolate
+    elseif AeqB && !BeqC
+        return 3   # Oblate
+    else
+        return 4  # Triaxial
     end
 end
 
@@ -107,6 +111,6 @@ Classify a 2D ellipse from its (already sorted) semi-axes:
     2 → equivalent of `Elliptic`  (a > b)
 """
 function _classify_shape_2d(::Type{T}, a, b) where {T}
-    is_equal = T <: Real ? (a - b) ≤ max(a, b) * (1e-10 * one(T)) : isequal(a, b)
+    is_equal = T <: Real ? (a - b) ≤ max(a, b) * (1.0e-10 * one(T)) : isequal(a, b)
     return is_equal ? 1 : 2
 end
