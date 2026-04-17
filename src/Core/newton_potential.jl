@@ -1,0 +1,153 @@
+# =============================================================================
+#  newton_potential.jl
+#
+#  Newton potentials `Iᵢ` (2D / 3D) for an ellipsoid given its semi-axes.
+#  Kept in Core because both the `Elasticity` and `Conductivity`
+#  sub-modules need it. Element-type genericity covers `Float64`,
+#  `ForwardDiff.Dual`, `SymPy.Sym`, `Symbolics.Num`.
+#
+#  The `newton_potential_3d(ell::Ellipsoid)` and
+#  `newton_potential_2d(ell::Ellipsoid)` convenience methods are deliberately
+#  added in the `Elasticity` sub-module (where `Ellipsoid` is defined), not
+#  here, to avoid a circular dependency.
+# =============================================================================
+
+"""
+    newton_potential_3d(a, b, c) -> (Iv, IIv)
+
+Newton potential integrals for a 3-D ellipsoid with semi-axes `a ≥ b ≥ c > 0`.
+
+Returns:
+- `Iv  = (I_a, I_b, I_c)`       with `I_a + I_b + I_c = 4π`
+- `IIv = (I_aa, I_bb, I_cc, I_bc, I_ca, I_ab)`
+
+Two methods are provided:
+- `T<:Real` (includes `Float64`, `ForwardDiff.Dual`): numerically stable case-split
+  using tolerance comparisons (sphere, oblate, prolate, triaxial with elliptic integrals).
+- `T<:Number` (e.g. `SymPy.Sym`, `Symbolics.Num`): structural equality via `isequal`
+  selects the same four cases.
+"""
+function newton_potential_3d(a::T, b::T, c::T) where {T<:Real}
+    tol  = 1e-6 * one(T)
+    AeqB = (a - b) ≤ a * tol
+    BeqC = (b - c) ≤ b * tol
+
+    if AeqB && BeqC
+        A2 = a * a
+        Ia = Ib = Ic = 4 * T(π) / 3
+        Iaa = Ibb = Icc = Ibc = Ica = Iab = 4 * T(π) / (5 * A2)
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+
+    elseif AeqB && !BeqC
+        A2 = a * a;  C2 = c * c
+        Ia = Ib = 2 * T(π) * c * (A2 * acos(c / a) - c * sqrt(A2 - C2)) /
+                  (A2 - C2)^(3//2)
+        Ic = 4 * T(π) - 2 * Ia
+        Ica = Ibc = (Ia - Ic) / (C2 - A2)
+        Icc = 4 * T(π) / (3 * C2) - 2 * Ica / 3
+        Iaa = Ibb = Iab = T(π) / A2 - Ica / 4
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+
+    elseif !AeqB && BeqC
+        A2 = a * a;  C2 = c * c
+        Ic = Ib = 2 * T(π) * a * (a * sqrt(A2 - C2) - C2 * acosh(a / c)) /
+                  (A2 - C2)^(3//2)
+        Ia = 4 * T(π) - 2 * Ic
+        Ica = Iab = (Ia - Ic) / (C2 - A2)
+        Iaa = 4 * T(π) / (3 * A2) - 2 * Ica / 3
+        Ibb = Icc = Ibc = T(π) / C2 - Ica / 4
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+
+    else
+        return _newton_potential_3d_triaxial(a, b, c)
+    end
+end
+
+# Symbolic types (T<:Number but not T<:Real)
+function newton_potential_3d(a::T, b::T, c::T) where {T<:Number}
+    AeqB = isequal(a, b)
+    BeqC = isequal(b, c)
+
+    if AeqB && BeqC
+        A2 = a * a
+        Ia = Ib = Ic = 4 * T(π) / 3
+        Iaa = Ibb = Icc = Ibc = Ica = Iab = 4 * T(π) / (5 * A2)
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+
+    elseif AeqB && !BeqC
+        A2 = a * a;  C2 = c * c
+        Ia = Ib = 2 * T(π) * c * (A2 * acos(c / a) - c * sqrt(A2 - C2)) /
+                  (A2 - C2)^(3//2)
+        Ic = 4 * T(π) - 2 * Ia
+        Ica = Ibc = (Ia - Ic) / (C2 - A2)
+        Icc = 4 * T(π) / (3 * C2) - 2 * Ica / 3
+        Iaa = Ibb = Iab = T(π) / A2 - Ica / 4
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+
+    elseif !AeqB && BeqC
+        A2 = a * a;  C2 = c * c
+        Ic = Ib = 2 * T(π) * a * (a * sqrt(A2 - C2) - C2 * acosh(a / c)) /
+                  (A2 - C2)^(3//2)
+        Ia = 4 * T(π) - 2 * Ic
+        Ica = Iab = (Ia - Ic) / (C2 - A2)
+        Iaa = 4 * T(π) / (3 * A2) - 2 * Ica / 3
+        Ibb = Icc = Ibc = T(π) / C2 - Ica / 4
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+
+    else
+        return _newton_potential_3d_triaxial(a, b, c)
+    end
+end
+
+# ── Internal: general triaxial formula ───────────────────────────────────────
+function _newton_potential_3d_triaxial(a::T, b::T, c::T) where {T<:Number}
+    A2 = a * a;  B2 = b * b;  C2 = c * c
+    theta = asin(sqrt(one(T) - C2 / A2))
+    k2    = (A2 - B2) / (A2 - C2)
+    Fell  = ell_F(theta, k2)
+    Eell  = ell_E(theta, k2)
+    fac   = 4 * T(π) * a * b * c / sqrt(A2 - C2)
+    Ia    = fac / (A2 - B2) * (Fell - Eell)
+    Ic    = fac / (B2 - C2) * (b * sqrt(A2 - C2) / (a * c) - Eell)
+    Ib    = 4 * T(π) - Ia - Ic
+    Ibc   = (Ic - Ib) / (B2 - C2)
+    Ica   = (Ic - Ia) / (A2 - C2)
+    Iab   = (Ib - Ia) / (A2 - B2)
+    Iaa   = (4 * T(π) / A2 - Iab - Ica) / 3
+    Ibb   = (4 * T(π) / B2 - Iab - Ibc) / 3
+    Icc   = (4 * T(π) / C2 - Ica - Ibc) / 3
+    return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+end
+
+# ── 2-D Newton potentials ─────────────────────────────────────────────────────
+
+"""
+    newton_potential_2d(a, b) -> (Ia, Ib)
+
+Newton potential integrals for a 2-D ellipse with semi-axes `a ≥ b > 0`.
+Returns `(Ia, Ib)` with `Ia + Ib = 2π`.
+
+Works for any `T<:Number` including `ForwardDiff.Dual`, `SymPy.Sym`, `Symbolics.Num`.
+
+Formulas:
+- Circle: `Ia = Ib = π`
+- General ellipse: `Ia = 2πb/(a+b)`, `Ib = 2πa/(a+b)`
+"""
+function newton_potential_2d(a::T, b::T) where {T<:Real}
+    tol = 1e-6 * one(T)
+    if (a - b) ≤ a * tol
+        return (T(π), T(π))
+    else
+        s = a + b
+        return (2 * T(π) * b / s, 2 * T(π) * a / s)
+    end
+end
+
+function newton_potential_2d(a::T, b::T) where {T<:Number}
+    if isequal(a, b)
+        return (T(π), T(π))
+    else
+        s = a + b
+        return (2 * T(π) * b / s, 2 * T(π) * a / s)
+    end
+end

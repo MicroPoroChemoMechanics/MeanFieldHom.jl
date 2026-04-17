@@ -1,0 +1,26 @@
+"""
+    MeanFieldHom.Conductivity
+
+2nd-order Hill tensor for conductivity / diffusivity problems.
+Extends the `_kernel` method table of [`MeanFieldHom.Elasticity`] with
+additional 2nd-order specialisations.
+"""
+module Conductivity
+
+using LinearAlgebra
+using TensND
+using QuadGK
+
+import ..Core
+using ..Core
+const MFH_Core = Core
+
+import ..Elasticity
+using ..Elasticity: Ellipsoid, Spherical, Prolate, Oblate, Triaxial,
+                    Circular, Elliptic, tens_IA
+
+include("hill_order2_3d.jl")
+include("hill_order2_2d.jl")
+include("api.jl")
+
+end # module

@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Barthélémy"
+    given-names: "Jean-François"
+    orcid: "0000-0002-1968-8939"
+    affiliation: "Cerema, UMR MCD"
+title: "MeanFieldHom.jl: Mean-field homogenisation of heterogeneous materials"
+abstract: "Julia framework for mean-field homogenisation of heterogeneous materials. Provides Hill polarisation tensors for ellipsoidal inclusions (2D/3D, isotropic and anisotropic matrices), crack-opening-displacement tensors, stress and displacement intensity factors for flat cracks, and second-order Hill tensors for transport problems, under a common abstraction hierarchy and dispatch mechanism. ForwardDiff-compatible across every analytical and DECUHR path."
+keywords:
+  - "Julia"
+  - "homogenisation"
+  - "micromechanics"
+  - "Hill polarisation tensor"
+  - "Eshelby problem"
+  - "crack mechanics"
+  - "stress intensity factors"
+  - "automatic differentiation"
+version: "0.1.0"
+url: "https://github.com/MicMacTools/MeanFieldHom.jl"
+repository-code: "https://github.com/MicMacTools/MeanFieldHom.jl"
+license: "MIT"
