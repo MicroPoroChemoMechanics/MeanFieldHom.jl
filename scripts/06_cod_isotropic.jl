@@ -44,6 +44,6 @@ hline!(plt, [B_p[3,3]], label = "penny B_nn", linestyle = :dash)
 
 r     = RibbonCrack(1.0)
 B_r   = cod_tensor(r, C₀)
-hline!(plt, [B_r[3,3]], label = "ribbon B_nn (3π/8 × lim)", linestyle = :dot)
+hline!(plt, [B_r[3,3]], label = "ribbon B_nn (B²ᵈ = (3π/8)·lim_{η→0} B³ᵈ)", linestyle = :dot)
 
 display(plt)

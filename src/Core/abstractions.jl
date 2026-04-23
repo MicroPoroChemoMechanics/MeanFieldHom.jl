@@ -101,3 +101,156 @@ values: `Spherical`, `Prolate`, `Oblate`, `Triaxial`, `Circular`,
 `Elliptic` (ellipsoids), `Penny`, `EllipticShape`, `Ribbon` (cracks).
 """
 function shape_trait end
+
+"""
+    shape_tensor(incl::AbstractInclusion) -> AbstractTens{2}
+
+Symmetric 2nd-order tensor encoding both the semi-axes and the
+orientation of the inclusion in the global (canonical) frame:
+
+```math
+\\mathbf A = \\mathbf R \\; \\mathrm{diag}(a_1, a_2, \\dots) \\; \\mathbf R^{\\!T}
+```
+
+where ``\\mathbf R`` is the rotation matrix mapping the canonical frame
+onto the inclusion's local basis and the diagonal entries are the
+semi-axes in the order dictated by the local basis.
+
+Conventions for degenerate cases:
+
+| Inclusion               | Diagonal (principal frame)      |
+| ----------------------- | ------------------------------- |
+| `Ellipsoid{3}`          | `(a₁, a₂, a₃)`                  |
+| `Ellipsoid{2}`          | `(a₁, a₂)`                      |
+| `Cylinder`              | `(Inf, b, c)` — axis ``e_1``    |
+| `EllipticCrack`         | `(a, b, 0)`  — normal ``e_3``   |
+| `RibbonCrack`           | `(Inf, b, 0)`                   |
+"""
+function shape_tensor end
+
+"""
+    eshelby_tensor(incl, C₀; method=:auto, abstol, reltol, maxiters) -> AbstractTens
+
+Eshelby tensor of the inclusion `incl` embedded in a matrix of
+stiffness / conductivity `C₀`, derived from the Hill polarisation
+tensor ``\\mathbb P`` (or ``\\mathbf P``) by the relations
+
+```math
+\\mathbb S = \\mathbb P : \\mathbb C_0
+\\qquad\\text{(order 4, elasticity)}
+```
+
+```math
+\\mathbf s = \\mathbf P \\cdot \\mathbf K_0
+\\qquad\\text{(order 2, conductivity / diffusion)}
+```
+
+The appropriate method is selected by dispatch on the order of `C₀`:
+an `AbstractTens{4, 3}` (elasticity) triggers the double contraction
+``\\mathbb P \\;\\underset{s}{:}\\; \\mathbb C_0``, while an
+`AbstractTens{2, 3}` (conductivity) triggers the simple contraction
+``\\mathbf P \\cdot \\mathbf K_0``.
+
+All keyword arguments (`method`, `abstol`, `reltol`, `maxiters`) are
+forwarded verbatim to [`hill_tensor`](@ref); see its docstring for the
+set of admissible algorithm traits.
+
+See also [`hill_tensor`](@ref).
+"""
+function eshelby_tensor end
+
+# =============================================================================
+#  Localization & contribution public API stubs
+#
+#  Declared here so that every sub-module (Elasticity, Cracks,
+#  Conductivity, LayeredSphere, user extensions) can add methods via
+#  `import ..Core: stiffness_contribution` + method definition, all
+#  attaching to a single generic function.  Definitions live in
+#  `src/localization.jl` and `src/contribution.jl` (loaded at
+#  MeanFieldHom top level after all sub-modules).
+# =============================================================================
+
+"""
+    strain_strain_loc(incl, C₁, C₀; kw...)  -> Tens{4,3}
+
+Dilute strain-strain localization tensor `A_εε` (Eshelby).
+"""
+function strain_strain_loc end
+
+"""
+    stress_strain_loc(incl, C₁, C₀; kw...)  -> Tens{4,3}
+"""
+function stress_strain_loc end
+
+"""
+    strain_stress_loc(incl, C₁, C₀; kw...)  -> Tens{4,3}
+"""
+function strain_stress_loc end
+
+"""
+    stress_stress_loc(incl, C₁, C₀; kw...)  -> Tens{4,3}
+"""
+function stress_stress_loc end
+
+"""
+    gradient_gradient_loc(incl, K₁, K₀; kw...) -> Tens{2,3}
+"""
+function gradient_gradient_loc end
+
+"""
+    flux_gradient_loc(incl, K₁, K₀; kw...)    -> Tens{2,3}
+"""
+function flux_gradient_loc end
+
+"""
+    gradient_flux_loc(incl, K₁, K₀; kw...)    -> Tens{2,3}
+"""
+function gradient_flux_loc end
+
+"""
+    flux_flux_loc(incl, K₁, K₀; kw...)        -> Tens{2,3}
+"""
+function flux_flux_loc end
+
+"""
+    stiffness_contribution(incl, C₁, C₀; kw...) -> Tens{4,3}
+    stiffness_contribution(crack, C₀; kw...)   -> Tens{4,3}
+
+Size-independent stiffness contribution tensor `N` of an inclusion in
+a matrix `C₀`.  For a dilute family of volume fraction `f`:
+`ΔC_eff = f · N` (see [`delta_stiffness`](@ref)).
+"""
+function stiffness_contribution end
+
+"""
+    conductivity_contribution(incl, K₁, K₀; kw...) -> Tens{2,3}
+    conductivity_contribution(crack, K₀; kw...)     -> Tens{2,3}
+
+Size-independent conductivity contribution tensor for the 2nd-order
+transport problem.  Analogue of [`stiffness_contribution`](@ref).
+"""
+function conductivity_contribution end
+
+"""
+    resistivity_contribution(incl, K₁, K₀; kw...) -> Tens{2,3}
+
+Size-independent resistivity contribution tensor of an inclusion
+(2nd-order analogue of [`compliance_contribution`](@ref) for solid
+ellipsoids).
+"""
+function resistivity_contribution end
+
+"""
+    delta_stiffness(N, f) -> Tens{4,3}
+
+Dilute effective-stiffness correction `ΔC = f · N` from the size-
+independent contribution tensor `N` and the volume fraction `f`.
+"""
+function delta_stiffness end
+
+"""
+    delta_conductivity(N_K, f) -> Tens{2,3}
+
+Dilute effective-conductivity correction `ΔK = f · N_K`.
+"""
+function delta_conductivity end

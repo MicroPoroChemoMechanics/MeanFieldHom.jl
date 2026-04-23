@@ -17,7 +17,8 @@ const MFH_Core = Core
 
 import ..Elasticity
 using ..Elasticity: Ellipsoid, Spherical, Prolate, Oblate, Triaxial,
-    Circular, Elliptic, tens_IA
+    Circular, Elliptic, tens_IA,
+    Cylinder, CylindricalShape, CircularCylindrical, EllipticCylindrical
 
 include("hill_order2_3d.jl")
 include("hill_order2_2d.jl")

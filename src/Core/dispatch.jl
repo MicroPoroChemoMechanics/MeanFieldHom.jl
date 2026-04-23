@@ -67,12 +67,21 @@ _resolve_algo(::Val, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{2, 2}
 _resolve_algo(::Val{:auto}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
 _resolve_algo(::Val{:residue}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
 _resolve_algo(::Val{:decuhr}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = DECUHR()
+_resolve_algo(::Val{:nestedquadgk}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = NestedQuadGK()
+
+# ─── Cylinder dispatch — anisotropic elasticity (3D) routes to the dedicated
+# 1D transverse-plane quadrature.  The residue algorithm is not applicable
+# to a cylinder (acoustic polynomial degenerates), so `:residue` silently
+# falls back to `CylinderQuadrature`.  The rules are injected by the
+# Elasticity sub-module (see `Elasticity.jl`) to avoid a Core→Elasticity
+# dependency — this file only declares the infrastructure.
 
 # Generic inclusion fallback (also used by `AbstractCrack` before the
 # TI-aligned refinement injected from the `Cracks` sub-module).
 _resolve_algo(::Val{:auto}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
 _resolve_algo(::Val{:residue}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
 _resolve_algo(::Val{:decuhr}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = DECUHR()
+_resolve_algo(::Val{:nestedquadgk}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = NestedQuadGK()
 
 # Plain catch-all for the cases where a sub-module passes `method` symbols
 # we don't know about (e.g. a user extension): default to Analytical.

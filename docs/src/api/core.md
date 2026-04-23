@@ -10,9 +10,12 @@ MeanFieldHom.AbstractAlgorithm
 MeanFieldHom.Analytical
 MeanFieldHom.Residue
 MeanFieldHom.DECUHR
+MeanFieldHom.CylinderQuadrature
 MeanFieldHom.material_symmetry
 MeanFieldHom.Core.extract_iso_moduli
 MeanFieldHom.Core.extract_ti_moduli
 MeanFieldHom.Core.newton_potential_3d
 MeanFieldHom.Core.newton_potential_2d
+MeanFieldHom.Core.newton_potential_3d_cylinder
+MeanFieldHom.Core.shape_tensor
 ```

@@ -74,12 +74,54 @@ using LinearAlgebra
             0.0  0.0  1.5
         ]
         B = Tens(Bdata, ℬ)
-        H = compliance_from_cod(B, ℬ)
-        B_back = cod_from_compliance(H, ℬ)
-        @test B_back[3, 3] ≈ B[3, 3] atol = 1.0e-12
+
+        # Elliptic / 3D factor (3/4)
+        H_ell = compliance_from_cod(B, PennyCrack(1.0), ℬ)
+        B_back_ell = cod_from_compliance(H_ell, PennyCrack(1.0), ℬ)
+        @test B_back_ell[3, 3] ≈ B[3, 3] atol = 1.0e-12
+
+        # Ribbon / 2D factor (2/π)
+        H_rib = compliance_from_cod(B, RibbonCrack(1.0), ℬ)
+        B_back_rib = cod_from_compliance(H_rib, RibbonCrack(1.0), ℬ)
+        @test B_back_rib[3, 3] ≈ B[3, 3] atol = 1.0e-12
+
+        # Back-compat (no-crack) defaults to the elliptic factor
+        H_default = compliance_from_cod(B, ℬ)
+        @test H_default[3, 3, 3, 3] ≈ H_ell[3, 3, 3, 3] atol = 1.0e-12
     end
 
-    @testset "Compliance contribution — ellipse vs ribbon pre-factors" begin
+    @testset "Compliance contribution — H factorisation (ellipse vs ribbon)" begin
+        E, ν = 1.0, 0.2
+        k = E / (3 * (1 - 2ν))
+        μ = E / (2 * (1 + ν))
+        C₀ = TensISO{3}(3k, 2μ)
+
+        # Elliptic (penny): H = (3/4) n̂ ⊗ˢ B ⊗ˢ n̂
+        pc = PennyCrack(1.0)
+        B_p = cod_tensor(pc, C₀)
+        H_p = compliance_contribution(pc, C₀)
+        n̂ = tensbasis(crack_basis(pc), 3)
+        expected_H_p = (3 / 4) * (n̂ ⊗ˢ B_p ⊗ˢ n̂)
+        for i in 1:3, j in 1:3, kk in 1:3, l in 1:3
+            @test H_p[i, j, kk, l] ≈ expected_H_p[i, j, kk, l] rtol = 1.0e-12
+        end
+        # Analytical penny value: H[3,3,3,3] = (3/4) × 16(1-ν²)/(3πE) = 4(1-ν²)/(πE)
+        @test H_p[3, 3, 3, 3] ≈ 4 * (1 - ν^2) / (π * E) rtol = 1.0e-10
+
+        # Ribbon: H = (2/π) n̂ ⊗ˢ B ⊗ˢ n̂
+        r = RibbonCrack(1.0)
+        B_r = cod_tensor(r, C₀)
+        H_r = compliance_contribution(r, C₀)
+        n̂r = tensbasis(crack_basis(r), 3)
+        expected_H_r = (2 / π) * (n̂r ⊗ˢ B_r ⊗ˢ n̂r)
+        for i in 1:3, j in 1:3, kk in 1:3, l in 1:3
+            @test H_r[i, j, kk, l] ≈ expected_H_r[i, j, kk, l] rtol = 1.0e-12
+        end
+        # Analytical ribbon: H[3,3,3,3] = (2/π) × π(1-ν²)/E = 2(1-ν²)/E
+        @test H_r[3, 3, 3, 3] ≈ 2 * (1 - ν^2) / E rtol = 1.0e-10
+    end
+
+    @testset "delta_compliance — Budiansky density helpers" begin
         E, ν = 1.0, 0.2
         k = E / (3 * (1 - 2ν))
         μ = E / (2 * (1 + ν))
@@ -87,22 +129,72 @@ using LinearAlgebra
         ε = 0.1
 
         pc = PennyCrack(1.0)
-        B_p = cod_tensor(pc, C₀)
-        ΔS_p = compliance_contribution(pc, C₀, ε)
-        n̂ = tensbasis(crack_basis(pc), 3)
-        expected_p = π * ε * (n̂ ⊗ˢ B_p ⊗ˢ n̂)
-        for i in 1:3, j in 1:3, k in 1:3, l in 1:3
-            @test ΔS_p[i, j, k, l] ≈ expected_p[i, j, k, l] rtol = 1.0e-12
+        H_p = compliance_contribution(pc, C₀)
+        ΔS_p = delta_compliance(pc, H_p, ε)
+        # Elliptic: ΔS = (4π/3) ε H
+        for i in 1:3, j in 1:3, kk in 1:3, l in 1:3
+            @test ΔS_p[i, j, kk, l] ≈ (4π / 3) * ε * H_p[i, j, kk, l] rtol = 1.0e-12
         end
 
         r = RibbonCrack(1.0)
-        B_r = cod_tensor(r, C₀)
-        ΔS_r = compliance_contribution(r, C₀, ε)
-        n̂r = tensbasis(crack_basis(r), 3)
-        expected_r = (π / 2) * ε * (n̂r ⊗ˢ B_r ⊗ˢ n̂r)
-        for i in 1:3, j in 1:3, k in 1:3, l in 1:3
-            @test ΔS_r[i, j, k, l] ≈ expected_r[i, j, k, l] rtol = 1.0e-12
+        H_r = compliance_contribution(r, C₀)
+        ΔS_r = delta_compliance(r, H_r, ε)
+        # Ribbon: ΔS = π ε H
+        for i in 1:3, j in 1:3, kk in 1:3, l in 1:3
+            @test ΔS_r[i, j, kk, l] ≈ π * ε * H_r[i, j, kk, l] rtol = 1.0e-12
         end
+    end
+
+    @testset "stiffness_contribution / conductivity_contribution — crack API symmetry" begin
+        E, ν = 1.0, 0.25
+        k = E / (3 * (1 - 2ν))
+        μ = E / (2 * (1 + ν))
+        C₀ = TensISO{3}(3k, 2μ)
+        K₀ = TensISO{3}(2.0)
+
+        for crack in (PennyCrack(1.0), EllipticCrack(1.0, 0.3), RibbonCrack(0.5))
+            # Elasticity: N = -C₀ : H : C₀
+            H = compliance_contribution(crack, C₀)
+            N = stiffness_contribution(crack, C₀)
+            expected_N = -(C₀ ⊡ H ⊡ C₀)
+            for i in 1:3, j in 1:3, k_idx in 1:3, l in 1:3
+                @test N[i, j, k_idx, l] ≈ expected_N[i, j, k_idx, l] rtol = 1.0e-12
+            end
+
+            # Conductivity: N_K = -K₀ · R · K₀
+            R = compliance_contribution(crack, K₀)
+            N_K = conductivity_contribution(crack, K₀)
+            expected_N_K = -(K₀ ⋅ R ⋅ K₀)
+            for i in 1:3, j in 1:3
+                @test N_K[i, j] ≈ expected_N_K[i, j] rtol = 1.0e-12
+            end
+
+            # Dilute coherence on cracks: delta_stiffness gives
+            # (4π/3) ε N (elliptic) or π ε N (ribbon); at first order in ε,
+            # matches -C₀ : delta_compliance : C₀.
+            ε_small = 1.0e-3
+            ΔC = delta_stiffness(crack, N, ε_small)
+            ΔS = delta_compliance(crack, H, ε_small)
+            ΔC_from_ΔS = -(C₀ ⊡ ΔS ⊡ C₀)
+            for i in 1:3, j in 1:3, k_idx in 1:3, l in 1:3
+                @test ΔC[i, j, k_idx, l] ≈ ΔC_from_ΔS[i, j, k_idx, l] rtol = 1.0e-10
+            end
+        end
+    end
+
+    @testset "2D/3D consistency — B²ᵈ = (3π/8) lim_{η→0} B³ᵈ" begin
+        E, ν = 1.0, 0.25
+        k = E / (3 * (1 - 2ν))
+        μ = E / (2 * (1 + ν))
+        C₀ = TensISO{3}(3k, 2μ)
+
+        r = RibbonCrack(1.0)
+        B_r = cod_tensor(r, C₀)
+        # Take a very flat elliptic crack and check the limit relation
+        # on the normal-normal component.
+        ec = EllipticCrack(1.0, 1.0e-4)
+        B_e = cod_tensor(ec, C₀)
+        @test (3π / 8) * B_e[3, 3] ≈ B_r[3, 3] rtol = 1.0e-2
     end
 
     @testset "SIF — ribbon analytical" begin

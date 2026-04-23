@@ -9,6 +9,12 @@
 """
     _Qnn_star_residue(C::AbstractArray{Float64,4}, ξs::AbstractVector, n̂::AbstractVector)
             -> Matrix{Float64}  (3×3, symmetric)
+
+Per-``\\varphi`` kernel of the crack-plane line integral that produces
+the COD tensor of an anisotropic matrix, evaluated by Cauchy residues
+([Masson 2008](@cite masson2008) adapted to the crack limit, with the
+limit-algorithm construction of [Barthélémy 2009](@cite barthelemyIJSS2009)).
+Float64 only.
 """
 function _Qnn_star_residue(
         C::AbstractArray{Float64, 4},
@@ -18,8 +24,11 @@ function _Qnn_star_residue(
     # ζ(z) = ξs + z·n̂  ⇒  α₀ζ = ξs, α₁ζ = n̂
     sys = MFH_Core._build_poly_system(C, ξs, n̂)
     adj = sys.adj_poly
+    Q = sys.Q
     dQ = sys.dQ
     roots_uhp = sys.roots_uhp
+    # Adaptive singular-root guard: skip roots where |Q'(zᵣ)| ≪ scale of Q.
+    dQ_thresh = 1.0e-14 * maximum(abs, coeffs(Q))
 
     # Tncon[i, p, q] = Σ_α C_{i α p q} n̂_α
     Tncon = zeros(Float64, 3, 3, 3)
@@ -67,7 +76,7 @@ function _Qnn_star_residue(
     result = zeros(Float64, 3, 3)
     @inbounds for zr in roots_uhp
         dQr = dQ(zr)
-        abs(dQr) < 1.0e-30 && continue
+        abs(dQr) < dQ_thresh && continue
         for i in 1:3, k in 1:3
             contrib = im * Bpoly[i, k](zr) / dQr
             result[i, k] -= real(contrib)

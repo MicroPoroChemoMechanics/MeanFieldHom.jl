@@ -1,14 +1,26 @@
 # =============================================================================
-#  green_decuhr.jl — ForwardDiff-compatible evaluation of Q̂*_{nn}
-#  and direct 2D cubature for elliptic crack COD. Shared 2D helpers
-#  (`_A_and_Tn`, `_phi_cache`, `_qnn_pair_components!`, `_inv3`) live
-#  in `Core`.
+#  green_decuhr.jl — DECUHR-based evaluation of Q̂*_{nn} (1-D α-integral)
+#  and direct 2-D cubature for the elliptic-crack COD.  Uses
+#  `Integrals.jl` with `DecuhrAlgorithm` (Espelid & Genz 1994).
+#
+#  The integrands are smooth on the integration domains (α ∈ [0, π/2]
+#  for Q̂*; (φ, α) ∈ [0, 2π] × [0, π/2] for the elliptic COD).  We pass
+#  `singul = 1, alpha = 0.0` to `DecuhrAlgorithm`, which degrades to
+#  ordinary adaptive Gauss and bypasses the Float64-only `alpha`
+#  auto-estimation path — keeping ForwardDiff compatibility.
+#
+#  Shared 2-D helpers (`_A_and_Tn`, `_phi_cache`, `_qnn_pair_components!`,
+#  `_inv3`) live in `src/Core/green_helpers.jl`.  The nested-QuadGK
+#  counterpart lives in `green_nestedquadgk.jl`.
 # =============================================================================
 
 """
     _Qnn_star_decuhr(C, ξs, n̂; abstol, reltol, maxiters) -> Matrix
 
-ForwardDiff-compatible evaluation of ``\\hat{\\mathbf Q}^{\\star}_{nn}``.
+Adaptive 1-D DECUHR (via `Integrals.DecuhrAlgorithm`) evaluation of
+the crack-plane kernel used in the ``\\omega \\to 0`` limit algorithm
+of [Barthélémy 2009](@cite barthelemyIJSS2009).  Integrand is smooth,
+`alpha = 0.0` is forced to keep ForwardDiff compatibility.
 """
 function _Qnn_star_decuhr(
         C::AbstractArray{TC, 4},
@@ -32,16 +44,22 @@ function _Qnn_star_decuhr(
 
     buf = Matrix{T}(undef, 3, 3)
 
-    function vec_at(α)
+    function integrand(u, _)
+        α = u[1]
         ca = cos(α); sa = sin(α)
         MFH_Core._qnn_pair_components!(buf, A, Vs, Ks, Kns, ca, sa, inv(sa * sa))
         return T[buf[1, 1], buf[2, 2], buf[3, 3], buf[1, 2], buf[1, 3], buf[2, 3]]
     end
 
-    Tvec, _ = QuadGK.quadgk(
-        vec_at, zero(T), T(π) / 2;
-        atol = abstol, rtol = reltol, maxevals = maxiters
+    prob = Integrals.IntegralProblem(integrand, ([0.0], [π / 2]))
+    sol = Integrals.solve(
+        prob,
+        DecuhrAlgorithm(singul = 1, alpha = 0.0, wrksub = max(5000, maxiters ÷ 32));
+        abstol = abstol, reltol = reltol, maxiters = maxiters
     )
+    sol.retcode == Integrals.ReturnCode.Success || sol.retcode == Integrals.ReturnCode.MaxIters ||
+        error("DECUHR failed: retcode = $(sol.retcode)")
+    Tvec = sol.u
 
     fac = ρ / (2 * T(π))
     result = Matrix{T}(undef, 3, 3)
@@ -53,11 +71,15 @@ function _Qnn_star_decuhr(
 end
 
 # -----------------------------------------------------------------------------
-#  Direct 2-D cubature for elliptic COD
+#  Direct 2-D cubature for elliptic COD — DECUHR version
 # -----------------------------------------------------------------------------
 
 """
     _cod_elliptic_decuhr_direct(c, C₀; abstol, reltol, maxiters)
+
+Direct 2-D DECUHR cubature (via `Integrals.DecuhrAlgorithm`) over the
+elliptic-crack COD integrand on `(φ, α) ∈ [0, 2π] × [0, π/2]`.
+Smooth integrand — `alpha = 0.0` forced for ForwardDiff compatibility.
 """
 function _cod_elliptic_decuhr_direct(
         c::EllipticCrack{T}, C₀;
@@ -81,9 +103,8 @@ function _cod_elliptic_decuhr_direct(
 
     A, Tn = MFH_Core._A_and_Tn(Carr, nhat_p, Tp)
 
-    inner_atol = abstol / 10
-
-    function outer(φ)
+    function integrand(u, _)
+        φ, α = u[1], u[2]
         cφ = cos(φ); sφ = sin(φ)
         ρ = sqrt(ηp * ηp * cφ * cφ + sφ * sφ)
         invρ = inv(ρ)
@@ -94,27 +115,23 @@ function _cod_elliptic_decuhr_direct(
         ]
         Vs, Ks, Kns = MFH_Core._phi_cache(Carr, Tn, nhat_p, ξshat, Tp)
         buf = Matrix{Tp}(undef, 3, 3)
-
-        function inner(α)
-            ca = cos(α); sa = sin(α)
-            MFH_Core._qnn_pair_components!(buf, A, Vs, Ks, Kns, ca, sa, ρ / (sa * sa))
-            return Tp[
-                buf[1, 1], buf[2, 2], buf[3, 3],
-                buf[1, 2], buf[1, 3], buf[2, 3],
-            ]
-        end
-
-        inner_val, _ = QuadGK.quadgk(
-            inner, zero(Tp), Tp(π) / 2;
-            atol = inner_atol, rtol = reltol, maxevals = maxiters
-        )
-        return inner_val
+        ca = cos(α); sa = sin(α)
+        MFH_Core._qnn_pair_components!(buf, A, Vs, Ks, Kns, ca, sa, ρ / (sa * sa))
+        return Tp[
+            buf[1, 1], buf[2, 2], buf[3, 3],
+            buf[1, 2], buf[1, 3], buf[2, 3],
+        ]
     end
 
-    Tvec, _ = QuadGK.quadgk(
-        outer, zero(Tp), 2 * Tp(π);
-        atol = abstol, rtol = reltol, maxevals = maxiters
+    prob = Integrals.IntegralProblem(integrand, ([0.0, 0.0], [2π, π / 2]))
+    sol = Integrals.solve(
+        prob,
+        DecuhrAlgorithm(singul = 1, alpha = 0.0, wrksub = max(5000, maxiters ÷ 32));
+        abstol = abstol, reltol = reltol, maxiters = maxiters
     )
+    sol.retcode == Integrals.ReturnCode.Success || sol.retcode == Integrals.ReturnCode.MaxIters ||
+        error("DECUHR failed: retcode = $(sol.retcode)")
+    Tvec = sol.u
 
     fac = inv(2 * Tp(π))
     Tmat = Matrix{Tp}(undef, 3, 3)

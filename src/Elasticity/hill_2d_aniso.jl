@@ -3,6 +3,17 @@
 #  anisotropic matrix.
 # =============================================================================
 
+"""
+    _hill_2d_aniso(ell::Ellipsoid{2}, C₀; abstol, reltol, maxiters) -> AbstractTens{4,2}
+
+Hill polarisation tensor of a 2-D ellipse in an arbitrarily
+anisotropic plane-strain matrix.  The 1-D integral on the unit circle
+``S^{1}`` — the 2-D specialisation of the [Willis 1977](@cite
+willis1977) form — is evaluated in closed form through a Cauchy
+residue reduction inspired by [Masson 2008](@cite masson2008); when
+the acoustic-tensor eigenvalues nearly coincide the code falls back to
+the direct QuadGK quadrature of the integrand.
+"""
 function _hill_2d_aniso(
         ell::Ellipsoid{2}, C₀;
         abstol::Float64 = 1.0e-8,
@@ -72,5 +83,5 @@ function _hill_2d_aniso(
         P_arr[α, β, γ, δ] = v
     end
 
-    return TensND.change_tens_canon(TensND.Tens(P_arr, ell.basis))
+    return TensND.Tens(P_arr, ell.basis)
 end

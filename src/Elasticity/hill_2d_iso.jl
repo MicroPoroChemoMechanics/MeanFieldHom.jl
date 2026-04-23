@@ -2,6 +2,14 @@
 #  hill_2d_iso.jl — Hill tensor for a 2-D ellipse in an isotropic matrix.
 # =============================================================================
 
+"""
+    _hill_2d_iso(ell::Ellipsoid{2}, C₀::TensISO{4,2}) -> AbstractTens{4,2}
+
+Analytical Hill polarisation tensor of a 2-D ellipse in an isotropic
+plane-strain matrix ``\\mathbb C_0 = 3k\\,\\mathbb J + 2\\mu\\,\\mathbb K``,
+obtained by specialising the general [Willis 1977](@cite willis1977)
+integral to the unit circle ``S^{1}`` (prefactor ``1/(2\\pi)``).
+"""
 function _hill_2d_iso(ell::Ellipsoid{2, Circular}, C₀)
     T = promote_type(eltype(ell.semi_axes), eltype(C₀))
     α, β = C₀.data
@@ -49,5 +57,5 @@ function _hill_2d_iso(ell::Ellipsoid{2, Elliptic}, C₀)
     for (a, b, c, d) in ((1, 2, 1, 2), (1, 2, 2, 1), (2, 1, 1, 2), (2, 1, 2, 1))
         P_arr[a, b, c, d] = P1212
     end
-    return TensND.change_tens_canon(TensND.Tens(P_arr, ell.basis))
+    return TensND.Tens(P_arr, ell.basis)
 end

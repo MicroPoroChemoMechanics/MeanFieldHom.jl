@@ -1,15 +1,32 @@
 # =============================================================================
 #  hill_3d_aniso_decuhr.jl
 #
-#  ForwardDiff-compatible 2D cubature for the 3D anisotropic Hill tensor.
-#  Nested QuadGK over (z, φ) ∈ [0, 1] × [0, 2π].
+#  2D adaptive cubature for the 3D anisotropic Hill tensor using the
+#  DECUHR algorithm of Espelid & Genz 1994, called through the
+#  `Integrals.jl` / `DECUHR.jl` stack.  Same 2D parametrisation as the
+#  nested-QuadGK variant in `hill_3d_aniso_nestedquadgk.jl`:
 #
-#  The routine uses only `Core._acoustic_tensor` + `Core._inv3` from the
-#  Core layer; the specific 2D parametrisation (`ζ = (√(1-z²)cosφ,
-#  √(1-z²)sinφ/η, z/ω)`) is kept here because it is tied to the ellipsoid
-#  semi-axes (η, ω).
+#     ζ(z, φ) = (√(1 - z²) cos φ, √(1 - z²) sin φ / η, z / ω)
+#
+#  Integration domain: (z, φ) ∈ [0, 1] × [0, 2π].  The integrand is
+#  smooth (no vertex singularity), so we pass `singul = 1, alpha = 0.0`
+#  to `DecuhrAlgorithm` — it degrades to ordinary adaptive Gauss.  Using
+#  `alpha = 0.0` (rather than the default `-2.0` which triggers
+#  auto-estimation) keeps the kernel ForwardDiff-compatible (the
+#  auto-estimation path is Float64-only).
 # =============================================================================
 
+"""
+    _hill_3d_aniso_decuhr(ell, C₀; abstol, reltol, maxiters) -> AbstractTens{4,3}
+
+Hill polarisation tensor of a 3-D ellipsoid in an arbitrarily
+anisotropic matrix, evaluated by the adaptive 2-D DECUHR cubature of
+[Espelid & Genz 1994](@cite espelid1994) called through `Integrals.jl`
+(`DecuhrAlgorithm`).  ForwardDiff-compatible — `alpha = 0.0` is
+supplied explicitly so the integrand is treated as smooth (no vertex
+singularity) and `DecuhrAlgorithm` bypasses the Float64-only
+auto-estimation path.
+"""
 function _hill_3d_aniso_decuhr(
         ell::Ellipsoid{3}, C₀;
         abstol::Float64 = 1.0e-8,
@@ -29,7 +46,11 @@ function _hill_3d_aniso_decuhr(
 
     voigt_ij = ((1, 1), (2, 2), (3, 3), (2, 3), (1, 3), (1, 2))
 
-    function integrand_at(z, φ)
+    # Integrand on the unit square (z, φ) ∈ [0, 1] × [0, 2π].
+    # Returns a 21-element vector of the independent Hill-tensor
+    # components (Voigt upper-triangle ordering).
+    function integrand(u, _)
+        z, φ = u[1], u[2]
         uz = sqrt(one(T) - T(z) * T(z))
         ζ = (uz * cos(T(φ)), uz * sin(T(φ)) / η, T(z) / ω)
 
@@ -60,22 +81,18 @@ function _hill_3d_aniso_decuhr(
         return vals
     end
 
-    P_vals, _ = QuadGK.quadgk(
-        0.0, 1.0;
-        atol = abstol,
-        rtol = reltol,
-        maxevals = maxiters
-    ) do z
-        inner, _ = QuadGK.quadgk(
-            0.0, 2π;
-            atol = abstol / 10,
-            rtol = reltol
-        ) do φ
-            integrand_at(z, φ)
-        end
-        inner
-    end
-    P_vals ./= T(2π)
+    prob = Integrals.IntegralProblem(integrand, ([0.0, 0.0], [1.0, 2π]))
+    # `wrksub` must be large enough to hold all adaptive subregions;
+    # approximate upper bound `maxiters / 65` matches the 2D deg-13 rule
+    # (65 evaluation points per subregion).
+    sol = Integrals.solve(
+        prob,
+        DecuhrAlgorithm(singul = 1, alpha = 0.0, wrksub = max(5000, maxiters ÷ 32));
+        abstol = abstol, reltol = reltol, maxiters = maxiters
+    )
+    sol.retcode == Integrals.ReturnCode.Success || sol.retcode == Integrals.ReturnCode.MaxIters ||
+        error("DECUHR failed: retcode = $(sol.retcode)")
+    P_vals = sol.u ./ T(2π)
 
     P_arr = zeros(T, 3, 3, 3, 3)
     idx = 0
@@ -90,5 +107,5 @@ function _hill_3d_aniso_decuhr(
         P_arr[k, l, j, i] = v;  P_arr[l, k, j, i] = v
     end
 
-    return TensND.change_tens_canon(TensND.Tens(P_arr, ell.basis))
+    return TensND.Tens(P_arr, ell.basis)
 end

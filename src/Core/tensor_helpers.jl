@@ -96,8 +96,8 @@ function _make_ortho(
 end
 
 # Fallback: type mismatch (e.g. `T = ForwardDiff.Dual` + `Float64` basis).
-# Reconstruct the 81-component array manually and convert to the canonical
-# frame via a generic `Tens`.
+# Reconstruct the 81-component array manually and wrap as a generic `Tens`
+# in the given basis.
 function _make_ortho(
         ::Type{T},
         C11, C22, C33, C12, C13, C23, C44, C55, C66,
@@ -111,5 +111,5 @@ function _make_ortho(
     _fill_sym4!(P_arr, 2, 3, 2, 3, C44)
     _fill_sym4!(P_arr, 1, 3, 1, 3, C55)
     _fill_sym4!(P_arr, 1, 2, 1, 2, C66)
-    return TensND.change_tens_canon(TensND.Tens(P_arr, basis))
+    return TensND.Tens(P_arr, basis)
 end

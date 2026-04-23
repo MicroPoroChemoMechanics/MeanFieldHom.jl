@@ -119,6 +119,90 @@ function _newton_potential_3d_triaxial(a::T, b::T, c::T) where {T <: Number}
     return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
 end
 
+# ── 3-D Newton potentials — infinite cylinder (a → ∞, b ≥ c > 0) ────────────
+
+"""
+    newton_potential_3d_cylinder(b, c) -> (Iv, IIv)
+
+Newton potential integrals for an infinite cylinder of elliptic cross-section
+with transverse semi-axes `b ≥ c > 0` (cylinder axis = `e₁`, transverse plane
+= `(e₂, e₃)`).
+
+Obtained as the limit `a → ∞` of [`newton_potential_3d`](@ref) — the
+cylinder axis contributes no finite Newton mass (`I_a = I_aa = I_ab = I_ac = 0`)
+and the transverse potentials collapse to simple rational expressions in
+`(b, c)`.
+
+Returns:
+- `Iv  = (I_a, I_b, I_c)`       with `I_a + I_b + I_c = 4π`, `I_a = 0`.
+- `IIv = (I_aa, I_bb, I_cc, I_bc, I_ca, I_ab)` with `I_aa = I_ab = I_ac = 0`.
+
+Two methods are provided:
+- `T<:Real` (includes `Float64`, `ForwardDiff.Dual`): numerically stable
+  case-split via tolerance comparison to pick the circular (`b = c`) or the
+  elliptic (`b > c`) branch.
+- `T<:Number` (`SymPy.Sym`, `Symbolics.Num`, …): structural equality via
+  `isequal` selects the two branches.
+
+Both branches are written as closed-form limits — no `1/(b² − c²)` style
+denominators, so the routine is free of `0/0` indeterminacies at `b = c`
+and differentiable through `ForwardDiff`.
+"""
+function newton_potential_3d_cylinder(b, c)
+    T = promote_type(typeof(b), typeof(c))
+    return newton_potential_3d_cylinder(T(b), T(c))
+end
+
+function newton_potential_3d_cylinder(b::T, c::T) where {T <: Real}
+    tol = 1.0e-6 * one(T)
+    BeqC = (b - c) ≤ b * tol
+
+    if BeqC
+        # Circular base (b = c): I_b = I_c = 2π, I_bb = I_cc = I_bc = π/b²
+        B2 = b * b
+        Ia = zero(T)
+        Ib = Ic = 2 * T(π)
+        Iaa = Iab = Ica = zero(T)
+        Ibb = Icc = Ibc = T(π) / B2
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+    else
+        # Elliptic base (b > c)
+        s = b + c
+        s2 = s * s
+        Ia = zero(T)
+        Ib = 4 * T(π) * c / s
+        Ic = 4 * T(π) * b / s
+        Iaa = Iab = Ica = zero(T)
+        Ibc = 4 * T(π) / s2
+        Ibb = 4 * T(π) / 3 * (one(T) / (b * b) - one(T) / s2)
+        Icc = 4 * T(π) / 3 * (one(T) / (c * c) - one(T) / s2)
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+    end
+end
+
+# Symbolic types (T<:Number but not T<:Real) — structural equality
+function newton_potential_3d_cylinder(b::T, c::T) where {T <: Number}
+    if isequal(b, c)
+        B2 = b * b
+        Ia = zero(T)
+        Ib = Ic = 2 * T(π)
+        Iaa = Iab = Ica = zero(T)
+        Ibb = Icc = Ibc = T(π) / B2
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+    else
+        s = b + c
+        s2 = s * s
+        Ia = zero(T)
+        Ib = 4 * T(π) * c / s
+        Ic = 4 * T(π) * b / s
+        Iaa = Iab = Ica = zero(T)
+        Ibc = 4 * T(π) / s2
+        Ibb = 4 * T(π) / 3 * (one(T) / (b * b) - one(T) / s2)
+        Icc = 4 * T(π) / 3 * (one(T) / (c * c) - one(T) / s2)
+        return (Ia, Ib, Ic), (Iaa, Ibb, Icc, Ibc, Ica, Iab)
+    end
+end
+
 # ── 2-D Newton potentials ─────────────────────────────────────────────────────
 
 """

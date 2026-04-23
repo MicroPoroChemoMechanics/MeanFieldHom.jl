@@ -5,7 +5,10 @@
 """
     _hill_order2_2d_iso(ell::Ellipsoid{2}, K₀) -> AbstractTens{2,2}
 
-2nd-order Hill tensor for a 2D ellipse in an isotropic conductor.
+2nd-order Hill polarisation tensor of a 2-D ellipse in an isotropic
+conductor ``\\mathbf K_0 = K\\,\\mathbf 1``, closed form
+``\\mathbf P = \\mathbf I^{\\mathbf A}/K`` specialised to the plane-strain
+unit circle (prefactor ``1/(2\\pi)``).
 """
 function _hill_order2_2d_iso(ell::Ellipsoid{2, Circular}, K₀)
     T = promote_type(eltype(ell.semi_axes), eltype(K₀))
@@ -20,14 +23,18 @@ function _hill_order2_2d_iso(ell::Ellipsoid{2, Elliptic}, K₀)
     P_arr = zeros(T, 2, 2)
     P_arr[1, 1] = ρ / (k * (1 + ρ))
     P_arr[2, 2] = one(T) / (k * (1 + ρ))
-    return TensND.change_tens_canon(TensND.Tens(P_arr, ell.basis))
+    return TensND.Tens(P_arr, ell.basis)
 end
 
 """
     _hill_order2_2d(ell::Ellipsoid{2}, K₀) -> AbstractTens{2,2}
 
-2nd-order Hill tensor for a 2D ellipse in a general anisotropic
-conductor.  Closed-form formula.
+2nd-order Hill polarisation tensor of a 2-D ellipse in an arbitrarily
+anisotropic conductor. Obtained in closed form from the
+``\\mathbf K^{-1/2}`` change-of-variable of
+[Giraud & Gruescu 2019](@cite giraudMOM2019) (2-D specialisation);
+the code falls back to the nearly-isotropic limit when the acoustic
+denominator ``\\det(\\mathbf K) - k_{12}^{2}`` approaches zero.
 """
 function _hill_order2_2d(ell::Ellipsoid{2}, K₀)
     T = promote_type(eltype(ell.semi_axes), eltype(K₀))
@@ -64,5 +71,5 @@ function _hill_order2_2d(ell::Ellipsoid{2}, K₀)
         P_arr[2, 2] = t24 * t23 * (t12 * t19 - ρ * k11 * k22 + 2 * t5 * ρ - t10 * t28 + t10 * k22)
     end
 
-    return TensND.change_tens_canon(TensND.Tens(P_arr, ell.basis))
+    return TensND.Tens(P_arr, ell.basis)
 end

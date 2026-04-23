@@ -107,7 +107,25 @@ function _build_poly_system(
         pop!(Q_coeffs)
     end
     roots_all = PolynomialRoots.roots(Q_coeffs)
-    roots_uhp = ComplexF64[zr for zr in roots_all if imag(zr) > 1.0e-8]
+
+    # Newton polish: `PolynomialRoots.roots` (Durand-Kerner) typically leaves
+    # |Q(zᵣ)| ~ 1e-10…1e-12; 2 Newton iterations push this to O(eps).  Skip
+    # roots where |Q'(zᵣ)| is too small (multiple roots).
+    Q_scale = maximum(abs, Q_coeffs)
+    dQ_thresh = 1.0e-14 * Q_scale
+    @inbounds for _ in 1:2
+        for i in eachindex(roots_all)
+            zr = roots_all[i]
+            Qv = Q(zr)
+            dQv = dQ(zr)
+            abs(dQv) < dQ_thresh && continue
+            roots_all[i] = zr - Qv / dQv
+        end
+    end
+
+    # After polish, genuine UHP roots have imag > O(eps); tighten the filter
+    # to catch only real-axis roots.
+    roots_uhp = ComplexF64[zr for zr in roots_all if imag(zr) > 1.0e-12]
 
     return (K_poly = K_poly, adj_poly = adj_poly, Q = Q, dQ = dQ, roots_uhp = roots_uhp)
 end

@@ -1,0 +1,17 @@
+# API — Localization & contribution
+
+```@docs
+MeanFieldHom.strain_strain_loc
+MeanFieldHom.stress_strain_loc
+MeanFieldHom.strain_stress_loc
+MeanFieldHom.stress_stress_loc
+MeanFieldHom.gradient_gradient_loc
+MeanFieldHom.flux_gradient_loc
+MeanFieldHom.gradient_flux_loc
+MeanFieldHom.flux_flux_loc
+MeanFieldHom.stiffness_contribution
+MeanFieldHom.conductivity_contribution
+MeanFieldHom.resistivity_contribution
+MeanFieldHom.delta_stiffness
+MeanFieldHom.delta_conductivity
+```

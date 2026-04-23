@@ -1,8 +1,10 @@
 # =============================================================================
-#  green_decuhr.jl
+#  green_helpers.jl
 #
-#  Shared DECUHR / nested-QuadGK building blocks used by the `Elasticity`
-#  and `Cracks` sub-modules.
+#  Quadrature-agnostic building blocks of the crack-plane / half-sphere
+#  Green-function evaluation.  Shared by every numerical back-end
+#  (`green_nestedquadgk.jl`, `green_decuhr.jl`) in `Cracks/` and
+#  `Elasticity/`.
 #
 #  `_A_and_Tn`          : φ-independent pre-computation (n̂-only).
 #  `_phi_cache`         : φ-dependent, α-independent pre-computation.

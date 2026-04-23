@@ -8,6 +8,8 @@ MeanFieldHom.PennyCrack
 MeanFieldHom.cod_tensor
 MeanFieldHom.B_tensor
 MeanFieldHom.compliance_contribution
+MeanFieldHom.delta_compliance
+MeanFieldHom.delta_resistivity
 MeanFieldHom.sif
 MeanFieldHom.dif
 MeanFieldHom.compliance_from_cod

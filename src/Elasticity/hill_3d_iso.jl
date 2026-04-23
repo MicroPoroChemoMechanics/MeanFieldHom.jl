@@ -3,6 +3,23 @@
 #  Low-level helpers live in Core.
 # =============================================================================
 
+"""
+    _hill_3d_iso(ell::Ellipsoid{3}, C₀::TensISO{4,3}) -> AbstractTens{4,3}
+
+Analytical Hill polarisation tensor ``\\mathbb P`` for a 3-D ellipsoid
+in an isotropic matrix ``\\mathbb C_0 = 3k\\,\\mathbb J + 2\\mu\\,\\mathbb K
+= 3\\lambda\\,\\mathbb I + 2\\mu\\,\\mathbb K``:
+
+```
+P(A, 3λI + 2μK) = U^A/(λ+2μ) + (V^A − U^A)/μ .
+```
+
+Uses the Kelvin–Mandel forms of ``\\mathbb U^{\\mathbf A}`` and
+``\\mathbb V^{\\mathbf A}`` (see [`tens_UA`](@ref), [`tens_VA`](@ref))
+and produces the most specific TensND type compatible with the
+ellipsoid symmetry ([Willis 1977](@cite willis1977),
+[Mura 1987](@cite mura1987)).
+"""
 function _hill_3d_iso(ell::Ellipsoid{3, Spherical}, C₀)
     T = promote_type(eltype(ell.semi_axes), eltype(C₀))
     α, β = C₀.data

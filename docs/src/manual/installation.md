@@ -1,11 +1,17 @@
 # Installation
 
-`MeanFieldHom` depends on three Julia packages shipped alongside it in
-the ECHOES repository (`DECUHR.jl`, `GenericElliptic.jl`, and a
-registered `TensND.jl`).  Instantiate the project before first use:
+`MeanFieldHom` depends on one Julia package hosted under the
+`MicMacTools` organisation (`DECUHR.jl`) and on the registered
+`TensND.jl` (and a handful of registered scientific-computing
+dependencies such as `Elliptic.jl`, `QuadGK.jl`, `Polynomials.jl`,
+`PolynomialRoots.jl`, `Tensors.jl`). Type-generic elliptic integrals
+are bundled internally as the [`MeanFieldHom.Elliptic`](@ref
+MeanFieldHom.Elliptic) submodule, with an optional `SymPy` weak
+extension for symbolic closed forms. Instantiate the project before
+first use:
 
 ```shell
-cd interface/julia/MeanFieldHom.jl
+cd /path/to/MeanFieldHom.jl
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 

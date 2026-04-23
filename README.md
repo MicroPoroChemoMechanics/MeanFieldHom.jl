@@ -40,18 +40,20 @@ julia> using Pkg
 julia> Pkg.add(url = "https://github.com/MicMacTools/MeanFieldHom.jl.git")
 ```
 
-`MeanFieldHom` depends on two packages hosted under the `MicMacTools`
+`MeanFieldHom` depends on one package hosted under the `MicMacTools`
 organisation:
 
 - [`DECUHR.jl`](https://github.com/MicMacTools/DECUHR.jl) — adaptive
-  cubature backend;
-- [`GenericElliptic.jl`](https://github.com/MicMacTools/GenericElliptic.jl)
-  — type-generic elliptic integrals.
+  cubature backend.
 
-They are declared as Git-URL dependencies in `Project.toml`. While
-these repositories are private, `Pkg.instantiate()` requires valid
-GitHub credentials (SSH key or HTTPS token). `TensND.jl` is pulled
-automatically from the Julia general registry.
+It is declared as a Git-URL dependency in `Project.toml`. While this
+repository is private, `Pkg.instantiate()` requires valid GitHub
+credentials (SSH key or HTTPS token). `TensND.jl`, `Elliptic.jl`,
+`Polynomials.jl`, `PolynomialRoots.jl`, `QuadGK.jl` and `Tensors.jl`
+are pulled automatically from the Julia general registry.
+
+Type-generic elliptic integrals are bundled as the
+`MeanFieldHom.Elliptic` submodule.
 
 ## Quick start
 
@@ -120,3 +122,6 @@ The package accompanies:
 Developed by [Jean-François Barthélémy](https://github.com/jfbarthelemy),
 researcher at [Cerema](https://www.cerema.fr/en) in the research team
 [UMR MCD](https://mcd.univ-gustave-eiffel.fr/).
+
+Parts of this codebase were developed with the assistance of Anthropic's
+*Claude Code*, under the author's review and numerical validation.

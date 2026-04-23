@@ -1,5 +1,11 @@
 [deps]
+Elliptic = "b305315f-e792-5b7a-8f41-49f472929428"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MeanFieldHom = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
+SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
 TensND = "474b5345-2588-4284-8a58-2430a1a40cb0"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[sources]
+TensND = {path = "../../TensND.jl"}

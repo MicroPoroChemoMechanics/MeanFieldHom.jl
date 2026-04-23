@@ -1,0 +1,17 @@
+# API — LayeredSphere
+
+```@docs
+MeanFieldHom.LayeredSpheres.LayeredSphere
+MeanFieldHom.LayeredSpheres.AbstractInterface
+MeanFieldHom.LayeredSpheres.PerfectInterface
+MeanFieldHom.LayeredSpheres.SpringInterface
+MeanFieldHom.LayeredSpheres.layer_count
+MeanFieldHom.LayeredSpheres.layer_radius
+MeanFieldHom.LayeredSpheres.layer_modulus
+MeanFieldHom.LayeredSpheres.layer_interface
+MeanFieldHom.LayeredSpheres.layer_volume_fraction
+MeanFieldHom.LayeredSpheres.outer_radius
+MeanFieldHom.LayeredSpheres.layer_strain_average
+MeanFieldHom.LayeredSpheres.sphere_strain_average
+MeanFieldHom.LayeredSpheres.cumulative_strain_average
+```

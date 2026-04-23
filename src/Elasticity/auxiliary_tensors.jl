@@ -12,8 +12,18 @@
     tens_IA(ell::Ellipsoid{3}) -> AbstractTens{2,3}
     tens_IA(ell::Ellipsoid{2}) -> AbstractTens{2,2}
 
-2nd-order auxiliary tensor `I^A` for ellipsoid `ell`.  Diagonal in the
-principal frame with components `Iᵢ` satisfying `ΣIᵢ = 1`.
+Newton-potential geometric tensor ``\\mathbf I^{\\mathbf A}`` of an
+ellipsoid, defined by
+
+```
+I^A = (det A)/(4π) ∫_{|ξ|=1} ξ⊗ξ / ‖A·ξ‖³ dS_ξ .
+```
+
+``\\mathbf I^{\\mathbf A}`` is symmetric with the same eigenvectors as
+``\\mathbf A`` and with diagonal components ``I_i^{\\mathbf A}``
+satisfying ``\\sum_i I_i^{\\mathbf A} = 1`` (see [Kellogg 1929](@cite
+kellogg1929), [Eshelby 1957](@cite eshelby1957),
+[Parnell 2016](@cite parnell2016)).
 """
 function tens_IA(ell::Ellipsoid{3, Spherical})
     T = eltype(ell.semi_axes)
@@ -29,7 +39,19 @@ function tens_IA(ell::Ellipsoid{3})
     IA_arr[1, 1] = Iv[1] / fac
     IA_arr[2, 2] = Iv[2] / fac
     IA_arr[3, 3] = Iv[3] / fac
-    return TensND.change_tens_canon(TensND.Tens(IA_arr, ell.basis))
+    return TensND.Tens(IA_arr, ell.basis)
+end
+
+function tens_IA(cyl::Cylinder)
+    T = eltype(cyl.semi_axes)
+    b, c = cyl.semi_axes
+    Iv, _ = MFH_Core.newton_potential_3d_cylinder(b, c)
+    fac = 4 * T(π)
+    IA_arr = zeros(T, 3, 3)
+    IA_arr[1, 1] = Iv[1] / fac
+    IA_arr[2, 2] = Iv[2] / fac
+    IA_arr[3, 3] = Iv[3] / fac
+    return TensND.Tens(IA_arr, cyl.basis)
 end
 
 function tens_IA(ell::Ellipsoid{2, Circular})
@@ -45,7 +67,7 @@ function tens_IA(ell::Ellipsoid{2})
     IA_arr = zeros(T, 2, 2)
     IA_arr[1, 1] = Iv[1] / fac
     IA_arr[2, 2] = Iv[2] / fac
-    return TensND.change_tens_canon(TensND.Tens(IA_arr, ell.basis))
+    return TensND.Tens(IA_arr, ell.basis)
 end
 
 # ── tens_UA ───────────────────────────────────────────────────────────────────
@@ -54,7 +76,21 @@ end
     tens_UA(ell::Ellipsoid{3}) -> AbstractTens{4,3}
     tens_UA(ell::Ellipsoid{2}) -> AbstractTens{4,2}
 
-4th-order auxiliary tensor `U^A` for ellipsoid `ell`.
+4th-order Newton-potential geometric tensor ``\\mathbb U^{\\mathbf A}``:
+
+```
+U^A = (det A)/(4π) ∫_{|ξ|=1} ξ⊗ξ⊗ξ⊗ξ / ‖A·ξ‖³ dS_ξ .
+```
+
+In the principal frame, the non-zero Kelvin–Mandel components are
+
+```
+U^A_{iiii} = 3(Iᵢ − ρᵢ² Iᵢᵢ)/2
+U^A_{iijj} = U^A_{ijij} = U^A_{ijji} = (Iⱼ − ρᵢ² Iᵢⱼ)/2 ,   i≠j
+```
+
+with the ``I_i^{\\mathbf A}`` and ``I_{ij}^{\\mathbf A}`` coefficients
+given in the Echoes appendix (tables ``I_i`` / ``I_{ij}``).
 """
 function tens_UA(ell::Ellipsoid{3, Spherical})
     T = eltype(ell.semi_axes)
@@ -111,6 +147,47 @@ function tens_UA(ell::Ellipsoid{3, Triaxial})
     )
 end
 
+function tens_UA(cyl::Cylinder{CircularCylindrical})
+    T = eltype(cyl.semi_axes)
+    b = cyl.semi_axes[1]
+    b2 = b * b
+    Iv, IIv = MFH_Core.newton_potential_3d_cylinder(b, cyl.semi_axes[2])
+    fac = 4 * T(π)
+    I2 = Iv[2] / fac
+    I22 = IIv[2] / fac
+    I23 = IIv[4] / fac
+    u1 = zero(T)
+    u2 = 3 * (I2 - b2 * I22) / 2 + (I2 - b2 * I23) / 2
+    u3 = zero(T)
+    u5 = 3 * (I2 - b2 * I22) / 2 - (I2 - b2 * I23) / 2
+    u6 = zero(T)
+    return TensND.TensWalpole(u1, u2, u3, u5, u6, MFH_Core._basis_col(cyl.basis, 1))
+end
+
+function tens_UA(cyl::Cylinder{EllipticCylindrical})
+    T = eltype(cyl.semi_axes)
+    b, c = cyl.semi_axes
+    b2, c2 = b * b, c * c
+    Iv, IIv = MFH_Core.newton_potential_3d_cylinder(b, c)
+    fac = 4 * T(π)
+    I2, I3 = Iv[2] / fac, Iv[3] / fac
+    I22, I33 = IIv[2] / fac, IIv[3] / fac
+    I23 = IIv[4] / fac
+    C11 = zero(T)
+    C22 = 3 * (I2 - b2 * I22) / 2
+    C33 = 3 * (I3 - c2 * I33) / 2
+    C12 = zero(T)
+    C13 = zero(T)
+    C23 = (I3 - b2 * I23) / 2
+    C44 = C23
+    C55 = C13
+    C66 = C12
+    return MFH_Core._make_ortho(
+        T, C11, C22, C33, C12, C13, C23, C44, C55, C66,
+        nothing, cyl.basis
+    )
+end
+
 function tens_UA(ell::Ellipsoid{2})
     T = eltype(ell.semi_axes)
     a, b = ell.semi_axes
@@ -131,7 +208,7 @@ function tens_UA(ell::Ellipsoid{2})
     for idx in ((1, 1, 2, 2), (2, 2, 1, 1), (1, 2, 1, 2), (2, 1, 2, 1), (1, 2, 2, 1), (2, 1, 1, 2))
         U_arr[idx...] = v12
     end
-    return TensND.change_tens_canon(TensND.Tens(U_arr, ell.basis))
+    return TensND.Tens(U_arr, ell.basis)
 end
 
 # ── tens_VA ───────────────────────────────────────────────────────────────────
@@ -140,7 +217,16 @@ end
     tens_VA(ell::Ellipsoid{3}) -> AbstractTens{4,3}
     tens_VA(ell::Ellipsoid{2}) -> AbstractTens{4,2}
 
-4th-order auxiliary tensor `V^A` for ellipsoid `ell`.
+4th-order Newton-potential geometric tensor ``\\mathbb V^{\\mathbf A}``:
+
+```
+V^A = (det A)/(4π) ∫_{|ξ|=1} ξ ⊗ˢ 1 ⊗ˢ ξ / ‖A·ξ‖³ dS_ξ
+    = (1 ⊠ˢ I^A + I^A ⊠ˢ 1)/2 .
+```
+
+In the principal frame, ``V^{\\mathbf A}_{iiii} = I_i^{\\mathbf A}``
+and ``V^{\\mathbf A}_{ijij} = V^{\\mathbf A}_{ijji}
+= (I_i^{\\mathbf A}+I_j^{\\mathbf A})/4`` for ``i\\ne j``.
 """
 function tens_VA(ell::Ellipsoid{3, Spherical})
     T = eltype(ell.semi_axes)
@@ -180,6 +266,28 @@ function tens_VA(ell::Ellipsoid{3, Triaxial})
     )
 end
 
+function tens_VA(cyl::Cylinder{CircularCylindrical})
+    T = eltype(cyl.semi_axes)
+    Iv, _ = MFH_Core.newton_potential_3d_cylinder(cyl.semi_axes[1], cyl.semi_axes[2])
+    fac = 4 * T(π)
+    I1, I2 = Iv[1] / fac, Iv[2] / fac
+    return TensND.TensWalpole(I1, I2, zero(T), I2, (I1 + I2) / 2, MFH_Core._basis_col(cyl.basis, 1))
+end
+
+function tens_VA(cyl::Cylinder{EllipticCylindrical})
+    T = eltype(cyl.semi_axes)
+    Iv, _ = MFH_Core.newton_potential_3d_cylinder(cyl.semi_axes[1], cyl.semi_axes[2])
+    fac = 4 * T(π)
+    I1, I2, I3 = Iv[1] / fac, Iv[2] / fac, Iv[3] / fac
+    C11 = I1;              C22 = I2;              C33 = I3
+    C12 = zero(T);         C13 = zero(T);         C23 = zero(T)
+    C44 = (I2 + I3) / 4;   C55 = (I1 + I3) / 4;   C66 = (I1 + I2) / 4
+    return MFH_Core._make_ortho(
+        T, C11, C22, C33, C12, C13, C23, C44, C55, C66,
+        nothing, cyl.basis
+    )
+end
+
 function tens_VA(ell::Ellipsoid{2})
     T = eltype(ell.semi_axes)
     a, b = ell.semi_axes
@@ -194,5 +302,5 @@ function tens_VA(ell::Ellipsoid{2})
     V_arr[1, 2, 1, 2] = V_arr[2, 1, 1, 2] = v
     V_arr[1, 2, 2, 1] = V_arr[2, 1, 2, 1] = v
 
-    return TensND.change_tens_canon(TensND.Tens(V_arr, ell.basis))
+    return TensND.Tens(V_arr, ell.basis)
 end

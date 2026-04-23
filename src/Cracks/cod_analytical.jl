@@ -16,8 +16,8 @@ Angular integrals (paper eq. 1532).
         q = T(π) / T(4)
         return q, q, T(π) / T(2)
     else
-        𝒦 = GenericElliptic.ell_K(k²)
-        ℰ = GenericElliptic.ell_E(k²)
+        𝒦 = ell_K(k²)
+        ℰ = ell_E(k²)
         𝒞 = (ℰ - η² * 𝒦) / k²
         𝒮 = (𝒦 - ℰ) / k²
         return 𝒞, 𝒮, ℰ
@@ -30,7 +30,22 @@ end
 
 """
     _cod_iso_ellipse(c::EllipticCrack, E, ν) -> Tens{2,3}
-Paper eq. (1514).
+
+Closed-form COD tensor ``\\mathbf B`` of an elliptic crack of aspect
+ratio ``\\eta = b/a`` in an isotropic matrix ``(E,\\nu)``:
+
+```
+B_ℓℓ = 8η(1−ν²)/(3E) · (1−η²) / ((1−ν−η²) 𝓔_η + ν η² 𝓚_η)
+B_mm = 8η(1−ν²)/(3E) · (1−η²) / ((1−(1−ν)η²) 𝓔_η − ν η² 𝓚_η)
+B_nn = 8η(1−ν²)/(3E) · 1/𝓔_η
+```
+
+with ``\\mathcal K_\\eta = \\mathcal K(\\sqrt{1-\\eta^{2}})`` and
+``\\mathcal E_\\eta = \\mathcal E(\\sqrt{1-\\eta^{2}})`` the complete
+elliptic integrals of first and second kind
+([Abramowitz & Stegun 1972](@cite abramowitz1972)). Circular penny
+limit ``\\eta=1``: ``B_{nn} = 16(1-\\nu^{2})/(3\\pi E)``,
+``B_{mm}=B_{\\ell\\ell}=B_{nn}/(1-\\nu/2)``.
 """
 function _cod_iso_ellipse(c::EllipticCrack{T}, E, ν) where {T <: Number}
     η = aspect_ratio(c)
@@ -44,7 +59,11 @@ end
 
 """
     _cod_iso_ribbon(c::RibbonCrack, E, ν) -> Tens{2,3}
-Paper eq. (1576).
+
+Closed-form COD tensor of a ribbon (tunnel) crack in an isotropic
+matrix.  Ribbon limit of the elliptic closed form
+(see [Kachanov 1993](@cite kachanov1993),
+ [Sevostianov & Kachanov 2002](@cite sevostianov2002)).
 """
 function _cod_iso_ribbon(c::RibbonCrack{T}, E, ν) where {T <: Number}
     χ = T(π) * (one(T) - ν^2) / E
@@ -65,7 +84,16 @@ end
 
 """
     _cod_ti_ellipse(c, E, H, ν₁, ν₂, Γ) -> Tens{2,3}
-Paper eqs. 1596-1634.
+
+Closed-form COD tensor of an elliptic crack in a transversely
+isotropic matrix whose TI axis is aligned with the crack normal
+``\\hat{\\mathbf n}``. Expressions are given in the engineering
+parameterisation ``(E,\\nu_{1},\\nu_{2},H,\\Gamma)`` of
+[Hoenig 1978](@cite hoenig1978),
+[Kanaun & Levin 2009](@cite kanaun2009),
+[Barthélémy 2021](@cite barthelemyIJES2021); the auxiliary scalar
+``\\sigma_\\gamma`` is defined in `_ti_sigma_gamma`. Reduces to the
+isotropic case for ``\\nu_{1}=\\nu_{2}=\\nu``, ``H=\\Gamma=1``.
 """
 function _cod_ti_ellipse(c::EllipticCrack{T}, E::T, H::T, ν₁::T, ν₂::T, Γ::T) where {T <: Number}
     η = aspect_ratio(c)
@@ -91,7 +119,11 @@ end
 
 """
     _cod_ti_ribbon(c, E, H, ν₁, ν₂, Γ) -> Tens{2,3}
-Paper eqs. 1669-1681.
+
+Closed-form COD tensor of a ribbon crack in an aligned TI matrix,
+ribbon limit of the elliptic TI closed form
+([Hoenig 1978](@cite hoenig1978),
+ [Barthélémy 2021](@cite barthelemyIJES2021)).
 """
 function _cod_ti_ribbon(c::RibbonCrack{T}, E::T, H::T, ν₁::T, ν₂::T, Γ::T) where {T <: Number}
     σᵞ = _ti_sigma_gamma(E, H, ν₁, ν₂, Γ)

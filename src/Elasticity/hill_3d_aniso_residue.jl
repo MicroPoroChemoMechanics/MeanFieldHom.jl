@@ -11,6 +11,17 @@
 #  Implementation of Masson (2008) Eq. (20). Float64 only.
 # =============================================================================
 
+"""
+    _hill_3d_aniso_residue(ell, C₀; abstol, reltol, maxiters) -> AbstractTens{4,3}
+
+Hill polarisation tensor of a 3-D ellipsoid in an arbitrarily
+anisotropic matrix, evaluated by reducing the 2-D surface integral of
+[Willis 1977](@cite willis1977) to a 1-D line quadrature via the
+Cauchy residue theorem of [Masson 2008](@cite masson2008). The inner
+``\\varphi`` integral is collapsed into a finite sum over the roots of
+the determinant of the acoustic tensor lying inside the unit circle.
+Float64 only (PolynomialRoots).
+"""
 function _hill_3d_aniso_residue(
         ell::Ellipsoid{3}, C₀;
         abstol::Float64 = 1.0e-8,
@@ -43,6 +54,7 @@ function _hill_3d_aniso_residue(
         Q = sys.Q
         dQ = sys.dQ
         roots_uhp = sys.roots_uhp
+        dQ_thresh = 1.0e-14 * maximum(abs, coeffs(Q))
 
         # ζ as a vector of Polynomial{ComplexF64,:z}
         ζ_poly = [Polynomial(ComplexF64[α₀ζ[i], α₁ζ[i]], :z) for i in 1:3]
@@ -86,7 +98,7 @@ function _hill_3d_aniso_residue(
         for zr in roots_uhp
             abs(zr - const_I) > 1.0e-6 || continue
             dQr = dQ(zr)
-            abs(dQr) < 1.0e-30 && continue
+            abs(dQr) < dQ_thresh && continue
 
             t1 = zr * zr
             t2 = 1.0 + t1
@@ -121,5 +133,5 @@ function _hill_3d_aniso_residue(
         P_arr[k, l, j, i] = v;  P_arr[l, k, j, i] = v
     end
 
-    return TensND.change_tens_canon(TensND.Tens(P_arr, ell.basis))
+    return TensND.Tens(P_arr, ell.basis)
 end

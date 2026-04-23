@@ -50,17 +50,26 @@ const _SHAPE_2D = (Circular, Elliptic)
 """
     Ellipsoid{dim, S<:EllipsoidShape, T<:Number, B<:AbstractBasis}
 
-Ellipsoidal inclusion with semi-axes `semi_axes` (a₁ ≥ a₂ [≥ a₃] when `T<:Real`,
-or in the caller-provided order when `T` is symbolic) and an orientation
-`basis` describing the principal frame relative to the global (canonical)
-frame.
+Ellipsoidal inclusion of the Eshelby problem
+([Eshelby 1957](@cite eshelby1957)). In the Echoes convention, an
+ellipsoid ``\\mathcal E_{\\mathbf A}`` is described by an invertible
+second-order shape tensor ``\\mathbf A`` through
+
+```
+x ∈ E_A  ⇔  x·(Aᵀ·A)⁻¹·x ≤ 1 ,
+Aᵀ·A = Σᵢ ρᵢ² êᵢ^A ⊗ êᵢ^A ,   ρ₁=a ≥ ρ₂=b ≥ ρ₃=c .
+```
+
+`semi_axes` stores the eigenvalues ``\\rho_i`` (sorted in decreasing
+order for real-valued types) and `basis` stores the orthonormal frame
+``(\\hat{\\mathbf e}_i^{\\mathbf A})`` relative to the canonical frame.
 
 The shape `S` is determined at construction time:
 - 3-D: `Spherical`, `Prolate`, `Oblate`, or `Triaxial`
 - 2-D: `Circular` or `Elliptic`
 
-`T` can be any `Number` subtype (`Float64`, `ForwardDiff.Dual`, `SymPy.Sym`,
-`Symbolics.Num`, …).
+`T` can be any `Number` subtype (`Float64`, `ForwardDiff.Dual`,
+`SymPy.Sym`, `Symbolics.Num`, …).
 """
 struct Ellipsoid{dim, S <: EllipsoidShape, T <: Number, B <: TensND.AbstractBasis} <:
     MFH_Core.AbstractEllipsoidalInclusion{dim, T}
@@ -70,25 +79,100 @@ end
 
 # ── 3-D constructors ──────────────────────────────────────────────────────────
 
+# Internal helper: resolve degenerate real-valued semi-axes (one or two
+# zeros / infs after sorting) to the dedicated inclusion type.  Returns
+# `nothing` when the triple is a regular ellipsoid, else the pre-built
+# inclusion (Cylinder / EllipticCrack / RibbonCrack).  Raises
+# `ArgumentError` for unsupported combinations (slab, needle, …).
+#
+# The reference to the `Cracks` sub-module is resolved at *runtime* via
+# `getfield` to avoid the circular dependency (`Elasticity` is loaded
+# before `Cracks`).
+function _resolve_degenerate_ellipsoid(axes_sorted::NTuple{3, T}, basis) where {T <: Real}
+    n_inf = count(isinf, axes_sorted)
+    n_zero = count(iszero, axes_sorted)
+
+    n_inf ≥ 2 && throw(ArgumentError(
+        "Ellipsoid with two or more infinite semi-axes (infinite slab / plane) is not supported."
+    ))
+    n_zero == 3 && throw(ArgumentError(
+        "Ellipsoid with all semi-axes zero is not a physical inclusion."
+    ))
+    n_zero == 2 && throw(ArgumentError(
+        "Ellipsoid with two zero semi-axes (needle / line) is not supported."
+    ))
+
+    # Regular case — no degeneracy
+    (n_inf == 0 && n_zero == 0) && return nothing
+
+    a1, a2, a3 = axes_sorted
+
+    # Cylinder: one axis Inf, the other two finite > 0
+    if n_inf == 1 && n_zero == 0
+        return Cylinder{_SHAPE_CYLINDER[_classify_cylinder_shape(T, a2, a3)], T, typeof(basis)}(
+            (a2, a3), basis
+        )
+    end
+
+    # Cracks live in the sibling sub-module — resolve at runtime
+    Cracks = getfield(parentmodule(@__MODULE__), :Cracks)
+
+    # Ribbon (tunnel) crack: one axis Inf, one axis zero
+    if n_inf == 1 && n_zero == 1
+        return Base.invokelatest(getfield(Cracks, :RibbonCrack), a2, basis)
+    end
+
+    # Flat elliptic crack (penny or elliptic): one axis zero, two finite > 0
+    if n_inf == 0 && n_zero == 1
+        # EllipticCrack takes a ≥ b and a basis built from Euler angles.
+        # We pass the axes in descending order and the pre-built basis.
+        return Base.invokelatest(
+            getfield(Cracks, :EllipticCrack), a1, a2, basis
+        )
+    end
+    return nothing
+end
+
+_resolve_degenerate_ellipsoid(::NTuple{3, T}, _) where {T} = nothing
+
 """
     Ellipsoid(a, b, c; euler_angles=(θ,ϕ,ψ))
 
-3-D ellipsoid with semi-axes `a`, `b`, `c` (sorted descending when `T<:Real`)
-oriented by ZYZ Euler angles `(θ,ϕ,ψ)`.  Angles default to `(0,0,0)`.
+3-D ellipsoid with semi-axes `a`, `b`, `c` oriented by ZYZ Euler angles
+`(θ, ϕ, ψ)`.
+
+**Input-order convention** (`T <: Real`).  The three semi-axis values
+are interpreted as the lengths along columns 1, 2, 3 of the local
+basis defined by `euler_angles`.  For internal consistency the stored
+`semi_axes` are sorted descending and the basis columns are permuted
+accordingly, so the physical geometry in the canonical frame
+(`change_tens_canon(shape_tensor(ell))`) matches the user's input
+regardless of their order.
+
+**`euler_angles`**.  Any tuple of length 0–3 with heterogeneous `Real`
+element types is accepted; missing trailing angles default to `0`.
+
+Degenerate limits (`T <: Real` only) are routed automatically to the
+dedicated inclusion type:
+- one infinite semi-axis → [`Cylinder`](@ref);
+- one zero semi-axis → `EllipticCrack`;
+- one infinite *and* one zero semi-axis → `RibbonCrack`.
+Unsupported combinations (two or more infinite axes, two zero axes) raise
+an `ArgumentError`.  Symbolic element types (`Sym`, `Num`) skip this
+detection — call the dedicated constructor explicitly.
 """
 function Ellipsoid(
         a::Ta, b::Tb, c::Tc;
-        euler_angles::NTuple{3, <:Real} = (0.0, 0.0, 0.0)
+        euler_angles::Tuple{Vararg{Real}} = ()
     ) where {Ta, Tb, Tc}
     T = MFH_Core._floatlike(promote_type(Ta, Tb, Tc))
+    axes_in = (T(a), T(b), T(c))
+    basis_in = MFH_Core._default_basis(T, euler_angles)
+    axes_sorted, basis = MFH_Core._sort_axes_and_basis(axes_in, basis_in, :ellipsoid_3d)
     if T <: Real
-        axes_sorted = NTuple{3, T}(sort([T(a), T(b), T(c)]; rev = true))
-    else
-        axes_sorted = (T(a), T(b), T(c))
+        redirected = _resolve_degenerate_ellipsoid(axes_sorted, basis)
+        redirected === nothing || return redirected
     end
-    Tbasis = MFH_Core._basis_eltype(T)
-    basis = all(iszero, euler_angles) ? TensND.CanonicalBasis{3, Tbasis}() :
-        TensND.RotatedBasis(euler_angles...)
     code = MFH_Core._classify_shape_3d(T, axes_sorted...)
     S = _SHAPE_3D[code]
     return Ellipsoid{3, S, T, typeof(basis)}(axes_sorted, basis)
@@ -97,19 +181,50 @@ end
 """
     Ellipsoid(a, b, c, R::AbstractMatrix)
 
-3-D ellipsoid whose principal axes are the columns of the rotation matrix `R`.
+3-D ellipsoid whose principal axes are the columns of the rotation
+matrix `R`; column `i` carries semi-axis `(a, b, c)[i]`.  When
+`T <: Real`, the stored `semi_axes` are sorted descending and the
+columns of `R` are permuted to preserve the physical geometry.  Same
+degenerate-limit redirection rules as
+[`Ellipsoid(a, b, c; euler_angles)`](@ref).
 """
 function Ellipsoid(a::Ta, b::Tb, c::Tc, R::AbstractMatrix) where {Ta, Tb, Tc}
     T = MFH_Core._floatlike(promote_type(Ta, Tb, Tc))
+    axes_in = (T(a), T(b), T(c))
+    basis_in = TensND.RotatedBasis(Matrix{Float64}(R))
+    axes_sorted, basis = MFH_Core._sort_axes_and_basis(axes_in, basis_in, :ellipsoid_3d)
     if T <: Real
-        axes_sorted = NTuple{3, T}(sort([T(a), T(b), T(c)]; rev = true))
-    else
-        axes_sorted = (T(a), T(b), T(c))
+        redirected = _resolve_degenerate_ellipsoid(axes_sorted, basis)
+        redirected === nothing || return redirected
     end
-    basis = TensND.RotatedBasis(Matrix{Float64}(R))
     code = MFH_Core._classify_shape_3d(T, axes_sorted...)
     S = _SHAPE_3D[code]
     return Ellipsoid{3, S, T, typeof(basis)}(axes_sorted, basis)
+end
+
+"""
+    Ellipsoid(a, b, c, basis::TensND.AbstractBasis)
+
+3-D ellipsoid sharing an already-constructed TensND basis.  Column `i`
+of `basis` carries semi-axis `(a, b, c)[i]`; when `T <: Real` the
+stored `semi_axes` are sorted descending and the basis columns are
+permuted accordingly (the returned basis may therefore differ from the
+one passed in).  Same degenerate-limit redirection rules as
+[`Ellipsoid(a, b, c; euler_angles)`](@ref).
+"""
+function Ellipsoid(
+        a::Ta, b::Tb, c::Tc, basis::TensND.AbstractBasis
+    ) where {Ta, Tb, Tc}
+    T = MFH_Core._floatlike(promote_type(Ta, Tb, Tc))
+    axes_in = (T(a), T(b), T(c))
+    axes_sorted, basis_out = MFH_Core._sort_axes_and_basis(axes_in, basis, :ellipsoid_3d)
+    if T <: Real
+        redirected = _resolve_degenerate_ellipsoid(axes_sorted, basis_out)
+        redirected === nothing || return redirected
+    end
+    code = MFH_Core._classify_shape_3d(T, axes_sorted...)
+    S = _SHAPE_3D[code]
+    return Ellipsoid{3, S, T, typeof(basis_out)}(axes_sorted, basis_out)
 end
 
 # ── 2-D constructors ──────────────────────────────────────────────────────────
@@ -117,21 +232,20 @@ end
 """
     Ellipsoid(a, b; angle=0.0)
 
-2-D ellipse with semi-axes `a`, `b` (sorted descending when `T<:Real`) and
-orientation angle `θ` (radians) of the major axis w.r.t. the first global axis.
+2-D ellipse with semi-axes `a`, `b` and orientation angle `θ` (radians)
+of the local frame w.r.t. the first global axis.  The user's input
+order defines which local axis carries each length; when `T <: Real`
+the stored `semi_axes` are sorted descending and the orientation is
+adjusted to preserve the physical geometry in the canonical frame.
 """
 function Ellipsoid(a::Ta, b::Tb; angle::Real = 0.0) where {Ta, Tb}
     T = MFH_Core._floatlike(promote_type(Ta, Tb))
-    if T <: Real
-        a1, a2 = T(a) >= T(b) ? (T(a), T(b)) : (T(b), T(a))
-    else
-        a1, a2 = T(a), T(b)
-    end
     Tbasis = MFH_Core._basis_eltype(T)
-    basis = iszero(angle) ? TensND.CanonicalBasis{2, Tbasis}() : TensND.RotatedBasis(float(angle))
-    code = MFH_Core._classify_shape_2d(T, a1, a2)
+    basis_in = iszero(angle) ? TensND.CanonicalBasis{2, Tbasis}() : TensND.RotatedBasis(float(angle))
+    axes_sorted, basis = MFH_Core._sort_axes_and_basis((T(a), T(b)), basis_in, :ellipsoid_2d)
+    code = MFH_Core._classify_shape_2d(T, axes_sorted...)
     S = _SHAPE_2D[code]
-    return Ellipsoid{2, S, T, typeof(basis)}((a1, a2), basis)
+    return Ellipsoid{2, S, T, typeof(basis)}(axes_sorted, basis)
 end
 
 # ── Sphere / circle ───────────────────────────────────────────────────────────
@@ -149,11 +263,50 @@ function Ellipsoid(r::T; dim::Int = 3) where {T <: Number}
     return Ellipsoid{dim, S, Tf, typeof(basis)}(axes, basis)
 end
 
+# ── Equality and hashing (field-wise) ────────────────────────────────────────
+# Two `Ellipsoid`s are equal when their semi-axes and local basis compare
+# equal (via `==`, i.e. by value — *not* by reference, which is the default
+# Julia behaviour for fields whose type is not `isbits`, such as
+# `RotatedBasis`).
+
+Base.:(==)(x::T, y::T) where {T <: Ellipsoid} =
+    x.semi_axes == y.semi_axes && x.basis == y.basis
+
+function Base.hash(x::Ellipsoid, h::UInt)
+    h = hash(typeof(x), h)
+    h = hash(x.semi_axes, h)
+    return hash(x.basis, h)
+end
+
 # ── Interface implementations ────────────────────────────────────────────────
 
 MFH_Core.dimension(::Ellipsoid{dim}) where {dim} = dim
 MFH_Core.inclusion_basis(ell::Ellipsoid) = ell.basis
 MFH_Core.shape_trait(::Ellipsoid{dim, S}) where {dim, S} = S
+
+"""
+    shape_tensor(ell::Ellipsoid) -> AbstractTens{2}
+
+Return the symmetric representative of the 2nd-order shape tensor
+``\\mathbf A = \\mathbf R\\,\\mathrm{diag}(\\rho_i)\\,\\mathbf R^{\\!T}``
+of `ell`, expressed in the canonical frame.
+
+Note: the Echoes convention
+([eshelby_hill.qmd](https://github.com/jeanfrancoisbarthelemy/echoes))
+allows ``\\mathbf A`` to be any invertible 2nd-order tensor — only the
+symmetric product ``\\mathbf A^{\\!T}\\!\\cdot\\mathbf A`` enters any
+Hill expression. MFH stores the symmetric representative for
+convenience.  See the generic [`shape_tensor`](@ref) docstring for
+conventions.
+"""
+function MFH_Core.shape_tensor(ell::Ellipsoid{dim}) where {dim}
+    T = eltype(ell.semi_axes)
+    D = zeros(T, dim, dim)
+    @inbounds for i in 1:dim
+        D[i, i] = ell.semi_axes[i]
+    end
+    return TensND.Tens(D, ell.basis)
+end
 
 # ── Shape helpers used by scripts and downstream code ──────────────────────
 

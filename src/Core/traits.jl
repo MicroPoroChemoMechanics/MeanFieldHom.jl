@@ -31,8 +31,14 @@ struct Analytical <: AbstractAlgorithm end
 "Residue-theorem algorithm — polynomial-root based, `Float64` only (incompatible with `ForwardDiff` and `SymPy`)."
 struct Residue <: AbstractAlgorithm end
 
-"DECUHR / nested-QuadGK algorithm — ForwardDiff-compatible 2D cubature, suitable for general anisotropy in 3D."
+"DECUHR 2D hyper-cubature (Espelid & Genz 1994) via Integrals.jl `DecuhrAlgorithm`. Suitable for general anisotropy in 3D."
 struct DECUHR <: AbstractAlgorithm end
+
+"Nested 1D QuadGK cubature (fallback to DECUHR, ForwardDiff-compatible). Historically shipped as `DECUHR` before the split."
+struct NestedQuadGK <: AbstractAlgorithm end
+
+"1D QuadGK quadrature dedicated to infinite cylinders (transverse-plane parametrisation ζ(φ) = (0, cos φ / b, sin φ / c)). ForwardDiff-compatible, selected whenever an [`AbstractEllipsoidalInclusion`](@ref) with a cylindrical-shape trait meets a general-anisotropic 3D stiffness."
+struct CylinderQuadrature <: AbstractAlgorithm end
 
 "Placeholder singleton used by `_resolve_algo(Val(:auto), …)` as an explicit *automatic* selection request."
 struct Auto <: AbstractAlgorithm end

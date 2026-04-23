@@ -1,7 +1,12 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterCitations = "daee34ce-89f3-4625-b898-19384cb65244"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"
+LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
 MeanFieldHom = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 TensND = "474b5345-2588-4284-8a58-2430a1a40cb0"
 
 [sources]
 MeanFieldHom = {path = ".."}
+TensND = {path = "../../TensND.jl"}

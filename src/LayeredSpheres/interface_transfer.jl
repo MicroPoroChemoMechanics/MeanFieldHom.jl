@@ -1,0 +1,111 @@
+# =============================================================================
+#  interface_transfer.jl — interface transfer matrices for
+#  `LayeredSphere`.
+#
+#  For each interface type, both the bulk (2×2) and shear (4×4) jump
+#  matrices are provided.  The perfect-interface limit is the identity;
+#  spring and membrane interfaces act in complementary "primal / dual"
+#  directions (primal = displacement discontinuous, traction continuous;
+#  dual = displacement continuous, traction discontinuous).
+# =============================================================================
+
+# ── Bulk (2×2) interface transfer matrices ──────────────────────────────────
+#
+# State vector: s = (u_r, σ_rr).
+#
+#   PerfectInterface    : J = I
+#   SpringInterface     : J = [1  kn ;  0  1]     (bulk uses kn only)
+#   MembraneInterface   : J = [1   0 ; 4κs/r²  1] (bulk uses κs only)
+#   (Thermal analogues live in `conductivity.jl`.)
+
+"""
+    _bulk_interface_T(intf, κ, μ, r) -> Matrix(2×2)
+
+Return the 2×2 jump matrix for the **bulk** (spherical, mode `Y₀`)
+state vector `(u_r, σ_rr)` at the interface of type `intf` located at
+radius `r` between layers of moduli `(κ, μ)` and `(κ⁺, μ⁺)`.  Only
+the interface parameters and the radius enter the bulk jump; the
+adjacent layer moduli are provided for type promotion.
+"""
+function _bulk_interface_T end
+
+# Perfect interface — identity.
+function _bulk_interface_T(::PerfectInterface, κ, μ, r)
+    T = promote_type(typeof(κ), typeof(μ), typeof(r))
+    return T[one(T) zero(T); zero(T) one(T)]
+end
+
+# Spring: primal (displacement jump), bulk uses kn only.
+function _bulk_interface_T(intf::SpringInterface, κ, μ, r)
+    T = promote_type(eltype(intf), typeof(κ), typeof(μ), typeof(r))
+    return T[one(T) T(intf.kn); zero(T) one(T)]
+end
+
+# Surface-elastic membrane: dual (traction jump), bulk uses κs only.
+function _bulk_interface_T(intf::MembraneInterface, κ, μ, r)
+    T   = promote_type(eltype(intf), typeof(κ), typeof(μ), typeof(r))
+    Tr  = T(r)
+    Tr² = Tr * Tr
+    return T[one(T) zero(T); 4 * T(intf.κs) / Tr² one(T)]
+end
+
+# ── Shear (4×4) interface transfer matrices ──────────────────────────────────
+#
+# State vector: S = (U, V, σ_rr, σ_rθ).
+# These are imposed at the radius r_k of the interface.  Perfect = I.
+#
+# For SpringInterface the displacement components jump (normal → kn,
+# tangential → kt) while tractions are continuous:
+#   U⁺ = U⁻ + kn · σ_rr⁻
+#   V⁺ = V⁻ + kt · σ_rθ⁻
+# In matrix form:
+#   J = [ 1  0  kn  0 ;
+#         0  1  0   kt;
+#         0  0  1   0 ;
+#         0  0  0   1 ]
+#
+# For MembraneInterface the traction components jump:
+#   σ_rr⁺ = σ_rr⁻  +  f1(κs, μs, r) · U  +  f2(κs, μs, r) · V
+#   σ_rθ⁺ = σ_rθ⁻  +  f3(κs, μs, r) · U  +  f4(κs, μs, r) · V
+# The exact coefficients come from the divergence of the 2D surface
+# stress on a sphere for the `Y₂`-mode (surface-elasticity model with
+# both dilatation and shear surface stiffness).  In matrix form J is a
+# 4×4 block-triangular with the linear combination in the lower-left
+# 2×2 block.
+
+"""
+    _shear_interface_T(intf, κ, μ, r) -> Matrix(4×4)
+
+Return the 4×4 jump matrix for the **shear** (deviatoric, mode `Y₂`)
+state vector `(U, V, σ_rr/μ_ref, σ_rθ/μ_ref)` at the interface at
+radius `r`.
+"""
+function _shear_interface_T end
+
+function _shear_interface_T(::PerfectInterface, κ, μ, r)
+    T = promote_type(typeof(κ), typeof(μ), typeof(r))
+    return Matrix{T}(LinearAlgebra.I, 4, 4)
+end
+
+function _shear_interface_T(intf::SpringInterface, κ, μ, r)
+    T = promote_type(eltype(intf), typeof(κ), typeof(μ), typeof(r))
+    M = Matrix{T}(LinearAlgebra.I, 4, 4)
+    # State order: (U, V, τ_rr, τ_rθ).  U jumps by kn · τ_rr, V by kt · τ_rθ.
+    M[1, 3] = T(intf.kn)
+    M[2, 4] = T(intf.kt)
+    return M
+end
+
+function _shear_interface_T(intf::MembraneInterface, κ, μ, r)
+    T = promote_type(eltype(intf), typeof(κ), typeof(μ), typeof(r))
+    M = Matrix{T}(LinearAlgebra.I, 4, 4)
+    κs = T(intf.κs); μs = T(intf.μs)
+    Tr  = T(r)
+    inv_r² = one(T) / (Tr * Tr)
+    six_κs_over_r² = 6 * κs * inv_r²
+    M[3, 1] = -six_κs_over_r²
+    M[3, 2] =  six_κs_over_r²
+    M[4, 1] = -(κs + 3 * μs) * inv_r²
+    M[4, 2] =  (3 * μs - κs) * inv_r²
+    return M
+end

@@ -80,15 +80,23 @@ end
     EllipticCrack(a, b; euler_angles=(0,0,0))
 
 Elliptical flat crack with semi-axes `a` and `b` oriented by ZYZ Euler
-angles.  When `T <: Real`, the semi-axes are sorted so that `a ≥ b`.
+angles.  `euler_angles` accepts tuples of length 0–3 with heterogeneous
+`Real` entries (trailing zeros are implicit).
+
+**Input-order convention** (`T <: Real`): columns 1 and 2 of the local
+basis carry the user's `a` and `b` respectively; column 3 is the crack
+normal.  The stored semi-axes are sorted so that `a ≥ b` and columns 1
+and 2 are permuted when needed to preserve the physical geometry.
+Column 3 (normal) is never touched.
 """
 function EllipticCrack(
         a::Ta, b::Tb;
-        euler_angles::NTuple{3, <:Real} = (0.0, 0.0, 0.0)
+        euler_angles::Tuple{Vararg{Real}} = ()
     ) where {Ta, Tb}
     T = MFH_Core._floatlike(promote_type(Ta, Tb))
-    a_, b_ = T <: Real && T(b) > T(a) ? (T(b), T(a)) : (T(a), T(b))
-    basis = MFH_Core._default_basis(T, euler_angles)
+    basis_in = MFH_Core._default_basis(T, euler_angles)
+    axes_sorted, basis = MFH_Core._sort_axes_and_basis((T(a), T(b)), basis_in, :crack)
+    a_, b_ = axes_sorted
     S = _classify_crack(T, a_, b_)
     return EllipticCrack{T, S, typeof(basis)}(a_, b_, basis)
 end
@@ -100,9 +108,11 @@ Elliptical flat crack whose local frame columns are the columns of `R`.
 """
 function EllipticCrack(a::Ta, b::Tb, R::AbstractMatrix) where {Ta, Tb}
     T = MFH_Core._floatlike(promote_type(Ta, Tb))
-    basis = TensND.RotatedBasis(Matrix{Float64}(R))
-    S = _classify_crack(T, T(a), T(b))
-    return EllipticCrack{T, S, typeof(basis)}(T(a), T(b), basis)
+    basis_in = TensND.RotatedBasis(Matrix{Float64}(R))
+    axes_sorted, basis = MFH_Core._sort_axes_and_basis((T(a), T(b)), basis_in, :crack)
+    a_, b_ = axes_sorted
+    S = _classify_crack(T, a_, b_)
+    return EllipticCrack{T, S, typeof(basis)}(a_, b_, basis)
 end
 
 """
@@ -112,8 +122,10 @@ Elliptical flat crack with an already-constructed TensND basis.
 """
 function EllipticCrack(a::Ta, b::Tb, basis::TensND.AbstractBasis) where {Ta, Tb}
     T = MFH_Core._floatlike(promote_type(Ta, Tb))
-    S = _classify_crack(T, T(a), T(b))
-    return EllipticCrack{T, S, typeof(basis)}(T(a), T(b), basis)
+    axes_sorted, basis_out = MFH_Core._sort_axes_and_basis((T(a), T(b)), basis, :crack)
+    a_, b_ = axes_sorted
+    S = _classify_crack(T, a_, b_)
+    return EllipticCrack{T, S, typeof(basis_out)}(a_, b_, basis_out)
 end
 
 """
@@ -121,7 +133,7 @@ end
 
 Convenience constructor for a circular (penny-shaped) flat crack.
 """
-PennyCrack(a; euler_angles::NTuple{3, <:Real} = (0.0, 0.0, 0.0)) =
+PennyCrack(a; euler_angles::Tuple{Vararg{Real}} = ()) =
     EllipticCrack(a, a; euler_angles = euler_angles)
 
 """
@@ -131,7 +143,7 @@ Ribbon-like (tunnel) crack of half-width `b`.
 """
 function RibbonCrack(
         b::Tb;
-        euler_angles::NTuple{3, <:Real} = (0.0, 0.0, 0.0)
+        euler_angles::Tuple{Vararg{Real}} = ()
     ) where {Tb}
     T = MFH_Core._floatlike(Tb)
     basis = MFH_Core._default_basis(T, euler_angles)
@@ -160,6 +172,29 @@ function RibbonCrack(b::Tb, basis::TensND.AbstractBasis) where {Tb}
 end
 
 # =============================================================================
+#  Equality and hashing (field-wise)
+# =============================================================================
+
+Base.:(==)(x::T, y::T) where {T <: EllipticCrack} =
+    x.a == y.a && x.b == y.b && x.basis == y.basis
+
+function Base.hash(x::EllipticCrack, h::UInt)
+    h = hash(typeof(x), h)
+    h = hash(x.a, h)
+    h = hash(x.b, h)
+    return hash(x.basis, h)
+end
+
+Base.:(==)(x::T, y::T) where {T <: RibbonCrack} =
+    x.b == y.b && x.basis == y.basis
+
+function Base.hash(x::RibbonCrack, h::UInt)
+    h = hash(typeof(x), h)
+    h = hash(x.b, h)
+    return hash(x.basis, h)
+end
+
+# =============================================================================
 #  Interface implementations (Core abstractions)
 # =============================================================================
 
@@ -167,6 +202,35 @@ MFH_Core.dimension(::MFH_Core.AbstractCrack) = 3
 MFH_Core.inclusion_basis(c::MFH_Core.AbstractCrack) = c.basis
 MFH_Core.shape_trait(::EllipticCrack{T, S}) where {T, S} = S
 MFH_Core.shape_trait(::RibbonCrack) = Ribbon
+
+"""
+    shape_tensor(c::EllipticCrack) -> AbstractTens{2,3}
+
+Return the symmetric 2nd-order shape tensor of a flat elliptic (or
+penny-shaped) crack: the diagonal in the local frame `(l̂, m̂, n̂)` is
+`(a, b, 0)` — the zero entry reflects the vanishing extent along the
+crack normal `n̂` (column 3 of the basis).
+"""
+function MFH_Core.shape_tensor(c::EllipticCrack{T}) where {T}
+    D = zeros(T, 3, 3)
+    D[1, 1] = c.a
+    D[2, 2] = c.b
+    return TensND.Tens(D, c.basis)
+end
+
+"""
+    shape_tensor(c::RibbonCrack) -> AbstractTens{2,3}
+
+Return the symmetric 2nd-order shape tensor of a ribbon (tunnel) crack:
+the diagonal in the local frame `(l̂, m̂, n̂)` is `(Inf, b, 0)` — `Inf`
+along the tunnel axis `l̂`, zero along the crack normal `n̂`.
+"""
+function MFH_Core.shape_tensor(c::RibbonCrack{T}) where {T}
+    D = zeros(T, 3, 3)
+    D[1, 1] = T(Inf)
+    D[2, 2] = c.b
+    return TensND.Tens(D, c.basis)
+end
 
 # =============================================================================
 #  Accessors

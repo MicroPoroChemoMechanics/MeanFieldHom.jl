@@ -14,8 +14,11 @@ using TensND
         @test B[3, 3] > 0
     end
 
-    # Compliance contribution — symmetric 4th-order tensor
+    # Compliance contribution — size-independent H (4th-order tensor)
     pc = PennyCrack(1.0)
-    ΔS = compliance_contribution(pc, C₀, 0.1)
+    H = compliance_contribution(pc, C₀)
+    @test H[1, 1, 1, 1] == H[1, 1, 1, 1]   # no NaN
+    # Budiansky helper reintroduces the density ε
+    ΔS = delta_compliance(pc, H, 0.1)
     @test ΔS[1, 1, 1, 1] == ΔS[1, 1, 1, 1]   # no NaN
 end
