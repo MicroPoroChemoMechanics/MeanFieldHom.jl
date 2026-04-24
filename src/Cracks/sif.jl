@@ -42,7 +42,7 @@ function sif(
         y₀ = nothing, method::Symbol = :auto, kw...
     ) where {T}
     b = crack.b
-    l̂, m̂, n̂ = (TensND.tensbasis(crack_basis(crack), i) for i in 1:3)
+    l̂, m̂, n̂ = (TensND.tens_basis(crack_basis(crack), i) for i in 1:3)
     𝐊 = sqrt(T(π) * b) * (Σ ⋅ n̂)
     Kᴵ = 𝐊 ⋅ n̂
     Kᴵᴵ = 𝐊 ⋅ m̂
@@ -58,7 +58,7 @@ function sif(
     a = crack.a
     b = crack.b
     ℬ = crack_basis(crack)
-    l̂, m̂, n̂ = (TensND.tensbasis(ℬ, i) for i in 1:3)
+    l̂, m̂, n̂ = (TensND.tens_basis(ℬ, i) for i in 1:3)
 
     𝐒_inv = inv(a) * (l̂ ⊗ l̂) + inv(b) * (m̂ ⊗ m̂)
 
@@ -98,7 +98,7 @@ end
 """
 function dif(crack::MFH_Core.AbstractCrack, C₀, Σ; method::Symbol = :auto, kw...)
     B = cod_tensor(crack, C₀; method = method, kw...)
-    n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    n̂ = TensND.tens_basis(crack_basis(crack), 3)
     return B ⋅ Σ ⋅ n̂
 end
 
@@ -127,7 +127,7 @@ function sif(
         y₀ = nothing, method::Symbol = :auto, kw...
     ) where {T}
     b = crack.b
-    n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    n̂ = TensND.tens_basis(crack_basis(crack), 3)
     return sqrt(T(π) * b) * (n̂ ⋅ q∞)
 end
 
@@ -141,7 +141,7 @@ function sif(
     a = crack.a
     b = crack.b
     ℬ = crack_basis(crack)
-    l̂, m̂, n̂ = (TensND.tensbasis(ℬ, i) for i in 1:3)
+    l̂, m̂, n̂ = (TensND.tens_basis(ℬ, i) for i in 1:3)
 
     𝐒_inv = inv(a) * (l̂ ⊗ l̂) + inv(b) * (m̂ ⊗ m̂)
 
@@ -188,6 +188,6 @@ function dif(
         method::Symbol = :auto, kw...
     )
     b = cod_tensor(crack, K₀; method = method, kw...)
-    n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    n̂ = TensND.tens_basis(crack_basis(crack), 3)
     return b * (n̂ ⋅ q∞)
 end

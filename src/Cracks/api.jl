@@ -4,22 +4,22 @@
 # =============================================================================
 
 """
-    _ti_aligned(C₀::TensWalpole, ℬ_crack) -> Bool
+    _ti_aligned(C₀::TensTI{4}, ℬ_crack) -> Bool
 
 Return `true` when the axis of transverse isotropy stored in `C₀` is
 parallel to the third axis (the crack normal) of the crack-local basis
 `ℬ_crack`.
 """
 function _ti_aligned(C₀, ℬ_crack::TensND.AbstractBasis)
-    axis_C = TensND.components_canon(TensND.tensbasis(TensND.getbasis(C₀), 3))
-    axis_n = TensND.components_canon(TensND.tensbasis(ℬ_crack, 3))
+    axis_C = TensND.components_canon(TensND.tens_basis(TensND.get_basis(C₀), 3))
+    axis_n = TensND.components_canon(TensND.tens_basis(ℬ_crack, 3))
     d = abs(dot(axis_C, axis_n))
     return isapprox(d, 1.0; atol = 1.0e-10)
 end
 
-# TI-aligned dispatch rules — refine Core dispatch for `AbstractCrack` + TensWalpole
-if isdefined(TensND, :TensWalpole)
-    @eval function MFH_Core._resolve_algo(::Val{m}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensWalpole) where {m}
+# TI-aligned dispatch rules — refine Core dispatch for `AbstractCrack` + TensTI{4}
+if isdefined(TensND, :TensTI)
+    @eval function MFH_Core._resolve_algo(::Val{m}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4}) where {m}
         _ti_aligned(C₀, crack_basis(crack)) && return MFH_Core.Analytical()
         m === :decuhr && return MFH_Core.DECUHR()
         m === :nestedquadgk && return MFH_Core.NestedQuadGK()
@@ -175,15 +175,15 @@ function _kernel(crack::RibbonCrack, C₀::TensND.TensISO{4, 3}, ::MFH_Core.Anal
 end
 
 # Analytical — TI matrix aligned with n̂
-if isdefined(TensND, :TensWalpole)
-    @eval function _kernel(crack::EllipticCrack, C₀::TensND.TensWalpole, ::MFH_Core.Analytical; kw...)
-        n̂ = TensND.tensbasis(crack_basis(crack), 3)
+if isdefined(TensND, :TensTI)
+    @eval function _kernel(crack::EllipticCrack, C₀::TensND.TensTI{4}, ::MFH_Core.Analytical; kw...)
+        n̂ = TensND.tens_basis(crack_basis(crack), 3)
         nt = MFH_Core.extract_ti_moduli(C₀, n̂)
         return _cod_ti_ellipse(crack, nt.E, nt.H, nt.ν₁, nt.ν₂, nt.Γ)
     end
 
-    @eval function _kernel(crack::RibbonCrack, C₀::TensND.TensWalpole, ::MFH_Core.Analytical; kw...)
-        n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    @eval function _kernel(crack::RibbonCrack, C₀::TensND.TensTI{4}, ::MFH_Core.Analytical; kw...)
+        n̂ = TensND.tens_basis(crack_basis(crack), 3)
         nt = MFH_Core.extract_ti_moduli(C₀, n̂)
         return _cod_ti_ribbon(crack, nt.E, nt.H, nt.ν₁, nt.ν₂, nt.Γ)
     end

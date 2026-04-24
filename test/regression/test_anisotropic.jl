@@ -46,8 +46,8 @@ const _K_aniso = TensND.Tens([3.0 0.5 0.3; 0.5 2.0 0.2; 0.3 0.2 1.5])
 # =============================================================================
 @testset "Anisotropic hill_tensor — triaxial ellipsoid" begin
     ℬ = CanonicalBasis{3, Float64}()
-    C_tri = TensND.invKM(_KM_tri, ℬ)
-    C_cubic = TensND.invKM(_KM_cubic, ℬ)
+    C_tri = TensND.inv_KM(_KM_tri, ℬ)
+    C_cubic = TensND.inv_KM(_KM_cubic, ℬ)
 
     @testset "Triaxial ellipsoid + triclinic C — algorithm consistency" begin
         ell = Ellipsoid(3.0, 2.0, 1.0)
@@ -106,13 +106,13 @@ end
 # =============================================================================
 @testset "Anisotropic compliance_contribution — elastic cracks" begin
     ℬ = CanonicalBasis{3, Float64}()
-    C_tri = TensND.invKM(_KM_tri, ℬ)
+    C_tri = TensND.inv_KM(_KM_tri, ℬ)
 
     @testset "Penny / triclinic — H = (3/4) n̂ ⊗ˢ B ⊗ˢ n̂" begin
         pc = PennyCrack(1.0)
         B = cod_tensor(pc, C_tri; method = :residues)
         H = compliance_contribution(pc, C_tri; method = :residues)
-        n̂ = tensbasis(crack_basis(pc), 3)
+        n̂ = tens_basis(crack_basis(pc), 3)
         Hexp = (3 / 4) * (n̂ ⊗ˢ B ⊗ˢ n̂)
         for i in 1:3, j in 1:3, k in 1:3, l in 1:3
             @test H[i, j, k, l] ≈ Hexp[i, j, k, l] rtol = 1.0e-10
@@ -134,7 +134,7 @@ end
         r = RibbonCrack(1.0)
         B = cod_tensor(r, C_tri; method = :residues)
         H = compliance_contribution(r, C_tri; method = :residues)
-        n̂ = tensbasis(crack_basis(r), 3)
+        n̂ = tens_basis(crack_basis(r), 3)
         Hexp = (2 / π) * (n̂ ⊗ˢ B ⊗ˢ n̂)
         for i in 1:3, j in 1:3, k in 1:3, l in 1:3
             @test H[i, j, k, l] ≈ Hexp[i, j, k, l] rtol = 1.0e-10
@@ -148,7 +148,7 @@ end
     # all three numerical backends (:residues, :decuhr, :nestedquadgk)
     # must converge to the same H tensor.
     ℬ = CanonicalBasis{3, Float64}()
-    C_tri = TensND.invKM(_KM_tri, ℬ)
+    C_tri = TensND.inv_KM(_KM_tri, ℬ)
 
     pc = PennyCrack(1.0)
     H_res = compliance_contribution(pc, C_tri; method = :residues)

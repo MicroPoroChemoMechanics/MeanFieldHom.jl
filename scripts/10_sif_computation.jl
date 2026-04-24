@@ -16,15 +16,15 @@ using Plots, LaTeXStrings
 
 # TI matrix parameters
 E_, H_, ν₁, ν₂, Γ_ = 1.0, 2.0, 0.4, 0.3, 3.0
-n̂  = tensbasis(CanonicalBasis{3,Float64}(), 3)
+n̂  = tens_basis(CanonicalBasis{3,Float64}(), 3)
 E₁ = E_; E₃ = H_ * E₁; ν₁₂ = ν₁; ν₃₁ = H_ * ν₂
 G₃₁ = Γ_ * E₁ / (2 * (1 + ν₁₂))
-S  = tensTI(inv(E₁), -ν₁₂/E₁, -ν₃₁/E₃, inv(E₃), inv(4G₃₁), n̂)
+S  = tens_TI(inv(E₁), -ν₁₂/E₁, -ν₃₁/E₃, inv(E₃), inv(4G₃₁), n̂)
 C₀ = inv(S)
 
 a, b = 1.0, 0.1
 crack = EllipticCrack(a, b)
-e1, e2, e3 = tensbasis(CanonicalBasis{3,Float64}())
+e1, e2, e3 = tens_basis(CanonicalBasis{3,Float64}())
 Σ = e3 ⊗ˢ e3
 
 # Sweep θˣ = atan(b sin θʸ, a cos θʸ) along the crack front

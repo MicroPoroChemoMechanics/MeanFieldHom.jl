@@ -15,7 +15,7 @@
 @inline _H_over_B_factor(::RibbonCrack, T) = T(2) / T(π)
 
 """
-    cod_from_compliance(H, crack, ℬ=getbasis(H)) -> Tens{2,3}
+    cod_from_compliance(H, crack, ℬ=get_basis(H)) -> Tens{2,3}
 
 Extract the size-independent COD tensor ``\\mathbf B`` from the crack
 compliance contribution tensor ``\\mathbb H`` using
@@ -36,7 +36,7 @@ Dispatches on the crack type
 """
 function cod_from_compliance(
         H, crack::MFH_Core.AbstractCrack,
-        ℬ::TensND.AbstractBasis = TensND.getbasis(H),
+        ℬ::TensND.AbstractBasis = TensND.get_basis(H),
     )
     T = eltype(H)
     k = _H_over_B_factor(crack, T)
@@ -57,14 +57,14 @@ function cod_from_compliance(
 end
 
 """
-    cod_from_compliance(H, ℬ=getbasis(H)) -> Tens{2,3}
+    cod_from_compliance(H, ℬ=get_basis(H)) -> Tens{2,3}
 
 Elliptic / 3D default: identical to `cod_from_compliance(H, EllipticCrack-like, ℬ)`
 with the Kachanov factor ``k = 3/4``.  Kept for back-compatibility with
 code that does not carry the crack object.  For a ribbon, pass the
 `RibbonCrack` explicitly.
 """
-function cod_from_compliance(H, ℬ::TensND.AbstractBasis = TensND.getbasis(H))
+function cod_from_compliance(H, ℬ::TensND.AbstractBasis = TensND.get_basis(H))
     T = eltype(H)
     newH = TensND.change_tens(H, ℬ)
     return TensND.Tens(
@@ -85,14 +85,14 @@ end
 const BfromH = cod_from_compliance
 
 """
-    compliance_from_cod(B, crack, ℬ=getbasis(B)) -> Tens{4,3}
+    compliance_from_cod(B, crack, ℬ=get_basis(B)) -> Tens{4,3}
 
 Inverse of [`cod_from_compliance`](@ref).  Reconstruct ``\\mathbb H``
 from ``\\mathbf B`` with the crack-shape-dependent factor ``k``.
 """
 function compliance_from_cod(
         B, crack::MFH_Core.AbstractCrack,
-        ℬ::TensND.AbstractBasis = TensND.getbasis(B),
+        ℬ::TensND.AbstractBasis = TensND.get_basis(B),
     )
     T = eltype(B)
     k = _H_over_B_factor(crack, T)
@@ -121,12 +121,12 @@ function compliance_from_cod(
 end
 
 """
-    compliance_from_cod(B, ℬ=getbasis(B)) -> Tens{4,3}
+    compliance_from_cod(B, ℬ=get_basis(B)) -> Tens{4,3}
 
 Elliptic / 3D default: identical to `compliance_from_cod(B, EllipticCrack-like, ℬ)`.
 Kept for back-compatibility.
 """
-function compliance_from_cod(B, ℬ::TensND.AbstractBasis = TensND.getbasis(B))
+function compliance_from_cod(B, ℬ::TensND.AbstractBasis = TensND.get_basis(B))
     T = eltype(B)
     newB = TensND.change_tens(B, ℬ)
     data = zeros(T, 3, 3, 3, 3)

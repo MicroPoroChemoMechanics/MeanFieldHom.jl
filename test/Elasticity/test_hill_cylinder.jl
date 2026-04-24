@@ -8,10 +8,10 @@ using ForwardDiff
     K, μ = 175.0, 80.77
     C_iso = TensISO{3}(3K, 2μ)
 
-    @testset "Circular cylinder, iso matrix → TensWalpole" begin
+    @testset "Circular cylinder, iso matrix → TensTI{4}" begin
         cyl = Cylinder(1.5)
         P = hill_tensor(cyl, C_iso)
-        @test P isa TensND.TensWalpole
+        @test P isa TensND.TensTI{4}
         # No coupling with axial direction
         @test P[1, 1, 1, 1] ≈ 0.0 atol = 1.0e-14
         @test P[1, 1, 2, 2] ≈ 0.0 atol = 1.0e-14
@@ -115,9 +115,9 @@ using ForwardDiff
         @test UA[1, 1, 1, 1] ≈ 0.0 atol = 1.0e-14
         @test UA[1, 1, 2, 2] ≈ 0.0 atol = 1.0e-14
 
-        # Circular case — TensWalpole structure
+        # Circular case — TensTI{4} structure
         cyl2 = Cylinder(1.3)
         UA2 = tens_UA(cyl2)
-        @test UA2 isa TensND.TensWalpole
+        @test UA2 isa TensND.TensTI{4}
     end
 end

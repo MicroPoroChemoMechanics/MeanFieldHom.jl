@@ -7,7 +7,7 @@ using TensND
     basis = TensND.CanonicalBasis{3, Float64}()
     δ(a, b) = a == b ? 1.0 : 0.0
 
-    # Cubic stiffness (Fe-like) as a 6×6 KM matrix → Tens via invKM
+    # Cubic stiffness (Fe-like) as a 6×6 KM matrix → Tens via inv_KM
     c11, c12, c44 = 237.0, 141.0, 116.0
     KM_cubic = [
         c11 c12 c12 0.0 0.0 0.0;
@@ -17,7 +17,7 @@ using TensND
         0.0 0.0 0.0 0.0 2c44 0.0;
         0.0 0.0 0.0 0.0 0.0 2c44
     ]
-    C_cubic = TensND.invKM(KM_cubic, basis)
+    C_cubic = TensND.inv_KM(KM_cubic, basis)
 
     # Triclinic stiffness — hand-picked symmetric-positive KM (6×6)
     KM_tri = [
@@ -28,7 +28,7 @@ using TensND
         4.0 3.0 -2.0 2.5 65.0 -1.0;
         3.0 -1.0 2.0 1.5 -1.0 55.0
     ]
-    C_tric = TensND.invKM(KM_tri, basis)
+    C_tric = TensND.inv_KM(KM_tri, basis)
 
     @testset "Penny / cubic — :residues vs :nestedquadgk" begin
         crack = PennyCrack(1.0)

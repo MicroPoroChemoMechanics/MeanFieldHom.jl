@@ -47,9 +47,9 @@ convenience form used by the numerical (residue / DECUHR) algorithms.
 The returned element type follows the basis element type.
 """
 @inline function _frame_columns(basis::TensND.AbstractBasis)
-    l̂ = Vector(TensND.components_canon(TensND.tensbasis(basis, 1)))
-    m̂ = Vector(TensND.components_canon(TensND.tensbasis(basis, 2)))
-    n̂ = Vector(TensND.components_canon(TensND.tensbasis(basis, 3)))
+    l̂ = Vector(TensND.components_canon(TensND.tens_basis(basis, 1)))
+    m̂ = Vector(TensND.components_canon(TensND.tens_basis(basis, 2)))
+    n̂ = Vector(TensND.components_canon(TensND.tens_basis(basis, 3)))
     return l̂, m̂, n̂
 end
 

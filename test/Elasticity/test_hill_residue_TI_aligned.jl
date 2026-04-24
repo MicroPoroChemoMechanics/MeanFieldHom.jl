@@ -30,7 +30,7 @@ const basis = TensND.CanonicalBasis{3, Float64}()
         0.0 0.0 0.0 0.0   2C44  0.0;
         0.0 0.0 0.0 0.0   0.0   2C66
     ]
-    C_TI = TensND.invKM(KM, basis)
+    C_TI = TensND.inv_KM(KM, basis)
 
     ell = Ellipsoid(2.0, 2.0, 1.0)        # spheroid, axis along e3
 
@@ -54,7 +54,7 @@ end
         0.0   0.0  0.0   0.0   150.0 0.0;
         0.0   0.0  0.0   0.0   0.0   120.0
     ]
-    C_O = TensND.invKM(KM, basis)
+    C_O = TensND.inv_KM(KM, basis)
     ell = Ellipsoid(3.0, 1.5, 1.0)
 
     P_res = hill_tensor(ell, C_O; method = :residues)
@@ -79,7 +79,7 @@ end
         0.0 0.0 0.0 0.0  2C44 0.0;
         0.0 0.0 0.0 0.0  0.0  2C66
     ]
-    C_TI = TensND.invKM(KM, basis)
+    C_TI = TensND.inv_KM(KM, basis)
 
     ell = Ellipsoid(2.0, 2.0, 1.0; euler_angles = (deg2rad(5.0), 0.0, 0.0))
 
@@ -103,7 +103,7 @@ end
           4.0   3.0  -2.0   5.0 130.0 -2.0;
           3.0  -1.0   2.0   3.0 -2.0 110.0
     ]
-    C = TensND.invKM(KM, basis)
+    C = TensND.inv_KM(KM, basis)
     ell = Ellipsoid(10.6, 1.2, 0.5)
 
     P_res = hill_tensor(ell, C; method = :residues)

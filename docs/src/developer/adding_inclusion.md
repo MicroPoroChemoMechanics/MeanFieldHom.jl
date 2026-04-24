@@ -14,6 +14,6 @@
    `_kernel(::YourInclusion, C₀, ::Residue)` / `_kernel(..., ::DECUHR)`
    for numerical fallbacks.
 4. If the new inclusion has a specialised TI-aligned path (cf. the
-   `AbstractCrack` / `TensWalpole` rule), register the extra dispatch
+   `AbstractCrack` / `TensTI{4}` rule), register the extra dispatch
    rule at the end of your sub-module file via `import ..Core: _resolve_algo`.
 5. Add at least one unit test under `test/<SubModule>/`.

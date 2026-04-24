@@ -51,7 +51,7 @@ end
 Elliptic: ``\\mathbb H = \\tfrac{3}{4}(\\hat n ⊗ˢ \\mathbf B ⊗ˢ \\hat n)``.
 """
 function _compliance_from_B_elliptic(crack::EllipticCrack, B)
-    n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    n̂ = TensND.tens_basis(crack_basis(crack), 3)
     T = eltype(B)
     return (3 * one(T) / 4) * (n̂ ⊗ˢ B ⊗ˢ n̂)
 end
@@ -62,7 +62,7 @@ end
 Ribbon: ``\\mathbb H = \\tfrac{2}{\\pi}(\\hat n ⊗ˢ \\mathbf B ⊗ˢ \\hat n)``.
 """
 function _compliance_from_B_ribbon(crack::RibbonCrack, B)
-    n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    n̂ = TensND.tens_basis(crack_basis(crack), 3)
     T = eltype(B)
     return (2 * one(T) / T(π)) * (n̂ ⊗ˢ B ⊗ˢ n̂)
 end
@@ -86,7 +86,7 @@ with the correct V-formula Hill tensor limit
 ``\\mathbf P(0) = \\hat{\\mathbf n}\\otimes\\hat{\\mathbf n}/k_{nn}``).
 """
 function _resistivity_from_b_elliptic(crack::EllipticCrack, b, _K₀)
-    n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    n̂ = TensND.tens_basis(crack_basis(crack), 3)
     T = eltype(n̂)
     return (T(3) / T(4) * b) * (n̂ ⊗ n̂)
 end
@@ -98,7 +98,7 @@ Ribbon: ``\\mathbf R = \\tfrac{2}{\\pi}\\,b\\,\\hat{\\mathbf n}
 \\otimes\\hat{\\mathbf n}``.
 """
 function _resistivity_from_b_ribbon(crack::RibbonCrack, b, _K₀)
-    n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    n̂ = TensND.tens_basis(crack_basis(crack), 3)
     T = eltype(n̂)
     return (T(2) / T(π) * b) * (n̂ ⊗ n̂)
 end

@@ -57,7 +57,7 @@ abstract type MaterialSymmetry end
 "Isotropic material (TensND `TensISO`)."
 struct IsotropicSym <: MaterialSymmetry end
 
-"Transversely isotropic material (TensND `TensWalpole` / `TensTI`)."
+"Transversely isotropic material (TensND `TensTI{4}` / `TensTI`)."
 struct TransverselyIsotropicSym <: MaterialSymmetry end
 
 "Orthotropic material (TensND `TensOrtho`)."
@@ -73,19 +73,19 @@ struct GeneralAnisotropicSym <: MaterialSymmetry end
 
 Return the [`MaterialSymmetry`](@ref) trait corresponding to the TensND
 tensor `C₀`.  Dispatches on the concrete TensND type: `TensISO` →
-`IsotropicSym`, `TensWalpole` → `TransverselyIsotropicSym`, `TensOrtho`
+`IsotropicSym`, `TensTI{4}` → `TransverselyIsotropicSym`, `TensOrtho`
 → `OrthotropicSym`, anything else → `GeneralAnisotropicSym`.
 """
 function material_symmetry(::TensND.TensISO)
     return IsotropicSym()
 end
 
-# `TensWalpole` and `TensOrtho` may or may not exist in any given TensND
+# `TensTI{4}` and `TensOrtho` may or may not exist in any given TensND
 # release — guard the method definitions with `isdefined` so the package
 # still loads if those symbols have been renamed upstream.
 
-if isdefined(TensND, :TensWalpole)
-    @eval material_symmetry(::TensND.TensWalpole) = TransverselyIsotropicSym()
+if isdefined(TensND, :TensTI)
+    @eval material_symmetry(::TensND.TensTI{4}) = TransverselyIsotropicSym()
 end
 
 if isdefined(TensND, :TensOrtho)

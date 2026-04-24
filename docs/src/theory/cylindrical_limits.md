@@ -15,7 +15,7 @@ transverse semi-axes (along ``\hat{\mathbf e}_2`` and
 ``\hat{\mathbf e}_3``). The family contains two shape traits:
 
 - `CircularCylindrical` when ``b = c`` — transversely isotropic
-  response, returned as a `TensWalpole` with axis ``\hat{\mathbf e}_1``;
+  response, returned as a `TensTI{4}` with axis ``\hat{\mathbf e}_1``;
 - `EllipticCylindrical` when ``b > c`` — orthotropic response,
   returned as a `TensOrtho`.
 

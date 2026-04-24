@@ -240,7 +240,7 @@ end
 crack_basis(c::MFH_Core.AbstractCrack) = c.basis
 
 "Return the unit normal ``\\hat{\\mathbf n}`` of the crack plane."
-crack_normal(c::MFH_Core.AbstractCrack) = TensND.tensbasis(c.basis, 3)
+crack_normal(c::MFH_Core.AbstractCrack) = TensND.tens_basis(c.basis, 3)
 
 """
     aspect_ratio(c)

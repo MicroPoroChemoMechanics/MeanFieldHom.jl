@@ -183,7 +183,7 @@ const C_tric_KM = [
    -0.249878 -0.161806 -0.249375  0.123902   0.442613  -0.120333
     0.038079  0.0734051 0.0735958 -0.227447 -0.120333   0.448281
 ]
-const C_tric = invKM(C_tric_KM, CanonicalBasis{3, Float64}())
+const C_tric = inv_KM(C_tric_KM, CanonicalBasis{3, Float64}())
 
 const C_iso_py   = stiffness_to_echoes(KM(C_iso))
 const C_cubic_py = stiffness_to_echoes(KM(C_cubic))
@@ -714,7 +714,7 @@ let ell = Ellipsoid(2.0, 1.0, 0.5), basis = CanonicalBasis{3, Float64}()
             if i != j
                 C[j, i] += δ
             end
-            return KM(change_tens_canon(hill_tensor(ell, invKM(C, basis); method = :decuhr)))
+            return KM(change_tens_canon(hill_tensor(ell, inv_KM(C, basis); method = :decuhr)))
         end
         return ForwardDiff.derivative(f, 0.0)
     end

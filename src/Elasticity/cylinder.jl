@@ -180,7 +180,7 @@ end
 # ── Shape helpers ────────────────────────────────────────────────────────────
 
 "Return the spatial dimension of the cylinder (always 3)."
-getdim(::Cylinder) = 3
+get_dim(::Cylinder) = 3
 
 "Return the `i`-th transverse semi-axis (1-indexed: 1 → `b`, 2 → `c`)."
 semi_axis(cyl::Cylinder, i::Int) = cyl.semi_axes[i]

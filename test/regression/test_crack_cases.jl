@@ -100,7 +100,7 @@ using LinearAlgebra
         pc = PennyCrack(1.0)
         B_p = cod_tensor(pc, C₀)
         H_p = compliance_contribution(pc, C₀)
-        n̂ = tensbasis(crack_basis(pc), 3)
+        n̂ = tens_basis(crack_basis(pc), 3)
         expected_H_p = (3 / 4) * (n̂ ⊗ˢ B_p ⊗ˢ n̂)
         for i in 1:3, j in 1:3, kk in 1:3, l in 1:3
             @test H_p[i, j, kk, l] ≈ expected_H_p[i, j, kk, l] rtol = 1.0e-12
@@ -112,7 +112,7 @@ using LinearAlgebra
         r = RibbonCrack(1.0)
         B_r = cod_tensor(r, C₀)
         H_r = compliance_contribution(r, C₀)
-        n̂r = tensbasis(crack_basis(r), 3)
+        n̂r = tens_basis(crack_basis(r), 3)
         expected_H_r = (2 / π) * (n̂r ⊗ˢ B_r ⊗ˢ n̂r)
         for i in 1:3, j in 1:3, kk in 1:3, l in 1:3
             @test H_r[i, j, kk, l] ≈ expected_H_r[i, j, kk, l] rtol = 1.0e-12
@@ -205,7 +205,7 @@ using LinearAlgebra
 
         b = 0.5
         r = RibbonCrack(b)
-        e1, e2, e3 = tensbasis(CanonicalBasis{3, Float64}())
+        e1, e2, e3 = tens_basis(CanonicalBasis{3, Float64}())
         Σ = e3 ⊗ˢ e3
 
         𝐊, modes = sif(r, C₀, Σ)
@@ -224,7 +224,7 @@ using LinearAlgebra
         C₀ = TensISO{3}(3k, 2μ)
 
         pc = PennyCrack(1.0)
-        e1, e2, e3 = tensbasis(CanonicalBasis{3, Float64}())
+        e1, e2, e3 = tens_basis(CanonicalBasis{3, Float64}())
         Σ = e3 ⊗ˢ e3
 
         d = dif(pc, C₀, Σ)

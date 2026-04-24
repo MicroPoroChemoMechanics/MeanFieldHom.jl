@@ -60,8 +60,8 @@ See the package documentation for the full derivation.
 """
 function extract_ti_moduli(C₀, n̂)
     𝕊 = inv(C₀)
-    ℬ_current = TensND.getbasis(𝕊)
-    𝕊_rot = TensND.tensbasis(ℬ_current, 3) == n̂ ? 𝕊 :
+    ℬ_current = TensND.get_basis(𝕊)
+    𝕊_rot = TensND.tens_basis(ℬ_current, 3) == n̂ ? 𝕊 :
         TensND.change_tens(
             𝕊,
             TensND.Basis(TensND.angles(TensND.components_canon(n̂))...)

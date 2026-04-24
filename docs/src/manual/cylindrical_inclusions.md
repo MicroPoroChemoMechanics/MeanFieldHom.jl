@@ -58,7 +58,7 @@ C_iso = TensISO{3}(3K, 2μ)
 
 cyl = Cylinder(2.0, 1.0)
 P   = hill_tensor(cyl, C_iso)        # TensOrtho (elliptic)
-P_c = hill_tensor(Cylinder(1.5), C_iso)  # TensWalpole (circular, TI axis e₁)
+P_c = hill_tensor(Cylinder(1.5), C_iso)  # TensTI{4} (circular, TI axis e₁)
 ```
 
 All components involving the cylinder axis (`P_{11kl}`) are exactly
@@ -94,7 +94,7 @@ transverse 2×2 sub-matrix, reusing the 2D Newton potentials.
 
 ```julia
 IA = tens_IA(cyl)   # 2nd-order, Iₐ = 0, sum = 1
-UA = tens_UA(cyl)   # 4th-order — TensWalpole (circular) or TensOrtho (elliptic)
+UA = tens_UA(cyl)   # 4th-order — TensTI{4} (circular) or TensOrtho (elliptic)
 VA = tens_VA(cyl)
 ```
 

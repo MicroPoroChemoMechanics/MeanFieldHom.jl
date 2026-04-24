@@ -7,7 +7,7 @@
 #    julia --project=. scripts/11_cylinder.jl
 #
 #  Sections:
-#   § 1  Circular cylinder (b = c) in isotropic matrix — TensWalpole output
+#   § 1  Circular cylinder (b = c) in isotropic matrix — TensTI{4} output
 #   § 2  Elliptic cylinder (b > c) in isotropic matrix — TensOrtho output
 #   § 3  Anisotropic matrix — 1D quadrature path
 #   § 4  Redirection Ellipsoid(Inf, …) → Cylinder

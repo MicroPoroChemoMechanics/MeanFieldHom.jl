@@ -17,13 +17,13 @@ using Plots
 # TI moduli  (E₁=E, E₃=H·E₁, ν₁₂=ν₁, ν₃₁=H·ν₂, G₃₁=Γ·E₁/(2(1+ν₁₂)))
 E_, H_, ν₁, ν₂, Γ_ = 1.0, 2.0, 0.4, 0.3, 3.0
 
-n̂  = tensbasis(CanonicalBasis{3,Float64}(), 3)
+n̂  = tens_basis(CanonicalBasis{3,Float64}(), 3)
 E₁ = E_
 E₃ = H_ * E₁
 ν₁₂ = ν₁
 ν₃₁ = H_ * ν₂
 G₃₁ = Γ_ * E₁ / (2 * (1 + ν₁₂))
-S  = tensTI(inv(E₁), -ν₁₂/E₁, -ν₃₁/E₃, inv(E₃), inv(4G₃₁), n̂)
+S  = tens_TI(inv(E₁), -ν₁₂/E₁, -ν₃₁/E₃, inv(E₃), inv(4G₃₁), n̂)
 C₀ = inv(S)
 
 # Penny in TI isotropy plane

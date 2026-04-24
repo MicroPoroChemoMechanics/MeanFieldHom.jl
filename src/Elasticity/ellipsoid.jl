@@ -311,7 +311,7 @@ end
 # ── Shape helpers used by scripts and downstream code ──────────────────────
 
 "Return the spatial dimension of the ellipsoid."
-getdim(::Ellipsoid{dim}) where {dim} = dim
+get_dim(::Ellipsoid{dim}) where {dim} = dim
 
 "Return the i-th semi-axis (1-indexed)."
 semi_axis(ell::Ellipsoid, i::Int) = ell.semi_axes[i]
