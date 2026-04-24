@@ -67,7 +67,7 @@ non-uniform axial strain.
 
 For a general anisotropic matrix the call
 `hill_tensor(cyl, C_aniso)` transparently routes to a dedicated 1D
-QuadGK quadrature over the transverse plane.  The `method=:residue`
+QuadGK quadrature over the transverse plane.  The `method=:residues`
 option is remapped to the same routine (the residue algorithm is not
 applicable to a cylinder — see
 [theory / cylindrical limits](../theory/cylindrical_limits.md)).

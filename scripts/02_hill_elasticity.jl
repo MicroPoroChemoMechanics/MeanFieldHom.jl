@@ -149,24 +149,24 @@ let
 
     # Warm-up (avoid counting compilation)
     let _ell = Ellipsoid(2.0, 1.0, 1.0)
-        hill_tensor(_ell, C_cubic; method=:residue, abstol=1e-8, reltol=1e-6)
+        hill_tensor(_ell, C_cubic; method=:residues, abstol=1e-8, reltol=1e-6)
         hill_tensor(_ell, C_cubic; method=:decuhr,  abstol=1e-8, reltol=1e-6)
     end
 
     ell = Ellipsoid(3.0, 1.0, 1.0)
     println("\n  Prolate spheroid (a=3, b=c=1) in cubic matrix:")
 
-    t_res = @elapsed P_res = hill_tensor(ell, C_cubic; method=:residue, abstol=1e-8, reltol=1e-6)
+    t_res = @elapsed P_res = hill_tensor(ell, C_cubic; method=:residues, abstol=1e-8, reltol=1e-6)
     t_dcr = @elapsed P_dcr = hill_tensor(ell, C_cubic; method=:decuhr,  abstol=1e-8, reltol=1e-6)
 
-    @printf "  :residue  time=%.4f s\n" t_res
+    @printf "  :residues  time=%.4f s\n" t_res
     @printf "  :decuhr   time=%.4f s\n" t_dcr
 
     max_err = maximum(abs(P_res[i,j,k,l]-P_dcr[i,j,k,l]) for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
     @printf "  Max |P_residue − P_decuhr| = %.3e MPa⁻¹\n" max_err
 
-    println("\n  Voigt[:residue] vs Voigt[:decuhr]  (×10⁻⁶ MPa⁻¹):")
-    println("        label     :residue    :decuhr      diff")
+    println("\n  Voigt[:residues] vs Voigt[:decuhr]  (×10⁻⁶ MPa⁻¹):")
+    println("        label     :residues    :decuhr      diff")
     for (I,(i,j)) in enumerate(voigt_idx), (J,(k,l)) in enumerate(voigt_idx)
         J >= I || continue
         vr = P_res[i,j,k,l]; vd = P_dcr[i,j,k,l]

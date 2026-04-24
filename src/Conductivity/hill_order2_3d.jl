@@ -69,11 +69,11 @@ function _hill_order2_3d_aniso(ell::Ellipsoid{3}, K₀)
     F2 = svd(A * invsqrt_K)
     perm = sortperm(F2.S, rev = true)
     s = F2.S[perm]
-    U = F2.U[:, perm]
+    V = F2.V[:, perm]
 
     Iv, _ = MFH_Core.newton_potential_3d(s[1], s[2], s[3])
 
-    P₀_arr = U * Diagonal([Iv[1], Iv[2], Iv[3]] ./ (4π)) * U'
+    P₀_arr = V * Diagonal([Iv[1], Iv[2], Iv[3]] ./ (4π)) * V'
     P_arr = invsqrt_K * P₀_arr * invsqrt_K
 
     return TensND.Tens(P_arr, TensND.CanonicalBasis{3, Float64}())
@@ -143,11 +143,11 @@ function _hill_order2_3d_aniso(cyl::Cylinder, K₀)
     F2 = svd(A2 * invsqrt_K)
     perm = sortperm(F2.S, rev = true)
     s = F2.S[perm]
-    U = F2.U[:, perm]
+    V = F2.V[:, perm]
 
     Iv2 = MFH_Core.newton_potential_2d(s[1], s[2])
 
-    P_arr_2d_princ = U * Diagonal([Iv2[1], Iv2[2]] ./ (2π)) * U'
+    P_arr_2d_princ = V * Diagonal([Iv2[1], Iv2[2]] ./ (2π)) * V'
     P_arr_2d = invsqrt_K * P_arr_2d_princ * invsqrt_K
 
     P_arr_3d_princ = zeros(T, 3, 3)

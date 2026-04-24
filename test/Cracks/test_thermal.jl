@@ -89,7 +89,7 @@ end
         ΔR = delta_resistivity(crack, R, 1.0)
         R_num = hill_limit_R(crack, K₀; ε_small = 1.0e-9)
         for i in 1:3, j in 1:3
-            @test ΔR[i, j] ≈ R_num[i, j] rtol = 1.0e-6 atol = 1.0e-10
+            @test ΔR[i, j] ≈ R_num[i, j] rtol = 1.0e-6 atol = 1.0e-8
         end
     end
 

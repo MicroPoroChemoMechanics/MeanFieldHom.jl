@@ -59,8 +59,8 @@ def py_conductivity_tensor(mat33):
     return echoes.tensor(np.asarray(mat33, dtype=float))
 
 def py_hill(a, b, c, C, algo, epsroots=1e-6, epsrel=1e-6, epsabs=1e-6,
-            maxnb=200000):
-    ell = echoes.ellipsoidal(np.array([a, b, c, 0.0, 0.0, 0.0]))
+            maxnb=200000, theta=0.0, phi=0.0, psi=0.0):
+    ell = echoes.ellipsoidal(np.array([a, b, c, theta, phi, psi]))
     try:
         H = echoes.hill(ell, C, algo=_ALGO[algo],
                         epsrel=epsrel, epsabs=epsabs,
@@ -231,8 +231,10 @@ acoustic polynomial has quasi-multiple roots that break RESIDUES.
 """
 function bench_hill(label, ell_jl, semi_axes, C_jl, C_py;
                     jl_method = :auto, is_iso = false,
-                    echoes_algos = ("RESIDUES", "NUMINT3D"))
+                    echoes_algos = ("RESIDUES", "NUMINT3D"),
+                    euler_angles = (0.0, 0.0, 0.0))
     a, b, c = semi_axes
+    θ_ea, φ_ea, ψ_ea = euler_angles
 
     P_jl    = hill_tensor(ell_jl, C_jl; method = jl_method)
     P_jl_KM = KM(change_tens_canon(P_jl))
@@ -245,7 +247,8 @@ function bench_hill(label, ell_jl, semi_axes, C_jl, C_py;
     @printf "    t(Julia) = %s\n" fmt_time(tJ)
 
     if is_iso
-        P_py = to_jlmat(py_hill(a, b, c, C_py, "DEFAULT"))
+        P_py = to_jlmat(py_hill(a, b, c, C_py, "DEFAULT";
+                                theta = θ_ea, phi = φ_ea, psi = ψ_ea))
         if P_py === nothing
             @printf "    Echoes (analytical) : FAIL (C++ exception)\n"
             push!(hill_rows, (label = label, algo = "analytical", status = "FAIL",
@@ -253,7 +256,8 @@ function bench_hill(label, ell_jl, semi_axes, C_jl, C_py;
                               tJ = tJ, tE = NaN, ratio = NaN))
         else
             maxabs, maxrel = compare(P_jl_KM, P_py)
-            tE = @belapsed py_hill($a, $b, $c, $C_py, "DEFAULT")
+            tE = @belapsed py_hill($a, $b, $c, $C_py, "DEFAULT";
+                                   theta = $θ_ea, phi = $φ_ea, psi = $ψ_ea)
             @printf "    Echoes (analytical) : max|Δ| = %.3e  ε_rel = %.3e  t = %s  ratio E/J = %.2f×\n" maxabs maxrel fmt_time(tE) (tE / tJ)
             push!(hill_rows, (label = label, algo = "analytical", status = "OK",
                               maxabs = maxabs, maxrel = maxrel,
@@ -263,7 +267,8 @@ function bench_hill(label, ell_jl, semi_axes, C_jl, C_py;
     end
 
     for algo in echoes_algos
-        P_py = to_jlmat(py_hill(a, b, c, C_py, algo))
+        P_py = to_jlmat(py_hill(a, b, c, C_py, algo;
+                                theta = θ_ea, phi = φ_ea, psi = ψ_ea))
         if P_py === nothing
             @printf "    Echoes %s : FAIL (C++ exception)\n" algo
             push!(hill_rows, (label = label, algo = algo, status = "FAIL",
@@ -272,7 +277,8 @@ function bench_hill(label, ell_jl, semi_axes, C_jl, C_py;
             continue
         end
         maxabs, maxrel = compare(P_jl_KM, P_py)
-        tE = @belapsed py_hill($a, $b, $c, $C_py, $algo)
+        tE = @belapsed py_hill($a, $b, $c, $C_py, $algo;
+                               theta = $θ_ea, phi = $φ_ea, psi = $ψ_ea)
         @printf "    Echoes %-8s : max|Δ| = %.3e  ε_rel = %.3e  t = %s  ratio E/J = %.2f×\n" algo maxabs maxrel fmt_time(tE) (tE / tJ)
         push!(hill_rows, (label = label, algo = algo, status = "OK",
                           maxabs = maxabs, maxrel = maxrel,
@@ -294,7 +300,7 @@ bench_hill("Oblate a=b=5,c=1 / ISO",
 
 bench_hill("Prolate a=3,b=c=1 / cubic",
            Ellipsoid(3.0, 1.0, 1.0), (3.0, 1.0, 1.0),
-           C_cubic, C_cubic_py; jl_method = :residue,
+           C_cubic, C_cubic_py; jl_method = :residues,
            echoes_algos = ("NUMINT3D",))
 
 bench_hill("Prolate a=3,b=c=1 / cubic (Julia :decuhr)",
@@ -309,7 +315,7 @@ bench_hill("Prolate a=3,b=c=1 / cubic (Julia :nestedquadgk)",
 
 bench_hill("Triaxial a=2,b=1,c=0.5 / triclinic",
            Ellipsoid(2.0, 1.0, 0.5), (2.0, 1.0, 0.5),
-           C_tric, C_tric_py; jl_method = :residue)
+           C_tric, C_tric_py; jl_method = :residues)
 
 bench_hill("Triaxial a=2,b=1,c=0.5 / triclinic (Julia :decuhr)",
            Ellipsoid(2.0, 1.0, 0.5), (2.0, 1.0, 0.5),
@@ -318,6 +324,23 @@ bench_hill("Triaxial a=2,b=1,c=0.5 / triclinic (Julia :decuhr)",
 bench_hill("Triaxial a=2,b=1,c=0.5 / triclinic (Julia :nestedquadgk)",
            Ellipsoid(2.0, 1.0, 0.5), (2.0, 1.0, 0.5),
            C_tric, C_tric_py; jl_method = :nestedquadgk)
+
+# ─── With Euler angles (θ = π/4, φ = π/6, ψ = π/3) ──────────────────────────
+
+bench_hill("Rotated prolate a=5,b=c=1 / ISO  (π/4,π/6,π/3)",
+           Ellipsoid(5.0, 1.0, 1.0; euler_angles = (π/4, π/6, π/3)),
+           (5.0, 1.0, 1.0), C_iso, C_iso_py;
+           is_iso = true, euler_angles = (π/4, π/6, π/3))
+
+bench_hill("Rotated triaxial a=2,b=1,c=0.5 / triclinic (π/4,π/6,π/3)",
+           Ellipsoid(2.0, 1.0, 0.5; euler_angles = (π/4, π/6, π/3)),
+           (2.0, 1.0, 0.5), C_tric, C_tric_py;
+           jl_method = :residues, euler_angles = (π/4, π/6, π/3))
+
+bench_hill("Rotated triaxial a=2,b=1,c=0.5 / triclinic :decuhr (π/4,π/6,π/3)",
+           Ellipsoid(2.0, 1.0, 0.5; euler_angles = (π/4, π/6, π/3)),
+           (2.0, 1.0, 0.5), C_tric, C_tric_py;
+           jl_method = :decuhr, euler_angles = (π/4, π/6, π/3))
 
 # =============================================================================
 #  § 2  CRACK COMPLIANCE CONTRIBUTION H  (size-independent, Echoes convention)
@@ -391,9 +414,9 @@ function bench_crack(label, C_jl, C_py; jl_method = :auto, is_iso = false,
 end
 
 bench_crack("Penny / ISO",       C_iso,   C_iso_py; is_iso = true)
-bench_crack("Penny / cubic",     C_cubic, C_cubic_py; jl_method = :residue,
+bench_crack("Penny / cubic",     C_cubic, C_cubic_py; jl_method = :residues,
             echoes_algos = ("NUMINT3D",))
-bench_crack("Penny / triclinic", C_tric,  C_tric_py;  jl_method = :residue)
+bench_crack("Penny / triclinic", C_tric,  C_tric_py;  jl_method = :residues)
 
 # =============================================================================
 #  § 3  HILL TENSOR P  (conductivity, 2nd order)
@@ -407,8 +430,10 @@ println("="^78)
 order2_as_matrix(P) = Float64[P[i, j] for i in 1:3, j in 1:3]
 
 function bench_hill_order2(label, ell_jl, semi_axes, K_jl, K_py; is_iso = false,
-                           echoes_algos = ("RESIDUES", "NUMINT3D"))
+                           echoes_algos = ("RESIDUES", "NUMINT3D"),
+                           euler_angles = (0.0, 0.0, 0.0))
     a, b, c = semi_axes
+    θ_ea, φ_ea, ψ_ea = euler_angles
 
     P_jl     = hill_tensor(ell_jl, K_jl)
     P_jl_mat = order2_as_matrix(change_tens_canon(P_jl))
@@ -428,7 +453,8 @@ function bench_hill_order2(label, ell_jl, semi_axes, K_jl, K_py; is_iso = false,
             @printf "    Sphere/iso analytical P[i,i] = 1/(3k) = %.6e  err(J) = %.2e\n" expected err
         end
 
-        P_py = to_jlmat(py_hill(a, b, c, K_py, "DEFAULT"))
+        P_py = to_jlmat(py_hill(a, b, c, K_py, "DEFAULT";
+                                theta = θ_ea, phi = φ_ea, psi = ψ_ea))
         if P_py === nothing
             @printf "    Echoes (analytical) : FAIL (C++ exception)\n"
             push!(hill2_rows, (label = label, algo = "analytical", status = "FAIL",
@@ -436,7 +462,8 @@ function bench_hill_order2(label, ell_jl, semi_axes, K_jl, K_py; is_iso = false,
                                tJ = tJ, tE = NaN, ratio = NaN))
         else
             maxabs, maxrel = compare(P_jl_mat, P_py)
-            tE = @belapsed py_hill($a, $b, $c, $K_py, "DEFAULT")
+            tE = @belapsed py_hill($a, $b, $c, $K_py, "DEFAULT";
+                                   theta = $θ_ea, phi = $φ_ea, psi = $ψ_ea)
             @printf "    Echoes (analytical) : max|Δ| = %.3e  ε_rel = %.3e  t = %s  ratio E/J = %.2f×\n" maxabs maxrel fmt_time(tE) (tE / tJ)
             push!(hill2_rows, (label = label, algo = "analytical", status = "OK",
                                maxabs = maxabs, maxrel = maxrel,
@@ -446,7 +473,8 @@ function bench_hill_order2(label, ell_jl, semi_axes, K_jl, K_py; is_iso = false,
     end
 
     for algo in echoes_algos
-        P_py = to_jlmat(py_hill(a, b, c, K_py, algo))
+        P_py = to_jlmat(py_hill(a, b, c, K_py, algo;
+                                theta = θ_ea, phi = φ_ea, psi = ψ_ea))
         if P_py === nothing
             @printf "    Echoes %s : FAIL (C++ exception)\n" algo
             push!(hill2_rows, (label = label, algo = algo, status = "FAIL",
@@ -455,7 +483,8 @@ function bench_hill_order2(label, ell_jl, semi_axes, K_jl, K_py; is_iso = false,
             continue
         end
         maxabs, maxrel = compare(P_jl_mat, P_py)
-        tE = @belapsed py_hill($a, $b, $c, $K_py, $algo)
+        tE = @belapsed py_hill($a, $b, $c, $K_py, $algo;
+                               theta = $θ_ea, phi = $φ_ea, psi = $ψ_ea)
         @printf "    Echoes %-8s : max|Δ| = %.3e  ε_rel = %.3e  t = %s  ratio E/J = %.2f×\n" algo maxabs maxrel fmt_time(tE) (tE / tJ)
         push!(hill2_rows, (label = label, algo = algo, status = "OK",
                            maxabs = maxabs, maxrel = maxrel,
@@ -475,6 +504,11 @@ bench_hill_order2("Oblate a=b=5,c=1 / K iso",
 bench_hill_order2("Triaxial a=2,b=1,c=0.5 / K aniso",
                   Ellipsoid(2.0, 1.0, 0.5), (2.0, 1.0, 0.5),
                   K_aniso, K_aniso_py)
+
+bench_hill_order2("Rotated triaxial a=2,b=1,c=0.5 / K aniso (π/4,π/6,π/3)",
+                  Ellipsoid(2.0, 1.0, 0.5; euler_angles = (π/4, π/6, π/3)),
+                  (2.0, 1.0, 0.5), K_aniso, K_aniso_py;
+                  euler_angles = (π/4, π/6, π/3))
 
 # =============================================================================
 #  § 4  HILL DERIVATIVE ∂P/∂θ  (elasticity only)

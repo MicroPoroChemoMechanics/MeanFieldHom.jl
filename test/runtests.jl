@@ -19,6 +19,7 @@ using MeanFieldHom
         include("Elasticity/test_eshelby.jl")
         include("Elasticity/test_localization.jl")
         include("Elasticity/test_contribution.jl")
+        include("Elasticity/test_hill_nestedquadgk_oblate.jl")
     end
 
     @testset "Cracks" begin

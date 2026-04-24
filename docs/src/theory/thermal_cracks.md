@@ -16,7 +16,7 @@ vector (heat flux or gradient) rather than a symmetric 2-tensor.
 | Stiffness ``\mathbb C`` — 4-tensor, 21 independent components    | Conductivity ``\mathbf K_0`` — 2-tensor, 6 independent components       |
 | Hill tensor ``\mathbb P`` — 4-tensor                             | Hill tensor ``\mathbf P`` — 2-tensor                                    |
 | COD tensor ``\mathbf B`` — **2-tensor** (6 components)           | COD scalar ``b`` — **scalar** (1 component)                             |
-| Kachanov factorisation ``\mathbb H = k\,\hat{\mathbf n}\stackrel{s}{\otimes}\mathbf B\stackrel{s}{\otimes}\hat{\mathbf n}``, ``k=3/4`` (elliptic), ``k=2/\pi`` (ribbon) | Rank-1 factorisation ``\mathbf R = k\,b\,\hat{\mathbf w}\otimes\hat{\mathbf w}``, same ``k``, ``\hat{\mathbf w}\parallel\mathbf K_0^{-1/2}\hat{\mathbf n}`` |
+| Kachanov factorisation ``\mathbb H = k\,\hat{\mathbf n}\stackrel{s}{\otimes}\mathbf B\stackrel{s}{\otimes}\hat{\mathbf n}``, ``k=3/4`` (elliptic), ``k=2/\pi`` (ribbon) | Rank-1 factorisation ``\mathbf R = k\,b\,\hat{\mathbf n}\otimes\hat{\mathbf n}``, same ``k`` |
 | Dilute contribution ``\Delta\mathbb S = (4\pi/3)\varepsilon^{3\mathrm d}\mathbb H`` (elliptic), ``= \pi\varepsilon^{2\mathrm d}\mathbb H`` (ribbon) | Dilute contribution ``\Delta\mathbf R = (4\pi/3)\varepsilon^{3\mathrm d}\mathbf R`` (elliptic), ``= \pi\varepsilon^{2\mathrm d}\mathbf R`` (ribbon) |
 | Sextic acoustic polynomial (Masson 2008)                         | Quadratic acoustic form ``\xi\cdot\mathbf K_0\cdot\xi`` → **analytical** |
 | Stress intensity factors ``K_I, K_{II}, K_{III}``                | Heat-flux intensity factor ``K_T`` — scalar (mode I analogue only)      |
@@ -30,14 +30,13 @@ single scalar ``b`` captures the full crack flexibility — as opposed to
 the 6-component ``\mathbf B`` of the 4-tensor problem, which has to
 resolve sliding and shear modes.
 
-Why a rank-1 direction ``\hat{\mathbf w} \ne \hat{\mathbf n}`` in
-general?  Because the null space of the block ``\mathbf K_0 - \mathbf
-K_0\mathbf P(0)\mathbf K_0`` — which emerges in the ``\omega\to 0``
-limit of the Hill tensor — is aligned with
-``\mathbf K_0^{-1/2}\hat{\mathbf n}``, **not** with ``\hat{\mathbf n}``.
-The two coincide whenever ``\hat{\mathbf n}`` is an eigenvector of
-``\mathbf K_0`` (isotropic matrix, TI aligned, orthotropic with
-``\hat{\mathbf n}`` along a symmetry axis).
+Why always ``\hat{\mathbf n}``?  The null space of the block
+``\mathbf K_0 - \mathbf K_0\mathbf P(0)\mathbf K_0`` — which emerges
+in the ``\omega\to 0`` limit of the Hill tensor with the correct
+V-formula (right singular vectors of
+``\mathbf A\cdot\mathbf K_0^{-1/2}``) — is spanned by
+``\hat{\mathbf n}`` for any ``\mathbf K_0`` (see derivation below).
+The scalar ``b`` captures all the anisotropy of the matrix.
 
 ## Crack geometry
 
@@ -53,41 +52,47 @@ Same geometric families as in the elasticity chapter:
 
 Mirror of the elasticity derivation of
 [Barthélémy (2009)](@cite barthelemyIJSS2009).  For a flat ellipsoidal
-inclusion of aspect ratio ``\omega\to 0``, the 2nd-order Hill tensor
-admits the expansion
+inclusion of aspect ratio ``\omega\to 0``, the 2nd-order Hill tensor is
+computed via the formula
+``\mathbf P(\mathbf A,\mathbf K_0)
+= \mathbf K_0^{-1/2}\cdot\mathbf I^{\mathbf A\cdot\mathbf K_0^{-1/2}}
+  \cdot\mathbf K_0^{-1/2}``
+([Giraud & Gruescu 2019](@cite giraudMOM2019)), where
+``\mathbf I^{\mathbf B}`` is assembled in the eigenbasis of
+``\mathbf B^T\mathbf B`` (right singular vectors of
+``\mathbf B = \mathbf A\cdot\mathbf K_0^{-1/2}``).  As ``\omega\to 0``:
+
+- The null vector of ``\mathbf B^T\mathbf B`` is
+  ``\mathbf v_3 = \mathbf K_0^{1/2}\hat{\mathbf n}/\sqrt{k_{nn}}``,
+  ``k_{nn}=\hat{\mathbf n}\cdot\mathbf K_0\hat{\mathbf n}``.
+- The corresponding Newton potential ``I_3\to 4\pi`` while
+  ``I_1, I_2\to 0``, so
 
 ```math
-\mathbf P(\omega) = \mathbf P(0) + \omega\,\boldsymbol\Pi + o(\omega),
-\qquad
-\mathbf P(0) = \bigl(\mathbf K_0^{-1/2}\hat{\mathbf n}\bigr)
-               \otimes
-               \bigl(\mathbf K_0^{-1/2}\hat{\mathbf n}\bigr)
+\mathbf P(0) = \mathbf K_0^{-1/2}\mathbf v_3\otimes\mathbf v_3\mathbf K_0^{-1/2}
+             = \frac{\hat{\mathbf n}\otimes\hat{\mathbf n}}{k_{nn}}
 ```
 
-which is rank-1.  The acoustic block is then
+which is rank-1 along ``\hat{\mathbf n}``.  The acoustic block is then
 
 ```math
 \boldsymbol\Lambda(\omega) = \mathbf K_0 - \mathbf K_0\mathbf P(\omega)\mathbf K_0
                            = \boldsymbol\Lambda(0) + \omega\,\boldsymbol\Lambda_1 + o(\omega),
 ```
 
-with ``\boldsymbol\Lambda(0) = \mathbf K_0 - (\mathbf K_0^{1/2}\hat{\mathbf n})
-(\mathbf K_0^{1/2}\hat{\mathbf n})^T``.  Its null space is spanned by
-``\mathbf v = \mathbf K_0^{-1/2}\hat{\mathbf n}`` (one-dimensional in
-the 2-tensor case — to be contrasted with the 3-dimensional null space
-in the elasticity problem).  The limit
+with ``\boldsymbol\Lambda(0) = \mathbf K_0 - (\mathbf K_0\hat{\mathbf n})\otimes(\mathbf K_0\hat{\mathbf n})/k_{nn}``.
+Its null space is spanned by ``\hat{\mathbf n}`` (one-dimensional in the
+2-tensor case — to be contrasted with the 3-dimensional null space in
+the elasticity problem).  The limit
 
 ```math
 \mathbf R
 = \lim_{\omega\to 0}\omega\,\boldsymbol\Lambda(\omega)^{-1}
-= \frac{1}{Y_{22}}\,\hat{\mathbf w}\otimes\hat{\mathbf w},
-\qquad
-\hat{\mathbf w} = \frac{\mathbf K_0^{-1/2}\hat{\mathbf n}}
-                        {\sqrt{\hat{\mathbf n}\cdot\mathbf K_0^{-1}\hat{\mathbf n}}}
+= \frac{1}{Y_{nn}}\,\hat{\mathbf n}\otimes\hat{\mathbf n},
 ```
 
-is rank-1, with ``Y_{22} = \mathbf v\cdot\boldsymbol\Lambda_1\cdot\mathbf v /
-\|\mathbf v\|^2``.
+is rank-1 along ``\hat{\mathbf n}``, with
+``Y_{nn} = \hat{\mathbf n}\cdot\boldsymbol\Lambda_1\cdot\hat{\mathbf n}``.
 
 ## Closed-form COD scalar ``b``
 
@@ -125,9 +130,8 @@ first-kind integral parameter is ``k_t^{2} = 1 - \eta_t^{2}``.  Then
 ```math
 \boxed{\;
 b_{\text{ell}}^{\text{aniso}}
-= \frac{\sigma_2\,(\hat{\mathbf n}\cdot\mathbf K_0^{-1}\hat{\mathbf n})
-         \,\sqrt{\hat{\mathbf n}\cdot\mathbf K_0\hat{\mathbf n}}}
-       {\pi\,a_\text{max}\,\mathcal E_{\eta_t}}
+= \frac{\sigma_2}
+       {\pi\,a_\text{max}\,\sqrt{\hat{\mathbf n}\cdot\mathbf K_0\hat{\mathbf n}}\,\mathcal E_{\eta_t}}
 \;},
 \qquad
 a_\text{max} = \max(a,b).
@@ -135,8 +139,7 @@ a_\text{max} = \max(a,b).
 
 It reduces to the isotropic formula above when
 ``\mathbf K_0 = k_0\,\mathbf 1`` (then ``\sigma_2 = \min(a,b)/\sqrt{k_0}``
-and ``\hat{\mathbf n}\cdot\mathbf K_0\hat{\mathbf n} = k_0``,
-``\hat{\mathbf n}\cdot\mathbf K_0^{-1}\hat{\mathbf n} = 1/k_0``).
+and ``\hat{\mathbf n}\cdot\mathbf K_0\hat{\mathbf n} = k_0``).
 For a TI matrix aligned with ``\hat{\mathbf n}``
 (``\mathbf K_0 = \mathrm{diag}(k_t, k_t, k_n)`` in the crack frame, penny):
 
@@ -167,10 +170,10 @@ assembled from the scalar ``b`` and the effective direction
 ``\hat{\mathbf w}``:
 
 ```math
-\mathbf R^{\mathcal E} = \tfrac{3}{4}\,b\,\hat{\mathbf w}\otimes\hat{\mathbf w}
+\mathbf R^{\mathcal E} = \tfrac{3}{4}\,b\,\hat{\mathbf n}\otimes\hat{\mathbf n}
 \qquad\text{(elliptic)},
 \qquad
-\mathbf R^{\mathcal R} = \tfrac{2}{\pi}\,b\,\hat{\mathbf w}\otimes\hat{\mathbf w}
+\mathbf R^{\mathcal R} = \tfrac{2}{\pi}\,b\,\hat{\mathbf n}\otimes\hat{\mathbf n}
 \qquad\text{(ribbon)}.
 ```
 
@@ -178,7 +181,8 @@ The geometric prefactors ``3/4`` and ``2/\pi`` are the same as in the
 elasticity case (they come from ``cS/V`` evaluated on the ellipsoidal
 and ribbon geometries — see
 [Crack compliance and COD tensor](cod_tensors.md#Crack-compliance-H-and-COD-tensor-B)).
-In iso and aligned-TI cases ``\hat{\mathbf w} = \hat{\mathbf n}``.
+The rank-1 direction is always the crack normal ``\hat{\mathbf n}``,
+for any conductivity tensor ``\mathbf K_0``.
 
 [`compliance_contribution`](@ref)`(crack, K₀)` returns ``\mathbf R``
 directly.  The dilute resistivity correction to the effective

@@ -2,7 +2,7 @@ using Test
 using MeanFieldHom
 using TensND
 
-@testset "Cracks — :residue accuracy (post polish + vectorised QuadGK)" begin
+@testset "Cracks — :residues accuracy (post polish + vectorised QuadGK)" begin
 
     basis = TensND.CanonicalBasis{3, Float64}()
     δ(a, b) = a == b ? 1.0 : 0.0
@@ -30,9 +30,9 @@ using TensND
     ]
     C_tric = TensND.invKM(KM_tri, basis)
 
-    @testset "Penny / cubic — :residue vs :nestedquadgk" begin
+    @testset "Penny / cubic — :residues vs :nestedquadgk" begin
         crack = PennyCrack(1.0)
-        B_res = cod_tensor(crack, C_cubic; method = :residue)
+        B_res = cod_tensor(crack, C_cubic; method = :residues)
         B_nqg = cod_tensor(crack, C_cubic; method = :nestedquadgk, reltol = 1.0e-12)
 
         err = maximum(abs(B_res[i, j] - B_nqg[i, j]) for i in 1:3 for j in i:3)
@@ -40,9 +40,9 @@ using TensND
         @test err / scale < 1.0e-8
     end
 
-    @testset "Penny / triclinic — :residue vs :nestedquadgk" begin
+    @testset "Penny / triclinic — :residues vs :nestedquadgk" begin
         crack = PennyCrack(1.0)
-        B_res = cod_tensor(crack, C_tric; method = :residue)
+        B_res = cod_tensor(crack, C_tric; method = :residues)
         B_nqg = cod_tensor(crack, C_tric; method = :nestedquadgk, reltol = 1.0e-12)
 
         err = maximum(abs(B_res[i, j] - B_nqg[i, j]) for i in 1:3 for j in i:3)
@@ -50,9 +50,9 @@ using TensND
         @test err / scale < 1.0e-6
     end
 
-    @testset "Elliptic / cubic η=0.3 — :residue vs :nestedquadgk" begin
+    @testset "Elliptic / cubic η=0.3 — :residues vs :nestedquadgk" begin
         crack = EllipticCrack(1.0, 0.3)
-        B_res = cod_tensor(crack, C_cubic; method = :residue)
+        B_res = cod_tensor(crack, C_cubic; method = :residues)
         B_nqg = cod_tensor(crack, C_cubic; method = :nestedquadgk, reltol = 1.0e-12)
 
         err = maximum(abs(B_res[i, j] - B_nqg[i, j]) for i in 1:3 for j in i:3)

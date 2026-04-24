@@ -36,13 +36,13 @@ function showB(label, B)
 end
 
 pc    = PennyCrack(1.0)
-showB("Penny  — residue", cod_tensor(pc, C_aniso; method=:residue))
+showB("Penny  — residue", cod_tensor(pc, C_aniso; method=:residues))
 showB("Penny  — decuhr",  cod_tensor(pc, C_aniso; method=:decuhr))
 
 ec    = EllipticCrack(1.0, 0.3)
-showB("η=0.3  — residue", cod_tensor(ec, C_aniso; method=:residue))
+showB("η=0.3  — residue", cod_tensor(ec, C_aniso; method=:residues))
 showB("η=0.3  — decuhr",  cod_tensor(ec, C_aniso; method=:decuhr))
 
 r     = RibbonCrack(1.0)
-showB("Ribbon — residue", cod_tensor(r, C_aniso; method=:residue))
+showB("Ribbon — residue", cod_tensor(r, C_aniso; method=:residues))
 showB("Ribbon — decuhr",  cod_tensor(r, C_aniso; method=:decuhr))

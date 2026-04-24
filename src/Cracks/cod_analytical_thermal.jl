@@ -77,17 +77,16 @@ transformed in-plane aspect ratio
 ``\\eta_t = \\sigma_2/\\sigma_1 \\in (0,1]``.  Then
 
 ```
-b = σ₂ · (n̂·K₀⁻¹·n̂) · √(n̂·K₀·n̂) / (π · aₘₐₓ · 𝓔(√(1-η_t²))) ,
+b = σ₂ / (π · aₘₐₓ · √(n̂·K₀·n̂) · 𝓔(√(1-η_t²))) ,
 ```
 
-with ``a_\\text{max} = \\max(a,b)`` and the resistivity contribution
-rank-1 along ``\\hat{\\mathbf w} = \\mathbf K_0^{-1/2}\\hat{\\mathbf n}/
-\\sqrt{\\hat{\\mathbf n}\\cdot\\mathbf K_0^{-1}\\hat{\\mathbf n}}``
-(assembled by [`compliance_contribution`](@ref)).  Reduces to the iso
-formula ``b = \\eta/(\\pi k_0 \\mathcal E_\\eta)`` for
-``\\mathbf K_0 = k_0\\,\\mathbf 1`` (where ``\\hat{\\mathbf w} = \\hat
-{\\mathbf n}``), and to ``b = 2/(\\pi^2 \\sqrt{k_t k_n})`` for a penny
-crack in a TI matrix aligned with ``\\hat{\\mathbf n}``.
+with ``a_\\text{max} = \\max(a,b)``.  The resistivity contribution is
+assembled as ``\\mathbf R = \\tfrac{3}{4}\\,b\\,\\hat{\\mathbf n}
+\\otimes\\hat{\\mathbf n}`` by [`compliance_contribution`](@ref).
+Reduces to the iso formula ``b = \\eta/(\\pi k_0 \\mathcal E_\\eta)``
+for ``\\mathbf K_0 = k_0\\,\\mathbf 1``, and to
+``b = 2/(\\pi^2 \\sqrt{k_t k_n})`` for a penny crack in a TI matrix
+aligned with ``\\hat{\\mathbf n}``.
 """
 function _cod_aniso_ellipse_thermal(c::EllipticCrack, K₀)
     T_mat = eltype(K₀)
@@ -110,10 +109,9 @@ function _cod_aniso_ellipse_thermal(c::EllipticCrack, K₀)
 
     n̂ = R_crack[:, 3]
     k_nn = dot(n̂, K_arr * n̂)
-    k_nn_inv = dot(n̂, K_arr \ n̂)
     a_max = max(c.a, c.b)
 
-    return σ[2] * k_nn_inv * sqrt(k_nn) / (π * a_max * ℰ)
+    return σ[2] / (π * a_max * sqrt(k_nn) * ℰ)
 end
 
 # -----------------------------------------------------------------------------

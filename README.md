@@ -76,7 +76,7 @@ K₀ = TensISO{3}(5.0)
 P_cond = hill_tensor(Ellipsoid(1.0), K₀)
 ```
 
-Every entry point accepts `method = :auto | :residue | :decuhr` and
+Every entry point accepts `method = :auto | :residues | :decuhr` and
 the keyword tuple `(abstol, reltol, maxiters)`; see the in-line
 docstrings for details.
 

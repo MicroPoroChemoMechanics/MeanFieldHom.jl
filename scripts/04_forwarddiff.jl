@@ -200,7 +200,7 @@ end
 println("\n", "="^70)
 println("  § 5  ANISOTROPIC MATRIX — shape AD via :decuhr")
 println("="^70)
-println("  :residue does NOT support ForwardDiff.Dual geometry.")
+println("  :residues does NOT support ForwardDiff.Dual geometry.")
 println("  :decuhr integrates numerically with Dual-valued ζ inside the integrand.")
 
 let

@@ -2,7 +2,7 @@
 #  scripts/04_cod_ribbon.jl
 #
 #  Compare ribbon-crack COD tensors obtained from :analytical (ISO),
-#  :residue (ISO promoted to Tens) and :decuhr (idem), and verify the
+#  :residues (ISO promoted to Tens) and :decuhr (idem), and verify the
 #  consistency relation B^R = (3π/8) lim_{η→0} B^ℰ(η) numerically.
 # =============================================================================
 
@@ -26,7 +26,7 @@ C_gen = Tens(C_generic, CanonicalBasis{3,Float64}())
 
 r = RibbonCrack(1.0)
 println("Analytical (TensISO): ", cod_tensor(r, C_iso))
-println("Residue    (generic): ", cod_tensor(r, C_gen; method=:residue))
+println("Residue    (generic): ", cod_tensor(r, C_gen; method=:residues))
 println("DECUHR     (generic): ", cod_tensor(r, C_gen; method=:decuhr))
 
 # Consistency check: (3π/8)·B^E(η→0) ≈ B^R   on nn and mm components

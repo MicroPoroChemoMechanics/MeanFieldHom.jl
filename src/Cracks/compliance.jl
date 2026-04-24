@@ -75,61 +75,32 @@ _compliance_from_B(crack::RibbonCrack, B) = _compliance_from_B_ribbon(crack, B)
 # =============================================================================
 
 """
-    _effective_crack_direction(crack, K₀) -> Tens{1,3}
-
-Unit vector ``\\hat{\\mathbf w}`` giving the rank-1 direction of the
-crack resistivity contribution.  For an isotropic matrix or a matrix
-aligned with the crack frame this reduces to the geometric normal
-``\\hat{\\mathbf n}``; for general anisotropy,
-
-```
-ŵ = K₀⁻¹ᐟ² · n̂ / ‖K₀⁻¹ᐟ² · n̂‖
-```
-
-(obtained as the null-space direction of ``\\mathbf K_0 - \\mathbf K_0
-\\mathbf P(0) \\mathbf K_0`` in the crack limit — see
-[`docs/src/theory/thermal_cracks.md`](docs/src/theory/thermal_cracks.md)).
-"""
-function _effective_crack_direction(crack::MFH_Core.AbstractCrack, K₀)
-    T_mat = eltype(K₀)
-    K_arr = Matrix{T_mat}(undef, 3, 3)
-    for i in 1:3, j in 1:3
-        K_arr[i, j] = K₀[i, j]
-    end
-    F = eigen(Symmetric(K_arr))
-    invsqrt_K = F.vectors * Diagonal(1 ./ sqrt.(F.values)) * F.vectors'
-    n̂_arr = [crack_basis(crack)[i, 3] for i in 1:3]
-    w = invsqrt_K * n̂_arr
-    w ./= norm(w)
-    return TensND.Tens(w)
-end
-
-"""
     _resistivity_from_b_elliptic(crack, b, K₀) -> Tens{2,3}
 
-Elliptic: ``\\mathbf R = \\tfrac{3}{4}\\,b\\,\\hat{\\mathbf w}
-\\otimes\\hat{\\mathbf w}`` where ``\\hat{\\mathbf w}`` is the effective
-rank-1 direction (see [`_effective_crack_direction`](@ref)).  Reduces
-to ``\\mathbf R = \\tfrac{3}{4}\\,b\\,\\hat{\\mathbf n}\\otimes\\hat{\\mathbf n}``
-for iso / aligned-TI matrices.
+Elliptic: ``\\mathbf R = \\tfrac{3}{4}\\,b\\,\\hat{\\mathbf n}
+\\otimes\\hat{\\mathbf n}``.
+
+The rank-1 direction is always the crack normal ``\\hat{\\mathbf n}``
+(null space of ``\\mathbf K_0 - \\mathbf K_0\\mathbf P(0)\\mathbf K_0``
+with the correct V-formula Hill tensor limit
+``\\mathbf P(0) = \\hat{\\mathbf n}\\otimes\\hat{\\mathbf n}/k_{nn}``).
 """
-function _resistivity_from_b_elliptic(crack::EllipticCrack, b, K₀)
-    ŵ = _effective_crack_direction(crack, K₀)
-    T = eltype(ŵ)
-    return (T(3) / T(4) * b) * (ŵ ⊗ ŵ)
+function _resistivity_from_b_elliptic(crack::EllipticCrack, b, _K₀)
+    n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    T = eltype(n̂)
+    return (T(3) / T(4) * b) * (n̂ ⊗ n̂)
 end
 
 """
     _resistivity_from_b_ribbon(crack, b, K₀) -> Tens{2,3}
 
-Ribbon: ``\\mathbf R = \\tfrac{2}{\\pi}\\,b\\,\\hat{\\mathbf w}
-\\otimes\\hat{\\mathbf w}``.  For iso / aligned-TI matrices
-``\\hat{\\mathbf w} = \\hat{\\mathbf n}``.
+Ribbon: ``\\mathbf R = \\tfrac{2}{\\pi}\\,b\\,\\hat{\\mathbf n}
+\\otimes\\hat{\\mathbf n}``.
 """
-function _resistivity_from_b_ribbon(crack::RibbonCrack, b, K₀)
-    ŵ = _effective_crack_direction(crack, K₀)
-    T = eltype(ŵ)
-    return (T(2) / T(π) * b) * (ŵ ⊗ ŵ)
+function _resistivity_from_b_ribbon(crack::RibbonCrack, b, _K₀)
+    n̂ = TensND.tensbasis(crack_basis(crack), 3)
+    T = eltype(n̂)
+    return (T(2) / T(π) * b) * (n̂ ⊗ n̂)
 end
 
 _resistivity_from_b(crack::EllipticCrack, b, K₀) = _resistivity_from_b_elliptic(crack, b, K₀)

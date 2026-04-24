@@ -77,7 +77,7 @@ end
     C₁ = 2.0 * C₀   # same symmetry, doubled
     ell = Ellipsoid(3.0, 2.0, 1.0)
 
-    A = strain_strain_loc(ell, C₁, C₀; method = :residue)
+    A = strain_strain_loc(ell, C₁, C₀; method = :residues)
     A_nqg = strain_strain_loc(ell, C₁, C₀; method = :nestedquadgk, reltol = 1.0e-12)
     scale = maximum(abs(A[i, j, k, l]) for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
     for i in 1:3, j in 1:3, k in 1:3, l in 1:3

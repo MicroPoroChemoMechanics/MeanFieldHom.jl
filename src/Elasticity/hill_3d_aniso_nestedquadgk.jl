@@ -2,8 +2,7 @@
 #  hill_3d_aniso_nestedquadgk.jl
 #
 #  ForwardDiff-compatible 2D cubature for the 3D anisotropic Hill tensor
-#  via nested QuadGK: outer integral over z ∈ [0, 1], inner over
-#  φ ∈ [0, 2π].
+#  via nested QuadGK: outer integral over u ∈ [0, 1], inner over φ ∈ [0, 2π].
 #
 #  The specific 2D parametrisation
 #
@@ -12,11 +11,24 @@
 #  is tied to the ellipsoid semi-axes (η, ω) — kept in this file because
 #  the surrounding change-of-variable is inclusion-specific.
 #
+#  Robustness for flat / elongated ellipsoids
+#  ==========================================
+#  **Power change-of-variable**: z(u) = 1 − (1 − u)^α with
+#  α = max(1, log₁₀(1/ω)).  For α = 1 (ω ≥ 0.1) the substitution is the
+#  identity and carries no overhead.  For smaller ω the Gauss-Kronrod grid
+#  is compressed near z = 1, capturing the steep integrand gradient without
+#  increasing maxiters.
+#
+#  **Axis sort**: the Ellipsoid constructor (`_sort_axes_and_basis`) already
+#  sorts `semi_axes` in descending order for real-valued types, so η ≤ 1
+#  and ω ≤ 1 are guaranteed on entry.  The explicit re-sort below is kept
+#  for safety with non-Real element types (ForwardDiff.Dual, symbolic) where
+#  the constructor may not sort.  For the common Float64 case it is a no-op.
+#
 #  Historical note: this kernel was previously named `_hill_3d_aniso_decuhr`
 #  because it targets the same mathematical problem as DECUHR cubature,
 #  but the implementation uses nested 1-D QuadGK, not DECUHR.  The actual
-#  DECUHR-based implementation lives in
-#  `hill_3d_aniso_decuhr.jl`.
+#  DECUHR-based implementation lives in `hill_3d_aniso_decuhr.jl`.
 # =============================================================================
 
 """
@@ -25,7 +37,8 @@
 Hill polarisation tensor of a 3-D ellipsoid in an arbitrarily
 anisotropic matrix, evaluated by **nested 1-D QuadGK cubature** over the
 unit sphere of the general [Willis 1977](@cite willis1977) integrand.
-ForwardDiff-compatible.
+ForwardDiff-compatible. Includes axis-sort and power change-of-variable for
+improved convergence on flat or elongated ellipsoids.
 """
 function _hill_3d_aniso_nestedquadgk(
         ell::Ellipsoid{3}, C₀;
@@ -35,14 +48,35 @@ function _hill_3d_aniso_nestedquadgk(
     )
     T = promote_type(eltype(ell.semi_axes), eltype(C₀))
 
-    η = ell.semi_axes[2] / ell.semi_axes[1]
-    ω = ell.semi_axes[3] / ell.semi_axes[1]
-
     C₀_princ = TensND.change_tens(C₀, ell.basis)
     C₀_arr = Array{T, 4}(undef, 3, 3, 3, 3)
     for i in 1:3, j in 1:3, k in 1:3, l in 1:3
         C₀_arr[i, j, k, l] = C₀_princ[i, j, k, l]
     end
+
+    # --- Axis sort (descending) -----------------------------------------------
+    # Sort semi-axes so a₁ ≥ a₂ ≥ a₃, guaranteeing η ≤ 1 and ω ≤ 1.
+    # The stiffness tensor is permuted consistently so that the parametrisation
+    # ζ = (√(1-z²)cosφ, √(1-z²)sinφ/η, z/ω) matches the sorted frame.
+    # After integration, the result is un-permuted via the inverse permutation.
+    p = sortperm(collect(ell.semi_axes), rev = true)
+    if p != [1, 2, 3]
+        C₀_arr_p = Array{T, 4}(undef, 3, 3, 3, 3)
+        for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+            C₀_arr_p[i, j, k, l] = C₀_arr[p[i], p[j], p[k], p[l]]
+        end
+        C₀_arr = C₀_arr_p
+    end
+
+    semi_sorted = ell.semi_axes[p]
+    η = semi_sorted[2] / semi_sorted[1]
+    ω = semi_sorted[3] / semi_sorted[1]
+
+    # --- Change-of-variable exponent ------------------------------------------
+    # z(u) = 1 − (1 − u)^α concentrates Gauss-Kronrod nodes near z = 1
+    # where the integrand varies most rapidly for flat ellipsoids (ω ≪ 1).
+    # α = 1 (identity) when ω ≥ 0.1; beyond that α ≈ 2, 3, … for each decade.
+    α = max(1.0, -log10(Float64(ω)))
 
     voigt_ij = ((1, 1), (2, 2), (3, 3), (2, 3), (1, 3), (1, 2))
 
@@ -82,7 +116,10 @@ function _hill_3d_aniso_nestedquadgk(
         atol = abstol,
         rtol = reltol,
         maxevals = maxiters
-    ) do z
+    ) do u
+        one_minus_u = 1.0 - u
+        z   = 1.0 - one_minus_u^α
+        jac = α * one_minus_u^(α - 1.0)
         inner, _ = QuadGK.quadgk(
             0.0, 2π;
             atol = abstol / 10,
@@ -90,21 +127,30 @@ function _hill_3d_aniso_nestedquadgk(
         ) do φ
             integrand_at(z, φ)
         end
-        inner
+        inner .* jac
     end
     P_vals ./= T(2π)
 
-    P_arr = zeros(T, 3, 3, 3, 3)
+    # --- Build result in sorted frame -----------------------------------------
+    P_perm = zeros(T, 3, 3, 3, 3)
     idx = 0
     for I in 1:6, J in I:6
         i, j = voigt_ij[I]
         k, l = voigt_ij[J]
         idx += 1
         v = P_vals[idx]
-        P_arr[i, j, k, l] = v;  P_arr[j, i, k, l] = v
-        P_arr[i, j, l, k] = v;  P_arr[j, i, l, k] = v
-        P_arr[k, l, i, j] = v;  P_arr[l, k, i, j] = v
-        P_arr[k, l, j, i] = v;  P_arr[l, k, j, i] = v
+        P_perm[i, j, k, l] = v;  P_perm[j, i, k, l] = v
+        P_perm[i, j, l, k] = v;  P_perm[j, i, l, k] = v
+        P_perm[k, l, i, j] = v;  P_perm[l, k, i, j] = v
+        P_perm[k, l, j, i] = v;  P_perm[l, k, j, i] = v
+    end
+
+    # --- Un-permute back to original axis ordering ----------------------------
+    # P_orig[q[i],q[j],q[k],q[l]] = P_perm[i,j,k,l]  where  q = invperm(p).
+    q = invperm(p)
+    P_arr = zeros(T, 3, 3, 3, 3)
+    for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+        P_arr[q[i], q[j], q[k], q[l]] = P_perm[i, j, k, l]
     end
 
     return TensND.Tens(P_arr, ell.basis)

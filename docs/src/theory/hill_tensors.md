@@ -418,7 +418,7 @@ s  = eshelby_tensor(Ellipsoid(1.0), K₀)    # 2nd-order
 | `(inclusion, C₀)`                    | `:auto` selects        | alternative(s)             | ForwardDiff |
 | :----------------------------------- | :--------------------- | :------------------------- | :---------: |
 | `Ellipsoid{3}, TensISO`              | `Analytical`           | —                          |     ✓       |
-| `Ellipsoid{3}, TensTI` (aligned)     | `Analytical` (MFH)     | `:residue`, `:decuhr`      |     ✓       |
+| `Ellipsoid{3}, TensTI` (aligned)     | `Analytical` (MFH)     | `:residues`, `:decuhr`      |     ✓       |
 | `Ellipsoid{3}, AbstractTens{4,3}`    | `Residue` (Float64)    | `:decuhr`                  |  ✓ (decuhr) |
 | `Cylinder, TensISO`                  | `Analytical`           | —                          |     ✓       |
 | `Cylinder, AbstractTens{4,3}`        | `CylinderQuadrature`   | (residue degenerates)      |     ✓       |

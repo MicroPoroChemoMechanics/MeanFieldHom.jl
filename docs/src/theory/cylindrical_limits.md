@@ -106,7 +106,7 @@ on the six complex roots of the acoustic polynomial along
 ``\hat{\boldsymbol\xi}_3``. For an infinite cylinder one root escapes
 to infinity and the polynomial degenerates — the algorithm is
 therefore **not applicable**. Calling
-`hill_tensor(Cylinder(…), C₀; method=:residue)` silently falls back
+`hill_tensor(Cylinder(…), C₀; method=:residues)` silently falls back
 to the dedicated 1-D quadrature via `CylinderQuadrature`, preserving
 user ergonomics.
 

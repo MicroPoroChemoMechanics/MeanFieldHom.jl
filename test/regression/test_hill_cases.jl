@@ -76,7 +76,7 @@ const K_iso3 = TensISO{3}(5.0)
     end
 
     @testset "Hill 3D iso vs DECUHR — prolate spheroid" begin
-        # Note: the :residue path on an iso matrix is numerically unstable
+        # Note: the :residues path on an iso matrix is numerically unstable
         # (pre-existing degeneracy in the root-finder) — cross-check against
         # DECUHR which is ForwardDiff- and iso-safe.
         ell = Ellipsoid(3.0, 1.0, 1.0)

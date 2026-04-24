@@ -47,7 +47,7 @@ Timings are collected with `BenchmarkTools.@belapsed`.
 
 - This subfolder has its **own Project.toml** — it does not pollute the
   main `MeanFieldHom.jl` environment with PyCall / BenchmarkTools.
-- `:residue` is used on both sides for the cubic and triclinic cases
+- `:residues` is used on both sides for the cubic and triclinic cases
   (same mathematical algorithm → expected agreement at machine
   precision).
 - For the isotropic cases, the Julia side uses the analytic path

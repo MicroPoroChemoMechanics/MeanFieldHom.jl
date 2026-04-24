@@ -206,17 +206,17 @@ MFH_Core.newton_potential_3d_cylinder(cyl::Cylinder) =
 # `AbstractEllipsoidalInclusion + TensISO` rule in Core/dispatch.jl.
 MFH_Core._resolve_algo(::Val, ::Cylinder, ::TensND.TensISO) = MFH_Core.Analytical()
 MFH_Core._resolve_algo(::Val{:auto}, ::Cylinder, ::TensND.TensISO) = MFH_Core.Analytical()
-MFH_Core._resolve_algo(::Val{:residue}, ::Cylinder, ::TensND.TensISO) = MFH_Core.Analytical()
+MFH_Core._resolve_algo(::Val{:residues}, ::Cylinder, ::TensND.TensISO) = MFH_Core.Analytical()
 MFH_Core._resolve_algo(::Val{:decuhr}, ::Cylinder, ::TensND.TensISO) = MFH_Core.Analytical()
 
 # Anisotropic matrix → dedicated 1D `CylinderQuadrature`.  The acoustic
 # polynomial used by the residue algorithm degenerates for a cylinder
-# (one root at infinity), so `:residue` is transparently remapped to the
+# (one root at infinity), so `:residues` is transparently remapped to the
 # quadrature.  `:auto` picks the same 1D quadrature — cheaper than the
 # 2D `DECUHR` route and ForwardDiff-safe.
 MFH_Core._resolve_algo(::Val{:auto}, ::Cylinder, ::TensND.AbstractTens{4, 3}) =
     MFH_Core.CylinderQuadrature()
-MFH_Core._resolve_algo(::Val{:residue}, ::Cylinder, ::TensND.AbstractTens{4, 3}) =
+MFH_Core._resolve_algo(::Val{:residues}, ::Cylinder, ::TensND.AbstractTens{4, 3}) =
     MFH_Core.CylinderQuadrature()
 MFH_Core._resolve_algo(::Val{:decuhr}, ::Cylinder, ::TensND.AbstractTens{4, 3}) =
     MFH_Core.CylinderQuadrature()
