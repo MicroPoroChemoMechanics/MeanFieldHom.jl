@@ -1,0 +1,117 @@
+# =============================================================================
+#  test_cod_ti_aligned.jl
+#
+#  Validates the closed-form COD tensor for an elliptic / penny / ribbon
+#  crack whose normal coincides with the symmetry axis of a transversely
+#  isotropic matrix (Hoenig 1979 / Kanaun-Levin 2009 / Barthélémy 2021).
+#
+#  Coverage:
+#   1. Iso-as-TI degenerate limit: the TI analytical branch must reproduce
+#      the isotropic analytical result.
+#   2. Cross-validation against the residue and DECUHR numerical backends
+#      on a true TI matrix (Sevostianov-Yilmaz-Kushch-Levin 2005 stiffness).
+#   3. Penny crack (η=1) and ribbon crack — specialised closed forms.
+#   4. Dispatcher: Analytical when TI axis = crack normal, Residue otherwise.
+#   5. ForwardDiff compatibility through the analytical branch.
+# =============================================================================
+
+using Test
+using MeanFieldHom
+using TensND
+using LinearAlgebra
+
+const ATOL_COD_ISO = 1.0e-10
+const ATOL_COD_RES = 1.0e-9
+const ATOL_COD_DEC = 1.0e-7
+
+# Helper: convert TI stiffness to engineering compliance moduli.
+# (Same routine `extract_ti_moduli` used internally by the analytical kernel.)
+
+@testset "COD TI aligned — iso-as-TI recovers isotropic builder" begin
+    # Build an isotropic stiffness, then re-express it as a degenerate TI
+    # tensor with axis along the crack normal e₃.
+    n_axis = [0.0, 0.0, 1.0]
+    E, ν = 210.0, 0.3
+    k = E / (3 * (1 - 2ν)); μ = E / (2 * (1 + ν))
+    C_iso = TensISO{3}(3k, 2μ)
+    C_ti  = fromISO(C_iso, n_axis)
+    @test C_ti isa TensND.TensTI{4, Float64, 5}
+
+    for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5), RibbonCrack(1.0))
+        B_iso = cod_tensor(c, C_iso)
+        B_ti  = cod_tensor(c, C_ti)
+        @test maximum(abs.(get_array(B_ti) .- get_array(B_iso))) < ATOL_COD_ISO
+    end
+end
+
+@testset "COD TI aligned — cross-validation vs residue (true TI)" begin
+    # Sevostianov-Yilmaz-Kushch-Levin (2005) test stiffness.
+    n_axis = [0.0, 0.0, 1.0]
+    C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+
+    for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5), EllipticCrack(1.0, 0.2))
+        B_ana = cod_tensor(c, C_TI)                                   # analytical
+        B_res = cod_tensor(c, C_TI; method = :residues)
+        diff = maximum(abs.(get_array(B_ana) .- get_array(B_res)))
+        @test diff < ATOL_COD_RES
+    end
+end
+
+@testset "COD TI aligned — cross-validation vs DECUHR (true TI)" begin
+    n_axis = [0.0, 0.0, 1.0]
+    C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+
+    for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5))
+        B_ana = cod_tensor(c, C_TI)
+        B_dec = cod_tensor(c, C_TI; method = :decuhr)
+        diff = maximum(abs.(get_array(B_ana) .- get_array(B_dec)))
+        @test diff < ATOL_COD_DEC
+    end
+end
+
+@testset "COD TI aligned — dispatcher selects Analytical when aligned" begin
+    # Crack basis defaults to canonical with normal = e₃.
+    n_axis = [0.0, 0.0, 1.0]
+    C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+
+    for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5), RibbonCrack(1.0))
+        algo = MeanFieldHom.Core._resolve_algo(Val(:auto), c, C_TI)
+        @test algo isa MeanFieldHom.Core.Analytical
+    end
+end
+
+@testset "COD TI aligned — dispatcher falls back when non-aligned" begin
+    # TI axis = e₁ but the crack normal stays e₃ → not aligned.
+    n_axis = [1.0, 0.0, 0.0]
+    C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+    c = EllipticCrack(1.0, 0.5)
+    algo = MeanFieldHom.Core._resolve_algo(Val(:auto), c, C_TI)
+    @test algo isa MeanFieldHom.Core.Residue
+    # And the residue path still produces a finite COD tensor.
+    B = cod_tensor(c, C_TI; method = :residues)
+    @test all(isfinite, get_array(B))
+end
+
+@testset "COD TI aligned — ForwardDiff compatibility" begin
+    using ForwardDiff
+    n_axis = [0.0, 0.0, 1.0]
+    c_penny = PennyCrack(1.0)
+    C0 = [2.179, 0.579, 0.689, 10.345, 1.0]
+
+    f = C -> begin
+        C_TI = tens_TI(C[1], C[2], C[3], C[4], C[5], n_axis)
+        get_array(cod_tensor(c_penny, C_TI))[3, 3]
+    end
+    grad = ForwardDiff.gradient(f, C0)
+    @test length(grad) == 5
+    @test all(isfinite, grad)
+
+    # Also through the elliptic-crack aspect ratio
+    g = b_minor -> begin
+        c_e = EllipticCrack(1.0, b_minor)
+        C_TI = tens_TI(C0..., n_axis)
+        get_array(cod_tensor(c_e, C_TI))[3, 3]
+    end
+    dval = ForwardDiff.derivative(g, 0.5)
+    @test isfinite(dval)
+end

@@ -219,7 +219,7 @@ println("  § 1  HILL TENSOR P  (elasticity, 4th order)")
 println("="^78)
 
 """
-    bench_hill(label, ell_jl, semi_axes, C_jl, C_py; jl_method = :auto,
+    bench_hill(label, ell_jl, C_jl, C_py; jl_method = :auto,
                is_iso = false, echoes_algos = ("RESIDUES", "NUMINT3D"))
 
 Compute P with MeanFieldHom (one call), then with Echoes.  When
@@ -229,11 +229,11 @@ the algorithms listed in `echoes_algos` are tested.  Pass
 `echoes_algos = ("NUMINT3D",)` for non-triclinic matrices where the
 acoustic polynomial has quasi-multiple roots that break RESIDUES.
 """
-function bench_hill(label, ell_jl, semi_axes, C_jl, C_py;
+function bench_hill(label, ell_jl, C_jl, C_py;
                     jl_method = :auto, is_iso = false,
                     echoes_algos = ("RESIDUES", "NUMINT3D"),
                     euler_angles = (0.0, 0.0, 0.0))
-    a, b, c = semi_axes
+    a, b, c = ell_jl.semi_axes
     θ_ea, φ_ea, ψ_ea = euler_angles
 
     P_jl    = hill_tensor(ell_jl, C_jl; method = jl_method)
@@ -288,58 +288,58 @@ function bench_hill(label, ell_jl, semi_axes, C_jl, C_py;
 end
 
 bench_hill("Sphere a=b=c=1 / ISO",
-           Ellipsoid(1.0), (1.0, 1.0, 1.0), C_iso, C_iso_py; is_iso = true)
+           Ellipsoid(1.0), C_iso, C_iso_py; is_iso = true)
 
 bench_hill("Prolate a=5,b=c=1 / ISO",
-           Ellipsoid(5.0, 1.0, 1.0), (5.0, 1.0, 1.0),
+           Ellipsoid(5.0, 1.0, 1.0),
            C_iso, C_iso_py; is_iso = true)
 
 bench_hill("Oblate a=b=5,c=1 / ISO",
-           Ellipsoid(5.0, 5.0, 1.0), (5.0, 5.0, 1.0),
+           Ellipsoid(5.0, 5.0, 1.0),
            C_iso, C_iso_py; is_iso = true)
 
 bench_hill("Prolate a=3,b=c=1 / cubic",
-           Ellipsoid(3.0, 1.0, 1.0), (3.0, 1.0, 1.0),
+           Ellipsoid(3.0, 1.0, 1.0),
            C_cubic, C_cubic_py; jl_method = :residues,
            echoes_algos = ("NUMINT3D",))
 
 bench_hill("Prolate a=3,b=c=1 / cubic (Julia :decuhr)",
-           Ellipsoid(3.0, 1.0, 1.0), (3.0, 1.0, 1.0),
+           Ellipsoid(3.0, 1.0, 1.0),
            C_cubic, C_cubic_py; jl_method = :decuhr,
            echoes_algos = ("NUMINT3D",))
 
 bench_hill("Prolate a=3,b=c=1 / cubic (Julia :nestedquadgk)",
-           Ellipsoid(3.0, 1.0, 1.0), (3.0, 1.0, 1.0),
+           Ellipsoid(3.0, 1.0, 1.0),
            C_cubic, C_cubic_py; jl_method = :nestedquadgk,
            echoes_algos = ("NUMINT3D",))
 
 bench_hill("Triaxial a=2,b=1,c=0.5 / triclinic",
-           Ellipsoid(2.0, 1.0, 0.5), (2.0, 1.0, 0.5),
+           Ellipsoid(2.0, 1.0, 0.5),
            C_tric, C_tric_py; jl_method = :residues)
 
 bench_hill("Triaxial a=2,b=1,c=0.5 / triclinic (Julia :decuhr)",
-           Ellipsoid(2.0, 1.0, 0.5), (2.0, 1.0, 0.5),
+           Ellipsoid(2.0, 1.0, 0.5),
            C_tric, C_tric_py; jl_method = :decuhr)
 
 bench_hill("Triaxial a=2,b=1,c=0.5 / triclinic (Julia :nestedquadgk)",
-           Ellipsoid(2.0, 1.0, 0.5), (2.0, 1.0, 0.5),
+           Ellipsoid(2.0, 1.0, 0.5),
            C_tric, C_tric_py; jl_method = :nestedquadgk)
 
 # ─── With Euler angles (θ = π/4, φ = π/6, ψ = π/3) ──────────────────────────
 
 bench_hill("Rotated prolate a=5,b=c=1 / ISO  (π/4,π/6,π/3)",
            Ellipsoid(5.0, 1.0, 1.0; euler_angles = (π/4, π/6, π/3)),
-           (5.0, 1.0, 1.0), C_iso, C_iso_py;
+           C_iso, C_iso_py;
            is_iso = true, euler_angles = (π/4, π/6, π/3))
 
 bench_hill("Rotated triaxial a=2,b=1,c=0.5 / triclinic (π/4,π/6,π/3)",
            Ellipsoid(2.0, 1.0, 0.5; euler_angles = (π/4, π/6, π/3)),
-           (2.0, 1.0, 0.5), C_tric, C_tric_py;
+           C_tric, C_tric_py;
            jl_method = :residues, euler_angles = (π/4, π/6, π/3))
 
 bench_hill("Rotated triaxial a=2,b=1,c=0.5 / triclinic :decuhr (π/4,π/6,π/3)",
            Ellipsoid(2.0, 1.0, 0.5; euler_angles = (π/4, π/6, π/3)),
-           (2.0, 1.0, 0.5), C_tric, C_tric_py;
+           C_tric, C_tric_py;
            jl_method = :decuhr, euler_angles = (π/4, π/6, π/3))
 
 # =============================================================================
@@ -429,10 +429,10 @@ println("="^78)
 
 order2_as_matrix(P) = Float64[P[i, j] for i in 1:3, j in 1:3]
 
-function bench_hill_order2(label, ell_jl, semi_axes, K_jl, K_py; is_iso = false,
+function bench_hill_order2(label, ell_jl, K_jl, K_py; is_iso = false,
                            echoes_algos = ("RESIDUES", "NUMINT3D"),
                            euler_angles = (0.0, 0.0, 0.0))
-    a, b, c = semi_axes
+    a, b, c = ell_jl.semi_axes
     θ_ea, φ_ea, ψ_ea = euler_angles
 
     P_jl     = hill_tensor(ell_jl, K_jl)
@@ -494,20 +494,20 @@ function bench_hill_order2(label, ell_jl, semi_axes, K_jl, K_py; is_iso = false,
 end
 
 bench_hill_order2("Sphere a=b=c=1 / K iso",
-                  Ellipsoid(1.0), (1.0, 1.0, 1.0), K_iso, K_iso_py; is_iso = true)
+                  Ellipsoid(1.0), K_iso, K_iso_py; is_iso = true)
 bench_hill_order2("Prolate a=5,b=c=1 / K iso",
-                  Ellipsoid(5.0, 1.0, 1.0), (5.0, 1.0, 1.0), K_iso, K_iso_py;
+                  Ellipsoid(5.0, 1.0, 1.0), K_iso, K_iso_py;
                   is_iso = true)
 bench_hill_order2("Oblate a=b=5,c=1 / K iso",
-                  Ellipsoid(5.0, 5.0, 1.0), (5.0, 5.0, 1.0), K_iso, K_iso_py;
+                  Ellipsoid(5.0, 5.0, 1.0), K_iso, K_iso_py;
                   is_iso = true)
 bench_hill_order2("Triaxial a=2,b=1,c=0.5 / K aniso",
-                  Ellipsoid(2.0, 1.0, 0.5), (2.0, 1.0, 0.5),
+                  Ellipsoid(2.0, 1.0, 0.5),
                   K_aniso, K_aniso_py)
 
 bench_hill_order2("Rotated triaxial a=2,b=1,c=0.5 / K aniso (π/4,π/6,π/3)",
                   Ellipsoid(2.0, 1.0, 0.5; euler_angles = (π/4, π/6, π/3)),
-                  (2.0, 1.0, 0.5), K_aniso, K_aniso_py;
+                  K_aniso, K_aniso_py;
                   euler_angles = (π/4, π/6, π/3))
 
 # =============================================================================
@@ -578,8 +578,8 @@ const py_hill_derivative_ortho = py"py_hill_derivative_ortho"
 
 # ─── 4.1 — ISO cases (derive w.r.t. κ = 3k, η = 2μ) ───────────────────────
 
-function bench_hill_derivative_iso(label, ell_jl, semi_axes)
-    a, b, c = semi_axes
+function bench_hill_derivative_iso(label, ell_jl)
+    a, b, c = ell_jl.semi_axes
     α₀, β₀  = 3k_iso, 2μ_iso
 
     println()
@@ -615,11 +615,9 @@ function bench_hill_derivative_iso(label, ell_jl, semi_axes)
     return nothing
 end
 
-bench_hill_derivative_iso("Sphere a=b=c=1 / ISO",      Ellipsoid(1.0), (1.0, 1.0, 1.0))
-bench_hill_derivative_iso("Prolate a=5,b=c=1 / ISO",   Ellipsoid(5.0, 1.0, 1.0),
-                          (5.0, 1.0, 1.0))
-bench_hill_derivative_iso("Oblate a=b=5,c=1 / ISO",    Ellipsoid(5.0, 5.0, 1.0),
-                          (5.0, 5.0, 1.0))
+bench_hill_derivative_iso("Sphere a=b=c=1 / ISO",      Ellipsoid(1.0))
+bench_hill_derivative_iso("Prolate a=5,b=c=1 / ISO",   Ellipsoid(5.0, 1.0, 1.0))
+bench_hill_derivative_iso("Oblate a=b=5,c=1 / ISO",    Ellipsoid(5.0, 5.0, 1.0))
 
 # ─── 4.2 — ORTHO case (cubic crystal, prolate, 9 params) ──────────────────
 
@@ -646,9 +644,9 @@ function dP_dortho_forwarddiff(ell, base::NTuple{9, Float64}, jl_idx::Int;
     return ForwardDiff.derivative(f, 0.0)
 end
 
-function bench_hill_derivative_ortho(label, ell_jl, semi_axes;
+function bench_hill_derivative_ortho(label, ell_jl;
                                      echoes_algos = ("RESIDUES", "NUMINT3D"))
-    a, b, c = semi_axes
+    a, b, c = ell_jl.semi_axes
 
     println()
     println("─"^78)
@@ -690,7 +688,7 @@ function bench_hill_derivative_ortho(label, ell_jl, semi_axes;
 end
 
 bench_hill_derivative_ortho("Prolate a=3,b=c=1 / cubic-as-ORTHO",
-                            Ellipsoid(3.0, 1.0, 1.0), (3.0, 1.0, 1.0);
+                            Ellipsoid(3.0, 1.0, 1.0);
                             echoes_algos = ("NUMINT3D",))
 
 # ─── 4.3 — Triclinic Julia-only (no Echoes counterpart) ───────────────────

@@ -25,6 +25,7 @@ using MeanFieldHom
 
     @testset "Cracks" begin
         include("Cracks/test_cod.jl")
+        include("Cracks/test_cod_ti_aligned.jl")
         include("Cracks/test_residue_accuracy.jl")
         include("Cracks/test_thermal.jl")
     end

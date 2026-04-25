@@ -26,6 +26,7 @@ using MeanFieldHom
 using TensND
 using LinearAlgebra
 using Printf
+using Plots
 
 println("=== Hill polarisation tensor — TI matrix coaxial with spheroid ===")
 println()
@@ -109,5 +110,78 @@ t_dec = _bench(() -> hill_tensor(ell, C_TI; method = :decuhr), 10)
 @printf("  Residue    : %.3e s    (×%.0f)\n", t_res, t_res / t_ana)
 @printf("  DECUHR     : %.3e s    (×%.0f)\n", t_dec, t_dec / t_ana)
 
+println()
+
+# ── Reproduce Figure 1 of Barthélémy 2020 -----------------------------------
+#
+# 6 Eshelby components plotted against the paper's aspect ratio
+# ξ = 1/ω = (transverse)/(axial) on a semilog x-axis.
+#
+#   * ξ < 1: prolate (axial > transverse) — TI axis along the long axis
+#   * ξ > 1: oblate  (transverse > axial) — TI axis along the short axis
+#
+# To stay coaxial throughout, MFH stores semi-axes in descending order:
+#   * For oblate (ξ > 1): semi_axes = (a, a, c) with c < a, axis e₃ — TI on e₃.
+#   * For prolate (ξ < 1): semi_axes = (c, a, a) with c > a, axis e₁ — TI on e₁.
+# Components are reported in the (axial, transverse, transverse′) frame,
+# matching the paper's index labelling (axial = "3", transverse = "1" or "2").
+
+println("Generating Figure 1 (Barthélémy 2020) — 100 points logspace(-2, 2)…")
+
+ξs = exp10.(range(-2.0, 2.0, length = 100))
+S1111 = zeros(length(ξs))   # transverse–transverse  (paper "1111")
+S3333 = zeros(length(ξs))   # axial–axial            (paper "3333")
+S1122 = zeros(length(ξs))   # transverse–transverse′ (paper "1122")
+S1133 = zeros(length(ξs))   # transverse–axial       (paper "1133")
+S3311 = zeros(length(ξs))   # axial–transverse       (paper "3311")
+S1313 = zeros(length(ξs))   # axial–transverse shear (paper "1313")
+
+let
+    for (k, ξ) in enumerate(ξs)
+        ω = 1 / ξ                                  # paper's spheroid aspect = axial/transverse
+        if ω ≤ 1                                   # oblate: c < a, axis e₃ in MFH
+            ell = Ellipsoid(1.0, 1.0, ω)
+            n_axis = [0.0, 0.0, 1.0]
+            i_a, i_t, i_t′ = 3, 1, 2
+        else                                        # prolate: sorted to axis e₁ in MFH
+            ell = Ellipsoid(ω, 1.0, 1.0)
+            n_axis = [1.0, 0.0, 0.0]
+            i_a, i_t, i_t′ = 1, 2, 3
+        end
+        C_TI = tens_TI(C1111, C1122, C1133, C3333, C2323, n_axis)
+        P = hill_tensor(ell, C_TI; method = :auto)
+        Sa = get_array(P ⊡ C_TI)
+        S1111[k] = Sa[i_t, i_t, i_t, i_t]
+        S3333[k] = Sa[i_a, i_a, i_a, i_a]
+        S1122[k] = Sa[i_t, i_t, i_t′, i_t′]
+        S1133[k] = Sa[i_t, i_t, i_a, i_a]
+        S3311[k] = Sa[i_a, i_a, i_t, i_t]
+        S1313[k] = Sa[i_t, i_a, i_t, i_a]
+    end
+end
+
+p = plot(
+    ξs, S1111;
+    xscale = :log10,
+    xlabel = raw"$\xi = 1/\omega$",
+    ylabel = raw"$S_{ijkl}$",
+    label  = raw"$S_{1111}$",
+    color  = :red, marker = :circle, markevery = 10, lw = 1.5,
+    legend = :topright,
+    framestyle = :box,
+    title  = "Eshelby components — TI matrix coaxial spheroid (Barthélémy 2020, Fig. 1)",
+    titlefontsize = 9,
+)
+plot!(p, ξs, S3333; label = raw"$S_{3333}$", color = :magenta, marker = :diamond, markevery = 10, lw = 1.5)
+plot!(p, ξs, S1122; label = raw"$S_{1122}$", color = :blue,    marker = :+,       markevery = 10, lw = 1.5)
+plot!(p, ξs, S1133; label = raw"$S_{1133}$", color = :green,   marker = :x,       markevery = 10, lw = 1.5)
+plot!(p, ξs, S3311; label = raw"$S_{3311}$", color = :brown,   marker = :rect,    markevery = 10, lw = 1.5)
+plot!(p, ξs, S1313; label = raw"$S_{1313}$", color = :cyan,    marker = :hexagon, markevery = 10, lw = 1.5)
+
+figdir = joinpath(@__DIR__, "figures")
+isdir(figdir) || mkdir(figdir)
+figpath = joinpath(figdir, "hill_ti_coaxial.png")
+savefig(p, figpath)
+println("  Figure saved to: ", figpath)
 println()
 println("Done.")

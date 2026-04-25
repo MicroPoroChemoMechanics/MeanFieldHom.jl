@@ -47,7 +47,8 @@ elliptic integrals of first and second kind
 limit ``\\eta=1``: ``B_{nn} = 16(1-\\nu^{2})/(3\\pi E)``,
 ``B_{mm}=B_{\\ell\\ell}=B_{nn}/(1-\\nu/2)``.
 """
-function _cod_iso_ellipse(c::EllipticCrack{T}, E, ν) where {T <: Number}
+function _cod_iso_ellipse(c::EllipticCrack, E::Number, ν::Number)
+    T = promote_type(typeof(E), typeof(ν))
     η = aspect_ratio(c)
     𝒞, 𝒮, ℰ = _elliptic_CS(η)
     χ = 8 * (one(T) - ν^2) / (3 * E)
@@ -65,7 +66,8 @@ matrix.  Ribbon limit of the elliptic closed form
 (see [Kachanov 1993](@cite kachanov1993),
  [Sevostianov & Kachanov 2002](@cite sevostianov2002)).
 """
-function _cod_iso_ribbon(c::RibbonCrack{T}, E, ν) where {T <: Number}
+function _cod_iso_ribbon(c::RibbonCrack, E::Number, ν::Number)
+    T = promote_type(typeof(E), typeof(ν))
     χ = T(π) * (one(T) - ν^2) / E
     Bll = χ / (one(T) - ν)
     return TensND.Tens(Diagonal([Bll, χ, χ]), crack_basis(c))
@@ -75,7 +77,8 @@ end
 #  TI matrix (axis ≡ n̂)
 # =============================================================================
 
-@inline function _ti_sigma_gamma(E::T, H::T, ν₁::T, ν₂::T, Γ::T) where {T <: Number}
+@inline function _ti_sigma_gamma(E::Number, H::Number, ν₁::Number, ν₂::Number, Γ::Number)
+    T = promote_type(typeof(E), typeof(H), typeof(ν₁), typeof(ν₂), typeof(Γ))
     return sqrt(T(2)) * sqrt(
         (one(T) - Γ * ν₂) / (Γ * (one(T) - ν₁)) +
             sqrt((one(T) - H * ν₂^2) / (H * (one(T) - ν₁^2))),
@@ -95,7 +98,8 @@ parameterisation ``(E,\\nu_{1},\\nu_{2},H,\\Gamma)`` of
 ``\\sigma_\\gamma`` is defined in `_ti_sigma_gamma`. Reduces to the
 isotropic case for ``\\nu_{1}=\\nu_{2}=\\nu``, ``H=\\Gamma=1``.
 """
-function _cod_ti_ellipse(c::EllipticCrack{T}, E::T, H::T, ν₁::T, ν₂::T, Γ::T) where {T <: Number}
+function _cod_ti_ellipse(c::EllipticCrack, E::Number, H::Number, ν₁::Number, ν₂::Number, Γ::Number)
+    T = promote_type(typeof(E), typeof(H), typeof(ν₁), typeof(ν₂), typeof(Γ))
     η = aspect_ratio(c)
     σᵞ = _ti_sigma_gamma(E, H, ν₁, ν₂, Γ)
     𝒞, 𝒮, ℰ = _elliptic_CS(η)
@@ -107,15 +111,12 @@ function _cod_ti_ellipse(c::EllipticCrack{T}, E::T, H::T, ν₁::T, ν₂::T, Γ
     return TensND.Tens(Diagonal([Bll, Bmm, Bnn]), crack_basis(c))
 end
 
-# Penny specialisation (η = 1)
-function _cod_ti_ellipse(c::EllipticCrack{T, Penny}, E::T, H::T, ν₁::T, ν₂::T, Γ::T) where {T <: Number}
-    σᵞ = _ti_sigma_gamma(E, H, ν₁, ν₂, Γ)
-    χ = T(π) * (one(T) - ν₁^2) / E
-    Bnn = χ * sqrt((one(T) - H * ν₂^2) / (H * (one(T) - ν₁^2)))
-    Bmm = χ * σᵞ / 2
-    Bll = χ / (sqrt(Γ) * (one(T) - ν₁))
-    return TensND.Tens(Diagonal([Bll, Bmm, Bnn]), crack_basis(c))
-end
+# NB: the Penny case (η = 1) is handled by the generic elliptic formula
+# above; `_elliptic_CS(1)` returns the limit values `(π/4, π/4, π/2)` and
+# the closed form is regular at η = 1. A previous specialised
+# `_cod_ti_ellipse(::EllipticCrack{T, Penny}, …)` had erroneous prefactors
+# (it did not reduce to the isotropic Penny formula
+# `Bnn_iso = 16(1-ν²)/(3πE)` in the limit ν₁=ν₂=ν, H=Γ=1) and was removed.
 
 """
     _cod_ti_ribbon(c, E, H, ν₁, ν₂, Γ) -> Tens{2,3}
@@ -125,7 +126,8 @@ ribbon limit of the elliptic TI closed form
 ([Hoenig 1978](@cite hoenig1978),
  [Barthélémy 2021](@cite barthelemyIJES2021)).
 """
-function _cod_ti_ribbon(c::RibbonCrack{T}, E::T, H::T, ν₁::T, ν₂::T, Γ::T) where {T <: Number}
+function _cod_ti_ribbon(c::RibbonCrack, E::Number, H::Number, ν₁::Number, ν₂::Number, Γ::Number)
+    T = promote_type(typeof(E), typeof(H), typeof(ν₁), typeof(ν₂), typeof(Γ))
     σᵞ = _ti_sigma_gamma(E, H, ν₁, ν₂, Γ)
     χ = T(π) * (one(T) - ν₁^2) / E
     Bnn = χ * sqrt((one(T) - H * ν₂^2) / (H * (one(T) - ν₁^2))) * σᵞ / 2

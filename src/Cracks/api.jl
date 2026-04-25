@@ -9,22 +9,39 @@
 Return `true` when the axis of transverse isotropy stored in `C₀` is
 parallel to the third axis (the crack normal) of the crack-local basis
 `ℬ_crack`.
+
+NB: this is the actual TI symmetry axis (`TensND.axis(C₀)`), not the
+third basis vector of `TensND.get_basis(C₀)` (which is always `e₃` for
+a `TensTI{4}` since the underlying basis is canonical — the symmetry
+axis is stored separately in the structured container).
 """
-function _ti_aligned(C₀, ℬ_crack::TensND.AbstractBasis)
-    axis_C = TensND.components_canon(TensND.tens_basis(TensND.get_basis(C₀), 3))
+function _ti_aligned(C₀::TensND.TensTI{4}, ℬ_crack::TensND.AbstractBasis)
+    axis_C = collect(TensND.axis(C₀))
     axis_n = TensND.components_canon(TensND.tens_basis(ℬ_crack, 3))
     d = abs(dot(axis_C, axis_n))
     return isapprox(d, 1.0; atol = 1.0e-10)
 end
 
-# TI-aligned dispatch rules — refine Core dispatch for `AbstractCrack` + TensTI{4}
+# TI-aligned dispatch rules — refine Core dispatch for `AbstractCrack` + TensTI{4}.
+# Explicit Val{:auto}, Val{:residues}, etc. methods are needed to disambiguate
+# against the generic Core rules (which use the same Val{:auto} signature).
 if isdefined(TensND, :TensTI)
-    @eval function MFH_Core._resolve_algo(::Val{m}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4}) where {m}
+    @eval function _ti_crack_dispatch(method::Symbol, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4})
         _ti_aligned(C₀, crack_basis(crack)) && return MFH_Core.Analytical()
-        m === :decuhr && return MFH_Core.DECUHR()
-        m === :nestedquadgk && return MFH_Core.NestedQuadGK()
+        method === :decuhr && return MFH_Core.DECUHR()
+        method === :nestedquadgk && return MFH_Core.NestedQuadGK()
         return MFH_Core.Residue()
     end
+    @eval MFH_Core._resolve_algo(::Val{:auto}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4}) =
+        _ti_crack_dispatch(:auto, crack, C₀)
+    @eval MFH_Core._resolve_algo(::Val{:analytical}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4}) =
+        _ti_crack_dispatch(:analytical, crack, C₀)
+    @eval MFH_Core._resolve_algo(::Val{:residues}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4}) =
+        _ti_crack_dispatch(:residues, crack, C₀)
+    @eval MFH_Core._resolve_algo(::Val{:decuhr}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4}) =
+        _ti_crack_dispatch(:decuhr, crack, C₀)
+    @eval MFH_Core._resolve_algo(::Val{:nestedquadgk}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4}) =
+        _ti_crack_dispatch(:nestedquadgk, crack, C₀)
 end
 
 # ── Public API ──────────────────────────────────────────────────────────────
