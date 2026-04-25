@@ -124,6 +124,32 @@ end
     @test isapprox(dval_dc, fd; rtol = 1.0e-5)
 end
 
+@testset "Hill TI coaxial — complex moduli (frequency-domain viscoelasticity)" begin
+    # The analytical formula must accept complex stiffness values to support
+    # harmonic / viscoelastic problems (ECHOES C++ library is templated on
+    # `T = double | complex<double>` for the same reason).
+    n_axis = [0.0, 0.0, 1.0]
+    ell = Ellipsoid(1.0, 1.0, 0.3)
+
+    # 1. eltype propagation — complex inputs ⇒ complex output.
+    δ = 0.05
+    C_c = tens_TI(2.179 + δ * im, 0.579 + 0.0im, 0.689 + 0.0im,
+                  10.345 + δ * im, 1.0 + 0.5δ * im, n_axis)
+    @test eltype(C_c) <: Complex
+    P_c = hill_tensor(ell, C_c; method = :auto)
+    @test eltype(P_c) <: Complex
+    @test all(isfinite, get_array(P_c))
+
+    # 2. Limit Im → 0 must reproduce the real-modulus result exactly.
+    C_r = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+    C_0 = tens_TI(2.179 + 0.0im, 0.579 + 0.0im, 0.689 + 0.0im,
+                  10.345 + 0.0im, 1.0 + 0.0im, n_axis)
+    P_r = hill_tensor(ell, C_r)
+    P_0 = hill_tensor(ell, C_0)
+    @test maximum(abs.(real.(get_array(P_0)) .- get_array(P_r))) < 1.0e-14
+    @test maximum(abs.(imag.(get_array(P_0))))                   < 1.0e-14
+end
+
 @testset "Hill TI coaxial — explicit :residues / :decuhr still work on coaxial" begin
     # The user can override the analytical default with a numerical method.
     n_axis = [0.0, 0.0, 1.0]

@@ -99,6 +99,17 @@ end
 
 # ── Core routine --------------------------------------------------------------
 
+# For real T the analytical formula has complex intermediates (square roots
+# of negative discriminants when the matrix is iso/near-iso, `acosh` of
+# η<1 in the oblate case, etc.) but the final P_i are real by construction.
+# For complex T (frequency-domain viscoelasticity, harmonic problems) the
+# intermediates and the P_i are genuinely complex.  We thus pick:
+#   * `TC = Complex{T}`   if `T <: Real`  — wrap to keep complex roots safe
+#   * `TC = T`            otherwise       — already complex, no double-wrap
+# and only strip the imaginary part on output when the inputs were real.
+@inline _strip_im(x::Complex, ::Type{T}) where {T <: Real} = real(x)
+@inline _strip_im(x, ::Type) = x
+
 """
     _hill_ti_walpole(ω, C1111, C1122, C1133, C3333, C2323)
         -> (P1, P2, P3, P5, P6)
@@ -107,15 +118,23 @@ Closed-form Walpole-basis coefficients of the Hill tensor for a spheroid
 of aspect ratio `ω = (axial)/(transverse)` coaxial with a transversely
 isotropic matrix specified by the five independent elastic constants.
 
-The arithmetic is carried out in `Complex{T}` where
-`T = promote_type(typeof(ω), typeof(C1111), …, typeof(C2323))`. This
-preserves compatibility with `ForwardDiff.Dual` numbers (so the
-analytical Hill tensor is differentiable through the elastic constants
-and the spheroid aspect ratio).  The imaginary parts cancel by
-construction and only the real parts are returned. When the matrix is
-in fact isotropic (`C1111 = C3333 = λ + 2μ`, `C1122 = C1133 = λ`,
-`C2323 = μ`) the returned coefficients reduce to the classical Mura
-formula.
+Element type policy: with
+`T = promote_type(typeof(ω), typeof(C1111), …, typeof(C2323))`,
+
+- if `T <: Real` (standard real-modulus case), the arithmetic is carried
+  out in `Complex{T}` to keep the complex roots of the acoustic
+  polynomial well-defined; the imaginary parts cancel by construction
+  and only the real parts are returned. Compatible with
+  `ForwardDiff.Dual` numbers (the analytical Hill tensor is
+  differentiable through the elastic constants and the spheroid aspect
+  ratio).
+- if `T` is itself complex (frequency-domain viscoelasticity, harmonic
+  problems), the formula is evaluated directly in `T` and the genuinely
+  complex `P_i` are returned unchanged.
+
+When the matrix is in fact isotropic (`C1111 = C3333 = λ + 2μ`,
+`C1122 = C1133 = λ`, `C2323 = μ`) the returned coefficients reduce to
+the classical Mura formula.
 
 !!! note "Symbolic numbers (SymPy `Sym`)"
     The function is **not** compatible with SymPy `Sym` inputs because
@@ -128,14 +147,15 @@ formula.
 Reference: [barthelemyIJES2020_hilltrans](@cite), eqs. 49–58.
 """
 function _hill_ti_walpole(ω, C1111, C1122, C1133, C3333, C2323)
-    T = promote_type(typeof(ω), typeof(C1111), typeof(C1122),
-                     typeof(C1133), typeof(C3333), typeof(C2323))
-    ωc  = Complex{T}(ω)
-    C11 = Complex{T}(C1111)
-    C12 = Complex{T}(C1122)
-    C13 = Complex{T}(C1133)
-    C33 = Complex{T}(C3333)
-    C44 = Complex{T}(C2323)
+    T  = promote_type(typeof(ω), typeof(C1111), typeof(C1122),
+                      typeof(C1133), typeof(C3333), typeof(C2323))
+    TC = T <: Real ? Complex{T} : T
+    ωc  = TC(ω)
+    C11 = TC(C1111)
+    C12 = TC(C1122)
+    C13 = TC(C1133)
+    C33 = TC(C3333)
+    C44 = TC(C2323)
 
     om2 = ωc^2
     om4 = om2^2
@@ -160,15 +180,21 @@ function _hill_ti_walpole(ω, C1111, C1122, C1133, C3333, C2323)
     i2 = _I2(η3) / C44
 
     # Walpole components (eqs. 53–58 of Barthélémy 2020)
-    P1 = real(((C44 - om2 * C11) * j4 + om2 * C11 * j2) / 2)
-    P2 = real(om2 * ((om2 * C44 - C33) * j4 + (C33 - 2 * om2 * C44) * j2 + om2 * C44 * j0) / 4)
-    P3 = real(om2 / (2 * sqrt(T(2))) * (C44 + C13) * (j4 - j2))
-    P5 = real(P2) / 2 + real(om2 * (i0 - i2) / 8)
-    P6 = real(((om4 * C11 + C33 + 2 * om2 * C13) * j4
+    P1_c = ((C44 - om2 * C11) * j4 + om2 * C11 * j2) / 2
+    P2_c = om2 * ((om2 * C44 - C33) * j4 + (C33 - 2 * om2 * C44) * j2 + om2 * C44 * j0) / 4
+    P3_c = om2 / (2 * sqrt(TC(2))) * (C44 + C13) * (j4 - j2)
+    P5_c = P2_c / 2 + om2 * (i0 - i2) / 8
+    P6_c = ((om4 * C11 + C33 + 2 * om2 * C13) * j4
                 - 2 * om2 * (om2 * C11 + C13) * j2
-                + om4 * C11 * j0 + i2) / 8)
+                + om4 * C11 * j0 + i2) / 8
 
-    return (P1, P2, P3, P5, P6)
+    return (
+        _strip_im(P1_c, T),
+        _strip_im(P2_c, T),
+        _strip_im(P3_c, T),
+        _strip_im(P5_c, T),
+        _strip_im(P6_c, T),
+    )
 end
 
 # ── Public builders — coaxial spheroid in TI matrix --------------------------

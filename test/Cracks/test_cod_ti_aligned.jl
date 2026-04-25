@@ -115,3 +115,28 @@ end
     dval = ForwardDiff.derivative(g, 0.5)
     @test isfinite(dval)
 end
+
+@testset "COD TI aligned — complex moduli (frequency-domain viscoelasticity)" begin
+    n_axis = [0.0, 0.0, 1.0]
+    δ = 0.05
+    C_c = tens_TI(2.179 + δ * im, 0.579 + 0.0im, 0.689 + 0.0im,
+                  10.345 + δ * im, 1.0 + 0.5δ * im, n_axis)
+    @test eltype(C_c) <: Complex
+
+    for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5), RibbonCrack(1.0))
+        B_c = cod_tensor(c, C_c)
+        @test eltype(B_c) <: Complex
+        @test all(isfinite, get_array(B_c))
+    end
+
+    # Limit Im → 0 must reproduce the real result exactly.
+    C_r = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+    C_0 = tens_TI(2.179 + 0.0im, 0.579 + 0.0im, 0.689 + 0.0im,
+                  10.345 + 0.0im, 1.0 + 0.0im, n_axis)
+    for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5), RibbonCrack(1.0))
+        B_r = cod_tensor(c, C_r)
+        B_0 = cod_tensor(c, C_0)
+        @test maximum(abs.(real.(get_array(B_0)) .- get_array(B_r))) < 1.0e-14
+        @test maximum(abs.(imag.(get_array(B_0))))                   < 1.0e-14
+    end
+end
