@@ -121,6 +121,24 @@ export layer_strain_average, sphere_strain_average, cumulative_strain_average
 # ── Elliptic integrals (type-generic) ────────────────────────────────────────
 export ell_K, ell_E, ell_F, ell_RF, ell_RD
 
+# ── Schemes : RVE + amounts + distribution shape ─────────────────────────────
+export AbstractAmount, VolumeFraction, CrackDensity
+export AbstractDistributionShape, UniformDistribution
+export Phase, RVE
+export add_matrix!, add_phase!
+export matrix_phase, inclusion_phase_names
+export phase_property, matrix_property
+export volume_fraction, crack_density, matrix_volume_fraction
+export validate_rve
+
+# ── Schemes : scheme types + entry point ─────────────────────────────────────
+export HomogenizationScheme
+export Voigt, Reuss, Dilute, DiluteDual, MoriTanaka, Maxwell, PonteCastanedaWillis
+export SelfConsistent, AsymmetricSelfConsistent
+export AndersonDefault, NewtonDefault
+export DifferentialTrajectory, Proportional, Sequential, CustomPath, DifferentialScheme
+export homogenize
+
 # ── Backwards-compat aliases ─────────────────────────────────────────────────
 const HillAlgorithm = AbstractAlgorithm
 const CrackAlgorithm = AbstractAlgorithm

@@ -37,6 +37,18 @@ using MeanFieldHom
         include("Conductivity/test_localization.jl")
     end
 
+    @testset "Schemes" begin
+        include("Schemes/test_rve.jl")
+        include("Schemes/test_dispatch.jl")
+        include("Schemes/test_voigt_reuss.jl")
+        include("Schemes/test_one_shot.jl")
+        include("Schemes/test_maxwell_pcw.jl")
+        include("Schemes/test_self_consistent.jl")
+        include("Schemes/test_differential.jl")
+        include("Schemes/test_complex_moduli.jl")
+        include("Schemes/test_dual_compat.jl")
+    end
+
     @testset "LayeredSpheres" begin
         include("LayeredSpheres/test_bulk.jl")
         include("LayeredSpheres/test_interfaces.jl")

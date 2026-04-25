@@ -47,6 +47,7 @@ makedocs(;
             "theory/cod_tensors.md",
             "theory/thermal_cracks.md",
             "theory/localization.md",
+            "theory/homogenization.md",
             "theory/layered_sphere.md",
             "theory/elliptic_integrals.md",
             "theory/cylindrical_limits.md",
@@ -57,6 +58,7 @@ makedocs(;
             "manual/cylindrical_inclusions.md",
             "manual/cracks.md",
             "manual/conductivity.md",
+            "manual/schemes.md",
             "manual/elliptic_examples.md",
         ],
         "Developer" => [
@@ -76,6 +78,7 @@ makedocs(;
             "api/conductivity.md",
             "api/localization.md",
             "api/layered_sphere.md",
+            "api/schemes.md",
         ],
         "References" => "references.md",
     ],

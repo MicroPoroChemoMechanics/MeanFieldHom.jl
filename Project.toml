@@ -1,6 +1,6 @@
 name = "MeanFieldHom"
 uuid = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
-version = "0.1.0"
+version = "0.3.0"
 authors = ["Jean-François Barthélémy <jean-francois.barthelemy@cerema.fr>"]
 
 [deps]
@@ -15,6 +15,7 @@ TensND = "474b5345-2588-4284-8a58-2430a1a40cb0"
 Tensors = "48a634ad-e948-5137-8d70-aa71f2a747f4"
 
 [weakdeps]
+NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
 
 [sources]
@@ -22,6 +23,7 @@ DECUHR = {path = "../DECUHR.jl"}
 TensND = {path = "../TensND.jl"}
 
 [extensions]
+MeanFieldHomNonlinearSolveExt = "NonlinearSolve"
 MeanFieldHomSymPyExt = "SymPy"
 
 [compat]
