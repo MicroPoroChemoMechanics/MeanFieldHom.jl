@@ -29,6 +29,7 @@ include("cylinder.jl")
 include("auxiliary_tensors.jl")
 include("hill_3d_iso.jl")
 include("hill_3d_cylinder_iso.jl")
+include("hill_3d_ti_coaxial.jl")
 include("hill_3d_aniso_residue.jl")
 include("hill_3d_aniso_nestedquadgk.jl")
 include("hill_3d_aniso_decuhr.jl")
@@ -36,6 +37,33 @@ include("hill_3d_cylinder_aniso.jl")
 include("hill_2d_iso.jl")
 include("hill_2d_aniso.jl")
 include("api.jl")
+
+# ── TI-coaxial dispatch refinement ──────────────────────────────────────────
+# Inject specialised resolution for TI matrix + coaxial spheroid; falls back
+# to the generic residue/DECUHR branch otherwise.  Defined here (after the
+# inclusion types and `_ti_coaxial` are visible) to avoid Core→Elasticity
+# circular dependency.
+
+if isdefined(TensND, :TensTI)
+    @eval function _ti_dispatch(method::Symbol, ell::Ellipsoid{3}, C₀::TensND.TensTI{4})
+        if (method === :auto || method === :analytical) && _ti_coaxial(C₀, ell)
+            return MFH_Core.Analytical()
+        end
+        method === :decuhr && return MFH_Core.DECUHR()
+        method === :nestedquadgk && return MFH_Core.NestedQuadGK()
+        return MFH_Core.Residue()
+    end
+    @eval MFH_Core._resolve_algo(::Val{:auto}, ell::Ellipsoid{3}, C₀::TensND.TensTI{4}) =
+        _ti_dispatch(:auto, ell, C₀)
+    @eval MFH_Core._resolve_algo(::Val{:analytical}, ell::Ellipsoid{3}, C₀::TensND.TensTI{4}) =
+        _ti_dispatch(:analytical, ell, C₀)
+    @eval MFH_Core._resolve_algo(::Val{:residues}, ell::Ellipsoid{3}, C₀::TensND.TensTI{4}) =
+        _ti_dispatch(:residues, ell, C₀)
+    @eval MFH_Core._resolve_algo(::Val{:decuhr}, ell::Ellipsoid{3}, C₀::TensND.TensTI{4}) =
+        _ti_dispatch(:decuhr, ell, C₀)
+    @eval MFH_Core._resolve_algo(::Val{:nestedquadgk}, ell::Ellipsoid{3}, C₀::TensND.TensTI{4}) =
+        _ti_dispatch(:nestedquadgk, ell, C₀)
+end
 
 export Ellipsoid
 export EllipsoidShape, Spherical, Prolate, Oblate, Triaxial, Circular, Elliptic

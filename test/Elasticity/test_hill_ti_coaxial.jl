@@ -1,0 +1,139 @@
+# =============================================================================
+#  test_hill_ti_coaxial.jl
+#
+#  Validates the closed-form analytical Hill tensor for a TI matrix coaxial
+#  with a spheroid (Barthélémy 2020) by:
+#   1. Reducing to the isotropic case and matching the analytical isotropic
+#      builder (consistency with `_hill_3d_iso`).
+#   2. Cross-validating against the residue algorithm (`:residues`) for an
+#      oblate spheroid (where the residue path is reliable).
+#   3. Cross-validating against the DECUHR algorithm (`:decuhr`) for a
+#      prolate spheroid, where the residue path can be numerically fragile.
+#   4. Verifying that the analytical algorithm is the dispatcher's default
+#      (`:auto`) for a TI-coaxial setup.
+#   5. Verifying that the dispatcher falls back to `Residue` when the TI axis
+#      is not aligned with the spheroid axis.
+# =============================================================================
+
+using Test
+using MeanFieldHom
+using TensND
+using LinearAlgebra
+
+const ATOL_ANA_ISO  = 1.0e-8
+const ATOL_ANA_RES  = 1.0e-12
+const ATOL_ANA_DEC  = 1.0e-8
+
+@testset "Hill TI coaxial — sphere recovers isotropic builder" begin
+    # Build an isotropic stiffness, then re-express it as a (degenerate) TI
+    # tensor with axis e₃: the analytical TI builder should reproduce the
+    # isotropic Hill tensor to numerical precision.
+    n_axis = [0.0, 0.0, 1.0]
+    ell = Ellipsoid(1.0, 1.0, 1.0)                     # sphere
+    C_iso = TensISO{3}(30.0, 10.0)                     # 3k=30, 2μ=10
+    C_ti  = fromISO(C_iso, n_axis)                     # TensTI{4,T,5}
+    @test C_ti isa TensND.TensTI{4, Float64, 5}
+
+    P_iso = hill_tensor(ell, C_iso)                    # isotropic builder
+    P_ana = hill_tensor(ell, C_ti)                     # auto → :analytical
+    @test P_ana isa TensND.TensTI{4, Float64, 5}
+    @test maximum(abs.(get_array(P_ana) .- get_array(P_iso))) < ATOL_ANA_ISO
+end
+
+@testset "Hill TI coaxial — oblate, cross-validation vs residue" begin
+    # Sevostianov-Yilmaz-Kushch-Levin (2005) test stiffness from the
+    # Barthélémy 2020 paper figure 1.
+    n_axis = [0.0, 0.0, 1.0]
+    C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+
+    # All ratios < 1 keep the spheroid axis along e₃ (oblate) — coaxial
+    # with the matrix axis n_axis.
+    for ratio in (0.1, 0.3, 0.5, 0.7, 0.9)
+        ell = Ellipsoid(1.0, 1.0, ratio)
+        @test ell isa Ellipsoid{3, MeanFieldHom.Oblate}
+        P_ana = hill_tensor(ell, C_TI)                   # analytical
+        P_res = hill_tensor(ell, C_TI; method = :residues)
+        diff = maximum(abs.(get_array(P_ana) .- get_array(P_res)))
+        @test diff < ATOL_ANA_RES
+    end
+end
+
+@testset "Hill TI coaxial — prolate, cross-validation vs DECUHR" begin
+    n_axis = [1.0, 0.0, 0.0]                            # TI axis = e₁
+    C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+
+    for ratio in (1.5, 3.0, 8.0)
+        ell = Ellipsoid(ratio, 1.0, 1.0)                # prolate, axis e₁
+        P_ana = hill_tensor(ell, C_TI)                   # analytical
+        P_dec = hill_tensor(ell, C_TI; method = :decuhr)
+        diff = maximum(abs.(get_array(P_ana) .- get_array(P_dec)))
+        @test diff < ATOL_ANA_DEC
+    end
+end
+
+@testset "Hill TI coaxial — dispatcher selects Analytical by default" begin
+    n_axis = [0.0, 0.0, 1.0]
+    ell = Ellipsoid(1.0, 1.0, 0.4)
+    C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+
+    algo = MeanFieldHom.Core._resolve_algo(Val(:auto), ell, C_TI)
+    @test algo isa MeanFieldHom.Core.Analytical
+end
+
+@testset "Hill TI coaxial — dispatcher falls back when non-coaxial" begin
+    # TI axis = e₁ but spheroid axis = e₃ (oblate) — not coaxial.
+    n_axis = [1.0, 0.0, 0.0]
+    ell = Ellipsoid(1.0, 1.0, 0.4)                       # oblate, axis e₃
+    C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+
+    algo = MeanFieldHom.Core._resolve_algo(Val(:auto), ell, C_TI)
+    @test algo isa MeanFieldHom.Core.Residue   # default fallback for non-coaxial
+
+    # And the residue / DECUHR path should still produce a finite answer.
+    P_dec = hill_tensor(ell, C_TI; method = :decuhr)
+    @test all(isfinite(P_dec[i, j, k, l]) for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+end
+
+@testset "Hill TI coaxial — ForwardDiff compatibility" begin
+    using ForwardDiff
+    n_axis = [0.0, 0.0, 1.0]
+    ell = Ellipsoid(1.0, 1.0, 0.3)
+    C0 = [2.179, 0.579, 0.689, 10.345, 1.0]
+
+    # Differentiability w.r.t. the 5 elastic constants
+    f = C -> begin
+        C_TI = tens_TI(C[1], C[2], C[3], C[4], C[5], n_axis)
+        get_array(hill_tensor(ell, C_TI))[3, 3, 3, 3]
+    end
+    grad_C = ForwardDiff.gradient(f, C0)
+    @test length(grad_C) == 5
+    @test all(isfinite, grad_C)
+
+    # Differentiability w.r.t. the spheroid aspect ratio
+    g = c_axial -> begin
+        ell2 = Ellipsoid(1.0, 1.0, c_axial)
+        C_TI = tens_TI(C0..., n_axis)
+        get_array(hill_tensor(ell2, C_TI))[3, 3, 3, 3]
+    end
+    dval_dc = ForwardDiff.derivative(g, 0.3)
+    @test isfinite(dval_dc)
+
+    # Numerical sanity: forward difference should agree with the AD derivative
+    h = 1.0e-6
+    fd = (g(0.3 + h) - g(0.3 - h)) / (2h)
+    @test isapprox(dval_dc, fd; rtol = 1.0e-5)
+end
+
+@testset "Hill TI coaxial — explicit :residues / :decuhr still work on coaxial" begin
+    # The user can override the analytical default with a numerical method.
+    n_axis = [0.0, 0.0, 1.0]
+    ell = Ellipsoid(1.0, 1.0, 0.5)
+    C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
+
+    P_ana = hill_tensor(ell, C_TI; method = :auto)
+    P_res = hill_tensor(ell, C_TI; method = :residues)
+    P_dec = hill_tensor(ell, C_TI; method = :decuhr)
+
+    @test maximum(abs.(get_array(P_ana) .- get_array(P_res))) < ATOL_ANA_RES
+    @test maximum(abs.(get_array(P_ana) .- get_array(P_dec))) < ATOL_ANA_DEC
+end

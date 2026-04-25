@@ -239,13 +239,39 @@ the Echoes `NUMINT` / `RESIDUES` options:
   derived in [masson2008](@cite). Float64 only (the polynomial root
   finder used for the inner sum is not ForwardDiff-compatible).
 
-Analytical anisotropic paths exist for specific symmetry classes
-([withers1989](@cite) for transversely isotropic matrices,
-[suvorov2002](@cite) for rate forms) and can be extended to a larger
-set through the linear-transformation technique
-[pouya2000](@cite), [pouya2006](@cite),
-[barthelemyIJES2020_hilltrans](@cite). These are **not yet
-implemented** in MFH.
+#### Transversely isotropic matrix coaxial with a spheroid (analytical)
+
+For the special case of a TI matrix whose symmetry axis is parallel to
+the spheroid axis, MFH provides a fully analytical closed-form path
+based on [barthelemyIJES2020_hilltrans](@cite). The Hill tensor
+admits the Walpole-basis decomposition
+``\mathbb P = P_1 W_1 + P_2 W_2 + P_3 (W_3+W_4) + P_5 W_5 + P_6 W_6``
+whose six coefficients depend on the aspect ratio
+``\omega = (\text{axial})/(\text{transverse})`` and the five
+independent TI elastic constants
+``(C_{1111}, C_{1122}, C_{1133}, C_{3333}, C_{2323})`` through six
+elementary integrals (closed-form combinations of `acosh` and complex
+square roots).
+
+**Selection** — the dispatcher
+[`MeanFieldHom.Core._resolve_algo`](@ref) routes a `TensTI{4}` matrix
+combined with a coaxial `Ellipsoid{3, Spherical|Prolate|Oblate}` to the
+`Analytical` algorithm trait by default. Coaxiality is detected via
+the helper `_ti_coaxial(C₀, ell)`. Non-coaxial spheroids and triaxial
+ellipsoids fall back to `Residue` (the default for general
+anisotropy).
+
+| Algorithm     | Symbol            | Use case                                            | Speed        | ForwardDiff |
+|---------------|-------------------|-----------------------------------------------------|--------------|-------------|
+| `Analytical`  | `:auto` (default) | TI matrix coaxial with spheroid                     | O(1)         | Yes         |
+| `Residue`     | `:residues`       | Anisotropic, default fallback                       | ~ µs         | No          |
+| `DECUHR`      | `:decuhr`         | Anisotropic, ForwardDiff-friendly numerical         | ~ ms         | Yes         |
+| `NestedQuadGK`| `:nestedquadgk`   | Historical nested-1D-QuadGK, kept for benchmarking | ~ ms         | Yes         |
+
+For other symmetry classes (orthotropic matrix, non-coaxial TI,
+generic anisotropic), analytical paths exist in the literature
+([withers1989](@cite), [pouya2000](@cite), [pouya2006](@cite),
+[suvorov2002](@cite)) but are not yet implemented in MFH.
 
 ### Cylinder (MFH extension)
 

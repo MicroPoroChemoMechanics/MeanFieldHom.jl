@@ -47,6 +47,10 @@ end
 _kernel(ell::Ellipsoid{3}, C₀::TensND.TensISO{4, 3}, ::MFH_Core.Analytical; kw...) =
     _hill_3d_iso(ell, C₀)
 
+# Analytical TI-coaxial branch — Barthélémy 2020
+_kernel(ell::Ellipsoid{3}, C₀::TensND.TensTI{4}, ::MFH_Core.Analytical; kw...) =
+    _hill_3d_ti_coaxial(ell, C₀)
+
 _kernel(ell::Ellipsoid{3}, C₀::TensND.AbstractTens{4, 3}, ::MFH_Core.Residue; kw...) =
     _hill_3d_aniso_residue(
     ell, C₀;
