@@ -1,5 +1,162 @@
 # Changelog
 
+## v0.4.0 — Friendly autodiff sensitivities, RVE-level symmetrize, Hill-symmetric SC
+
+A small but expressive API exposing `ForwardDiff`-based derivatives of any
+homogenisation result with respect to any scalar input parameter — physical
+(stiffness coefficient, conductivity), geometric (radii, semi-axes, crack
+opening, distribution-shape envelope) or volume-fraction / crack-density —
+*and* for arbitrary scalar fields of inclusion types defined later by the
+user. The autodiff path unlocks geometric and user-type sensitivities that
+were not previously practical, and the multi-scale chain rule is taken care
+of automatically by composing several `homogenize` calls inside a single
+closure.
+
+The release also ships an RVE-level orientation-distribution projection
+(`symmetrize`), a corrected Hill-symmetric self-consistent scheme that
+percolates exactly at φ=0.5 for spherical pores, a `Spheroid` convenience
+constructor, Dual-stable SC convergence, and a `select_best` mode that
+mirrors the C++ reference's behaviour at percolation thresholds.
+
+### Additions
+
+- **Lens hierarchy** `AbstractParameter` with four concrete kinds
+  (`AmountParameter`, `PropertyParameter`, `GeometryParameter`,
+  `DistributionShapeParameter`) plus user-friendly helpers (`amount`,
+  `property`, `geometry`, `shape_param`).
+- **`get_param(rve, p)` / `set_param(rve, p, value)`** — read / immutable
+  update of the scalar designated by a lens, with automatic eltype
+  promotion to integrate `ForwardDiff.Dual` cleanly.
+- **Public autodiff entry points** `derivative`, `gradient`, `jacobian`
+  and the closure fallback `sensitivity(f, x₀)`. They become available
+  after `using ForwardDiff` (weak extension `MeanFieldHomForwardDiffExt`).
+- **Generic geometry-field reflection** `_replace_geom_field` based on
+  `@generated` reconstruction with uniform sibling-field eltype
+  promotion. User-defined inclusions whose constructor follows the
+  parametric Julia auto-generated pattern (`MyType{T,B}(args...)`) are
+  differentiable through their scalar fields without any library change.
+- **Symbol selectors for property tensors** mapping named coefficients
+  (`:bulk`, `:shear`, `:transverse`, `:axial`, `:ℓ₁`..`:ℓ₆`) to the
+  positional indices of `get_data(tensor)` for `TensISO{2}`,
+  `TensISO{4,3}`, `TensTI{2}` and `TensTI{4}`.
+- **`MeanFieldHomForwardDiffExt`** weak extension activating the public
+  API on `using ForwardDiff`. ForwardDiff is registered in `[weakdeps]`
+  alongside NonlinearSolve and SymPy; no new hard dependency.
+- **RVE-level orientation symmetrize** via the `symmetrize` keyword on
+  `add_matrix!` / `add_phase!`. Three options:
+  - `:none` (default): no projection.
+  - `:iso`: Reynolds average over `SO(3)` ⇒ isotropic contribution
+    (`TensISO`).
+  - `:ti` / `TISymmetrize(axis)`: Reynolds average over rotations around
+    `axis` ⇒ transversely-isotropic contribution (`TensTI(axis)`).
+  Implemented for tensor orders 2 and 4. The TI projection currently
+  routes the matrix through an iso projection during the
+  localisation-tensor computation (workaround for non-coaxial inclusion
+  families); see [`src/Schemes/symmetrize.jl`](src/Schemes/symmetrize.jl)
+  for the rationale.
+- **`Spheroid(ω; euler_angles)`** convenience constructor on top of
+  `Ellipsoid`, mirroring the `spheroidal(omega)` helper of the C++
+  reference: `ω = c/a` with one polar semi-axis equal to `ω` and two
+  equatorial ones equal to `1`. Eshelby/Hill computations are
+  scale-invariant so only the aspect ratio matters.
+- **`select_best` keyword on the SC fixed-point solver** — when `true`,
+  the solver tracks the best iterate seen during Picard iteration
+  (smallest residual on the value field) and returns it at the end.
+  Useful for high-contrast iterations that oscillate around the fixed
+  point near percolation thresholds; matches the C++ reference's
+  `select_best=True` mode.
+
+### Fixes
+
+- **Hill-symmetric self-consistent**: every phase now contributes a
+  non-trivial dilute concentration `A_α = inv(I + P(C_α − C_eff))`
+  computed in the iterating effective medium, including the matrix
+  phase. The previous SC step treated the matrix as having `A = I`
+  (Mori-Tanaka-style), which gave the upper SC branch only and
+  misplaced the porous-sphere percolation threshold. With the fix,
+  porous spheres percolate exactly at φ = 0.5.
+- **Dual-stable SC convergence criterion** — the Picard convergence
+  test now requires both the value AND every partial of the residual to
+  fall below `abstol`. Without that, the value can converge while the
+  partials carry residual error of order `‖∂step/∂x‖ × abstol`,
+  producing numerically wrong sensitivities through the SC fixed point.
+- **TI symmetrize Walpole normalisation**: the `_apply_symmetrize` for
+  `TISymmetrize` now divides the W₅ and W₆ projection coefficients by
+  `‖W_k‖² = 2`, matching the basis-decomposition convention of
+  `TensND.TensTI{4}`. Round-trip on a coaxial TI(ez) tensor is now
+  exact.
+
+### Documentation
+
+New manual page `manual/sensitivities.md` (motivation, lens API, closure
+fallback, user-inclusion tutorial, multi-scale chain-rule example, and a
+section on the `symmetrize` keyword) and auto-API page
+`api/sensitivities.md`. Both wired into `docs/make.jl`.
+
+### Scripts
+
+- `scripts/26_sensitivities.jl` — tour of the API (lenses + gradient +
+  jacobian + cross-check vs the Christensen 1990 closed form for
+  `∂k_MT/∂f`, agreement to ~1e-16).
+- `scripts/27_user_inclusion_sensitivity.jl` — extensibility demo on a
+  user-defined inclusion type `MyBlob{T,B}` with two numeric fields
+  (`radius`, `eccentricity`).
+- `scripts/28_multiscale_strength.jl` — three-scale upscaling of
+  cement-paste / mortar elasticity and quasi-brittle compression
+  strength following Pichler & Hellmich 2011 (SC + MT + MT). The single
+  iso hydrate phase + global-μ autodiff approximation matches the
+  effective moduli (k, μ, E) of the reference Python implementation to
+  rtol ≈ 1e-3 across the (wc, α) grid.
+- `scripts/29_porous_schemes.jl` — porous benchmark across all ten
+  schemes (sphere and oblate ω = 0.2 with iso symmetrize). After the
+  Hill-symmetric SC fix, spherical-pore SC percolates exactly at φ=0.5.
+- `scripts/bench_echoes/benchmark_porous.jl`, `benchmark_pichler.jl`
+  — PyCall cross-validation against the C++ reference; ten schemes ×
+  two cases (sphere / oblate) for porous, six wc curves × twelve α
+  points for Pichler. The moduli match the reference to rtol_mod ≈ 1e-3
+  across both benchmarks.
+
+### Tests
+
+Three new cross-cutting test files:
+
+- `test_parameters.jl` (round-trip, type-promotion, no-mutation
+  invariants on every lens kind),
+- `test_sensitivities.jl` (FD vs autodiff cross-check on every scheme,
+  closed-form Christensen 1990 match to `~1e-12`, closure fallback,
+  `MyBlob` user-inclusion demonstration),
+- `test_symmetrize.jl` (round-trip iso/TI projections on 2nd- and
+  4th-order tensors, TI(ez) coaxial preservation, integration with
+  `homogenize`).
+
+Total: 3421 tests pass.
+
+### Breaking changes
+
+- **SC results differ for systems near percolation** because of the
+  Hill-symmetric SC fix. The pre-v0.4 SC step treated the matrix as
+  Mori-Tanaka-style (A = I) and therefore selected the upper branch
+  unconditionally. The new step is the textbook Hill / Budiansky 1965
+  symmetric SC. Users who relied on the old upper-branch behaviour for
+  porous-sphere systems should switch to `MoriTanaka` (which is also
+  not broken by the fix).
+- **`homogenize` API** keeps the `homogenize(rve, scheme; property=:C)`
+  kwarg form for backward compatibility but the recommended signature
+  is now `homogenize(rve, scheme, property::Symbol)` with `property`
+  required and positional.
+
+### Notes
+
+- `Complex{T}` autodiff is not supported (ForwardDiff does not mix Dual
+  and Complex cleanly). Symbolic differentiation goes through SymPy on
+  the closed-form schemes directly (already supported).
+- The `AsymmetricSelfConsistent` scheme follows the symmetric-SC fixed
+  point in compliance space when matrix is stiff. The C++ reference's
+  ASC uses a different formulation (compliance-form Mori-Tanaka with
+  iterating reference) which converges to a different branch for
+  porous oblate systems away from percolation; this is documented in
+  `scripts/bench_echoes/benchmark_porous.jl`.
+
 ## v0.3.0 — RVE container + 10 homogenisation schemes
 
 New `MeanFieldHom.Schemes` sub-module: a Representative Volume Element

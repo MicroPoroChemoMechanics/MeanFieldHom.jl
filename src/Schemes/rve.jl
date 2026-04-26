@@ -84,6 +84,80 @@ _sums_to_unit(::VolumeFraction) = true
 _sums_to_unit(::CrackDensity)   = false
 
 # =============================================================================
+#  Symmetrize: orientation-distribution projection of a phase's contribution
+# =============================================================================
+
+"""
+    AbstractSymmetrize
+
+Specifies how a phase's *localization tensor* (and the derived stiffness /
+compliance / conductivity / resistivity contributions) is averaged over an
+orientation distribution before being used in the homogenisation formula.
+
+Three concrete subtypes are shipped :
+
+- [`NoSymmetrize`](@ref) (default) — keep the contribution as computed for
+  the single-orientation inclusion stored in the phase.
+- [`IsoSymmetrize`](@ref) — average over **all** rotations (uniform spatial
+  distribution of orientations) ; produces an isotropic projection.
+- [`TISymmetrize`](@ref) — average over rotations around a specified axis
+  (uniaxial uniform distribution) ; produces a transversely-isotropic
+  projection.
+
+This mirrors C++ ECHOES's `symmetrize=[ISO]` / `symmetrize=[TI]` keyword on
+`ellipsoid()`, but moved to the *RVE* side (just like volume fractions) :
+the same inclusion type can be re-used in different RVEs with different
+distribution assumptions, and a single inclusion remains usable for
+localisation-tensor calculations without any RVE.
+"""
+abstract type AbstractSymmetrize end
+
+"""
+    NoSymmetrize() <: AbstractSymmetrize
+
+Default. The localization tensor is used as computed for the single
+orientation defined by the inclusion's basis.
+"""
+struct NoSymmetrize <: AbstractSymmetrize end
+
+"""
+    IsoSymmetrize() <: AbstractSymmetrize
+
+The localization tensor is averaged over a *uniform spatial distribution*
+of orientations, equivalent to projecting onto the isotropic basis
+`(J, K_proj)` for 4th-order tensors and onto the spherical part for
+2nd-order tensors. Produces an isotropic phase contribution regardless of
+the inclusion's actual shape.
+"""
+struct IsoSymmetrize <: AbstractSymmetrize end
+
+"""
+    TISymmetrize(axis = (0, 0, 1)) <: AbstractSymmetrize
+
+The localization tensor is averaged over rotations about `axis` (uniaxial
+uniform distribution). Produces a transversely-isotropic phase
+contribution with that symmetry axis.
+"""
+struct TISymmetrize{T <: Number} <: AbstractSymmetrize
+    axis::NTuple{3, T}
+end
+TISymmetrize() = TISymmetrize((0.0, 0.0, 1.0))
+TISymmetrize(axis::AbstractVector) = TISymmetrize(NTuple{3}(Tuple(axis)))
+
+# Coercer for kwargs : accept a Symbol shortcut, an `AbstractSymmetrize`, or
+# nothing (no projection).
+_to_symmetrize(::Nothing) = NoSymmetrize()
+_to_symmetrize(s::AbstractSymmetrize) = s
+function _to_symmetrize(s::Symbol)
+    s === :none && return NoSymmetrize()
+    s === :iso  && return IsoSymmetrize()
+    s === :ISO  && return IsoSymmetrize()
+    s === :ti   && return TISymmetrize()
+    s === :TI   && return TISymmetrize()
+    throw(ArgumentError("unknown symmetrize Symbol :$(s); expected :none, :iso or :ti (or pass an AbstractSymmetrize instance for non-default axis)"))
+end
+
+# =============================================================================
 #  Distribution shape: PCW / Maxwell outer-envelope descriptor
 # =============================================================================
 
@@ -205,6 +279,7 @@ mutable struct RVE{T <: Number, S <: Union{Nothing, AbstractDistributionShape}}
     phase_names::Vector{Symbol}
     phases::Dict{Symbol, Phase}
     amounts::Dict{Symbol, AbstractAmount{T}}
+    symmetrize::Dict{Symbol, AbstractSymmetrize}
     distribution_shape::S
 end
 
@@ -226,6 +301,7 @@ function RVE(matrix_name::Symbol;
         Symbol[],
         Dict{Symbol, Phase}(),
         Dict{Symbol, AbstractAmount{T}}(),
+        Dict{Symbol, AbstractSymmetrize}(),
         ds,
     )
 end
@@ -235,23 +311,32 @@ end
 # =============================================================================
 
 """
-    add_matrix!(rve, geometry, properties::AbstractDict)
+    add_matrix!(rve, geometry, properties::AbstractDict; symmetrize = nothing)
 
 Register the matrix phase. Must be called before any [`add_phase!`](@ref).
 The matrix has no explicit amount (its volume fraction is implicit).
+
+Pass a `symmetrize = :iso | :ti | TISymmetrize(axis) | NoSymmetrize()` kwarg
+to declare an orientation-distribution projection of the matrix's
+localization tensor (see [`AbstractSymmetrize`](@ref)).
 """
-function add_matrix!(rve::RVE, geometry::AbstractInclusion, properties::AbstractDict)
+function add_matrix!(rve::RVE, geometry::AbstractInclusion, properties::AbstractDict;
+                     symmetrize = nothing)
     name = rve.matrix_name
     haskey(rve.phases, name) &&
         throw(ArgumentError("matrix phase :$(name) already registered"))
     rve.phases[name] = Phase(geometry, properties)
     pushfirst!(rve.phase_names, name)
+    sym = _to_symmetrize(symmetrize)
+    if !(sym isa NoSymmetrize)
+        rve.symmetrize[name] = sym
+    end
     return rve
 end
 
 """
     add_phase!(rve, name::Symbol, geometry, properties::AbstractDict;
-               fraction = nothing, density = nothing)
+               fraction = nothing, density = nothing, symmetrize = nothing)
 
 Register an inclusion phase with the given `geometry` and material
 `properties`. Exactly one of `fraction` (for ellipsoidal inclusions and
@@ -261,10 +346,19 @@ solid inhomogeneities) or `density` (for cracks) must be supplied;
 
 Both `fraction` and `density` are converted to the RVE's amount eltype
 `T` at insertion.
+
+The optional `symmetrize` kwarg declares an orientation-distribution
+projection of this phase's localization tensor : `:iso` (uniform spatial
+distribution → isotropic projection), `:ti` (uniaxial uniform around
+z-axis), `TISymmetrize(axis)` (around an arbitrary axis), or pass an
+explicit [`AbstractSymmetrize`](@ref) instance. The default
+[`NoSymmetrize`](@ref) keeps the inclusion's actual single-orientation
+tensor.
 """
 function add_phase!(rve::RVE{T}, name::Symbol, geometry::AbstractInclusion,
                     properties::AbstractDict;
-                    fraction = nothing, density = nothing) where {T}
+                    fraction = nothing, density = nothing,
+                    symmetrize = nothing) where {T}
     name === rve.matrix_name &&
         throw(ArgumentError("name :$(name) is reserved for the matrix phase"))
     haskey(rve.phases, name) &&
@@ -278,6 +372,10 @@ function add_phase!(rve::RVE{T}, name::Symbol, geometry::AbstractInclusion,
         VolumeFraction{T}(convert(T, fraction))
     else
         CrackDensity{T}(convert(T, density))
+    end
+    sym = _to_symmetrize(symmetrize)
+    if !(sym isa NoSymmetrize)
+        rve.symmetrize[name] = sym
     end
     return rve
 end
@@ -351,6 +449,15 @@ function crack_density(rve::RVE{T}, name::Symbol) where {T}
     a = rve.amounts[name]
     return a isa CrackDensity ? amount_value(a) : zero(T)
 end
+
+"""
+    phase_symmetrize(rve, name::Symbol) -> AbstractSymmetrize
+
+Return the orientation-distribution projection declared for phase `name`.
+Defaults to [`NoSymmetrize`](@ref) if none was set.
+"""
+phase_symmetrize(rve::RVE, name::Symbol) =
+    get(rve.symmetrize, name, NoSymmetrize())
 
 """
     matrix_volume_fraction(rve::RVE) -> Number

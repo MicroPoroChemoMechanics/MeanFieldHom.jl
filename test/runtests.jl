@@ -47,6 +47,9 @@ using MeanFieldHom
         include("Schemes/test_differential.jl")
         include("Schemes/test_complex_moduli.jl")
         include("Schemes/test_dual_compat.jl")
+        include("Schemes/test_parameters.jl")
+        include("Schemes/test_sensitivities.jl")
+        include("Schemes/test_symmetrize.jl")
     end
 
     @testset "LayeredSpheres" begin

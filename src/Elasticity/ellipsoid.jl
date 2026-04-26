@@ -263,6 +263,41 @@ function Ellipsoid(r::T; dim::Int = 3) where {T <: Number}
     return Ellipsoid{dim, S, Tf, typeof(basis)}(axes, basis)
 end
 
+# ── Spheroid (axisymmetric) convenience constructors ─────────────────────────
+
+"""
+    Spheroid(ω; euler_angles = ())
+
+Convenience constructor for an axisymmetric ellipsoid (spheroid). The
+aspect ratio `ω` is the ratio of the polar semi-axis (along the axis
+of revolution) to the equatorial semi-axis:
+
+  * `ω < 1` ⇒ oblate (disc-like, axis of revolution is the *short* axis)
+  * `ω > 1` ⇒ prolate (needle-like, axis of revolution is the *long* axis)
+  * `ω = 1` ⇒ sphere
+
+The two equatorial semi-axes are fixed to `1`. Eshelby/Hill computations
+are scale-invariant, so the absolute size of the inclusion has no effect
+on the localization tensor and only `ω` matters.
+
+Optional `euler_angles` (tuple of length 0–3, ZYZ convention, radians)
+rotate the symmetry axis from `ez`. Without angles, the axis of
+revolution is `ez` (oblate) or `ex` (prolate) — i.e. the result is
+strictly equivalent to `Ellipsoid(1, 1, ω; euler_angles)`, with internal
+sorting and basis permutation handled by the regular `Ellipsoid`
+constructor.
+
+# Examples
+```julia
+Spheroid(0.2)                                      # oblate (axis ‖ ez)
+Spheroid(5.0)                                      # prolate (axis ‖ ez after sort)
+Spheroid(0.2; euler_angles = (π/4, π/3, 0))        # tilted axis
+```
+"""
+function Spheroid(ω::T; euler_angles::Tuple{Vararg{Real}} = ()) where {T <: Number}
+    return Ellipsoid(one(T), one(T), ω; euler_angles = euler_angles)
+end
+
 # ── Equality and hashing (field-wise) ────────────────────────────────────────
 # Two `Ellipsoid`s are equal when their semi-axes and local basis compare
 # equal (via `==`, i.e. by value — *not* by reference, which is the default

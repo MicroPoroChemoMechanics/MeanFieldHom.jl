@@ -28,6 +28,7 @@ import ..Elasticity: Ellipsoid, hill_tensor
 import ..Cracks: compliance_contribution, delta_compliance, delta_resistivity
 
 include("rve.jl")
+include("symmetrize.jl")
 include("scheme_types.jl")
 include("homogenize.jl")
 include("contribution_helpers.jl")
@@ -41,16 +42,20 @@ include("pcw.jl")
 include("self_consistent.jl")
 include("trajectory.jl")
 include("differential.jl")
+include("parameters.jl")
+include("sensitivities.jl")
 
 # ── Exports ────────────────────────────────────────────────────────────────
 # Data model
 export AbstractAmount, VolumeFraction, CrackDensity
 export AbstractDistributionShape, UniformDistribution
+export AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize
 export Phase, RVE
 export add_matrix!, add_phase!
 export matrix_phase, inclusion_phase_names
 export phase_property, matrix_property
 export volume_fraction, crack_density, matrix_volume_fraction
+export phase_symmetrize
 export validate_rve
 
 # Schemes
@@ -62,5 +67,12 @@ export DifferentialTrajectory, Proportional, Sequential, CustomPath, Differentia
 
 # Entry point
 export homogenize
+
+# Sensitivities — lentilles paramétriques + wrappers ForwardDiff (extension)
+export AbstractParameter, AmountParameter, PropertyParameter,
+    GeometryParameter, DistributionShapeParameter
+export amount, property, geometry, shape_param
+export get_param, set_param
+export derivative, gradient, jacobian, sensitivity
 
 end # module

@@ -164,9 +164,21 @@ function _hill_ti_walpole(ω, C1111, C1122, C1133, C3333, C2323)
     a = C44 * C33
     b = C13^2 + 2 * C13 * C44 - C11 * C33
     c = C11 * C44
-    sqd = sqrt(b^2 - 4 * a * c)
-    γ1 = sqrt((-b + sqd) / (2 * a))
-    γ2 = sqrt((-b - sqd) / (2 * a))
+    # Detect iso (or near-iso) values: b² − 4ac vanishes exactly when the
+    # matrix is isotropic. Using `sqrt` on the discriminant in Dual
+    # arithmetic at that point produces NaN partials (the analytic
+    # derivative of √x at x = 0 is +∞). Branch on the *real* value of
+    # the discriminant so the comparison is a plain Bool and the Dual
+    # partials are propagated through the appropriate iso-coaxial limit.
+    disc = b^2 - 4 * a * c
+    γ1, γ2 = if abs(disc) < _HILL_TI_EPS *
+                          max(abs(b^2), abs(4 * a * c), one(real(TC)))
+        γ_iso = sqrt(-b / (2 * a))
+        (γ_iso, γ_iso)
+    else
+        sqd = sqrt(disc)
+        (sqrt((-b + sqd) / (2 * a)), sqrt((-b - sqd) / (2 * a)))
+    end
 
     η1 = ωc * γ1
     η2 = ωc * γ2
@@ -243,6 +255,27 @@ function _hill_3d_ti_coaxial(::Ellipsoid{3, Spherical}, C₀::TensND.TensTI{4, T
     P1, P2, P3, P5, P6 = _hill_ti_walpole(one(T), C1111, C1122, C1133, C3333, C2323)
     return TensND.TensTI{4}(P1, P2, P3, P5, P6, TensND.axis(C₀))
 end
+
+# ── TI(N=6) inputs: collapse to the N=5 (major-symmetric) form via the ──────
+# (ℓ₃, ℓ₄) → (ℓ₃ + ℓ₄)/2 average. Elasticity stiffnesses (and Hill tensors
+# computed from them) are major-symmetric, so this is the right thing in
+# practice; if the input has a non-trivial ℓ₃ ≠ ℓ₄ asymmetry it is silently
+# averaged out here. The N=6 form arises naturally when a TI(axis) tensor
+# is built as a `dcontract` of two N=5 tensors (the result is structurally
+# allowed to be non-major-symmetric even when the operands are not).
+
+function _ti6_to_ti5(C::TensND.TensTI{4, T, 6}) where {T}
+    ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆ = TensND.get_data(C)
+    ℓ34 = (ℓ₃ + ℓ₄) / 2
+    return TensND.TensTI{4, T, 5}((ℓ₁, ℓ₂, ℓ34, ℓ₅, ℓ₆), TensND.axis(C))
+end
+
+_hill_3d_ti_coaxial(ell::Ellipsoid{3, Oblate}, C₀::TensND.TensTI{4, T, 6}) where {T} =
+    _hill_3d_ti_coaxial(ell, _ti6_to_ti5(C₀))
+_hill_3d_ti_coaxial(ell::Ellipsoid{3, Prolate}, C₀::TensND.TensTI{4, T, 6}) where {T} =
+    _hill_3d_ti_coaxial(ell, _ti6_to_ti5(C₀))
+_hill_3d_ti_coaxial(ell::Ellipsoid{3, Spherical}, C₀::TensND.TensTI{4, T, 6}) where {T} =
+    _hill_3d_ti_coaxial(ell, _ti6_to_ti5(C₀))
 
 # ── Coaxiality test ----------------------------------------------------------
 

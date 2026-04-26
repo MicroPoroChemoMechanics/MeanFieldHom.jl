@@ -59,6 +59,7 @@ makedocs(;
             "manual/cracks.md",
             "manual/conductivity.md",
             "manual/schemes.md",
+            "manual/sensitivities.md",
             "manual/elliptic_examples.md",
         ],
         "Developer" => [
@@ -79,6 +80,7 @@ makedocs(;
             "api/localization.md",
             "api/layered_sphere.md",
             "api/schemes.md",
+            "api/sensitivities.md",
         ],
         "References" => "references.md",
     ],

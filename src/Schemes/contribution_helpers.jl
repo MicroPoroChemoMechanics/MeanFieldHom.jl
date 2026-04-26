@@ -34,13 +34,15 @@ function _phase_stiffness_contribution(
     )
     a = rve.amounts[name]
     geom = rve.phases[name].geometry
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        N   = MFH_Core.stiffness_contribution(geom, P_i, P₀; kw...)
-        return amount_value(a) * N
+        N   = MFH_Core.stiffness_contribution(geom, P_i, P₀_proj; kw...)
+        return amount_value(a) * _apply_symmetrize(N, sym)
     else  # CrackDensity
-        N = MFH_Core.stiffness_contribution(geom, P₀; kw...)
-        return MFH_Core.delta_stiffness(geom, N, amount_value(a))
+        N = MFH_Core.stiffness_contribution(geom, P₀_proj; kw...)
+        return _apply_symmetrize(MFH_Core.delta_stiffness(geom, N, amount_value(a)), sym)
     end
 end
 
@@ -50,13 +52,14 @@ function _phase_stiffness_contribution(
     )
     a = rve.amounts[name]
     geom = rve.phases[name].geometry
+    sym = phase_symmetrize(rve, name)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
         N   = MFH_Core.conductivity_contribution(geom, P_i, P₀; kw...)
-        return amount_value(a) * N
+        return amount_value(a) * _apply_symmetrize(N, sym)
     else
         N = MFH_Core.conductivity_contribution(geom, P₀; kw...)
-        return MFH_Core.delta_conductivity(geom, N, amount_value(a))
+        return _apply_symmetrize(MFH_Core.delta_conductivity(geom, N, amount_value(a)), sym)
     end
 end
 
@@ -74,13 +77,14 @@ function _phase_compliance_contribution(
     )
     a = rve.amounts[name]
     geom = rve.phases[name].geometry
+    sym = phase_symmetrize(rve, name)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
         H   = compliance_contribution(geom, P_i, P₀; kw...)
-        return amount_value(a) * H
+        return amount_value(a) * _apply_symmetrize(H, sym)
     else
         H = compliance_contribution(geom, P₀; kw...)
-        return delta_compliance(geom, H, amount_value(a))
+        return _apply_symmetrize(delta_compliance(geom, H, amount_value(a)), sym)
     end
 end
 
@@ -90,13 +94,14 @@ function _phase_compliance_contribution(
     )
     a = rve.amounts[name]
     geom = rve.phases[name].geometry
+    sym = phase_symmetrize(rve, name)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
         R   = MFH_Core.resistivity_contribution(geom, P_i, P₀; kw...)
-        return amount_value(a) * R
+        return amount_value(a) * _apply_symmetrize(R, sym)
     else
         R = compliance_contribution(geom, P₀; kw...)  # 2nd-order resistivity contribution
-        return delta_resistivity(geom, R, amount_value(a))
+        return _apply_symmetrize(delta_resistivity(geom, R, amount_value(a)), sym)
     end
 end
 
@@ -123,7 +128,10 @@ function _phase_dilute_concentration(
     geom = rve.phases[name].geometry
     geom isa MFH_Core.AbstractCrack && return zero(P₀)   # caller must handle cracks separately
     P_i = phase_property(rve, name, prop)
-    return MFH_Core.strain_strain_loc(geom, P_i, P₀; kw...)
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
+    A = MFH_Core.strain_strain_loc(geom, P_i, P₀_proj; kw...)
+    return _apply_symmetrize(A, sym)
 end
 
 function _phase_dilute_concentration(
@@ -133,5 +141,8 @@ function _phase_dilute_concentration(
     geom = rve.phases[name].geometry
     geom isa MFH_Core.AbstractCrack && return zero(P₀)
     P_i = phase_property(rve, name, prop)
-    return MFH_Core.gradient_gradient_loc(geom, P_i, P₀; kw...)
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
+    A = MFH_Core.gradient_gradient_loc(geom, P_i, P₀_proj; kw...)
+    return _apply_symmetrize(A, sym)
 end

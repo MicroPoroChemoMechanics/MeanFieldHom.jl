@@ -87,7 +87,7 @@ export material_symmetry, dimension, inclusion_basis, shape_trait, shape_tensor
 export eshelby_tensor
 
 # ── Elasticity ───────────────────────────────────────────────────────────────
-export Ellipsoid
+export Ellipsoid, Spheroid
 export EllipsoidShape, Spherical, Prolate, Oblate, Triaxial, Circular, Elliptic
 export Cylinder, CylindricalShape, CircularCylindrical, EllipticCylindrical
 export newton_potential_3d_cylinder
@@ -121,14 +121,16 @@ export layer_strain_average, sphere_strain_average, cumulative_strain_average
 # ── Elliptic integrals (type-generic) ────────────────────────────────────────
 export ell_K, ell_E, ell_F, ell_RF, ell_RD
 
-# ── Schemes : RVE + amounts + distribution shape ─────────────────────────────
+# ── Schemes : RVE + amounts + distribution shape + symmetrize ───────────────
 export AbstractAmount, VolumeFraction, CrackDensity
 export AbstractDistributionShape, UniformDistribution
+export AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize
 export Phase, RVE
 export add_matrix!, add_phase!
 export matrix_phase, inclusion_phase_names
 export phase_property, matrix_property
 export volume_fraction, crack_density, matrix_volume_fraction
+export phase_symmetrize
 export validate_rve
 
 # ── Schemes : scheme types + entry point ─────────────────────────────────────
@@ -138,6 +140,13 @@ export SelfConsistent, AsymmetricSelfConsistent
 export AndersonDefault, NewtonDefault
 export DifferentialTrajectory, Proportional, Sequential, CustomPath, DifferentialScheme
 export homogenize
+
+# ── Schemes : sensitivities (autodiff via ForwardDiff weak extension) ────────
+export AbstractParameter, AmountParameter, PropertyParameter,
+    GeometryParameter, DistributionShapeParameter
+export amount, property, geometry, shape_param
+export get_param, set_param
+export derivative, gradient, jacobian, sensitivity
 
 # ── Backwards-compat aliases ─────────────────────────────────────────────────
 const HillAlgorithm = AbstractAlgorithm

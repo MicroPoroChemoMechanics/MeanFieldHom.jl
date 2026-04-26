@@ -65,7 +65,7 @@ if isdefined(TensND, :TensTI)
         _ti_dispatch(:nestedquadgk, ell, C₀)
 end
 
-export Ellipsoid
+export Ellipsoid, Spheroid
 export EllipsoidShape, Spherical, Prolate, Oblate, Triaxial, Circular, Elliptic
 export Cylinder, CylindricalShape, CircularCylindrical, EllipticCylindrical
 export tens_IA, tens_UA, tens_VA

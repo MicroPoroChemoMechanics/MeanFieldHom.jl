@@ -43,11 +43,11 @@ function _mt_4(rve, C₀::TensND.AbstractTens{4, 3}, ::Val{p}; kw...) where {p}
     Nsum  = zero(C₀)
     for name in inclusion_phase_names(rve)
         a    = rve.amounts[name]
-        geom = rve.phases[name].geometry
         if a isa VolumeFraction
             f = amount_value(a)
             P_i = phase_property(rve, name, p)
-            A_dil = MFH_Core.strain_strain_loc(geom, P_i, C₀; kw...)
+            # Apply per-phase orientation symmetrize via _phase_dilute_concentration.
+            A_dil = _phase_dilute_concentration(rve, name, p, C₀; kw...)
             A_avg += f * A_dil
             Nsum  += f * ((P_i - C₀) ⊡ A_dil)
         else  # CrackDensity — A_dil singular, fall back to dilute crack term
@@ -65,11 +65,10 @@ function _mt_2(rve, K₀::TensND.AbstractTens{2, 3}, ::Val{p}; kw...) where {p}
     Nsum  = zero(K₀)
     for name in inclusion_phase_names(rve)
         a    = rve.amounts[name]
-        geom = rve.phases[name].geometry
         if a isa VolumeFraction
             f = amount_value(a)
             P_i = phase_property(rve, name, p)
-            A_dil = MFH_Core.gradient_gradient_loc(geom, P_i, K₀; kw...)
+            A_dil = _phase_dilute_concentration(rve, name, p, K₀; kw...)
             A_avg += f * A_dil
             Nsum  += f * ((P_i - K₀) ⋅ A_dil)
         else

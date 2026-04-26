@@ -9,34 +9,44 @@
 # =============================================================================
 
 """
-    homogenize(rve::RVE, scheme::HomogenizationScheme; property::Symbol = :C, kw...)
-    homogenize(rve::RVE, scheme::Symbol; property::Symbol = :C, kw...)
+    homogenize(rve::RVE, scheme::HomogenizationScheme, property::Symbol; kw...)
+    homogenize(rve::RVE, scheme::Symbol, property::Symbol; kw...)
 
 Compute the effective `property` of `rve` under the chosen `scheme`.
 
-`property` selects which stored phase property is homogenised:
-
-- `:C` (default) — 4th-order elastic stiffness ;
-- `:K` — 2nd-order conductivity / diffusivity ;
-- arbitrary user-defined symbols are supported as long as every phase
-  carries a tensor under that key.
+`property` is a *required* `Symbol` argument naming which stored phase
+property is homogenised. The order of the result (4th-order, 2nd-order,
+…) follows from the order of the tensor stored under that name in each
+phase ; the symbol itself is just a key — any user-chosen name
+(`:stiffness`, `:conductivity`, `:κ`, …) works as long as every phase
+carries a tensor under that key. Common conventions are `:C` for elastic
+stiffness and `:K` for conductivity / diffusivity.
 
 The scheme can be passed either as a *type instance* (full control of
 options — `MoriTanaka()`, `SelfConsistent(algorithm = NewtonDefault(), abstol = 1e-12)`,
-…) or as a `Symbol` shortcut for the default constructor. The
-canonical Symbol aliases are lowercase (`:mt`, `:sc`, `:voigt`, …) to
-match the algorithm-method symbols (`:auto`, `:residues`, `:decuhr`,
-…) used by the underlying Hill-tensor backends; CamelCase and
-upper-case ECHOES-style codes are also accepted (see [`SCHEME_ALIAS`](@ref)).
+…) or as a `Symbol` shortcut for the default constructor. The canonical
+Symbol aliases are lowercase (`:mt`, `:sc`, `:voigt`, …) to match the
+algorithm-method symbols (`:auto`, `:residues`, `:decuhr`, …) used by
+the underlying Hill-tensor backends; CamelCase and upper-case forms are
+also accepted (see [`SCHEME_ALIAS`](@ref)).
 
 Extra `kw...` are forwarded to the scheme's `_evaluate` method
 (typically `abstol` / `reltol` / `maxiters` for iterative schemes,
 `method = :auto | :decuhr | …` for the underlying Hill-tensor backend).
 """
-function homogenize(rve::RVE, scheme::HomogenizationScheme;
-                    property::Symbol = :C, kw...)
+function homogenize(rve::RVE, scheme::HomogenizationScheme,
+                    property::Symbol; kw...)
     validate_rve(rve)
     return _evaluate(rve, scheme, Val(property); kw...)
+end
+
+# Backward-compatible kwarg form, kept so existing scripts and tests using
+# the old `homogenize(rve, scheme; property = …)` signature keep working.
+# New code is encouraged to pass the property name as a positional argument
+# (the user must always state explicitly which property is being homogenised).
+function homogenize(rve::RVE, scheme::HomogenizationScheme;
+                    property::Symbol = :C, kw...)
+    return homogenize(rve, scheme, property; kw...)
 end
 
 """
@@ -85,10 +95,14 @@ const SCHEME_ALIAS = Dict{Symbol, Type{<:HomogenizationScheme}}(
     :diff => DifferentialScheme, :Diff => DifferentialScheme, :DIFF => DifferentialScheme,
 )
 
-function homogenize(rve::RVE, scheme::Symbol; kw...)
+function homogenize(rve::RVE, scheme::Symbol, property::Symbol; kw...)
     haskey(SCHEME_ALIAS, scheme) ||
         throw(ArgumentError("unknown scheme :$(scheme); see MeanFieldHom.Schemes.SCHEME_ALIAS"))
-    return homogenize(rve, SCHEME_ALIAS[scheme](); kw...)
+    return homogenize(rve, SCHEME_ALIAS[scheme](), property; kw...)
+end
+
+function homogenize(rve::RVE, scheme::Symbol; property::Symbol = :C, kw...)
+    return homogenize(rve, scheme, property; kw...)
 end
 
 # =============================================================================
