@@ -407,41 +407,46 @@ function _shear_M_matrix_alv(r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatrix
     inv_r⁵ = inv_r⁴ / Tr
     Id = Matrix{T}(I, n, n)
     Mκ = Matrix{T}(M_κ); Mμ = Matrix{T}(M_μ)
-    # σ-form fundamental matrix (state vector (U, V, σ_rr, σ_rθ)) using
-    # **ECHOES C++ mode normalisation** (cf. `inclusion_sphere_nlayers.h
-    # ::set_visco_matrix_dev`).  The corresponding closed-form `M^{-1}`
-    # in `_shear_M_inverse_alv` is the analytic inverse for THIS specific
-    # convention, so the two must stay in lock-step.  In the U and V rows
-    # mode 2 and mode 4 carry `μ^{-1}` on the LEFT (the natural form from
-    # the Lamé operator); in the σ rows the entries are clean polynomials
-    # in `(κ, μ)` with no inverse.
-    invMμ = volterra_inverse(Mμ; block_size = 1)
-    k3mmu2  = 3 .* Mκ .- 2 .* Mμ
-    k15mu11 = 15 .* Mκ .+ 11 .* Mμ
-    k24mu5  = 24 .* Mκ .+ 5 .* Mμ
-    k9mu4   = 9 .* Mκ .+ 4 .* Mμ
-    kmu     = Mκ .+ Mμ
+    # σ-form fundamental matrix (state vector (U, V, σ_rr, σ_rθ)) in the
+    # **Christensen–Lo (SymPy) convention** — same form as the elastic
+    # state-space recurrence in `LayeredSpheres/shear_recurrence.jl`.
+    # Mode-2 and mode-4 entries in the U row pick up `μ^{-1}` on the LEFT
+    # (natural form from the Lamé operator) — the only Volterra inverse
+    # of `μ`; rows 3 and 4 are clean polynomials in `(κ, μ)`.
+    #
+    # The closed-form inverse in `_shear_M_inverse_alv` derives from the
+    # ECHOES C++ formula via the diagonal conjugation
+    #   `M_C++ = D_row · M_Christ–Lo · D_col`
+    # with `D_row = diag(1/2, 1, 1/2, 1)`, `D_col = diag(1, 1, 2, 2)`.
 
     blocks = Array{Matrix{T}, 2}(undef, 4, 4)
-    blocks[1, 1] =  Tr * Id
-    blocks[1, 2] =  3 * r³ * (invMμ * k3mmu2)
+
+    # Mode 1 — uniform deviatoric strain. (U, V) = (2r, r).
+    blocks[1, 1] = (2 * Tr) * Id
+    blocks[2, 1] = Tr * Id
+    blocks[3, 1] = 4 * Mμ
+    blocks[4, 1] = 2 * Mμ
+
+    # Mode 2 — r³ profile.  α₂ = 6(3x − 2), γ₂ = 15x + 11 with x = κ/μ.
+    blocks[1, 2] = (6 * r³) * volterra_left_divide(Mμ, 3 .* Mκ .- 2 .* Mμ;
+                                                    block_size = 1)
+    blocks[2, 2] = r³ * volterra_left_divide(Mμ, 15 .* Mκ .+ 11 .* Mμ;
+                                              block_size = 1)
+    blocks[3, 2] = r² * (12 .* Mμ .- 18 .* Mκ)         # 6(2μ − 3κ) r²
+    blocks[4, 2] = r² * (48 .* Mκ .+ 10 .* Mμ)         # 2(24κ + 5μ) r²
+
+    # Mode 3 — 1/r⁴ profile. (U, V) = (3, -1).
     blocks[1, 3] =  3 * inv_r⁴ * Id
-    blocks[1, 4] =  3 * inv_r² * (invMμ * kmu)
-
-    blocks[2, 1] =  Tr * Id
-    blocks[2, 2] =  r³ * (invMμ * k15mu11)
-    blocks[2, 3] = -2 * inv_r⁴ * Id
-    blocks[2, 4] =  2 * inv_r² * Id
-
-    blocks[3, 1] =  2 * Mμ
-    blocks[3, 2] = -3 * r² * k3mmu2
+    blocks[2, 3] =     -inv_r⁴ * Id
     blocks[3, 3] = -24 * inv_r⁵ * Mμ
-    blocks[3, 4] = -2 * inv_r³ * k9mu4
+    blocks[4, 3] =   8 * inv_r⁵ * Mμ
 
-    blocks[4, 1] =  2 * Mμ
-    blocks[4, 2] =  2 * r² * k24mu5
-    blocks[4, 3] = 16 * inv_r⁵ * Mμ
-    blocks[4, 4] =  6 * inv_r³ * Mκ
+    # Mode 4 — 1/r² profile. α₄ = 3(x + 1).
+    blocks[1, 4] = (3 * inv_r²) * volterra_left_divide(Mμ, Mκ .+ Mμ;
+                                                        block_size = 1)
+    blocks[2, 4] =      inv_r² * Id
+    blocks[3, 4] = -2 * inv_r³ * (9 .* Mκ .+ 4 .* Mμ)
+    blocks[4, 4] =  3 * inv_r³ * Mκ
 
     # Assemble into the 4n × 4n time-major matrix.
     M = zeros(T, 4 * n, 4 * n)
@@ -615,24 +620,38 @@ function _shear_M_inverse_alv(r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatri
     U_k3mmu2_invμ = U * (k3mmu2 * invMμ)
     U_k15mu11_invμ = U * (k15mu11 * invMμ)
 
-    blocks = Array{Matrix{T}, 2}(undef, 4, 4)
+    # ECHOES C++ closed-form M^{-1} (Christensen–Lo derivative).
+    blocks_cpp = Array{Matrix{T}, 2}(undef, 4, 4)
     one70 = T(1 // 70)
-    blocks[1, 1] =  one70 * (28 / Tr) * Uk9mu4
-    blocks[1, 2] =  one70 * (-126 / Tr) * Uk
-    blocks[1, 3] =  one70 * 42 * U_kmu_invμ
-    blocks[1, 4] =  one70 * 42 * U
-    blocks[2, 1] =  one70 * (-16 / R³) * Uμ
-    blocks[2, 2] =  one70 * ( 16 / R³) * Uμ
-    blocks[2, 3] =  one70 * (-2 / R²) * U
-    blocks[2, 4] =  one70 * ( 2 / R²) * U
-    blocks[3, 1] =  one70 * (2 * R⁴) * Uk3mmu2
-    blocks[3, 2] =  one70 * (-2 * R⁴) * Uk24mu5
-    blocks[3, 3] =  one70 * (2 * R⁵) * U_k3mmu2_invμ
-    blocks[3, 4] =  one70 * R⁵ * U_k15mu11_invμ
-    blocks[4, 1] =  one70 * (28 * R²) * Uμ
-    blocks[4, 2] =  one70 * (42 * R²) * Uμ
-    blocks[4, 3] =  one70 * (-14 * R³) * U
-    blocks[4, 4] =  one70 * (-21 * R³) * U
+    blocks_cpp[1, 1] =  one70 * (28 / Tr) * Uk9mu4
+    blocks_cpp[1, 2] =  one70 * (-126 / Tr) * Uk
+    blocks_cpp[1, 3] =  one70 * 42 * U_kmu_invμ
+    blocks_cpp[1, 4] =  one70 * 42 * U
+    blocks_cpp[2, 1] =  one70 * (-16 / R³) * Uμ
+    blocks_cpp[2, 2] =  one70 * ( 16 / R³) * Uμ
+    blocks_cpp[2, 3] =  one70 * (-2 / R²) * U
+    blocks_cpp[2, 4] =  one70 * ( 2 / R²) * U
+    blocks_cpp[3, 1] =  one70 * (2 * R⁴) * Uk3mmu2
+    blocks_cpp[3, 2] =  one70 * (-2 * R⁴) * Uk24mu5
+    blocks_cpp[3, 3] =  one70 * (2 * R⁵) * U_k3mmu2_invμ
+    blocks_cpp[3, 4] =  one70 * R⁵ * U_k15mu11_invμ
+    blocks_cpp[4, 1] =  one70 * (28 * R²) * Uμ
+    blocks_cpp[4, 2] =  one70 * (42 * R²) * Uμ
+    blocks_cpp[4, 3] =  one70 * (-14 * R³) * U
+    blocks_cpp[4, 4] =  one70 * (-21 * R³) * U
+
+    # Conjugate to the Christensen–Lo / SymPy convention used throughout
+    # `_shear_M_matrix_alv` (and by the elastic state-space recurrence):
+    #     M_C++ = D_row · M_CL · D_col,  with
+    #     D_row = diag(1/2, 1, 1/2, 1),  D_col = diag(1, 1, 2, 2),
+    # ⇒   M_CL^{-1} = D_col · M_C++^{-1} · D_row.
+    # Per-(i,j) block scaling: factor[i, j] = D_col[i] · D_row[j].
+    D_row = (T(1//2), T(1), T(1//2), T(1))
+    D_col = (T(1), T(1), T(2), T(2))
+    blocks = Array{Matrix{T}, 2}(undef, 4, 4)
+    @inbounds for i in 1:4, j in 1:4
+        blocks[i, j] = (D_col[i] * D_row[j]) .* blocks_cpp[i, j]
+    end
     return _assemble_4n_time_major(blocks, n)
 end
 

@@ -104,8 +104,23 @@ function _inclusion_alv_quantities(geom, C_r_law,
         throw(ArgumentError("homogenize_alv: phase property is not a ViscoLaw"))
     C_r = trapezoidal_matrix(C_r_law, times)
     P_r = hill_kernel(geom, C_M_law, times)
-    A_dut = dilute_concentration_alv(C_r, C_0, P_r)
-    N_dut = dilute_contribution_alv(C_r, C_0, P_r)
+    # Iso fast path : if every input matrix is iso (typical for
+    # spherical inclusions in iso ALV matrix), compute the dilute
+    # concentration and contribution as TWO scalar n×n Volterra
+    # problems and lift back to (6n × 6n) at the end.  Avoids the
+    # generic block-LU on the 6n×6n `(𝟙 + P̃ ∘ ΔC̃)` system.
+    if _is_iso_block(C_r) && _is_iso_block(C_0) && _is_iso_block(P_r)
+        αβ_E = _iso_pair(C_r)
+        αβ_0 = _iso_pair(C_0)
+        αβ_P = _iso_pair(P_r)
+        αβ_A_dut = dilute_concentration_alv_iso(αβ_E, αβ_0, αβ_P)
+        αβ_N_dut = dilute_contribution_alv_iso(αβ_E, αβ_0, αβ_P)
+        A_dut = _iso_blocks(αβ_A_dut)
+        N_dut = _iso_blocks(αβ_N_dut)
+    else
+        A_dut = dilute_concentration_alv(C_r, C_0, P_r)
+        N_dut = dilute_contribution_alv(C_r, C_0, P_r)
+    end
     return (C_r, A_dut, N_dut, P_r)
 end
 
@@ -135,35 +150,92 @@ function _amount_value(rve::RVE, name::Symbol)
     return Float64(amount.value)
 end
 
+# ── Iso-symmetry detection for the scheme fast path ─────────────────────────
+#
+# When every (6n × 6n) block matrix supplied to the scheme step is in
+# iso form, the scheme algebra reduces to two independent scalar n × n
+# Volterra problems on (α, β).  This is ~108× cheaper for matrix-matrix
+# products and ~18× for inversion compared to the generic block-LU
+# `(6n × 6n)` path.
+
+"""
+    _try_iso_pairs(matrices) -> Vector{Tuple} or nothing
+
+If every matrix in `matrices` passes the iso-form check
+(`_is_iso_block`), return a `Vector` of `(α, β)` `n×n` parameter
+tuples extracted from each.  Otherwise return `nothing`.
+
+Used by the scheme fast paths to opt into the iso pipeline only when
+all phases really are iso 4-tensors.
+"""
+function _try_iso_pairs(matrices::AbstractVector{<:AbstractMatrix})
+    isempty(matrices) && return Tuple{Matrix{Float64}, Matrix{Float64}}[]
+    out = Vector{Tuple{Matrix{eltype(matrices[1])}, Matrix{eltype(matrices[1])}}}()
+    for M in matrices
+        _is_iso_block(M) || return nothing
+        push!(out, _iso_pair(M))
+    end
+    return out
+end
+
 # ── Dispatch table on scheme types ──────────────────────────────────────────
 
 function _homogenize_alv_dispatch(::RVE, ::Voigt, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    iso = _try_iso_pairs(C_phases)
+    if iso !== nothing
+        αβ_eff = voigt_alv_iso(iso, [f_M; fractions])
+        return _iso_blocks(αβ_eff)
+    end
     return voigt_alv(C_phases, [f_M; fractions])
 end
 
 function _homogenize_alv_dispatch(::RVE, ::Reuss, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    iso = _try_iso_pairs(C_phases)
+    if iso !== nothing
+        αβ_eff = reuss_alv_iso(iso, [f_M; fractions])
+        return _iso_blocks(αβ_eff)
+    end
     return reuss_alv(C_phases, [f_M; fractions])
 end
 
 function _homogenize_alv_dispatch(::RVE, ::Dilute, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    iso_contribs = _try_iso_pairs(contribs)
+    if iso_contribs !== nothing && _is_iso_block(C_0)
+        αβ_0 = _iso_pair(C_0)
+        αβ_eff = dilute_alv_iso(αβ_0, iso_contribs, fractions)
+        return _iso_blocks(αβ_eff)
+    end
     return dilute_alv(C_0, contribs, fractions)
 end
 
 function _homogenize_alv_dispatch(::RVE, ::DiluteDual, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    iso_contribs = _try_iso_pairs(contribs)
+    if iso_contribs !== nothing && _is_iso_block(C_0)
+        αβ_0 = _iso_pair(C_0)
+        αβ_eff = dilute_dual_alv_iso(αβ_0, iso_contribs, fractions)
+        return _iso_blocks(αβ_eff)
+    end
     return dilute_dual_alv(C_0, contribs, fractions)
 end
 
 function _homogenize_alv_dispatch(::RVE, ::MoriTanaka, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    iso_contribs = _try_iso_pairs(contribs)
+    iso_A = _try_iso_pairs(A_duts)
+    if iso_contribs !== nothing && iso_A !== nothing && _is_iso_block(C_0)
+        αβ_0 = _iso_pair(C_0)
+        αβ_eff = mori_tanaka_alv_iso(αβ_0, iso_A, iso_contribs, fractions, f_M)
+        return _iso_blocks(αβ_eff)
+    end
     return mori_tanaka_alv(C_0, A_duts, contribs, fractions, f_M)
 end
 
@@ -175,6 +247,13 @@ function _homogenize_alv_dispatch(rve::RVE, ::Maxwell, ::Symbol,
     # default in `Schemes.maxwell`).
     C_M_law = matrix_property(rve, :C)
     H_0 = hill_kernel(Spheroid(1.0), C_M_law, times)
+    iso_contribs = _try_iso_pairs(contribs)
+    if iso_contribs !== nothing && _is_iso_block(C_0) && _is_iso_block(H_0)
+        αβ_0 = _iso_pair(C_0)
+        αβ_H_0 = _iso_pair(H_0)
+        αβ_eff = maxwell_alv_iso(αβ_0, iso_contribs, fractions, αβ_H_0)
+        return _iso_blocks(αβ_eff)
+    end
     return maxwell_alv(C_0, contribs, fractions; H_0 = H_0)
 end
 

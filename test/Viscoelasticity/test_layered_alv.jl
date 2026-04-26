@@ -193,20 +193,7 @@ end
     end
 end
 
-@testset "shear_localization_alv — Membrane interface (elastic limit, loose)" begin
-    # Convention note: since v0.5.3 the ALV shear M-matrix uses the
-    # ECHOES C++ shear-state convention (mode 1 contributes `U = a · r`,
-    # not the Christensen–Lo `U = 2 a · r`) — required for the closed-form
-    # M^{-1} that gives FP stability with soft / step-activated layers.
-    # The MembraneInterface jump expressions in `_shear_interface_T_alv`
-    # remain in the Christensen–Lo convention to match the elastic
-    # state-space recurrence.  Under MembraneInterface those two
-    # conventions disagree by a few %; under PerfectInterface (the only
-    # interface used in script 37 `:layers` and in the
-    # ECHOES-Python cross-check `bench_layered_alv*`) they agree at
-    # machine precision.  The loose tolerance below pins the residual
-    # discrepancy so a future convention unification has a regression
-    # benchmark.
+@testset "shear_localization_alv — Membrane interface (elastic limit)" begin
     C_M = TensISO{3}(30.0, 8.0)
     C_1 = TensISO{3}(60.0, 16.0)
     C_2 = TensISO{3}(90.0, 24.0)
@@ -220,7 +207,7 @@ end
     β_elas = MeanFieldHom.LayeredSpheres._shear_localization(sphere, C_M)
     for k in 1:2
         diag_β = [β_alv[k][i, i] for i in 1:length(times)]
-        @test maximum(abs.(diag_β .- β_elas[k])) ≤ 1.0e-2
+        @test maximum(abs.(diag_β .- β_elas[k])) ≤ 1.0e-10
     end
 end
 

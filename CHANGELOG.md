@@ -1,6 +1,104 @@
 # Changelog
 
-## v0.5.3 — Non-uniform time grid + multi-layer ALV stability
+## v0.5.3 — Non-uniform time grid + multi-layer ALV stability + iso fast path
+
+**Bug fix (membrane interface convention)** : when v0.5.2 introduced
+the C++-convention σ-form shear M-matrix, the elastic-limit unit test
+for `MembraneInterface` started failing because the membrane jump
+expressions and the M-matrix used different angular-component
+normalisations.  Resolution: keep the M-matrix in the
+**Christensen–Lo / SymPy convention** (matching the elastic
+state-space recurrence in `LayeredSpheres`) and derive the analytic
+`M^{-1}` from the C++ closed form via the diagonal conjugation
+
+```text
+M_C++ = D_row · M_Christ–Lo · D_col,
+   D_row = diag(1/2, 1, 1/2, 1),  D_col = diag(1, 1, 2, 2)
+⇒ M_Christ–Lo^{-1} = D_col · M_C++^{-1} · D_row
+```
+
+This gives the **best of both worlds**: numerical stability of the
+closed-form (only `(3κ+4μ)^{-vol}` and `μ^{-vol}` `n×n` Volterra
+inverses are needed) under the elastic-compatible mode normalisation
+where the Christensen–Lo membrane jumps stay correct.  The
+`Membrane interface (elastic limit)` test is back to `≤ 1e-10`
+tolerance with no convention asterisk.
+
+**Performance — iso-symmetry fast path** : when every phase 4-tensor
+and the matrix kernel are iso (`TensISO{4,3}`-valued),
+`homogenize_alv` automatically routes through new
+`*_alv_iso(αβ_…)` scheme primitives that operate on two scalar
+`n × n` Volterra matrices `(α = 3K, β = 2μ)` instead of the generic
+`(6n × 6n)` Mandel block matrix.  Theoretical speedups :
+
+  - matrix-matrix product : ~108× cheaper (`216 n³` → `2 n³`)
+  - matrix inverse        : ~18× cheaper
+  - storage               : 18× smaller
+
+Measured speedup on the script-37 setup (5 phases + Maxwell matrix +
+spherical inclusions, MT scheme): **×2.5–7** depending on `n_times`.
+The detection happens once per phase via a cheap iso-form pattern
+check (`_is_iso_block`); on failure the generic 6n×6n path is
+selected automatically — no API change.  New internal helpers
+(`iso_schemes_alv.jl`) :
+`voigt_alv_iso`, `reuss_alv_iso`, `dilute_alv_iso`,
+`dilute_dual_alv_iso`, `mori_tanaka_alv_iso`, `maxwell_alv_iso`,
+plus `dilute_concentration_alv_iso`, `dilute_contribution_alv_iso`
+used inside `_inclusion_alv_quantities`.
+
+**Bug fix (multi-layer ALV stability)** : on a non-uniform time grid
+(e.g. `logspace`) with a matrix relaxation kernel that has multiple
+time constants and/or layers with extreme modulus contrast (pores,
+step-activated `ViscoLaw`s), the layered-sphere ALV recurrence
+diverged from the ECHOES Python reference by 1e-3 to 1e-2.  Two
+compounding root causes :
+
+1. **Right vs left Volterra divide.**  The Hervé–Zaoui closed-form
+   interface transition `T = M_b^{-1} · M_a` requires the Volterra
+   inverse on the **left** of the numerator.  Our `volterra_divide`
+   implemented `num · S^{-vol}` (right) ; the two products are equal
+   only when `[num, S] = 0`.  Lower-triangular Volterra trapezoidal
+   matrices commute pairwise iff they are Toeplitz (uniform time
+   grid + same kernel structure) — non-uniform grids broke this
+   assumption silently.
+
+2. **Generic 4n×4n inversion of the shear M-matrix is FP-unstable
+   for soft phases.**  Even the block forward-substitution
+   `volterra_inverse(_; block_size = 4)` collapses when
+   `det(M[t,t]) → 0` (pore-like or step-activated layers).
+   ECHOES C++ uses a **closed-form analytic 4×4 inverse** whose only
+   `n × n` Volterra inverses are `(3κ + 4μ)^{-vol}` and `μ^{-vol}` —
+   both regular for any non-vacuum modulus.
+
+**Fix** :
+
+- Added `volterra_left_divide(S, M; block_size = 1|6)` (forward
+  substitution on `S · T = M`, rows i = j..n) and switched every
+  closed-form transition (perfect / spring / membrane, both bulk and
+  shear) to use it.
+- Added `_shear_M_inverse_alv(r, M_κ, M_μ, n)` returning the
+  closed-form `M(r; κ, μ)^{-1}` in time-major 4n×4n layout, mirroring
+  C++ `inclusion_sphere_nlayers.h::set_visco_inv_matrix_dev` and then
+  conjugated to the Christensen–Lo convention.  Used by
+  `_shear_layer_transfer_alv` (intra-layer transfer) and
+  `_shear_amp_blocks_alv` (state → amplitude extraction).
+- Reverted the v0.5.2 τ-scaling for the shear M-matrix — the
+  closed-form inverse is naturally written in σ-form and FP
+  stability now comes from the closed form rather than the rescaling.
+
+**Impact** : `script 37 :layers` now produces smooth, monotonic
+creep curves matching the Python reference figure visually
+(bounded between elastic limit and matrix Maxwell), in place of
+the previous unbounded / oscillating output.  Bench results :
+
+- `bench_layered_alv.jl` (N=2 stiff elastic + Maxwell matrix,
+  uniform grid) : 1e-16 (unchanged).
+- `bench_layered_alv_step.jl` (N=3 step-activated layers + pore +
+  Maxwell matrix, non-uniform grid) : bulk α 1e-15, shear β 1e-14.
+- `bench_step_n2.jl` (N=2 step layers, no pore) : 1e-14.
+- `bench_layered_alv_nopore.jl` (N=4 elastic, varied moduli) : 1e-15.
+
+## v0.5.1 — Multi-layer sphere shear localisation bug fix
 
 **Bug fix** : on a non-uniform time grid (e.g. `logspace`) with a
 matrix relaxation kernel that has multiple time constants and/or

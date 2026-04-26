@@ -57,6 +57,7 @@ include("volterra_inverse.jl")
 include("conversions.jl")
 include("hill_alv.jl")
 include("schemes_alv.jl")
+include("iso_schemes_alv.jl")
 include("schemes_alv_sc.jl")
 include("layered_alv.jl")
 include("homogenize_alv.jl")
@@ -72,6 +73,9 @@ export hill_kernel
 export dilute_concentration_alv, dilute_contribution_alv
 export voigt_alv, reuss_alv, dilute_alv, dilute_dual_alv
 export mori_tanaka_alv, maxwell_alv
+export voigt_alv_iso, reuss_alv_iso, dilute_alv_iso, dilute_dual_alv_iso
+export mori_tanaka_alv_iso, maxwell_alv_iso
+export dilute_concentration_alv_iso, dilute_contribution_alv_iso
 export self_consistent_alv
 export bulk_localization_alv, bulk_state_seq_alv, shear_localization_alv
 export strain_strain_loc_alv, stiffness_contribution_alv
