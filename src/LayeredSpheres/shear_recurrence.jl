@@ -221,10 +221,41 @@ function _shear_localization_single_layer(
 end
 
 """
+    _layer_avg_dev_shear_factor(r_a, r_b, κ, μ) -> Number
+
+Per-unit mode-2 amplitude `b` contribution to the layer-volume-averaged
+deviatoric strain in a spherical shell `(r_a, r_b)` (with `r_a = 0` for
+the innermost layer) of moduli `(κ, μ)`.  Equals
+`(21/5) · (3κ + μ)/μ · (r_b⁵ - r_a⁵) / (r_b³ - r_a³)` (Christensen-Lo
+mode-2 angular integral; modes 3 and 4 contribute zero to the dev β).
+
+The full per-layer dev localisation is therefore
+`β_k = a_k + b_k · _layer_avg_dev_shear_factor(r_a, r_b, κ_k, μ_k)`.
+"""
+@inline function _layer_avg_dev_shear_factor(r_a, r_b, κ, μ)
+    T = promote_type(typeof(r_a), typeof(r_b), typeof(κ), typeof(μ))
+    Tκ = T(κ); Tμ = T(μ); Tra = T(r_a); Trb = T(r_b)
+    Trb3 = Trb^3; Tra3 = Tra^3
+    Trb5 = Trb^5; Tra5 = Tra^5
+    geom = (Trb5 - Tra5) / (Trb3 - Tra3)
+    return T(21//5) * (3 * Tκ + Tμ) / Tμ * geom
+end
+
+"""
     _shear_localization_multi(sphere, C₀) -> NTuple{N}
 
-Multi-layer (`N ≥ 2`) shear localisation from the 4×4 state-vector
-recurrence.  Returns the per-layer `β_k = a_k` amplitudes.
+Multi-layer (`N ≥ 2`) per-layer deviatoric localisation `β_k` from the
+4×4 state-vector recurrence.  For a spherical shell layer, the
+volume-averaged deviatoric strain involves both the mode-1 amplitude
+(uniform deviatoric part) **and** the mode-2 amplitude (whose r³
+displacement profile contributes a non-zero integrated dev strain
+through the layer thickness).  Modes 3 (`1/r⁴`) and 4 (`1/r²`)
+integrate to zero.  The returned per-layer `β_k` is therefore
+`a_k + b_k · F_k` with `F_k = (21/5) (3κ_k + μ_k)/μ_k
+(r_k⁵ - r_{k-1}⁵)/(r_k³ - r_{k-1}³)`.
+
+Reference: Hervé-Zaoui 1993, Christensen-Lo 1979, ECHOES C++
+`inclusion_sphere_nlayers.h::get_visco_layer_average_strain_Strain`.
 """
 function _shear_localization_multi(
         sphere::LayeredSphere{T, N}, C₀::TensND.TensISO{4, 3}
@@ -234,8 +265,10 @@ function _shear_localization_multi(
     radii = sphere.radii
     return ntuple(N) do k
         (κk, μk) = κμ[k]
-        (a_k, _, _, _) = _shear_extract_amplitudes(radii[k], κk, μk, states[k])
-        a_k
+        (a_k, b_k, _, _) = _shear_extract_amplitudes(radii[k], κk, μk, states[k])
+        r_a = (k == 1) ? zero(eltype(radii)) : radii[k - 1]
+        r_b = radii[k]
+        a_k + b_k * _layer_avg_dev_shear_factor(r_a, r_b, κk, μk)
     end
 end
 

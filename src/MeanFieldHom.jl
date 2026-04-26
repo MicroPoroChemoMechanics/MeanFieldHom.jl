@@ -53,6 +53,7 @@ include("Cracks/Cracks.jl")
 include("Conductivity/Conductivity.jl")
 include("LayeredSpheres/LayeredSpheres.jl")
 include("Schemes/Schemes.jl")
+include("Viscoelasticity/Viscoelasticity.jl")
 
 using .Elliptic
 using .Core
@@ -61,6 +62,7 @@ using .Cracks
 using .Conductivity
 using .LayeredSpheres
 using .Schemes
+using .Viscoelasticity
 
 # ─── Localization + contribution (top-level: need all sub-module APIs) ──────
 # Generics are declared in Core; Cracks already defines `compliance_contribution`,
@@ -147,6 +149,22 @@ export AbstractParameter, AmountParameter, PropertyParameter,
 export amount, property, geometry, shape_param
 export get_param, set_param
 export derivative, gradient, jacobian, sensitivity
+
+# ── Viscoelasticity (ALV) ────────────────────────────────────────────────────
+export AbstractViscoLaw, ViscoLaw, VALID_VISCO_MODES
+export visco_mode, visco_eval
+export maxwell_relaxation, kelvin_creep, maxwell_iso, kelvin_iso, heaviside_law
+export trapezoidal_matrix
+export volterra_inverse, volterra_product, volterra_divide, volterra_left_divide
+export iso_params_from_blocks, iso_blocks_from_params
+export hill_kernel
+export dilute_concentration_alv, dilute_contribution_alv
+export voigt_alv, reuss_alv, dilute_alv, dilute_dual_alv
+export mori_tanaka_alv, maxwell_alv
+export self_consistent_alv
+export bulk_localization_alv, bulk_state_seq_alv, shear_localization_alv
+export strain_strain_loc_alv, stiffness_contribution_alv
+export homogenize_alv, has_visco_property
 
 # ── Backwards-compat aliases ─────────────────────────────────────────────────
 const HillAlgorithm = AbstractAlgorithm

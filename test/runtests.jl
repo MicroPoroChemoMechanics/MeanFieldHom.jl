@@ -61,6 +61,16 @@ using MeanFieldHom
         include("LayeredSpheres/test_generic.jl")
     end
 
+    @testset "Viscoelasticity" begin
+        include("Viscoelasticity/test_visco_law.jl")
+        include("Viscoelasticity/test_trapezoidal.jl")
+        include("Viscoelasticity/test_volterra_inverse.jl")
+        include("Viscoelasticity/test_hill_alv_iso.jl")
+        include("Viscoelasticity/test_schemes_alv.jl")
+        include("Viscoelasticity/test_sc_alv.jl")
+        include("Viscoelasticity/test_layered_alv.jl")
+    end
+
     @testset "Regression" begin
         include("regression/test_hill_cases.jl")
         include("regression/test_crack_cases.jl")

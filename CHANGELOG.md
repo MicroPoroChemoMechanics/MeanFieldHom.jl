@@ -1,5 +1,223 @@
 # Changelog
 
+## v0.5.3 — Non-uniform time grid + multi-layer ALV stability
+
+**Bug fix** : on a non-uniform time grid (e.g. `logspace`) with a
+matrix relaxation kernel that has multiple time constants and/or
+layers with extreme modulus contrast (pores, step-activated
+`ViscoLaw`s), the layered-sphere ALV recurrence diverged from the
+ECHOES Python reference by 1e-3 to 1e-2.  Two compounding root
+causes :
+
+1. **Right vs left Volterra divide.**  The Hervé–Zaoui closed-form
+   interface transition `T = M_b^{-1} · M_a` requires the Volterra
+   inverse on the **left** of the numerator.  Our `volterra_divide`
+   implemented `num · S^{-vol}` (right) ; the two products are equal
+   only when `[num, S] = 0`.  Lower-triangular Volterra trapezoidal
+   matrices commute pairwise iff they are Toeplitz (uniform time
+   grid + same kernel structure) — non-uniform grids broke this
+   assumption silently.
+
+2. **Generic 4n×4n inversion of the shear M-matrix is FP-unstable
+   for soft phases.**  Even the block forward-substitution
+   `volterra_inverse(_; block_size = 4)` collapses when
+   `det(M[t,t]) → 0` (pore-like or step-activated layers).
+   ECHOES C++ uses a **closed-form analytic 4×4 inverse** whose only
+   `n × n` Volterra inverses are `(3κ + 4μ)^{-vol}` and `μ^{-vol}` —
+   both regular for any non-vacuum modulus.
+
+**Fix** :
+
+- Added `volterra_left_divide(S, M; block_size = 1|6)` (forward
+  substitution on `S · T = M`, rows i = j..n) and switched every
+  closed-form transition (perfect / spring / membrane, both bulk and
+  shear) to use it.
+- Added `_shear_M_inverse_alv(r, M_κ, M_μ, n)` returning the
+  closed-form `M(r; κ, μ)^{-1}` in time-major 4n×4n layout, mirroring
+  C++ `inclusion_sphere_nlayers.h::set_visco_inv_matrix_dev`.  Used
+  by `_shear_layer_transfer_alv` (intra-layer transfer) and
+  `_shear_amp_blocks_alv` (state → amplitude extraction).
+- Reverted the v0.5.2 τ-scaling for the shear M-matrix — the
+  closed-form inverse is naturally written in σ-form and FP
+  stability now comes from the closed form rather than the rescaling.
+- Rewrote `_shear_M_matrix_alv` to use the C++ ECHOES mode
+  normalisation (mode 1 contributes `U = a · r`, not Christensen–Lo's
+  `2a · r`) so it stays consistent with the analytic `M^{-1}`
+  formula.  Mode-2 dev contribution factor
+  `F_k = (21/5) μ^{-vol} (3κ + μ) (r_b⁵ − r_a⁵)/(r_b³ − r_a³)` was
+  unchanged ; it cancels the mode-2 amplitude scaling implicitly.
+
+**Impact** : `script 37 :layers` now produces smooth, monotonic
+creep curves matching the Python reference figure visually
+(bounded between elastic limit and matrix Maxwell), in place of
+the previous unbounded / oscillating output.  Bench results :
+
+- `bench_layered_alv.jl` (N=2 stiff elastic + Maxwell matrix,
+  uniform grid) : 1e-16 (unchanged).
+- `bench_layered_alv_step.jl` (N=3 step-activated layers + pore +
+  Maxwell matrix, non-uniform grid) : bulk α 1e-15, shear β 1e-14.
+- `bench_step_n2.jl` (N=2 step layers, no pore) : 1e-14.
+- `bench_layered_alv_nopore.jl` (N=4 elastic, varied moduli) : 1e-15.
+
+## v0.5.1 — Multi-layer sphere shear localisation bug fix
+
+**Bug fix** : `LayeredSpheres._shear_localization` and the
+companion ALV `shear_localization_alv` previously returned only the
+mode-1 amplitude `a_k`, which is the correct per-layer dev β only
+when `b_k` (mode-2 amplitude) vanishes — true for `N = 1` (single
+sphere) and for the degenerate `N = 2` cases tested in
+`test_christensen.jl` (shell ≡ matrix or core ≡ shell).  For
+genuinely multi-layer composite spheres with distinct core, shell
+and matrix moduli, `b_k` is non-zero and contributes to the
+volume-averaged deviatoric strain via the mode-2 r³ profile.
+
+The corrected per-layer dev localisation is
+
+```text
+β_k = a_k + b_k · (21/5) (3κ_k + μ_k)/μ_k · (r_k⁵ − r_{k-1}⁵)/(r_k³ − r_{k-1}³)
+```
+
+(modes 3 and 4 contribute zero to the layer-volume-averaged
+deviatoric strain by angular orthogonality).  This matches ECHOES
+C++ `inclusion_sphere_nlayers.h::get_visco_layer_average_strain_Strain`
+to machine precision.
+
+**Impact** : the ALV `:layers` topology of `script 37` now matches
+the Python `fluage_echoes_solid.py` reference for N ≥ 2.  The
+elastic `stiffness_contribution(LayeredSphere, C₀)` and the ALV
+`stiffness_contribution_alv(LayeredSphere, C₀_law, times)` produce
+the correct effective dilute / MT moduli.
+
+**Validation** : new cross-check benchmark
+`scripts/bench_echoes/bench_layered_alv.{py,jl}` and a regression
+test `shear_localization_alv — N=2 cross-check vs ECHOES Python` in
+`test/Viscoelasticity/test_layered_alv.jl` pin the ALV per-layer
+α(t,t') and β(t,t') Volterra blocks to ECHOES Python at machine
+precision (1e-16 on the diagonal, 1e-6 on the off-diagonal blocks).
+
+## v0.5.0 — Ageing linear viscoelasticity (ALV) module
+
+A new `MeanFieldHom.Viscoelasticity` sub-module brings time-domain
+viscoelastic homogenisation to the package, mirroring the capabilities
+of the C++ ECHOES `viscoelasticity/visco_law.h` and
+`homogenization_maxwell.h`.  Reference: Sanahuja IJSS 2013 ;
+Barthélémy-Giraud-Lavergne-Sanahuja IJSS 2016 ;
+Barthélémy-Giraud-Sanahuja-Sevostianov IJES 2019 ; ECHOES manual
+chapter 7 and appendix `viscoelastic_hill_kernel.qmd`.
+
+### Highlights
+
+- **`ViscoLaw`** : abstract relaxation `R(t,t')` or creep `J(t,t')`
+  kernel, scalar- or 4-tensor-valued, with built-in convenience
+  constructors `maxwell_relaxation`, `kelvin_creep`, `maxwell_iso`,
+  `kelvin_iso`, `heaviside_law`.
+- **`trapezoidal_matrix`** : Sanahuja-2013 trapezoidal discretisation of
+  the Stieltjes integral on a time grid `times`, returning a dense
+  `Matrix{T}` of size `(B·n) × (B·n)` in lower-block-triangular form
+  (`B = 6` for 4-tensor in Mandel convention, `B = 1` for scalar
+  kernels).
+- **`volterra_inverse`** : block-triangular forward-substitution that
+  takes a discrete relaxation matrix to its discrete creep matrix in
+  `O(B³ n²)` flops.
+- **`hill_kernel`** : discrete ALV Hill polarisation tensor for an
+  ellipsoidal inclusion in an isotropic ALV matrix, using the
+  time-space decoupling formula of the manual appendix : reuses the
+  elastic auxiliary tensors `tens_UA`, `tens_VA` and combines them with
+  two scalar Volterra inverses (longitudinal and shear moduli).
+  Machine-precision agreement with the elastic Hill tensor in the
+  Heaviside (elastic) limit.
+- **`homogenize_alv(rve, scheme, prop; times)`** : public entry point
+  that builds the discrete operators for every phase, computes the
+  ALV Hill kernel, and dispatches to the appropriate scheme function.
+  Implemented schemes : `Voigt`, `Reuss`, `Dilute`, `DiluteDual`,
+  `MoriTanaka`, `Maxwell`.  Each one's output coincides with the
+  corresponding elastic homogenisation in the Heaviside limit (verified
+  to machine precision in the test suite).
+- **`Phase.properties` relaxed to `Dict{Symbol, Any}`** : a phase can now
+  carry either an elastic `AbstractTens` or a `ViscoLaw` under the
+  same key (`:C`).  No regression in the elastic test suite (3421/3421).
+- **Scripts** : `scripts/33_visco_law_basics.jl` (kernels + plot),
+  `scripts/37_fluage_echoes_solid.jl` (Sanahuja-style ageing creep of a
+  solidifying composite, whole-pores topology, mirroring
+  `tests/python/creep/fluage_echoes_solid.py` after [@sanahuja2013] and
+  chapter 9 §"Ageing creep of solidifying cementitious materials").
+- **Tests** : `test/Viscoelasticity/` adds 525 new tests across
+  `test_visco_law.jl`, `test_trapezoidal.jl`, `test_volterra_inverse.jl`,
+  `test_hill_alv_iso.jl`, `test_schemes_alv.jl`.  Total package test
+  count : 3946/3946 PASS.
+
+### Self-Consistent ALV (added in 0.5.0)
+
+- **`self_consistent_alv(rve, prop; times, abstol, reltol, maxiters,
+  damping, verbose, select_best)`** — symmetric SC fixed-point iteration
+  on the `(6n × 6n)` block matrix.  Each iteration recomputes the
+  per-phase Hill kernels using the running estimate's iso parameters,
+  computes the dilute concentration tensors, and forms the next
+  iterate.  Convergence on the Frobenius norm.
+- Plumbed into the dispatcher via `homogenize_alv(rve, SelfConsistent(),
+  :C; times = T)`.
+- Tests against the elastic SC limit pass at machine precision.
+
+### N-layer sphere ALV — full bulk + shear recurrence (added in 0.5.0)
+
+- **`bulk_localization_alv(sphere::LayeredSphere, C0_law, times)`** —
+  per-layer bulk localisation matrices `α_k(t,t')` of size `n × n`
+  (one per layer).  Extends the elastic Hervé-Zaoui bulk recurrence
+  ([`LayeredSpheres/bulk_recurrence.jl`]) by replacing every scalar
+  modulus with its `n × n` trapezoidal Volterra matrix, building
+  `(2n × 2n)` block transfer matrices.
+- **`shear_localization_alv(sphere::LayeredSphere, C0_law, times)`** —
+  per-layer deviatoric (Y₂-harmonic) localisation matrices `β_k(t,t')`
+  of size `n × n`.  Builds the Hervé-Zaoui 1993 4×4 fundamental matrix
+  in **time-major** layout (`(4n × 4n)` block-lower-triangular with
+  4×4 diagonal blocks), inverts it via `volterra_inverse(_;
+  block_size = 4)`, propagates two probe states through the layers,
+  and selects the linear combination matching unit far-field
+  `(a_{N+1}, b_{N+1}) = (I_n, 0)` via a final `(2n × 2n)`
+  `block_size = 2` Volterra solve.  Verified to machine precision
+  against `LayeredSpheres._shear_localization` in the Heaviside
+  (elastic) limit.
+- **`bulk_state_seq_alv`** / `_shear_state_seq_alv` — forward
+  propagation of the discrete state vectors through every layer.
+- **ALV interface transfers** (`_bulk_interface_T_alv`,
+  `_shear_interface_T_alv`) cover the same set of imperfect interface
+  models as the elastic counterpart : `PerfectInterface`,
+  `SpringInterface(kn, kt)` (primal — displacement jump driven by
+  `kn`/`kt`) and `MembraneInterface(κs, μs)` (dual — traction jump
+  from surface elasticity).  Each interface parameter may be a plain
+  scalar (constant in time, the elastic limit) **or** a `ViscoLaw`
+  scalar kernel — in the latter case the jump itself is ageing and
+  the corresponding `n × n` block is the parameter's trapezoidal
+  matrix.  The `(4n × 4n)` shear block-diagonal (4×4 sense) cleanly
+  reduces to the elastic 4×4 jump for scalar parameters.
+- **Composite-sphere assembly**:
+  `strain_strain_loc_alv(sphere, C0_law, times)` builds the volume-
+  averaged strain-strain localisation tensor
+  `A_avg = ⟨α⟩ 𝕁 + ⟨β⟩ 𝕂` (`(6n × 6n)`), and
+  `stiffness_contribution_alv(sphere, C0_law, times)` builds the
+  size-independent stiffness contribution
+  `N = 3 Σ_k f_k (M_κ_k − M_κ_0) ∘ α_k 𝕁
+       + 2 Σ_k f_k (M_μ_k − M_μ_0) ∘ β_k 𝕂` (`(6n × 6n)`).
+- **`homogenize_alv` extended to `LayeredSphere` phases**: the
+  per-inclusion quantities (`A_dut`, `N_dut`) are computed via the
+  layered-sphere recurrence instead of the Hill kernel + dilute
+  pipeline.  Verified to machine precision against the elastic
+  reference for the Dilute scheme and against the elastic MT for the
+  `t = t' = 0` block of a Maxwell relaxation kernel.
+- **`scripts/37_fluage_echoes_solid.jl`** now exposes a `MODEL`
+  constant (`:whole_pores` / `:layers`) selecting the topology;
+  the `:layers` branch reproduces the Python `sphere_nlayers(...)`
+  setup of `tests/python/creep/fluage_echoes_solid.py` exactly.
+
+### Deferred to follow-up
+
+- Cracks in ALV (extrapolating from the elastic `cod_tensor` /
+  `compliance_contribution` infrastructure).
+- Self-Consistent ALV with `LayeredSphere` phases (the current SC
+  ALV iteration handles only `Ellipsoid`-geometry inclusions).
+- Anisotropic ALV Hill kernel (numerical surface integral with Volterra
+  inverse of the 3×3 acoustic tensor at each integration point).
+
 ## v0.4.0 — Friendly autodiff sensitivities, RVE-level symmetrize, Hill-symmetric SC
 
 A small but expressive API exposing `ForwardDiff`-based derivatives of any

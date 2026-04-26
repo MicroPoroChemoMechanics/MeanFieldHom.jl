@@ -231,11 +231,11 @@ construction time. Specialization happens at the dispatch site
 """
 mutable struct Phase
     geometry::AbstractInclusion
-    properties::Dict{Symbol, AbstractTens}
+    properties::Dict{Symbol, Any}
 end
 
 Phase(geometry::AbstractInclusion, properties::AbstractDict) =
-    Phase(geometry, Dict{Symbol, AbstractTens}(properties...))
+    Phase(geometry, Dict{Symbol, Any}(properties...))
 
 # =============================================================================
 #  RVE: ordered collection of phases + matrix tag + distribution shape
