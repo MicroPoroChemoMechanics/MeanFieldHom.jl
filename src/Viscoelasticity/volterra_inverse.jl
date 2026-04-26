@@ -43,8 +43,13 @@ function volterra_inverse(M::AbstractMatrix; block_size::Int = 6)
     ))
     n = sz ÷ B
     T = eltype(M)
-    inv_M = zeros(T, sz, sz)
 
+    # ── Fast path: BlasFloat scalar Volterra → LAPACK trtri ────────────────
+    if B == 1 && T <: LinearAlgebra.BlasFloat && M isa StridedMatrix && n ≥ 64
+        return Matrix(inv(LowerTriangular(M)))
+    end
+
+    inv_M = zeros(T, sz, sz)
     if B == 1
         _volterra_forward_scalar!(inv_M, M, n)
     else
@@ -162,6 +167,15 @@ function volterra_divide(M::AbstractMatrix, S::AbstractMatrix;
         "volterra_divide: matrix size $(sz) not divisible by block_size $(B)"))
     n = sz ÷ B
     T = promote_type(eltype(M), eltype(S))
+
+    # ── Fast path: BlasFloat scalar Volterra → BLAS trsm ───────────────────
+    if B == 1 && T <: LinearAlgebra.BlasFloat &&
+       M isa StridedMatrix && S isa StridedMatrix && n ≥ 64
+        Mt = eltype(M) === T ? M : convert(Matrix{T}, M)
+        St = eltype(S) === T ? S : convert(Matrix{T}, S)
+        return Mt / LowerTriangular(St)
+    end
+
     out = zeros(T, sz, sz)
     if B == 1
         _volterra_divide_scalar!(out, M, S, n)
@@ -257,6 +271,15 @@ function volterra_left_divide(S::AbstractMatrix, M::AbstractMatrix;
         "volterra_left_divide: matrix size $(sz) not divisible by block_size $(B)"))
     n = sz ÷ B
     T = promote_type(eltype(M), eltype(S))
+
+    # ── Fast path: BlasFloat scalar Volterra → BLAS trsm ───────────────────
+    if B == 1 && T <: LinearAlgebra.BlasFloat &&
+       M isa StridedMatrix && S isa StridedMatrix && n ≥ 64
+        Mt = eltype(M) === T ? M : convert(Matrix{T}, M)
+        St = eltype(S) === T ? S : convert(Matrix{T}, S)
+        return LowerTriangular(St) \ Mt
+    end
+
     out = zeros(T, sz, sz)
     if B == 1
         _volterra_left_divide_scalar!(out, M, S, n)
