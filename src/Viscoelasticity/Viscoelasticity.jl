@@ -40,6 +40,9 @@ const MFH_Core = Core
 
 import ..Elasticity
 import ..Elasticity: tens_UA, tens_VA, tens_IA, Ellipsoid, Spheroid
+import ..Cracks
+using ..Cracks: EllipticCrack, RibbonCrack, PennyCrack,
+                 crack_basis, crack_normal, aspect_ratio
 import ..LayeredSpheres
 using ..LayeredSpheres: LayeredSphere, layer_radius, layer_modulus,
                          layer_interface, AbstractInterface, PerfectInterface,
@@ -49,7 +52,9 @@ import ..Schemes
 using ..Schemes: RVE, HomogenizationScheme, Voigt, Reuss, Dilute, DiluteDual,
                   MoriTanaka, Maxwell, SelfConsistent, matrix_phase,
                   inclusion_phase_names, matrix_property, phase_property,
-                  volume_fraction, matrix_volume_fraction
+                  volume_fraction, matrix_volume_fraction,
+                  AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize,
+                  phase_symmetrize
 
 include("visco_law.jl")
 include("trapezoidal.jl")
@@ -63,6 +68,7 @@ include("schemes_alv_sc.jl")
 include("layered_alv.jl")
 include("homogenize_alv.jl")
 include("order2_alv.jl")
+include("cracks_alv.jl")
 
 # ── Exports ─────────────────────────────────────────────────────────────────
 export AbstractViscoLaw, ViscoLaw, VALID_VISCO_MODES
@@ -92,5 +98,6 @@ export voigt_alv_order2, reuss_alv_order2, dilute_alv_order2,
        dilute_dual_alv_order2, mori_tanaka_alv_order2, maxwell_alv_order2
 export dilute_concentration_alv_order2, dilute_contribution_alv_order2
 export homogenize_alv_order2
+export cod_kernel_alv, compliance_contribution_alv, delta_compliance_alv
 
 end # module

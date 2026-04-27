@@ -174,7 +174,7 @@ decoupling formula  `P̃[block(i,j)] = α₀^{-vol}[i,j] · 𝐈^A`.
 """
 function hill_kernel_order2(ell, K_0_law::ViscoLaw,
                              times::AbstractVector{<:Real})
-    K_0 = trapezoidal_matrix(K_0_law, times)
+    K_0 = _trapezoidal_relaxation(K_0_law, times, 3)
     _is_iso_order2_block(K_0) ||
         throw(ArgumentError("hill_kernel_order2: only iso ALV matrix is currently supported"))
     α_0 = iso_order2_params_from_blocks(K_0)
@@ -354,24 +354,25 @@ function maxwell_alv_order2(K_0::AbstractMatrix,
     return K_0 .+ factor
 end
 
-# ── homogenize_alv_order2 dispatcher ───────────────────────────────────────
+# ── Order-2 ALV pipeline (internal — dispatched from homogenize_alv) ───────
 
 """
-    homogenize_alv_order2(rve, scheme, prop::Symbol; times) -> Matrix
+    _homogenize_alv_order2(rve, scheme, prop::Symbol; times) -> Matrix
 
-Order-2 ALV homogenisation.  Returns the effective `K̃_eff` of size
-`(3n × 3n)`, where `n = length(times)`.
+Internal order-2 ALV pipeline.  Reached from [`homogenize_alv`](@ref)
+when the matrix property law samples to a 3×3 / `TensND.AbstractTens{2,3}`
+value.  Returns the effective `K̃_eff` of size `(3n × 3n)`.
 
 Supports iso ALV matrix + ellipsoidal inclusions of any aspect ratio.
 The result is generally anisotropic (TI for spheroids, ortho for
 triaxial ellipsoids).
 """
-function homogenize_alv_order2(rve::RVE, scheme::HomogenizationScheme,
-                                prop::Symbol; times::AbstractVector{<:Real}, kw...)
+function _homogenize_alv_order2(rve::RVE, scheme::HomogenizationScheme,
+                                 prop::Symbol; times::AbstractVector{<:Real}, kw...)
     K_M_law = matrix_property(rve, prop)
     K_M_law isa ViscoLaw ||
         throw(ArgumentError("homogenize_alv_order2: matrix property $prop is not a ViscoLaw"))
-    K_0 = trapezoidal_matrix(K_M_law, times)
+    K_0 = _trapezoidal_relaxation(K_M_law, times, 3)
     f_M = matrix_volume_fraction(rve)
 
     incl_names = inclusion_phase_names(rve)
@@ -384,7 +385,7 @@ function homogenize_alv_order2(rve::RVE, scheme::HomogenizationScheme,
         K_r_law = phase_property(rve, name, prop)
         K_r_law isa ViscoLaw ||
             throw(ArgumentError("homogenize_alv_order2: phase $name property is not a ViscoLaw"))
-        K_r = trapezoidal_matrix(K_r_law, times)
+        K_r = _trapezoidal_relaxation(K_r_law, times, 3)
         P_r = hill_kernel_order2(ph.geometry, K_M_law, times)
         A_dut = dilute_concentration_alv_order2(K_r, K_0, P_r)
         N_dut = dilute_contribution_alv_order2(K_r, K_0, P_r)
@@ -445,3 +446,14 @@ function _homogenize_alv2_dispatch(rve::RVE, ::Maxwell, ::Symbol,
     H_0 = hill_kernel_order2(Spheroid(1.0), K_M_law, times)
     return maxwell_alv_order2(K_0, contribs, fractions; H_0 = H_0)
 end
+
+"""
+    homogenize_alv_order2(rve, scheme, prop; times)
+
+Backwards-compatible alias for [`homogenize_alv`](@ref) when the matrix
+property is order-2.  New code should call `homogenize_alv` directly —
+the dispatch on order-2 vs order-4 is automatic from the law sample.
+"""
+homogenize_alv_order2(rve::RVE, scheme::HomogenizationScheme,
+                       prop::Symbol; kw...) =
+    homogenize_alv(rve, scheme, prop; kw...)

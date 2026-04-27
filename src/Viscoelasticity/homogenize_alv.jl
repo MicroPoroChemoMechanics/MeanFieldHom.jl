@@ -30,17 +30,134 @@ function has_visco_property(rve::RVE, prop::Symbol = :C)
     return false
 end
 
+# ── Iso projection of a 6n×6n block matrix (ECHOES `symmetrize=[ISO]`) ─────
+#
+# ECHOES applies an orientation-averaging projection to each phase
+# 4-tensor whose RVE definition carries `symmetrize=[ISO]`.  For each
+# 6×6 Mandel block, the iso projection is :
+#   α = (1/3) Σᵢⱼ T_iijj  =  (M[1,1] + M[2,2] + M[3,3] + 2(M[1,2] + M[1,3] + M[2,3])) / 3
+#   β = (Σᵢⱼ T_ijij - α) / 5  =  (trace(M) - α) / 5
+#   M_iso = α 𝕁 + β 𝕂  (rebuilt via `iso_blocks_from_params` on a 1×1
+#                       parameter pair).
+#
+# We apply this block-by-block to the (6n)×(6n) `Ñ` (and `Ã`) of the
+# inclusions when their phase's `phase_symmetrize` is `IsoSymmetrize`.
+# Iso averaging of a TI block over a uniform orientation distribution
+# matches ECHOES `symmetrize=[ISO]` exactly.
+
+@inline function _iso_project_mandel66(M::AbstractMatrix)
+    @assert size(M) == (6, 6)
+    α = (M[1, 1] + M[2, 2] + M[3, 3] +
+         2 * (M[1, 2] + M[1, 3] + M[2, 3])) / 3
+    tr = M[1, 1] + M[2, 2] + M[3, 3] + M[4, 4] + M[5, 5] + M[6, 6]
+    β = (tr - α) / 5
+    return α, β
+end
+
+"""
+    _iso_project_blocks(M::AbstractMatrix) -> Matrix
+
+Project every 6×6 Mandel block of a `(6n × 6n)` ALV matrix to its iso
+component (Reynolds average over the orthogonal group), returning a
+new `(6n × 6n)` block matrix whose every block is iso.  Equivalent to
+the ECHOES `symmetrize=[ISO]` orientation-averaging projection
+applied to each `(t_i, t_j)` block independently.
+"""
+function _iso_project_blocks(M::AbstractMatrix)
+    sz = size(M, 1)
+    sz == size(M, 2) ||
+        throw(ArgumentError("_iso_project_blocks: matrix must be square"))
+    sz % 6 == 0 ||
+        throw(ArgumentError("_iso_project_blocks: size $(sz) not divisible by 6"))
+    n = sz ÷ 6
+    T = eltype(M)
+    α = zeros(T, n, n)
+    β = zeros(T, n, n)
+    @inbounds for i in 1:n, j in 1:n
+        rows = (6 * (i - 1) + 1):(6 * i)
+        cols = (6 * (j - 1) + 1):(6 * j)
+        a, b = _iso_project_mandel66(view(M, rows, cols))
+        α[i, j] = a
+        β[i, j] = b
+    end
+    return iso_blocks_from_params(α, β)
+end
+
+"""
+    _maybe_symmetrize_alv(M, sym) -> Matrix
+
+Apply the orientation-averaging projection corresponding to `sym` to a
+`(6n × 6n)` ALV block matrix.  Currently supports `NoSymmetrize`
+(passthrough) and `IsoSymmetrize` (block-by-block iso projection).
+TI projection on the ALV side is reserved for a follow-up.
+"""
+@inline _maybe_symmetrize_alv(M::AbstractMatrix, ::NoSymmetrize) = M
+@inline _maybe_symmetrize_alv(M::AbstractMatrix, ::IsoSymmetrize) =
+    _iso_project_blocks(M)
+
+"""
+    _trapezoidal_relaxation(law::ViscoLaw, times, B) -> Matrix
+
+Build the discrete relaxation block matrix from a `ViscoLaw`, regardless
+of whether the law is in `:relaxation` or `:creep` mode.  When the law
+is `:creep`, the trapezoidal compliance matrix is inverted (block forward
+substitution at `block_size = B`) to obtain the corresponding relaxation
+matrix — the convention every ALV scheme assumes internally.
+
+`B` is the block size (`6` for order-4 4-tensor / Mandel, `3` for
+order-2 vector-tensor).
+"""
+function _trapezoidal_relaxation(law::ViscoLaw,
+                                  times::AbstractVector{<:Real}, B::Int)
+    M = trapezoidal_matrix(law, times)
+    if visco_mode(law) === :creep
+        return volterra_inverse(M; block_size = B)
+    end
+    return M
+end
+
+"""
+    _alv_property_order(law::ViscoLaw, t) -> Int
+
+Inspect the sample returned by `visco_eval(law, t, t)` and report the
+tensor order (`2` for vector-tensor / 3×3, `4` for 4-tensor / 6×6
+Mandel).  Used by [`homogenize_alv`](@ref) to dispatch between the
+order-4 (stiffness / relaxation) and order-2 (conductivity / creep
+admittance) pipelines.
+"""
+function _alv_property_order(law::ViscoLaw, t::Real)
+    sample = visco_eval(law, t, t)
+    if sample isa TensND.AbstractTens{2, 3}
+        return 2
+    elseif sample isa TensND.AbstractTens{4, 3}
+        return 4
+    elseif sample isa AbstractMatrix
+        if size(sample) == (3, 3)
+            return 2
+        elseif size(sample) == (6, 6)
+            return 4
+        end
+    end
+    throw(ArgumentError("homogenize_alv: cannot infer ALV order from sample of type $(typeof(sample))"))
+end
+
 """
     homogenize_alv(rve, scheme, prop::Symbol; times) -> Matrix
 
-ALV pipeline: build the discrete `(6n × 6n)` block matrices of every
-phase, compute the ALV Hill kernel and dilute concentration tensors,
-and dispatch on `scheme` to the corresponding `_alv` scheme function.
+ALV pipeline: build the discrete block matrices of every phase, compute
+the ALV Hill kernel and dilute concentration tensors, and dispatch on
+`scheme` to the corresponding `_alv` scheme function.
 
-Returns the effective relaxation matrix `C̃_eff` of size `(6n × 6n)`,
-where `n = length(times)`.
+The function dispatches on the **order of the matrix property** (read
+once from the matrix `ViscoLaw` sample type):
+  * order-4 (4-tensor / 6×6 Mandel kernel) → returns `(6n × 6n)`
+    relaxation matrix following the standard Hill-kernel +
+    dilute-concentration pipeline.
+  * order-2 (2-tensor / 3×3 kernel; conductivity / diffusion /
+    permittivity) → returns `(3n × 3n)` matrix via the order-2 ALV
+    pipeline (`hill_kernel_order2`, time-space decoupling).
 
-Supports two inclusion-geometry families:
+Supports two inclusion-geometry families (order-4 only):
   * Single-shape ellipsoidal (`Ellipsoid`, `Spheroid`): the standard
     Hill-kernel + dilute-concentration pipeline.
   * `LayeredSphere`: bulk + shear ALV recurrences (see
@@ -58,7 +175,15 @@ function homogenize_alv(rve::RVE, scheme::HomogenizationScheme,
     C_M_law = matrix_property(rve, prop)
     C_M_law isa ViscoLaw ||
         throw(ArgumentError("homogenize_alv: matrix property $prop is not a ViscoLaw"))
-    C_0 = trapezoidal_matrix(C_M_law, times)
+
+    # Dispatch on the property order (2 vs 4) inferred from the sample.
+    order = _alv_property_order(C_M_law, first(times))
+    if order == 2
+        return _homogenize_alv_order2(rve, scheme, prop;
+                                       times = times, kw...)
+    end
+
+    C_0 = _trapezoidal_relaxation(C_M_law, times, 6)
     f_M = matrix_volume_fraction(rve)
 
     # 2. Loop on inclusions.
@@ -73,6 +198,11 @@ function homogenize_alv(rve::RVE, scheme::HomogenizationScheme,
         C_r_law = phase_property(rve, name, prop)
         C_r, A_dut, N_dut, P_r = _inclusion_alv_quantities(
             ph.geometry, C_r_law, C_M_law, C_0, times)
+        # Honour the phase's `symmetrize=[ISO]` (or other) projection,
+        # mirroring the elastic dispatcher in `Schemes/contribution_helpers.jl`.
+        sym = phase_symmetrize(rve, name)
+        A_dut = _maybe_symmetrize_alv(A_dut, sym)
+        N_dut = _maybe_symmetrize_alv(N_dut, sym)
         push!(C_phases, C_r)
         push!(A_duts, A_dut)
         push!(contribs, N_dut)
@@ -102,7 +232,7 @@ function _inclusion_alv_quantities(geom, C_r_law,
                                     times::AbstractVector{<:Real})
     C_r_law isa ViscoLaw ||
         throw(ArgumentError("homogenize_alv: phase property is not a ViscoLaw"))
-    C_r = trapezoidal_matrix(C_r_law, times)
+    C_r = _trapezoidal_relaxation(C_r_law, times, 6)
     P_r = hill_kernel(geom, C_M_law, times)
     # Iso fast path : if every input matrix is iso (typical for
     # spherical inclusions in iso ALV matrix), compute the dilute

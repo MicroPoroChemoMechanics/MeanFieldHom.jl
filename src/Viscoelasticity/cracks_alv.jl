@@ -1,91 +1,149 @@
 # =============================================================================
-#  cracks_alv.jl — ageing linear viscoelastic cracks (skeleton + roadmap).
+#  cracks_alv.jl — pure penny crack in an iso ALV matrix.
 #
 #  ECHOES C++ exposes ALV cracks via the `crack(shape, interf_visco_prop, …)`
 #  Python interface, see
 #  `c:/Users/jf.barthelemy/VSCode_workspace/Echoes/echoes_cpp/tests/python/creep/fluage_echoes_cracks.py`.
 #
-#  The supported geometries / matrices in ECHOES are:
-#    * iso ALV matrix `R(t,t')` (relaxation 4-tensor)
-#    * thin spheroidal crack with two **interface stiffness** ALV laws
-#      `(Rn(t,t'), Rt(t,t'))` (normal and tangential interface compliances)
+#  This first implementation covers **pure penny cracks (η = 1)** in an
+#  **isotropic ALV matrix** (no interface stiffness yet — the
+#  `(Rn(t,t'), Rt(t,t'))` interface laws will be added in a follow-up).
 #
-#  The Julia equivalents to develop here are:
+#  ── Time-space decoupling ─────────────────────────────────────────────────
 #
-#    cod_kernel_alv(crack, C₀_law, times)               -> (6n × 6n) Matrix
-#    compliance_contribution_alv(crack, C₀_law, times)  -> (6n × 6n) Matrix
-#
-#  with both routed through the existing scheme dispatcher in
-#  `homogenize_alv` via the `CrackDensity` amount on the inclusion phase.
-#
-#  ── Time–space decoupling for a pure penny crack in an iso ALV matrix ─────
-#
-#  The elastic COD tensor of a penny crack `(η = 1)` in iso `(K, μ)` is
-#  diagonal in the crack basis (l̂, m̂, n̂):
+#  In iso elasticity, a penny crack with normal n̂ has a diagonal COD
+#  tensor in the crack basis (n̂, t̂₁, t̂₂):
 #       B_nn = 16 (1−ν²) / (3π E)
-#       B_ll = B_mm = 32 (1−ν²) / (3π E (2−ν))
+#       B_t  = 32 (1−ν²) / (3π E (2−ν))
 #
-#  In the Volterra n×n algebra with α = 3K, β = 2μ:
-#       1 − ν²  =  9K (3K + 4μ) / (4 (3K + μ)²) = α (α + 2β) / (4 (α + β/2)²)
-#       E       =  9 K μ / (3 K + μ) = α β / (2 (α + β/2))
-#       (1−ν²)/E = (3K + 4μ) / (4μ (3K + μ)) = (α + 2β) / (2β (α + β/2))
+#  Rewriting in (α = 3K, β = 2μ):
+#       B_nn = (8 / (3π))  · (α + 2β) / (β · (α + β/2))
+#       B_t  = (32 / (9π)) · (α + 2β) / (β · (α + β))
 #
-#  giving
+#  In iso ALV, every "/" becomes a Volterra inverse and every "·"
+#  becomes a Volterra product on `n × n` matrices:
 #       B̃_nn = (8 / (3π))  · (α + 2β) ∘ (β ∘ (α + β/2))^{-vol}
-#       B̃_ll = (16 / (3π)) · (α + 2β) ∘ (β ∘ (α + β/2) · (2 - ν))^{-vol}   (with 2-ν tensorial)
+#       B̃_t  = (32 / (9π)) · (α + 2β) ∘ (β ∘ (α + β))^{-vol}
 #
-#  Implementing this requires:
-#    1. extracting (α, β) from the iso ALV matrix block matrix
-#    2. evaluating ν as a Volterra rational fraction in (α, β) → an extra
-#       n×n matrix for the (2 - ν) factor in B_ll / B_mm
-#    3. assembling the 6×6 block in the crack basis (l̂, m̂, n̂) and rotating
-#       to the global Mandel frame at every (t, t').
+#  The compliance contribution H̃ = (3/4) · n̂ ⊗ˢ B̃ ⊗ˢ n̂ is, in the
+#  canonical crack-aligned axis n̂ = e₃ + Mandel basis :
+#       H[3,3] = (3/4)  · B̃_n      (Walpole ℓ₁)
+#       H[4,4] = H[5,5] = (3/8) · B̃_t   (Walpole ℓ₆)
+#       all other entries vanish
 #
-#  Step (3) reduces the problem to four scalar Volterra n×n matrices —
-#  one for the diagonal in the crack basis (B_ll, B_mm, B_nn distinct) and
-#  one rotation tensor.  The result is then a TI block matrix in the
-#  crack normal axis, fitting the existing TI ALV fast path.
+#  i.e. H̃ is a **TI block matrix** in the crack normal axis with Walpole
+#  coefficients `ℓ = (3 B̃_n / 4, 0, 0, 0, 0, 3 B̃_t / 8)`.  This plugs
+#  directly into the existing TI ALV fast path without any extra
+#  infrastructure.
 #
-#  ── Interface-stiffness ALV cracks ──────────────────────────────────────
+#  ── Public API ────────────────────────────────────────────────────────────
 #
-#  When the crack carries `(Rn(t,t'), Rt(t,t'))` interface stiffnesses
-#  (cf. `fluage_echoes_cracks.py` setup), the COD tensor at every (t,t')
-#  is:
-#       B = (4η / 3) · diag(1/Rt, 1/Rt, 1/Rn)   (in the crack basis)
+#  The two functions below mirror the elastic API:
+#       cod_kernel_alv(crack, C_M_law, times)         -> Matrix{T}
+#       compliance_contribution_alv(crack, C_M_law, times) -> Matrix{T}
 #
-#  whose Volterra-discretised version is straightforward:
-#       B̃_n = (4η / 3) · Rn^{-vol}   (n × n scalar Volterra inverse)
-#       B̃_t = (4η / 3) · Rt^{-vol}
-#  Two scalar Volterra inverses, then assembly into a TI 6n×6n block
-#  matrix in the crack normal axis.
+#  Apply [`delta_compliance_alv`](@ref) (= `(4π/3) · ε · H̃`) to convert
+#  from the size-independent contribution to a fractional compliance
+#  correction `ΔJ̃ = (4π/3) ε³ᵈ · H̃`.
 #
-#  ── Compliance contribution H̃ ──────────────────────────────────────────
-#
-#  Following the elastic bridge:
-#       H̃ = (3/4) · n̂ ⊗ˢ B̃ ⊗ˢ n̂   (elliptic / penny)
-#       H̃ = (2/π) · n̂ ⊗ˢ B̃ ⊗ˢ n̂   (ribbon)
-#
-#  Symbolic-tensor product on each (i, j) Volterra entry separately —
-#  identical to the elastic case at each time pair.
-#
-#  ── Integration into homogenize_alv ─────────────────────────────────────
-#
-#  Add `_inclusion_alv_quantities(crack::AbstractCrack, ...)` that returns
-#  `(C_r ≡ 0, A_dut ≡ 𝟙, N_dut ≡ H̃, P_r)` for cracks (the contribution to
-#  effective compliance), reusing the existing CrackDensity dispatch from
-#  the elastic Schemes module.
-#
-#  The Mori-Tanaka / SC / PCW algebra in `schemes_alv.jl` is unchanged —
-#  cracks just plug in as one more inhomogeneity with H̃ as their
-#  compliance contribution.
-#
-#  ── Status ──────────────────────────────────────────────────────────────
-#
-#  * Pure penny crack in iso ALV matrix: implementation pending.
-#  * Interface-stiffness crack (Rn, Rt): implementation pending.
-#  * Test against `fluage_echoes_cracks.py` benchmark: pending.
+#  Interface-stiffness cracks (`Rn(t,t'), Rt(t,t')`) and TI / aniso
+#  matrices are deferred to v0.6.2.
 # =============================================================================
 
-# Placeholder exports — concrete definitions to be added in the follow-up.
-# `cod_kernel_alv` / `compliance_contribution_alv` will mirror
-# `cod_tensor` / `compliance_contribution` from `Cracks/`.
+# Detect whether a crack normal coincides with the canonical axis e_3.
+# We restrict to canonical-axis penny cracks for the iso ALV fast path —
+# arbitrary orientation will require a 6×6 Mandel rotation per (i,j) block.
+@inline function _crack_axis_is_e3(crack)
+    n̂ = TensND.get_array(TensND.tens_basis(crack_basis(crack), 3))
+    return abs(n̂[1]) < 1e-10 && abs(n̂[2]) < 1e-10 && abs(n̂[3] - 1) < 1e-10
+end
+
+"""
+    cod_kernel_alv(crack::EllipticCrack, C_M_law::ViscoLaw, times)
+        -> NamedTuple
+
+Discrete ALV COD-tensor data for a penny crack `η = 1` in an isotropic
+ALV matrix.  Returns the named tuple `(B_n = …, B_t = …)` of two
+`n × n` scalar Volterra matrices (n = `length(times)`).  Each
+`B̃[i,j]` approximates the COD coefficient at the time pair
+`(t_i, t_j)`.
+
+Throws if the matrix law is not iso or the crack is not a penny.
+"""
+function cod_kernel_alv(crack::MFH_Core.AbstractCrack, C_M_law::ViscoLaw,
+                         times::AbstractVector{<:Real})
+    # Build the matrix relaxation block matrix (invert if law is :creep)
+    # and check iso.
+    C_M = _trapezoidal_relaxation(C_M_law, times, 6)
+    _is_iso_block(C_M) ||
+        throw(ArgumentError("cod_kernel_alv: matrix law is not iso (only iso ALV is supported)"))
+    α, β = _iso_pair(C_M)
+
+    # Penny check (η = 1).  We cover the closed-form penny formulas; the
+    # general elliptic / ribbon ALV closed forms can be added later.
+    η = aspect_ratio(crack)
+    isapprox(η, 1.0; atol = 1e-12) ||
+        throw(ArgumentError("cod_kernel_alv: only penny cracks (η = 1) are currently supported"))
+
+    # Volterra rationals for B̃_n and B̃_t.
+    α_p_2β = α .+ 2β
+    α_p_βh = α .+ β ./ 2
+    α_p_β  = α .+ β
+    βα1 = β * α_p_βh                   # β · (α + β/2)
+    βα2 = β * α_p_β                    # β · (α + β)
+    B_n = (8 / (3π)) .* volterra_left_divide(βα1, α_p_2β)
+    B_t = (32 / (9π)) .* volterra_left_divide(βα2, α_p_2β)
+    return (B_n = B_n, B_t = B_t)
+end
+
+"""
+    compliance_contribution_alv(crack, C_M_law::ViscoLaw, times) -> Matrix{T}
+
+Discrete `(6n × 6n)` size-independent compliance contribution `H̃` of a
+penny crack in an isotropic ALV matrix.  Computed via the time-space
+decoupling formula
+
+   `H̃ = (3/4) · B̃_n · W₁(n̂)  +  (3/8) · B̃_t · W₆(n̂)`
+
+where `W₁`, `W₆` are the canonical Walpole basis tensors of the crack
+normal axis.  When `n̂ = e_3` the result is in TI form and routes
+through the existing TI ALV fast path; arbitrary orientation requires
+a 6×6 Mandel rotation per `(i, j)` block (not yet implemented).
+
+Convention: same as the elastic [`compliance_contribution`](@ref) — the
+Budiansky-O'Connell density factor is applied separately via
+[`delta_compliance_alv`](@ref).
+"""
+function compliance_contribution_alv(crack::MFH_Core.AbstractCrack,
+                                       C_M_law::ViscoLaw,
+                                       times::AbstractVector{<:Real})
+    _crack_axis_is_e3(crack) ||
+        throw(ArgumentError("compliance_contribution_alv: only crack normal n̂ = e_3 is currently supported"))
+    cod = cod_kernel_alv(crack, C_M_law, times)
+    n = size(cod.B_n, 1)
+    T = promote_type(eltype(cod.B_n), eltype(cod.B_t))
+    Z = zeros(T, n, n)
+    ℓ₁ = (T(3) / T(4)) .* cod.B_n
+    ℓ₆ = (T(3) / T(8)) .* cod.B_t
+    return ti_blocks_from_params((ℓ₁, copy(Z), copy(Z), copy(Z), copy(Z), ℓ₆))
+end
+
+"""
+    delta_compliance_alv(crack, H̃, ε) -> Matrix
+
+Apply the Budiansky-O'Connell crack density factor to the
+size-independent compliance contribution `H̃` produced by
+[`compliance_contribution_alv`](@ref), giving the fractional
+compliance correction `ΔJ̃ = (4π/3) ε³ᵈ · H̃` (penny / elliptic
+geometry, `ε³ᵈ = N a b²`) — same pre-factor as the elastic case.
+"""
+function delta_compliance_alv(crack::MFH_Core.AbstractCrack,
+                                 H̃::AbstractMatrix, ε::Real)
+    if crack isa EllipticCrack
+        return (4π / 3) * ε .* H̃
+    elseif crack isa RibbonCrack
+        return Float64(π) * ε .* H̃
+    else
+        throw(ArgumentError("delta_compliance_alv: unsupported crack type $(typeof(crack))"))
+    end
+end

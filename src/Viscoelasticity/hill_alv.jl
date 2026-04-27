@@ -49,8 +49,12 @@ ECHOES manual appendix `viscoelastic_hill_kernel.qmd`:
 """
 function hill_kernel(ell, C0_law::ViscoLaw, times::AbstractVector{<:Real})
     n = length(times)
-    # 1. Build the 6n×6n viscoelastic matrix of the iso reference.
+    # 1. Build the 6n×6n RELAXATION matrix of the iso reference (invert
+    #    the trapezoidal compliance if the law is in `:creep` mode).
     R_M = trapezoidal_matrix(C0_law, times)
+    if visco_mode(C0_law) === :creep
+        R_M = volterra_inverse(R_M; block_size = 6)
+    end
     # 2-3. Extract iso parameters (α=3K, β=2μ) and build longitudinal / shear.
     α, β = iso_params_from_blocks(R_M)
     M_long = @. (α + 2 * β) / 3      # = K + 4μ/3

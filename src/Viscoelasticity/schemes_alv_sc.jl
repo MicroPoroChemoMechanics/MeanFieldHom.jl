@@ -53,20 +53,22 @@ function self_consistent_alv(rve::RVE, prop::Symbol;
     C_M_law = matrix_property(rve, prop)
     C_M_law isa ViscoLaw ||
         throw(ArgumentError("self_consistent_alv: matrix property is not a ViscoLaw"))
-    C_0 = trapezoidal_matrix(C_M_law, times)
+    C_0 = _trapezoidal_relaxation(C_M_law, times, 6)
     f_M = matrix_volume_fraction(rve)
     incl_names = inclusion_phase_names(rve)
     C_phases = Matrix{eltype(C_0)}[C_0]
     geometries = Any[rve.phases[rve.matrix_name].geometry]
     fractions = Float64[f_M]
+    symmetrizes = AbstractSymmetrize[NoSymmetrize()]
     for name in incl_names
         ph = rve.phases[name]
         C_r_law = phase_property(rve, name, prop)
         C_r_law isa ViscoLaw ||
             throw(ArgumentError("self_consistent_alv: phase $name property is not a ViscoLaw"))
-        push!(C_phases, trapezoidal_matrix(C_r_law, times))
+        push!(C_phases, _trapezoidal_relaxation(C_r_law, times, 6))
         push!(geometries, ph.geometry)
         push!(fractions, _amount_value(rve, name))
+        push!(symmetrizes, phase_symmetrize(rve, name))
     end
 
     # 2. Pre-compute the Mandel forms of U^A, V^A for each phase.
@@ -83,7 +85,7 @@ function self_consistent_alv(rve::RVE, prop::Symbol;
 
     for iter in 1:maxiters
         C_m_new = _sc_alv_step(C_m, C_phases, U_M_phases, V_M_phases,
-                               fractions, n, Id)
+                               fractions, n, Id, symmetrizes)
         Δ = norm(C_m_new - C_m)
         norm_C = norm(C_m)
         tol_eff = abstol + reltol * norm_C
@@ -109,7 +111,8 @@ function _sc_alv_step(C_m::AbstractMatrix,
                       U_M_phases::AbstractVector{<:AbstractMatrix},
                       V_M_phases::AbstractVector{<:AbstractMatrix},
                       fractions::AbstractVector{<:Real},
-                      n::Int, Id::AbstractMatrix)
+                      n::Int, Id::AbstractMatrix,
+                      symmetrizes::AbstractVector{<:AbstractSymmetrize})
     sz = size(C_m, 1)
     T = eltype(C_m)
     A_avg = zeros(T, sz, sz)
@@ -137,9 +140,17 @@ function _sc_alv_step(C_m::AbstractMatrix,
         # Dilute concentration & scaled contribution.
         ΔC = C_phases[α] - C_m
         A_dil = volterra_inverse(Id + P_α * ΔC; block_size = 6)
+        CA   = C_phases[α] * A_dil
+        # Apply orientation-averaging projection (`symmetrize=[ISO]` for
+        # ECHOES) to both the dilute concentration and its scaled
+        # contribution.  This matters per SC iteration so that the
+        # running C_m converges to the iso-symmetrized fixed point.
+        sym = symmetrizes[α]
+        A_dil = _maybe_symmetrize_alv(A_dil, sym)
+        CA    = _maybe_symmetrize_alv(CA,    sym)
         f = fractions[α]
         @. A_avg += f * A_dil
-        CA_avg += f * (C_phases[α] * A_dil)
+        @. CA_avg += f * CA
     end
     return CA_avg * volterra_inverse(A_avg; block_size = 6)
 end
