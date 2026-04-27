@@ -190,12 +190,17 @@ function homogenize_alv(rve::RVE, scheme::HomogenizationScheme,
     #    CRACKS (`CrackDensity`).  Cracks contribute ΔC̃_crack to the
     #    numerator of the schemes (no volume → no denominator effect).
     incl_names = inclusion_phase_names(rve)
-    fractions = Float64[]
+    # Allow `fractions` to carry whatever element type the RVE amounts
+    # store — typically `Float64` but also `ForwardDiff.Dual` for autodiff
+    # sensitivities via `set_param(rve, AmountParameter(...), Dual(...))`.
+    T_amount = isempty(incl_names) ? Float64 :
+        promote_type((typeof(amount_value(rve.amounts[n])) for n in incl_names)...)
+    fractions = T_amount[]
     contribs = Matrix{eltype(C_0)}[]
     A_duts = Matrix{eltype(C_0)}[]
     C_phases = Matrix{eltype(C_0)}[C_0]
     H_phases = Matrix{eltype(C_0)}[]   # per-phase Hill kernels (for Maxwell distribution)
-    crack_data = Tuple{Any, Float64, AbstractSymmetrize}[]   # (geom, density, sym)
+    crack_data = Tuple{Any, Any, AbstractSymmetrize}[]   # (geom, density, sym)
     ΔC_cracks_M = zeros(eltype(C_0), size(C_0)...)   # cracks-against-C_M sum
     ΔJ_cracks_M = zeros(eltype(C_0), size(C_0)...)   # for Reuss/DiluteDual
 
@@ -207,7 +212,7 @@ function homogenize_alv(rve::RVE, scheme::HomogenizationScheme,
             geom = ph.geometry
             geom isa MFH_Core.AbstractCrack ||
                 throw(ArgumentError("homogenize_alv: phase $name has CrackDensity but geometry $(typeof(geom)) is not a crack"))
-            ε = Float64(a.value)
+            ε = a.value
             push!(crack_data, (geom, ε, sym))
             # Stiffness contribution of the crack against C̃_M.
             Ñ = stiffness_contribution_alv_at(geom, C_0)
@@ -322,11 +327,14 @@ function _inclusion_alv_quantities(sphere::LayeredSphere, _C_r_law,
     return (C_r, A_dut, N_dut, P_r)
 end
 
-# Convenience: turn `volume_fraction(rve, name)` into a `Float64` even when
-# the amount is wrapped in `VolumeFraction`/`CrackDensity`.
+# Convenience: extract the scalar amount value (volume fraction or crack
+# density) from the RVE.  Preserves the element type of the wrapper —
+# e.g. returns `ForwardDiff.Dual` when the RVE was constructed via
+# `set_param(rve, AmountParameter(...), Dual(…))` — so autodiff flows
+# through the entire ALV pipeline.
 function _amount_value(rve::RVE, name::Symbol)
     amount = rve.amounts[name]
-    return Float64(amount.value)
+    return amount.value
 end
 
 # ── Iso-symmetry detection for the scheme fast path ─────────────────────────

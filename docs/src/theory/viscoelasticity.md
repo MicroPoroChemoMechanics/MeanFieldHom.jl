@@ -71,12 +71,64 @@ stiffness contribution `Ñ = -C̃_M·H̃·C̃_M`.
 
 Schemes integrate cracks as follows:
 
-| Scheme                           | Crack treatment                                             |
-|----------------------------------|-------------------------------------------------------------|
-| Voigt / Reuss                    | ignored (zero-volume convention)                            |
-| Dilute / DiluteDual              | additive `+ ΔC̃_cracks`                                     |
-| Mori-Tanaka / Maxwell / PCW      | virtual phase with `Ã = 0`, `Ñ = ΔC̃_crack`, `f = 1`        |
-| SC / ASC                         | re-evaluated against the running effective estimate         |
+| Scheme                      | Crack treatment                                       |
+|-----------------------------|-------------------------------------------------------|
+| Voigt / Reuss               | ignored (zero-volume convention)                      |
+| Dilute / DiluteDual         | additive `+ delta_C_cracks`                           |
+| Mori-Tanaka / Maxwell / PCW | virtual phase with `A = 0`, `N = delta_C`, `f = 1`    |
+| SC / ASC                    | re-evaluated against the running effective estimate   |
+
+## Numerical example — minimal working ALV pipeline
+
+```julia
+using MeanFieldHom, TensND
+
+# Iso Maxwell relaxation kernel
+function R_iso(t, tp)
+    α = 3 * (3.0 + 2.0 * exp(-(t - tp) / 1.0))
+    β = 2 * (1.0 + 1.0 * exp(-(t - tp) / 0.5))
+    return TensISO{3}(α, β)
+end
+law_M = ViscoLaw(R_iso, :relaxation)
+
+# RVE = matrix + iso elastic spheres at f = 0.20
+rve = RVE(:M)
+add_matrix!(rve, Ellipsoid(1.0), Dict(:C => law_M))
+add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(TensISO{3}(60.0, 20.0)));
+            fraction = 0.20)
+
+# Time grid + Mori-Tanaka homogenisation
+times = collect(range(0.0, 5.0; length = 50))
+C_eff = homogenize_alv(rve, MoriTanaka(), :C; times = times)
+
+# Read off the effective shear modulus history (column 1 = t' = 0)
+α_eff, β_eff = iso_params_from_blocks(C_eff)
+μ_eff_history = β_eff[:, 1] ./ 2
+```
+
+A worked end-to-end example (multi-phase Maxwell + solidifying gel +
+pore) lives in `scripts/37_fluage_echoes_solid.jl`. Closed-form
+validation against the Rabotnov / Mittag-Leffler benchmark of
+[@barthelemyIJES2019, §5] is in `scripts/36_rabotnov_mittag_leffler.jl`.
+
+## Symmetry-class fast paths — runnable comparison
+
+```julia
+# All phases iso → automatic iso fast path (2·n² storage instead of 36·n²)
+using MeanFieldHom
+
+α_eff, β_eff = iso_params_from_blocks(C_eff)         # extracted from the result
+@assert MeanFieldHom.Viscoelasticity._is_iso_block(C_eff)
+
+# To opt into the structured wrapper (compact storage + algebra closure):
+K_iso = ALVKernelISO(C_eff)            # 2·n² entries instead of 36·n²
+K_inv = volterra_inverse(K_iso)        # stays ALVKernelISO
+Matrix(K_inv) ≈ volterra_inverse(C_eff; block_size = 6)   # cross-check
+```
+
+`scripts/42_alv_kernel_types.jl` walks through `ALVKernelISO` /
+`ALVKernelTI` / `ALVKernelOrtho` with the algebra ladder iso ⊂ TI ⊂
+ortho.
 
 ## References
 

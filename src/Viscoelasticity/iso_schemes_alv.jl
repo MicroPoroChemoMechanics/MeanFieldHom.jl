@@ -191,13 +191,33 @@ function voigt_alv_iso(αβ_phases::AbstractVector, fractions::AbstractVector)
         throw(ArgumentError("voigt_alv_iso: phase counts mismatch"))
     isempty(αβ_phases) && throw(ArgumentError("voigt_alv_iso: at least one phase required"))
     n = size(αβ_phases[1][1], 1)
-    T = promote_type(eltype(αβ_phases[1][1]), eltype(αβ_phases[1][2]),
-                     eltype(fractions))
+    T = _promote_iso_eltype(αβ_phases, fractions)
     αβ_eff = (zeros(T, n, n), zeros(T, n, n))
     @inbounds for r in eachindex(αβ_phases)
         _iso_add!(αβ_eff, fractions[r], αβ_phases[r])
     end
     return αβ_eff
+end
+
+"""
+    _promote_iso_eltype(αβ_list, fractions, αβ_0...) -> Type
+
+Promote element types of an iso ALV pipeline : `αβ_list` is a vector of
+`(α, β)` tuples, `fractions` is a numeric vector, optional positional
+`(α, β)` tuples (e.g. the matrix reference) participate in the
+promotion.  Used to lift `Tuple{Matrix{Float64}, Matrix{Float64}}` to
+the right element type when sensibilities are run with `Dual` fractions.
+"""
+function _promote_iso_eltype(αβ_list::AbstractVector, fractions::AbstractVector,
+                              αβ_0::Tuple...)
+    T = eltype(fractions)
+    if !isempty(αβ_list)
+        T = promote_type(T, eltype(αβ_list[1][1]), eltype(αβ_list[1][2]))
+    end
+    for ab in αβ_0
+        T = promote_type(T, eltype(ab[1]), eltype(ab[2]))
+    end
+    return T
 end
 
 """
@@ -224,7 +244,8 @@ function dilute_alv_iso(αβ_0::Tuple,
                          fractions::AbstractVector)
     length(contribs_iso) == length(fractions) ||
         throw(ArgumentError("dilute_alv_iso: phase counts mismatch"))
-    αβ = (copy(αβ_0[1]), copy(αβ_0[2]))
+    T = _promote_iso_eltype(contribs_iso, fractions, αβ_0)
+    αβ = (Matrix{T}(αβ_0[1]), Matrix{T}(αβ_0[2]))
     @inbounds for r in eachindex(contribs_iso)
         _iso_add!(αβ, fractions[r], contribs_iso[r])
     end
@@ -271,8 +292,9 @@ function mori_tanaka_alv_iso(αβ_0::Tuple, A_duts_iso::AbstractVector,
     length(A_duts_iso) == length(contribs_iso) == length(fractions) ||
         throw(ArgumentError("mori_tanaka_alv_iso: phase counts mismatch"))
     n = size(αβ_0[1], 1)
-    T = promote_type(eltype(αβ_0[1]), eltype(αβ_0[2]),
-                     eltype(fractions), typeof(f_M))
+    T = promote_type(_promote_iso_eltype(A_duts_iso, fractions, αβ_0),
+                     _promote_iso_eltype(contribs_iso, fractions),
+                     typeof(f_M))
     Id = _iso_identity(n, T)
     num = (zeros(T, n, n), zeros(T, n, n))
     den = (T(f_M) .* Id[1], T(f_M) .* Id[2])
@@ -281,7 +303,7 @@ function mori_tanaka_alv_iso(αβ_0::Tuple, A_duts_iso::AbstractVector,
         _iso_add!(den, fractions[r], A_duts_iso[r])
     end
     factor = _iso_prod(num, _iso_inv(den))
-    return (αβ_0[1] .+ factor[1], αβ_0[2] .+ factor[2])
+    return (T.(αβ_0[1]) .+ factor[1], T.(αβ_0[2]) .+ factor[2])
 end
 
 """
@@ -296,8 +318,7 @@ function maxwell_alv_iso(αβ_0::Tuple, contribs_iso::AbstractVector,
     length(contribs_iso) == length(fractions) ||
         throw(ArgumentError("maxwell_alv_iso: phase counts mismatch"))
     n = size(αβ_0[1], 1)
-    T = promote_type(eltype(αβ_0[1]), eltype(αβ_0[2]),
-                     eltype(fractions), eltype(αβ_H_0[1]))
+    T = _promote_iso_eltype(contribs_iso, fractions, αβ_0, αβ_H_0)
     Id = _iso_identity(n, T)
     Σ = (zeros(T, n, n), zeros(T, n, n))
     @inbounds for r in eachindex(contribs_iso)
@@ -305,7 +326,7 @@ function maxwell_alv_iso(αβ_0::Tuple, contribs_iso::AbstractVector,
     end
     HΣ = _iso_prod(αβ_H_0, Σ)
     factor = _iso_prod(Σ, _iso_inv((Id[1] .- HΣ[1], Id[2] .- HΣ[2])))
-    return (αβ_0[1] .+ factor[1], αβ_0[2] .+ factor[2])
+    return (T.(αβ_0[1]) .+ factor[1], T.(αβ_0[2]) .+ factor[2])
 end
 
 """

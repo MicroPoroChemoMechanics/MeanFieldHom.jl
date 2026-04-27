@@ -111,6 +111,34 @@ C_eff = homogenize(rve, MoriTanaka())   # eltype(C_eff) == ComplexF64
 All schemes propagate `Complex{Float64}` through their tensor algebra.
 The `Im → 0` limit consistently recovers the real-modulus result.
 
+## Time-domain ageing viscoelasticity
+
+For full time-domain ALV homogenisation (relaxation / creep kernels
+`R(t,t')` / `J(t,t')`, possibly ageing), pass a [`ViscoLaw`](@ref)
+property and a `times` grid to [`homogenize_alv`](@ref):
+
+```julia
+function R_iso(t, tp)
+    α = 3 * (3.0 + 2.0 * exp(-(t - tp) / 1.0))
+    β = 2 * (1.0 + 1.0 * exp(-(t - tp) / 0.5))
+    return TensISO{3}(α, β)
+end
+law_M = ViscoLaw(R_iso, :relaxation)
+
+rve = RVE(:M)
+add_matrix!(rve, Ellipsoid(1.0), Dict(:C => law_M))
+add_phase!(rve, :I, Ellipsoid(1.0),
+            Dict(:C => heaviside_law(TensISO{3}(60.0, 20.0)));
+            fraction = 0.20)
+
+times = collect(range(0.0, 5.0; length = 50))
+C_eff = homogenize_alv(rve, MoriTanaka(), :C; times = times)   # 300 × 300
+```
+
+See the dedicated [Viscoelasticity manual](viscoelasticity.md) for the
+full pipeline (ageing kernels, cracks, sensitivities, fast paths,
+ECHOES validation).
+
 ## Sensitivity (ForwardDiff)
 
 ```julia

@@ -72,6 +72,7 @@ using MeanFieldHom
         include("Viscoelasticity/test_ti_alv.jl")
         include("Viscoelasticity/test_ortho_alv.jl")
         include("Viscoelasticity/test_alv_kernel_types.jl")
+        include("Viscoelasticity/test_sensitivities_alv.jl")
         include("Viscoelasticity/test_order2_alv.jl")
         include("Viscoelasticity/test_extra_schemes_alv.jl")
         include("Viscoelasticity/test_crack_schemes_alv.jl")
