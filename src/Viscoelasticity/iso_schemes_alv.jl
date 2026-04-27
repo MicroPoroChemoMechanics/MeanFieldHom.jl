@@ -64,6 +64,18 @@ Volterra products `(α_a · α_b, β_a · β_b)`.
 @inline _iso_prod(a::Tuple, b::Tuple) = (a[1] * b[1], a[2] * b[2])
 
 """
+    _iso_prod!(out, a, b) -> out
+
+In-place iso-form Volterra product : `out[1] .= a[1] * b[1]`,
+`out[2] .= a[2] * b[2]`.  Allocation-free (uses `mul!` BLAS).
+"""
+@inline function _iso_prod!(out::Tuple, a::Tuple, b::Tuple)
+    mul!(out[1], a[1], b[1])
+    mul!(out[2], a[2], b[2])
+    return out
+end
+
+"""
     _iso_inv(a) -> (α^{-vol}, β^{-vol})
 
 Iso-form Volterra inverse.  The two components are inverted
@@ -71,6 +83,18 @@ independently as scalar `n × n` Volterra matrices.
 """
 @inline _iso_inv(a::Tuple) = (volterra_inverse(a[1]; block_size = 1),
                               volterra_inverse(a[2]; block_size = 1))
+
+"""
+    _iso_inv!(out, a) -> out
+
+In-place iso-form Volterra inverse: `out[1] .= a[1]^{-vol}` and
+`out[2] .= a[2]^{-vol}` via `volterra_inverse!`.
+"""
+@inline function _iso_inv!(out::Tuple, a::Tuple)
+    volterra_inverse!(out[1], a[1]; block_size = 1)
+    volterra_inverse!(out[2], a[2]; block_size = 1)
+    return out
+end
 
 """
     _iso_left_divide(S, M) -> (S_α^{-vol} · M_α, S_β^{-vol} · M_β)
@@ -97,6 +121,9 @@ diagonal, and zero elsewhere — to within absolute tolerance `tol`
 times the maximum modulus of `M`.
 
 Used by `homogenize_alv` to dispatch to the iso fast path automatically.
+
+Allocation-free: extracts `(α, β)` from the canonical block entries
+on the fly without building the parameter matrices.
 """
 function _is_iso_block(M::AbstractMatrix; tol::Real = 1.0e-12)
     sz = size(M, 1)
@@ -106,31 +133,30 @@ function _is_iso_block(M::AbstractMatrix; tol::Real = 1.0e-12)
     iszero(n) && return true
     scale = max(maximum(abs, M), one(real(eltype(M))))
     abstol = tol * scale
-    α, β = iso_params_from_blocks(M)
     @inbounds for i in 1:n, j in 1:n
-        a = α[i, j]
-        b = β[i, j]
+        r = 6 * (i - 1)
+        c = 6 * (j - 1)
+        # Extract (α, β) from the canonical entries of block (i, j).
+        a = M[r + 1, c + 1] + 2 * M[r + 1, c + 2]
+        b = M[r + 4, c + 4]
         diag_top = (a + 2b) / 3
         offdiag_top = (a - b) / 3
-        rows = (6 * (i - 1) + 1):(6 * i)
-        cols = (6 * (j - 1) + 1):(6 * j)
-        for k in 1:3
-            for l in 1:3
-                expected = (k == l) ? diag_top : offdiag_top
-                abs(M[rows[k], cols[l]] - expected) ≤ abstol || return false
-            end
-            for l in 4:6
-                abs(M[rows[k], cols[l]]) ≤ abstol || return false
-            end
+        # Upper-left 3×3 block: diag = (α+2β)/3, off-diag = (α-β)/3.
+        for k in 1:3, l in 1:3
+            expected = (k == l) ? diag_top : offdiag_top
+            abs(M[r + k, c + l] - expected) ≤ abstol || return false
         end
-        for k in 4:6
-            for l in 1:3
-                abs(M[rows[k], cols[l]]) ≤ abstol || return false
-            end
-            for l in 4:6
-                expected = (k == l) ? b : zero(b)
-                abs(M[rows[k], cols[l]] - expected) ≤ abstol || return false
-            end
+        # Cross blocks (1..3 × 4..6 and 4..6 × 1..3) must be zero.
+        for k in 1:3, l in 4:6
+            abs(M[r + k, c + l]) ≤ abstol || return false
+        end
+        for k in 4:6, l in 1:3
+            abs(M[r + k, c + l]) ≤ abstol || return false
+        end
+        # Lower-right 3×3 block: diagonal = β, off-diag = 0.
+        for k in 4:6, l in 4:6
+            expected = (k == l) ? b : zero(b)
+            abs(M[r + k, c + l] - expected) ≤ abstol || return false
         end
     end
     return true

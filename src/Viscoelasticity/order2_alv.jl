@@ -17,9 +17,18 @@
 @inline function _fill_trapezoidal_order2_tens!(M::AbstractMatrix, law::ViscoLaw,
                                                  times::AbstractVector)
     n = length(times)
-    @inbounds for i in 1:n, j in 1:i
-        block = _block_value_order2_tens(law, times, i, j)
-        _set_block_order2!(M, i, j, block)
+    n == 0 && return M
+    T = eltype(M)
+    cache = Vector{Matrix{T}}(undef, n)
+    @inbounds begin
+        cache[1] = _to_order2_mat(visco_eval(law, times[1], times[1]))
+        _set_block_order2!(M, 1, 1, cache[1])
+        for i in 2:n
+            for k in 1:i
+                cache[k] = _to_order2_mat(visco_eval(law, times[i], times[k]))
+            end
+            _fill_row_blocks_order2_from_cache!(M, cache, i, T)
+        end
     end
     return M
 end
@@ -27,9 +36,44 @@ end
 @inline function _fill_trapezoidal_order2_mat!(M::AbstractMatrix, law::ViscoLaw,
                                                 times::AbstractVector)
     n = length(times)
-    @inbounds for i in 1:n, j in 1:i
-        block = _block_value_order2_mat(law, times, i, j)
-        _set_block_order2!(M, i, j, block)
+    n == 0 && return M
+    T = eltype(M)
+    cache = Vector{Matrix{T}}(undef, n)
+    @inbounds begin
+        cache[1] = copy(visco_eval(law, times[1], times[1]))
+        _set_block_order2!(M, 1, 1, cache[1])
+        for i in 2:n
+            for k in 1:i
+                cache[k] = visco_eval(law, times[i], times[k])
+            end
+            _fill_row_blocks_order2_from_cache!(M, cache, i, T)
+        end
+    end
+    return M
+end
+
+# Place row `i` blocks (3×3 each) into `M` using cached evaluations.
+@inline function _fill_row_blocks_order2_from_cache!(M::AbstractMatrix,
+                                                       cache::Vector{<:AbstractMatrix},
+                                                       i::Int, ::Type{T}) where {T}
+    half = inv(T(2))
+    @inbounds begin
+        c1, c2 = cache[1], cache[2]
+        for kk in 1:3, ll in 1:3
+            M[3 * (i - 1) + kk, ll] = (c1[kk, ll] - c2[kk, ll]) * half
+        end
+        for j in 2:(i - 1)
+            cm, cp = cache[j - 1], cache[j + 1]
+            for kk in 1:3, ll in 1:3
+                M[3 * (i - 1) + kk, 3 * (j - 1) + ll] =
+                    (cm[kk, ll] - cp[kk, ll]) * half
+            end
+        end
+        cm, cp = cache[i - 1], cache[i]
+        for kk in 1:3, ll in 1:3
+            M[3 * (i - 1) + kk, 3 * (i - 1) + ll] =
+                (cm[kk, ll] + cp[kk, ll]) * half
+        end
     end
     return M
 end

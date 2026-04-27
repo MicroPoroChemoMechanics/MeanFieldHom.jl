@@ -71,6 +71,36 @@ Each entry of the 2×2 product expands to two `n×n` Volterra products.
     return (c1, c2, c3, c4, c5, c6)
 end
 
+"""
+    _ti_prod!(out, a, b) -> out
+
+In-place TI Volterra product : 8 `mul!` calls for the 2×2 normal
+block + 2 `mul!` for the shears.  No allocation if `out`'s entries
+have the right size.
+"""
+@inline function _ti_prod!(out::NTuple{6, <:Matrix},
+                            a::NTuple{6, <:Matrix},
+                            b::NTuple{6, <:Matrix})
+    T = eltype(out[1])
+    one_T = one(T)
+    # c1 = a[1] * b[1] + a[3] * b[4]
+    mul!(out[1], a[1], b[1])
+    mul!(out[1], a[3], b[4], one_T, one_T)
+    # c2 = a[4] * b[3] + a[2] * b[2]
+    mul!(out[2], a[4], b[3])
+    mul!(out[2], a[2], b[2], one_T, one_T)
+    # c3 = a[1] * b[3] + a[3] * b[2]
+    mul!(out[3], a[1], b[3])
+    mul!(out[3], a[3], b[2], one_T, one_T)
+    # c4 = a[4] * b[1] + a[2] * b[4]
+    mul!(out[4], a[4], b[1])
+    mul!(out[4], a[2], b[4], one_T, one_T)
+    # c5 = a[5] * b[5], c6 = a[6] * b[6]
+    mul!(out[5], a[5], b[5])
+    mul!(out[6], a[6], b[6])
+    return out
+end
+
 # ── Pack / unpack the Walpole 2×2 part as a (2n)×(2n) block-Volterra ──────
 #
 # Time-interleaved layout: block (i, j) of size 2×2 in the packed matrix
@@ -148,6 +178,11 @@ end
 
 Heuristic: return `true` if the `(6n × 6n)` block matrix `M` is in TI
 form (each 6×6 block is a TI 4-tensor with the canonical axis `e₃`).
+
+Allocation-free: extracts the 6 Walpole coefficients from the canonical
+entries of each block on the fly and checks every entry against the TI
+Mandel pattern, without building intermediate parameter matrices nor a
+reconstructed `(6n × 6n)` matrix for comparison.
 """
 function _is_ti_block(M::AbstractMatrix;
                        axis::NTuple{3} = (0.0, 0.0, 1.0),
@@ -160,10 +195,40 @@ function _is_ti_block(M::AbstractMatrix;
     axis == (0.0, 0.0, 1.0) || return false
     scale = max(maximum(abs, M), one(real(eltype(M))))
     abstol = tol * scale
-    ℓ = ti_params_from_blocks(M; axis = axis)
-    M_recon = ti_blocks_from_params(ℓ; axis = axis)
-    @inbounds for j in eachindex(M)
-        abs(M[j] - M_recon[j]) ≤ abstol || return false
+    s2 = sqrt(2)
+    @inbounds for i in 1:n, j in 1:n
+        r = 6 * (i - 1)
+        c = 6 * (j - 1)
+        # Extract the 6 Walpole coefficients from canonical block entries.
+        ℓ₁ = M[r + 3, c + 3]
+        ℓ₂ = M[r + 1, c + 1] + M[r + 1, c + 2]
+        ℓ₅ = M[r + 1, c + 1] - M[r + 1, c + 2]
+        ℓ₃ = s2 * M[r + 3, c + 1]
+        ℓ₄ = s2 * M[r + 1, c + 3]
+        ℓ₆ = M[r + 4, c + 4]
+        block_diag_in = (ℓ₂ + ℓ₅) / 2
+        block_off_in  = (ℓ₂ - ℓ₅) / 2
+        ℓ₃_o_s2 = ℓ₃ / s2
+        ℓ₄_o_s2 = ℓ₄ / s2
+        # Walk all 36 Mandel entries and compare.
+        for k in 1:6, l in 1:6
+            expected = if k ≤ 2 && l ≤ 2
+                k == l ? block_diag_in : block_off_in
+            elseif k == 3 && l == 3
+                ℓ₁
+            elseif k == 3 && l ≤ 2
+                ℓ₃_o_s2
+            elseif k ≤ 2 && l == 3
+                ℓ₄_o_s2
+            elseif (k == 4 && l == 4) || (k == 5 && l == 5)
+                ℓ₆
+            elseif k == 6 && l == 6
+                ℓ₅
+            else
+                zero(eltype(M))
+            end
+            abs(M[r + k, c + l] - expected) ≤ abstol || return false
+        end
     end
     return true
 end

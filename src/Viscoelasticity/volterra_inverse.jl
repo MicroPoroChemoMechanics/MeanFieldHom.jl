@@ -58,6 +58,47 @@ function volterra_inverse(M::AbstractMatrix; block_size::Int = 6)
     return inv_M
 end
 
+"""
+    volterra_inverse!(out::AbstractMatrix, M::AbstractMatrix; block_size = 6) -> out
+
+In-place version of [`volterra_inverse`](@ref).  Writes the Volterra
+inverse of `M` directly into the pre-allocated `out` (which must have
+the same size as `M`).  Returns `out`.
+"""
+function volterra_inverse!(out::AbstractMatrix, M::AbstractMatrix;
+                            block_size::Int = 6)
+    B = block_size
+    B ≥ 1 || throw(ArgumentError("volterra_inverse!: block_size must be ≥ 1"))
+    sz = size(M, 1)
+    sz == size(M, 2) ||
+        throw(ArgumentError("volterra_inverse!: M must be square"))
+    size(out) == size(M) ||
+        throw(DimensionMismatch("volterra_inverse!: out and M size mismatch"))
+    sz % B == 0 ||
+        throw(ArgumentError("volterra_inverse!: size $(sz) not divisible by $(B)"))
+    n = sz ÷ B
+    T = eltype(M)
+
+    fill!(out, zero(eltype(out)))
+    # Fast path: BlasFloat scalar Volterra → LAPACK trtri (LowerTriangular).
+    if B == 1 && T <: LinearAlgebra.BlasFloat && M isa StridedMatrix && n ≥ 64
+        copyto!(out, M)
+        LinearAlgebra.LAPACK.trtri!('L', 'N', out)
+        # `trtri!` leaves the upper triangle untouched; zero it.
+        @inbounds for j in 2:sz, i in 1:(j - 1)
+            out[i, j] = zero(eltype(out))
+        end
+        return out
+    end
+
+    if B == 1
+        _volterra_forward_scalar!(out, M, n)
+    else
+        _volterra_forward_block!(out, M, n, B)
+    end
+    return out
+end
+
 # ── Scalar (1×1 block) forward substitution ─────────────────────────────────
 # Solve `J̃ = M^{-vol}` block-column by block-column.
 

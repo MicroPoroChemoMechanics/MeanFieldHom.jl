@@ -62,6 +62,11 @@ matrix whose every block is the iso 4-tensor `α[i,j] · 𝕁 + β[i,j] · 𝕂`
 in Mandel form.
 
 Both `α` and `β` must be `n × n` and have a common element type.
+
+Note: a `kron(α, 𝕁_M) + kron(β, 𝕂_M)` formulation was experimented
+(P3.3.1) and reverted — the two extra `(6n × 6n)` intermediate
+allocations made it ~3× slower than this single-pass scalar loop,
+which writes each entry exactly once.
 """
 function iso_blocks_from_params(α::AbstractMatrix, β::AbstractMatrix)
     size(α) == size(β) ||
@@ -76,19 +81,10 @@ function iso_blocks_from_params(α::AbstractMatrix, β::AbstractMatrix)
         b = T(β[i, j])
         rows = (6 * (i - 1) + 1):(6 * i)
         cols = (6 * (j - 1) + 1):(6 * j)
-        # Mandel iso 4-tensor (α, β):
-        #   diagonal 3×3 block:   diag = (α + 2β)/3,  off-diag = (α − β)/3
-        #   diagonal shear block: 2μ = β on the diagonal of the 4..6 sub-block
         diag_top = (a + 2b) / 3
         offdiag_top = (a - b) / 3
-        for k in 1:3
-            for l in 1:3
-                if k == l
-                    M[rows[k], cols[l]] = diag_top
-                else
-                    M[rows[k], cols[l]] = offdiag_top
-                end
-            end
+        for k in 1:3, l in 1:3
+            M[rows[k], cols[l]] = (k == l) ? diag_top : offdiag_top
         end
         for k in 4:6
             M[rows[k], cols[k]] = b

@@ -81,6 +81,37 @@ component-wise.
     return (c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12)
 end
 
+"""
+    _ortho_prod!(out, a, b) -> out
+
+In-place ortho Volterra product.  27 `mul!` for the normal block + 3
+for the shears.  No allocation when `out`'s components are sized
+correctly.
+"""
+@inline function _ortho_prod!(out::NTuple{12, <:Matrix},
+                                a::NTuple{12, <:Matrix},
+                                b::NTuple{12, <:Matrix})
+    T = eltype(out[1])
+    one_T = one(T)
+    # Normal 3×3 block c_{ij} = Σ_k a_{ik} · b_{kj}
+    @inbounds for ii in 1:3, jj in 1:3
+        idx_c = 3 * (ii - 1) + jj            # (ii, jj) → flat index 1..9
+        idx_a1 = 3 * (ii - 1) + 1
+        idx_b1 = 0 * 3 + jj                   # k = 1 → (1, jj) flat = jj
+        mul!(out[idx_c], a[idx_a1], b[idx_b1])
+        for k in 2:3
+            idx_a = 3 * (ii - 1) + k         # (ii, k)
+            idx_b = 3 * (k - 1) + jj         # (k, jj)
+            mul!(out[idx_c], a[idx_a], b[idx_b], one_T, one_T)
+        end
+    end
+    # Shears
+    mul!(out[10], a[10], b[10])
+    mul!(out[11], a[11], b[11])
+    mul!(out[12], a[12], b[12])
+    return out
+end
+
 # ── Pack / unpack the normal 3×3 part as a (3n)×(3n) block-Volterra ───────
 #
 # Time-interleaved layout: block (i, j) of size 3×3 in the packed matrix
@@ -183,6 +214,9 @@ Heuristic: return `true` if the `(6n × 6n)` block matrix `M` is in
 ortho form (each 6×6 block is an ortho 4-tensor with canonical axes).
 The check verifies that every entry outside the orthotropic Mandel
 support pattern is below `tol · max|M|` in absolute value.
+
+Allocation-free: scans each block once and tests for off-pattern
+entries directly, without building intermediate parameter matrices.
 """
 function _is_ortho_block(M::AbstractMatrix; tol::Real = 1.0e-12)
     sz = size(M, 1)
@@ -192,10 +226,25 @@ function _is_ortho_block(M::AbstractMatrix; tol::Real = 1.0e-12)
     iszero(n) && return true
     scale = max(maximum(abs, M), one(real(eltype(M))))
     abstol = tol * scale
-    o = ortho_params_from_blocks(M)
-    M_recon = ortho_blocks_from_params(o)
-    @inbounds for j in eachindex(M)
-        abs(M[j] - M_recon[j]) ≤ abstol || return false
+    @inbounds for i in 1:n, j in 1:n
+        r = 6 * (i - 1)
+        c = 6 * (j - 1)
+        # Ortho support: the 3×3 normal block (rows/cols 1..3) and the
+        # 3×3 shear-diagonal block (rows/cols 4..6 only on the diagonal).
+        # Everything else must be zero up to abstol.
+        # Cross blocks (1..3 × 4..6 and 4..6 × 1..3): zero.
+        for k in 1:3, l in 4:6
+            abs(M[r + k, c + l]) ≤ abstol || return false
+        end
+        for k in 4:6, l in 1:3
+            abs(M[r + k, c + l]) ≤ abstol || return false
+        end
+        # Lower-right 3×3 block: only diagonal entries allowed.
+        for k in 4:6, l in 4:6
+            if k != l
+                abs(M[r + k, c + l]) ≤ abstol || return false
+            end
+        end
     end
     return true
 end

@@ -94,17 +94,27 @@ end
 @inline function _fill_trapezoidal_scalar!(M::AbstractMatrix, law::ViscoLaw,
                                            times::AbstractVector)
     n = length(times)
+    n == 0 && return M
+    T = eltype(M)
+    # Per-row cache: cache[k] = visco_eval(law, times[i], times[k]) for k = 1..i.
+    # Halves the number of `visco_eval` calls (n(n+1)/2 instead of ~n(n+1)).
+    # Note: threading the outer loop with `Threads.@threads :static` was
+    # experimented and reverted — the macro overhead exceeds the gain for
+    # cheap iso ViscoLaws (a 50% slowdown was observed at n = 200 even
+    # with a single thread).  Re-enable behind an opt-in kwarg if/when
+    # heavy kernels (Mittag-Leffler, numerical integral) are dominant.
+    cache = Vector{T}(undef, n)
     @inbounds begin
-        # Diagonal entry M[1,1] = f(t_0, t_0).
-        M[1, 1] = visco_eval(law, times[1], times[1])
+        cache[1] = visco_eval(law, times[1], times[1])
+        M[1, 1] = cache[1]
         for i in 2:n
-            M[i, i] = (visco_eval(law, times[i], times[i - 1])
-                       + visco_eval(law, times[i], times[i])) / 2
-            M[i, 1] = (visco_eval(law, times[i], times[1])
-                       - visco_eval(law, times[i], times[2])) / 2
+            for k in 1:i
+                cache[k] = visco_eval(law, times[i], times[k])
+            end
+            M[i, i] = (cache[i - 1] + cache[i]) / 2
+            M[i, 1] = (cache[1] - cache[2]) / 2
             for j in 2:(i - 1)
-                M[i, j] = (visco_eval(law, times[i], times[j - 1])
-                           - visco_eval(law, times[i], times[j + 1])) / 2
+                M[i, j] = (cache[j - 1] - cache[j + 1]) / 2
             end
         end
     end
@@ -158,13 +168,22 @@ function _mandel66_to_tens(M::AbstractMatrix)
 end
 
 # Fill the (6×6)-block-structured matrix from a 4-tensor kernel.
+# Per-row cache halves the number of `visco_eval` + `_to_mandel` calls.
+# (Threading reverted: see note in `_fill_trapezoidal_scalar!`.)
 @inline function _fill_trapezoidal_tensor!(M::AbstractMatrix, law::ViscoLaw,
                                            times::AbstractVector)
     n = length(times)
-    @inbounds for i in 1:n
-        for j in 1:i
-            block = _block_value_tensor(law, times, i, j)
-            _set_block!(M, i, j, block)
+    n == 0 && return M
+    T = eltype(M)
+    cache = Vector{Matrix{T}}(undef, n)
+    @inbounds begin
+        cache[1] = _to_mandel(visco_eval(law, times[1], times[1]))
+        _set_block!(M, 1, 1, cache[1])
+        for i in 2:n
+            for k in 1:i
+                cache[k] = _to_mandel(visco_eval(law, times[i], times[k]))
+            end
+            _fill_row_blocks_from_cache!(M, cache, i, T)
         end
     end
     return M
@@ -173,10 +192,48 @@ end
 @inline function _fill_trapezoidal_mandel!(M::AbstractMatrix, law::ViscoLaw,
                                            times::AbstractVector)
     n = length(times)
-    @inbounds for i in 1:n
-        for j in 1:i
-            block = _block_value_mandel(law, times, i, j)
-            _set_block!(M, i, j, block)
+    n == 0 && return M
+    T = eltype(M)
+    cache = Vector{Matrix{T}}(undef, n)
+    @inbounds begin
+        cache[1] = copy(visco_eval(law, times[1], times[1]))
+        _set_block!(M, 1, 1, cache[1])
+        for i in 2:n
+            for k in 1:i
+                cache[k] = visco_eval(law, times[i], times[k])
+            end
+            _fill_row_blocks_from_cache!(M, cache, i, T)
+        end
+    end
+    return M
+end
+
+# Place row `i` blocks into `M` from the cache `cache[1..i]` of
+# `_to_mandel(visco_eval(law, times[i], times[k]))`.  Writes blocks
+# directly entry-by-entry, no temporary `(a ± b) / 2` allocation.
+@inline function _fill_row_blocks_from_cache!(M::AbstractMatrix,
+                                               cache::Vector{<:AbstractMatrix},
+                                               i::Int, ::Type{T}) where {T}
+    half = inv(T(2))
+    @inbounds begin
+        # j = 1 : (cache[1] - cache[2]) / 2
+        c1, c2 = cache[1], cache[2]
+        for kk in 1:6, ll in 1:6
+            M[6 * (i - 1) + kk, ll] = (c1[kk, ll] - c2[kk, ll]) * half
+        end
+        # 1 < j < i : (cache[j-1] - cache[j+1]) / 2
+        for j in 2:(i - 1)
+            cm, cp = cache[j - 1], cache[j + 1]
+            for kk in 1:6, ll in 1:6
+                M[6 * (i - 1) + kk, 6 * (j - 1) + ll] =
+                    (cm[kk, ll] - cp[kk, ll]) * half
+            end
+        end
+        # j = i : (cache[i-1] + cache[i]) / 2  (note + sign)
+        cm, cp = cache[i - 1], cache[i]
+        for kk in 1:6, ll in 1:6
+            M[6 * (i - 1) + kk, 6 * (i - 1) + ll] =
+                (cm[kk, ll] + cp[kk, ll]) * half
         end
     end
     return M
