@@ -69,6 +69,7 @@ include("hill_alv.jl")
 include("schemes_alv.jl")
 include("iso_schemes_alv.jl")
 include("ti_schemes_alv.jl")
+include("ortho_schemes_alv.jl")
 include("schemes_alv_sc.jl")
 include("schemes_alv_extra.jl")
 include("layered_alv.jl")
@@ -84,6 +85,7 @@ export trapezoidal_matrix
 export volterra_inverse, volterra_product, volterra_divide, volterra_left_divide
 export iso_params_from_blocks, iso_blocks_from_params
 export ti_params_from_blocks, ti_blocks_from_params
+export ortho_params_from_blocks, ortho_blocks_from_params
 export hill_kernel
 export dilute_concentration_alv, dilute_contribution_alv
 export voigt_alv, reuss_alv, dilute_alv, dilute_dual_alv
@@ -94,6 +96,9 @@ export dilute_concentration_alv_iso, dilute_contribution_alv_iso
 export voigt_alv_ti, reuss_alv_ti, dilute_alv_ti, dilute_dual_alv_ti
 export mori_tanaka_alv_ti, maxwell_alv_ti
 export dilute_concentration_alv_ti, dilute_contribution_alv_ti
+export voigt_alv_ortho, reuss_alv_ortho, dilute_alv_ortho, dilute_dual_alv_ortho
+export mori_tanaka_alv_ortho, maxwell_alv_ortho
+export dilute_concentration_alv_ortho, dilute_contribution_alv_ortho
 export self_consistent_alv, asymmetric_self_consistent_alv,
        pcw_alv, differential_alv
 export bulk_localization_alv, bulk_state_seq_alv, shear_localization_alv

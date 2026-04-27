@@ -285,6 +285,17 @@ function _inclusion_alv_quantities(geom, C_r_law,
         ℓ_N_dut = dilute_contribution_alv_ti(ℓ_E, ℓ_0, ℓ_P)
         A_dut = _ti_blocks(ℓ_A_dut)
         N_dut = _ti_blocks(ℓ_N_dut)
+    elseif _is_ortho_block(C_r) && _is_ortho_block(C_0) && _is_ortho_block(P_r)
+        # Ortho fast path: shared canonical material frame across phase,
+        # matrix and Hill kernel.  Reduces the dilute concentration to a
+        # (3n)×(3n) block-Volterra inverse + 3 scalar Volterra inverses.
+        o_E = _ortho_pair(C_r)
+        o_0 = _ortho_pair(C_0)
+        o_P = _ortho_pair(P_r)
+        o_A_dut = dilute_concentration_alv_ortho(o_E, o_0, o_P)
+        o_N_dut = dilute_contribution_alv_ortho(o_E, o_0, o_P)
+        A_dut = _ortho_blocks(o_A_dut)
+        N_dut = _ortho_blocks(o_N_dut)
     else
         A_dut = dilute_concentration_alv(C_r, C_0, P_r)
         N_dut = dilute_contribution_alv(C_r, C_0, P_r)
@@ -367,6 +378,28 @@ function _try_ti_tuples(matrices::AbstractVector{<:AbstractMatrix})
     return out
 end
 
+"""
+    _try_ortho_tuples(matrices) -> Vector{NTuple{12, Matrix}} or nothing
+
+If every matrix passes the ortho-form check (`_is_ortho_block`), return
+a `Vector` of 12-tuples of `n×n` ortho parameter matrices extracted
+from each.  Otherwise return `nothing`.
+
+Iso and TI (axis = e₃) block matrices automatically satisfy the ortho
+test, so a mixed iso/TI/ortho phase setup with the canonical material
+frame works.
+"""
+function _try_ortho_tuples(matrices::AbstractVector{<:AbstractMatrix})
+    T = isempty(matrices) ? Float64 : eltype(matrices[1])
+    isempty(matrices) && return NTuple{12, Matrix{T}}[]
+    out = Vector{NTuple{12, Matrix{T}}}()
+    for M in matrices
+        _is_ortho_block(M) || return nothing
+        push!(out, _ortho_pair(M))
+    end
+    return out
+end
+
 # ── Dispatch table on scheme types ──────────────────────────────────────────
 #
 # Crack handling.  Every dispatcher honours the optional kwargs
@@ -394,6 +427,11 @@ function _homogenize_alv_dispatch(::RVE, ::Voigt, ::Symbol, ::AbstractVector,
         ℓ_eff = voigt_alv_ti(ti, [f_M; fractions])
         return _ti_blocks(ℓ_eff)
     end
+    ortho = _try_ortho_tuples(C_phases)
+    if ortho !== nothing
+        o_eff = voigt_alv_ortho(ortho, [f_M; fractions])
+        return _ortho_blocks(o_eff)
+    end
     return voigt_alv(C_phases, [f_M; fractions])
 end
 
@@ -410,6 +448,11 @@ function _homogenize_alv_dispatch(::RVE, ::Reuss, ::Symbol, ::AbstractVector,
     if ti !== nothing
         ℓ_eff = reuss_alv_ti(ti, [f_M; fractions])
         return _ti_blocks(ℓ_eff)
+    end
+    ortho = _try_ortho_tuples(C_phases)
+    if ortho !== nothing
+        o_eff = reuss_alv_ortho(ortho, [f_M; fractions])
+        return _ortho_blocks(o_eff)
     end
     return reuss_alv(C_phases, [f_M; fractions])
 end
@@ -429,6 +472,12 @@ function _homogenize_alv_dispatch(::RVE, ::Dilute, ::Symbol, ::AbstractVector,
             ℓ_0 = _ti_pair(C_0)
             ℓ_eff = dilute_alv_ti(ℓ_0, ti_contribs, fractions)
             return _ti_blocks(ℓ_eff)
+        end
+        ortho_contribs = _try_ortho_tuples(contribs)
+        if ortho_contribs !== nothing && _is_ortho_block(C_0)
+            o_0 = _ortho_pair(C_0)
+            o_eff = dilute_alv_ortho(o_0, ortho_contribs, fractions)
+            return _ortho_blocks(o_eff)
         end
         return dilute_alv(C_0, contribs, fractions)
     end
@@ -464,6 +513,12 @@ function _homogenize_alv_dispatch(::RVE, ::DiluteDual, ::Symbol, ::AbstractVecto
         ℓ_eff = dilute_dual_alv_ti(ℓ_0, ti_contribs, fractions)
         return _ti_blocks(ℓ_eff)
     end
+    ortho_contribs = _try_ortho_tuples(contribs)
+    if ortho_contribs !== nothing && _is_ortho_block(C_0)
+        o_0 = _ortho_pair(C_0)
+        o_eff = dilute_dual_alv_ortho(o_0, ortho_contribs, fractions)
+        return _ortho_blocks(o_eff)
+    end
     return dilute_dual_alv(C_0, contribs, fractions)
 end
 
@@ -484,6 +539,13 @@ function _homogenize_alv_dispatch(::RVE, ::MoriTanaka, ::Symbol, ::AbstractVecto
             ℓ_0 = _ti_pair(C_0)
             ℓ_eff = mori_tanaka_alv_ti(ℓ_0, ti_A, ti_contribs, fractions, f_M)
             return _ti_blocks(ℓ_eff)
+        end
+        ortho_contribs = _try_ortho_tuples(contribs)
+        ortho_A = _try_ortho_tuples(A_duts)
+        if ortho_contribs !== nothing && ortho_A !== nothing && _is_ortho_block(C_0)
+            o_0 = _ortho_pair(C_0)
+            o_eff = mori_tanaka_alv_ortho(o_0, ortho_A, ortho_contribs, fractions, f_M)
+            return _ortho_blocks(o_eff)
         end
         return mori_tanaka_alv(C_0, A_duts, contribs, fractions, f_M)
     end
@@ -521,6 +583,13 @@ function _homogenize_alv_dispatch(rve::RVE, ::Maxwell, ::Symbol,
             ℓ_H_0 = _ti_pair(H_0)
             ℓ_eff = maxwell_alv_ti(ℓ_0, ti_contribs, fractions, ℓ_H_0)
             return _ti_blocks(ℓ_eff)
+        end
+        ortho_contribs = _try_ortho_tuples(contribs)
+        if ortho_contribs !== nothing && _is_ortho_block(C_0) && _is_ortho_block(H_0)
+            o_0 = _ortho_pair(C_0)
+            o_H_0 = _ortho_pair(H_0)
+            o_eff = maxwell_alv_ortho(o_0, ortho_contribs, fractions, o_H_0)
+            return _ortho_blocks(o_eff)
         end
         return maxwell_alv(C_0, contribs, fractions; H_0 = H_0)
     end
@@ -586,6 +655,13 @@ function _homogenize_alv_dispatch(rve::RVE, ::PonteCastanedaWillis, ::Symbol,
             ℓ_H = _ti_pair(H_d)
             ℓ_eff = maxwell_alv_ti(ℓ_0, ti_contribs, fractions, ℓ_H)
             return _ti_blocks(ℓ_eff)
+        end
+        ortho_contribs = _try_ortho_tuples(contribs)
+        if ortho_contribs !== nothing && _is_ortho_block(C_0) && _is_ortho_block(H_d)
+            o_0 = _ortho_pair(C_0)
+            o_H = _ortho_pair(H_d)
+            o_eff = maxwell_alv_ortho(o_0, ortho_contribs, fractions, o_H)
+            return _ortho_blocks(o_eff)
         end
         return pcw_alv(C_0, contribs, fractions; H_dist = H_d)
     end

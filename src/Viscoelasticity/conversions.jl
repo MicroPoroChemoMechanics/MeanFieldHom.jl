@@ -207,3 +207,130 @@ function ti_blocks_from_params(ℓ::NTuple{6, <:AbstractMatrix};
     end
     return M
 end
+
+# =============================================================================
+#  ORTHO (orthotropic) — material-frame Mandel block, axes (e₁, e₂, e₃)
+# =============================================================================
+#
+#  An orthotropic 4-tensor in its material frame `(e₁, e₂, e₃)` has the
+#  block-diagonal Mandel structure (see `TensND.TensOrtho`):
+#
+#      M_block = [[A_norm,  0       ];
+#                 [0      ,  D_shear ]]
+#
+#  where `A_norm` is the (3 × 3) "normal" block carrying the elastic
+#  constants `(C₁₁, C₁₂, C₁₃, C₂₂, C₂₃, C₃₃)` (major-symmetric for an
+#  elastic stiffness, but **not** preserved by a Volterra product of two
+#  ortho ALV operators — the closure subspace is the full 3×3) and
+#  `D_shear = diag(2C₄₄, 2C₅₅, 2C₆₆)` is the (3 × 3) shear-diagonal block
+#  in Mandel form (factors of 2 absorb the engineering-strain
+#  convention).
+#
+#  In ALV the Volterra closure is therefore parametrised by 12 scalar
+#  Volterra `n × n` matrices :
+#    * 9 entries of the full unsymmetric normal block `(o[1..9])` —
+#      laid out row-major in a `(3 × 3)` array `(o₁₁, o₁₂, o₁₃,
+#                                                o₂₁, o₂₂, o₂₃,
+#                                                o₃₁, o₃₂, o₃₃)`,
+#    * 3 entries of the shear diagonal `(o[10..12]) = (o₄, o₅, o₆)`
+#      corresponding to the Mandel-position-4 / -5 / -6 diagonal.
+#
+#  Every ortho 4-tensor with the same canonical material frame
+#  `(e₁, e₂, e₃)` is closed under Volterra product, inverse, and
+#  left-divide.  Iso ⊂ TI ⊂ ortho ⊂ generic aniso.
+# =============================================================================
+
+"""
+    ortho_params_from_blocks(M; axes = ((1,0,0),(0,1,0),(0,0,1)))
+        -> NTuple{12, Matrix{T}}
+
+Decompose a `6n × 6n` block matrix whose every 6×6 block is an ortho
+4-tensor with material frame `(e₁, e₂, e₃)` (only the canonical frame is
+currently supported) into the 12 scalar parameter matrices
+
+    (o₁₁, o₁₂, o₁₃, o₂₁, o₂₂, o₂₃, o₃₁, o₃₂, o₃₃, o₄, o₅, o₆),
+
+each of size `n × n`, where the 3×3 normal block of the Mandel form is
+stored row-major in entries 1..9 and the 3 shear-diagonal Mandel
+entries `(M[4,4], M[5,5], M[6,6])` map to `(o₄, o₅, o₆)`.
+
+Note that closure under Volterra product does **not** preserve major
+symmetry (`o₁₂ ≠ o₂₁` in general), so the full 9-entry normal block is
+needed even for major-symmetric inputs.
+"""
+function ortho_params_from_blocks(M::AbstractMatrix;
+                                   axes::NTuple{3, NTuple{3}} = ((1.0, 0.0, 0.0),
+                                                                  (0.0, 1.0, 0.0),
+                                                                  (0.0, 0.0, 1.0)))
+    axes == ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)) ||
+        throw(ArgumentError("ortho_params_from_blocks: only canonical axes are supported"))
+    sz = size(M, 1)
+    sz == size(M, 2) ||
+        throw(ArgumentError("ortho_params_from_blocks: M must be square"))
+    sz % 6 == 0 ||
+        throw(ArgumentError("ortho_params_from_blocks: size $(sz) not divisible by 6"))
+    n = sz ÷ 6
+    T = eltype(M)
+    o = ntuple(_ -> zeros(T, n, n), 12)
+    @inbounds for i in 1:n, j in 1:n
+        r = 6 * (i - 1)
+        c = 6 * (j - 1)
+        o[1][i, j]  = M[r + 1, c + 1]
+        o[2][i, j]  = M[r + 1, c + 2]
+        o[3][i, j]  = M[r + 1, c + 3]
+        o[4][i, j]  = M[r + 2, c + 1]
+        o[5][i, j]  = M[r + 2, c + 2]
+        o[6][i, j]  = M[r + 2, c + 3]
+        o[7][i, j]  = M[r + 3, c + 1]
+        o[8][i, j]  = M[r + 3, c + 2]
+        o[9][i, j]  = M[r + 3, c + 3]
+        o[10][i, j] = M[r + 4, c + 4]
+        o[11][i, j] = M[r + 5, c + 5]
+        o[12][i, j] = M[r + 6, c + 6]
+    end
+    return o
+end
+
+"""
+    ortho_blocks_from_params(o::NTuple{12, AbstractMatrix};
+                              axes = ((1,0,0),(0,1,0),(0,0,1)))
+        -> Matrix{T}
+
+Inverse of [`ortho_params_from_blocks`](@ref): rebuild a `6n × 6n` block
+matrix whose every 6×6 block has the ortho Mandel structure with axes
+`(e₁, e₂, e₃)`.  All off-block-diagonal entries are zero (block 1..3 ↔
+block 4..6 coupling is forbidden by orthotropic symmetry).
+"""
+function ortho_blocks_from_params(o::NTuple{12, <:AbstractMatrix};
+                                   axes::NTuple{3, NTuple{3}} = ((1.0, 0.0, 0.0),
+                                                                  (0.0, 1.0, 0.0),
+                                                                  (0.0, 0.0, 1.0)))
+    axes == ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)) ||
+        throw(ArgumentError("ortho_blocks_from_params: only canonical axes are supported"))
+    n = size(o[1], 1)
+    @inbounds for k in 1:12
+        size(o[k]) == (n, n) ||
+            throw(ArgumentError("ortho_blocks_from_params: all components must be n×n"))
+    end
+    T = promote_type(map(eltype, o)...)
+    M = zeros(T, 6 * n, 6 * n)
+    @inbounds for i in 1:n, j in 1:n
+        rows = (6 * (i - 1) + 1):(6 * i)
+        cols = (6 * (j - 1) + 1):(6 * j)
+        # Normal 3×3 block (full, no symmetry assumed)
+        M[rows[1], cols[1]] = T(o[1][i, j])
+        M[rows[1], cols[2]] = T(o[2][i, j])
+        M[rows[1], cols[3]] = T(o[3][i, j])
+        M[rows[2], cols[1]] = T(o[4][i, j])
+        M[rows[2], cols[2]] = T(o[5][i, j])
+        M[rows[2], cols[3]] = T(o[6][i, j])
+        M[rows[3], cols[1]] = T(o[7][i, j])
+        M[rows[3], cols[2]] = T(o[8][i, j])
+        M[rows[3], cols[3]] = T(o[9][i, j])
+        # Shear diagonal (Mandel 4, 5, 6)
+        M[rows[4], cols[4]] = T(o[10][i, j])
+        M[rows[5], cols[5]] = T(o[11][i, j])
+        M[rows[6], cols[6]] = T(o[12][i, j])
+    end
+    return M
+end
