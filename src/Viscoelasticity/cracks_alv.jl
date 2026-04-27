@@ -147,3 +147,75 @@ function delta_compliance_alv(crack::MFH_Core.AbstractCrack,
         throw(ArgumentError("delta_compliance_alv: unsupported crack type $(typeof(crack))"))
     end
 end
+
+"""
+    stiffness_contribution_alv(crack, C_ref, times) -> Matrix{T}
+
+Discrete (6n × 6n) crack **stiffness** contribution
+   `Ñ = − C̃_ref ∘ H̃ ∘ C̃_ref`,
+mirror of the elastic [`stiffness_contribution(crack, C₀)`] formula.
+`C_ref` may be a `ViscoLaw` (the matrix law — relaxation auto-built
+through [`_trapezoidal_relaxation`](@ref)) or a pre-discretised
+`(6n × 6n)` reference matrix (used by SC iterations against the
+running estimate `C_n`).
+"""
+function stiffness_contribution_alv(crack::MFH_Core.AbstractCrack,
+                                       C_M_law::ViscoLaw,
+                                       times::AbstractVector{<:Real})
+    H̃ = compliance_contribution_alv(crack, C_M_law, times)
+    C̃_ref = _trapezoidal_relaxation(C_M_law, times, 6)
+    return -(C̃_ref * H̃ * C̃_ref)
+end
+
+"""
+    stiffness_contribution_alv_at(crack, C_ref::AbstractMatrix) -> Matrix
+
+Variant that takes a pre-discretised `(6n × 6n)` reference matrix.
+The compliance contribution is recomputed from the iso parameters of
+`C_ref` (only iso ALV matrices are currently supported by
+[`compliance_contribution_alv`](@ref)).
+"""
+function stiffness_contribution_alv_at(crack::MFH_Core.AbstractCrack,
+                                          C_ref::AbstractMatrix)
+    # Wrap C_ref in a synthetic ViscoLaw for compliance_contribution_alv —
+    # it only inspects the iso (α, β) parameters of the trapezoidal of the
+    # law, so we just need a "dummy" law whose trapezoidal equals C_ref.
+    # The fastest route is to extract (α, β) directly here.
+    _is_iso_block(C_ref) ||
+        throw(ArgumentError("stiffness_contribution_alv_at: only iso reference is supported"))
+    α, β = _iso_pair(C_ref)
+    α_p_2β = α .+ 2β
+    α_p_βh = α .+ β ./ 2
+    α_p_β  = α .+ β
+    βα1 = β * α_p_βh
+    βα2 = β * α_p_β
+    B_n = (8 / (3π)) .* volterra_left_divide(βα1, α_p_2β)
+    B_t = (32 / (9π)) .* volterra_left_divide(βα2, α_p_2β)
+    n = size(α, 1)
+    T = eltype(α)
+    Z = zeros(T, n, n)
+    ℓ₁ = (T(3) / T(4)) .* B_n
+    ℓ₆ = (T(3) / T(8)) .* B_t
+    H̃ = ti_blocks_from_params((ℓ₁, copy(Z), copy(Z), copy(Z), copy(Z), ℓ₆))
+    return -(C_ref * H̃ * C_ref)
+end
+
+"""
+    delta_stiffness_alv(crack, Ñ, ε) -> Matrix
+
+Apply the Budiansky-O'Connell crack density factor to the
+size-independent stiffness contribution `Ñ` produced by
+[`stiffness_contribution_alv`](@ref), giving the dilute stiffness
+correction `ΔC̃ = (4π/3) ε³ᵈ · Ñ` (penny / elliptic) or
+`π ε²ᵈ · Ñ` (ribbon).  Same pre-factors as the elastic case.
+"""
+function delta_stiffness_alv(crack::MFH_Core.AbstractCrack,
+                               Ñ::AbstractMatrix, ε::Real)
+    if crack isa EllipticCrack
+        return (4π / 3) * ε .* Ñ
+    elseif crack isa RibbonCrack
+        return Float64(π) * ε .* Ñ
+    else
+        throw(ArgumentError("delta_stiffness_alv: unsupported crack type $(typeof(crack))"))
+    end
+end

@@ -186,33 +186,60 @@ function homogenize_alv(rve::RVE, scheme::HomogenizationScheme,
     C_0 = _trapezoidal_relaxation(C_M_law, times, 6)
     f_M = matrix_volume_fraction(rve)
 
-    # 2. Loop on inclusions.
+    # 2. Loop on inclusions, separating SOLIDS (`VolumeFraction`) from
+    #    CRACKS (`CrackDensity`).  Cracks contribute ΔC̃_crack to the
+    #    numerator of the schemes (no volume → no denominator effect).
     incl_names = inclusion_phase_names(rve)
     fractions = Float64[]
     contribs = Matrix{eltype(C_0)}[]
     A_duts = Matrix{eltype(C_0)}[]
     C_phases = Matrix{eltype(C_0)}[C_0]
     H_phases = Matrix{eltype(C_0)}[]   # per-phase Hill kernels (for Maxwell distribution)
+    crack_data = Tuple{Any, Float64, AbstractSymmetrize}[]   # (geom, density, sym)
+    ΔC_cracks_M = zeros(eltype(C_0), size(C_0)...)   # cracks-against-C_M sum
+    ΔJ_cracks_M = zeros(eltype(C_0), size(C_0)...)   # for Reuss/DiluteDual
+
     for name in incl_names
         ph = rve.phases[name]
-        C_r_law = phase_property(rve, name, prop)
-        C_r, A_dut, N_dut, P_r = _inclusion_alv_quantities(
-            ph.geometry, C_r_law, C_M_law, C_0, times)
-        # Honour the phase's `symmetrize=[ISO]` (or other) projection,
-        # mirroring the elastic dispatcher in `Schemes/contribution_helpers.jl`.
+        a = rve.amounts[name]
         sym = phase_symmetrize(rve, name)
-        A_dut = _maybe_symmetrize_alv(A_dut, sym)
-        N_dut = _maybe_symmetrize_alv(N_dut, sym)
-        push!(C_phases, C_r)
-        push!(A_duts, A_dut)
-        push!(contribs, N_dut)
-        push!(H_phases, P_r)
-        push!(fractions, _amount_value(rve, name))
+        if a isa CrackDensity
+            geom = ph.geometry
+            geom isa MFH_Core.AbstractCrack ||
+                throw(ArgumentError("homogenize_alv: phase $name has CrackDensity but geometry $(typeof(geom)) is not a crack"))
+            ε = Float64(a.value)
+            push!(crack_data, (geom, ε, sym))
+            # Stiffness contribution of the crack against C̃_M.
+            Ñ = stiffness_contribution_alv_at(geom, C_0)
+            ΔC = delta_stiffness_alv(geom, Ñ, ε)
+            ΔC = _maybe_symmetrize_alv(ΔC, sym)
+            ΔC_cracks_M .+= ΔC
+            # Compliance contribution (for Reuss / DiluteDual).
+            H̃ = compliance_contribution_alv(geom, C_M_law, times)
+            ΔJ = delta_compliance_alv(geom, H̃, ε)
+            ΔJ = _maybe_symmetrize_alv(ΔJ, sym)
+            ΔJ_cracks_M .+= ΔJ
+        else
+            C_r_law = phase_property(rve, name, prop)
+            C_r, A_dut, N_dut, P_r = _inclusion_alv_quantities(
+                ph.geometry, C_r_law, C_M_law, C_0, times)
+            A_dut = _maybe_symmetrize_alv(A_dut, sym)
+            N_dut = _maybe_symmetrize_alv(N_dut, sym)
+            push!(C_phases, C_r)
+            push!(A_duts, A_dut)
+            push!(contribs, N_dut)
+            push!(H_phases, P_r)
+            push!(fractions, _amount_value(rve, name))
+        end
     end
 
     return _homogenize_alv_dispatch(rve, scheme, prop, times,
                                     C_0, C_phases, A_duts, contribs,
-                                    H_phases, fractions, f_M; kw...)
+                                    H_phases, fractions, f_M;
+                                    crack_data = crack_data,
+                                    ΔC_cracks_M = ΔC_cracks_M,
+                                    ΔJ_cracks_M = ΔJ_cracks_M,
+                                    kw...)
 end
 
 # ── Per-geometry inclusion quantities ───────────────────────────────────────
@@ -341,10 +368,22 @@ function _try_ti_tuples(matrices::AbstractVector{<:AbstractMatrix})
 end
 
 # ── Dispatch table on scheme types ──────────────────────────────────────────
+#
+# Crack handling.  Every dispatcher honours the optional kwargs
+#    crack_data    :: Vector{Tuple{geom, density, sym}}
+#    ΔC_cracks_M   :: pre-aggregated stiffness contribution against C̃_M
+#    ΔJ_cracks_M   :: pre-aggregated compliance contribution against C̃_M
+# computed once in `homogenize_alv` (see the matrix-reference cracks
+# loop above).  When `isempty(crack_data)`, the iso/TI fast paths are
+# attempted; otherwise the crack-aware generic path is used.
+
+@inline _has_cracks(kw) = haskey(kw, :crack_data) && !isempty(kw[:crack_data])
 
 function _homogenize_alv_dispatch(::RVE, ::Voigt, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    # Voigt ignores cracks (zero-volume convention, mirroring elastic
+    # `Schemes/voigt.jl`).  Result depends only on solid volume fractions.
     iso = _try_iso_pairs(C_phases)
     if iso !== nothing
         αβ_eff = voigt_alv_iso(iso, [f_M; fractions])
@@ -361,6 +400,7 @@ end
 function _homogenize_alv_dispatch(::RVE, ::Reuss, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    # Reuss ignores cracks (same convention as elastic `Schemes/reuss.jl`).
     iso = _try_iso_pairs(C_phases)
     if iso !== nothing
         αβ_eff = reuss_alv_iso(iso, [f_M; fractions])
@@ -377,24 +417,41 @@ end
 function _homogenize_alv_dispatch(::RVE, ::Dilute, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
-    iso_contribs = _try_iso_pairs(contribs)
-    if iso_contribs !== nothing && _is_iso_block(C_0)
-        αβ_0 = _iso_pair(C_0)
-        αβ_eff = dilute_alv_iso(αβ_0, iso_contribs, fractions)
-        return _iso_blocks(αβ_eff)
+    if !_has_cracks(kw)
+        iso_contribs = _try_iso_pairs(contribs)
+        if iso_contribs !== nothing && _is_iso_block(C_0)
+            αβ_0 = _iso_pair(C_0)
+            αβ_eff = dilute_alv_iso(αβ_0, iso_contribs, fractions)
+            return _iso_blocks(αβ_eff)
+        end
+        ti_contribs = _try_ti_tuples(contribs)
+        if ti_contribs !== nothing && _is_ti_block(C_0)
+            ℓ_0 = _ti_pair(C_0)
+            ℓ_eff = dilute_alv_ti(ℓ_0, ti_contribs, fractions)
+            return _ti_blocks(ℓ_eff)
+        end
+        return dilute_alv(C_0, contribs, fractions)
     end
-    ti_contribs = _try_ti_tuples(contribs)
-    if ti_contribs !== nothing && _is_ti_block(C_0)
-        ℓ_0 = _ti_pair(C_0)
-        ℓ_eff = dilute_alv_ti(ℓ_0, ti_contribs, fractions)
-        return _ti_blocks(ℓ_eff)
-    end
-    return dilute_alv(C_0, contribs, fractions)
+    # Cracks: additive — `C̃_dilute + ΔC̃_cracks_M`.
+    return dilute_alv(C_0, contribs, fractions) .+ kw[:ΔC_cracks_M]
 end
 
 function _homogenize_alv_dispatch(::RVE, ::DiluteDual, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    if _has_cracks(kw)
+        # DiluteDual : invert C → J, add per-phase compliance contribs +
+        # crack ΔJ̃, invert back.  We rebuild the per-phase compliance
+        # contribs from the relaxation contribs : N̄_J = -J_M ∘ N̄_C ∘ J_M.
+        J_M = volterra_inverse(C_0; block_size = 6)
+        J_eff = copy(J_M)
+        @inbounds for (f, N̄) in zip(fractions, contribs)
+            term = -(J_M * N̄ * J_M)
+            @. J_eff += f * term
+        end
+        J_eff .+= kw[:ΔJ_cracks_M]
+        return volterra_inverse(J_eff; block_size = 6)
+    end
     iso_contribs = _try_iso_pairs(contribs)
     if iso_contribs !== nothing && _is_iso_block(C_0)
         αβ_0 = _iso_pair(C_0)
@@ -413,21 +470,33 @@ end
 function _homogenize_alv_dispatch(::RVE, ::MoriTanaka, ::Symbol, ::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
-    iso_contribs = _try_iso_pairs(contribs)
-    iso_A = _try_iso_pairs(A_duts)
-    if iso_contribs !== nothing && iso_A !== nothing && _is_iso_block(C_0)
-        αβ_0 = _iso_pair(C_0)
-        αβ_eff = mori_tanaka_alv_iso(αβ_0, iso_A, iso_contribs, fractions, f_M)
-        return _iso_blocks(αβ_eff)
+    if !_has_cracks(kw)
+        iso_contribs = _try_iso_pairs(contribs)
+        iso_A = _try_iso_pairs(A_duts)
+        if iso_contribs !== nothing && iso_A !== nothing && _is_iso_block(C_0)
+            αβ_0 = _iso_pair(C_0)
+            αβ_eff = mori_tanaka_alv_iso(αβ_0, iso_A, iso_contribs, fractions, f_M)
+            return _iso_blocks(αβ_eff)
+        end
+        ti_contribs = _try_ti_tuples(contribs)
+        ti_A = _try_ti_tuples(A_duts)
+        if ti_contribs !== nothing && ti_A !== nothing && _is_ti_block(C_0)
+            ℓ_0 = _ti_pair(C_0)
+            ℓ_eff = mori_tanaka_alv_ti(ℓ_0, ti_A, ti_contribs, fractions, f_M)
+            return _ti_blocks(ℓ_eff)
+        end
+        return mori_tanaka_alv(C_0, A_duts, contribs, fractions, f_M)
     end
-    ti_contribs = _try_ti_tuples(contribs)
-    ti_A = _try_ti_tuples(A_duts)
-    if ti_contribs !== nothing && ti_A !== nothing && _is_ti_block(C_0)
-        ℓ_0 = _ti_pair(C_0)
-        ℓ_eff = mori_tanaka_alv_ti(ℓ_0, ti_A, ti_contribs, fractions, f_M)
-        return _ti_blocks(ℓ_eff)
-    end
-    return mori_tanaka_alv(C_0, A_duts, contribs, fractions, f_M)
+    # Crack-aware MT : append a virtual phase with N̄ = ΔC̃_cracks_M,
+    # Ã = 0 (cracks have no volume in the denominator), f = 1.  This
+    # injects ΔC̃ into the numerator without polluting the denominator.
+    sz = size(C_0, 1)
+    T = eltype(C_0)
+    extra_A = zeros(T, sz, sz)
+    contribs_aug = vcat(contribs, [kw[:ΔC_cracks_M]])
+    A_duts_aug = vcat(A_duts, [extra_A])
+    fractions_aug = vcat(fractions, [1.0])
+    return mori_tanaka_alv(C_0, A_duts_aug, contribs_aug, fractions_aug, f_M)
 end
 
 function _homogenize_alv_dispatch(rve::RVE, ::Maxwell, ::Symbol,
@@ -438,21 +507,27 @@ function _homogenize_alv_dispatch(rve::RVE, ::Maxwell, ::Symbol,
     # default in `Schemes.maxwell`).
     C_M_law = matrix_property(rve, :C)
     H_0 = hill_kernel(Spheroid(1.0), C_M_law, times)
-    iso_contribs = _try_iso_pairs(contribs)
-    if iso_contribs !== nothing && _is_iso_block(C_0) && _is_iso_block(H_0)
-        αβ_0 = _iso_pair(C_0)
-        αβ_H_0 = _iso_pair(H_0)
-        αβ_eff = maxwell_alv_iso(αβ_0, iso_contribs, fractions, αβ_H_0)
-        return _iso_blocks(αβ_eff)
+    if !_has_cracks(kw)
+        iso_contribs = _try_iso_pairs(contribs)
+        if iso_contribs !== nothing && _is_iso_block(C_0) && _is_iso_block(H_0)
+            αβ_0 = _iso_pair(C_0)
+            αβ_H_0 = _iso_pair(H_0)
+            αβ_eff = maxwell_alv_iso(αβ_0, iso_contribs, fractions, αβ_H_0)
+            return _iso_blocks(αβ_eff)
+        end
+        ti_contribs = _try_ti_tuples(contribs)
+        if ti_contribs !== nothing && _is_ti_block(C_0) && _is_ti_block(H_0)
+            ℓ_0 = _ti_pair(C_0)
+            ℓ_H_0 = _ti_pair(H_0)
+            ℓ_eff = maxwell_alv_ti(ℓ_0, ti_contribs, fractions, ℓ_H_0)
+            return _ti_blocks(ℓ_eff)
+        end
+        return maxwell_alv(C_0, contribs, fractions; H_0 = H_0)
     end
-    ti_contribs = _try_ti_tuples(contribs)
-    if ti_contribs !== nothing && _is_ti_block(C_0) && _is_ti_block(H_0)
-        ℓ_0 = _ti_pair(C_0)
-        ℓ_H_0 = _ti_pair(H_0)
-        ℓ_eff = maxwell_alv_ti(ℓ_0, ti_contribs, fractions, ℓ_H_0)
-        return _ti_blocks(ℓ_eff)
-    end
-    return maxwell_alv(C_0, contribs, fractions; H_0 = H_0)
+    # Crack-aware Maxwell : append cracks to the contribution sum (Σ).
+    contribs_aug = vcat(contribs, [kw[:ΔC_cracks_M]])
+    fractions_aug = vcat(fractions, [1.0])
+    return maxwell_alv(C_0, contribs_aug, fractions_aug; H_0 = H_0)
 end
 
 # Self-Consistent ALV: re-routes to `self_consistent_alv` (different
@@ -462,8 +537,13 @@ function _homogenize_alv_dispatch(rve::RVE, sc::SelfConsistent, prop::Symbol,
                                   times::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    # SC reads cracks directly from the RVE; strip the pre-aggregated
+    # crack kwargs that were meant for the simpler scheme dispatchers.
+    kw_filt = Iterators.filter(p -> !(p[1] in
+                                       (:crack_data, :ΔC_cracks_M, :ΔJ_cracks_M)),
+                                kw)
     return self_consistent_alv(rve, prop; times = times,
-                               sc.options..., kw...)
+                               sc.options..., kw_filt...)
 end
 
 # Asymmetric Self-Consistent ALV.  Same ingredients as `SelfConsistent`
@@ -473,8 +553,11 @@ function _homogenize_alv_dispatch(rve::RVE, asc::AsymmetricSelfConsistent, prop:
                                   times::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
+    kw_filt = Iterators.filter(p -> !(p[1] in
+                                       (:crack_data, :ΔC_cracks_M, :ΔJ_cracks_M)),
+                                kw)
     return asymmetric_self_consistent_alv(rve, prop; times = times,
-                                            asc.options..., kw...)
+                                            asc.options..., kw_filt...)
 end
 
 # Ponte-Castañeda & Willis ALV.  Algebraically identical to Maxwell in
@@ -489,21 +572,27 @@ function _homogenize_alv_dispatch(rve::RVE, ::PonteCastanedaWillis, ::Symbol,
     dist isa UniformDistribution ||
         throw(ArgumentError("PCW-ALV: only UniformDistribution is currently supported"))
     H_d = hill_kernel(dist.shape, C_M_law, times)
-    iso_contribs = _try_iso_pairs(contribs)
-    if iso_contribs !== nothing && _is_iso_block(C_0) && _is_iso_block(H_d)
-        αβ_0 = _iso_pair(C_0)
-        αβ_H = _iso_pair(H_d)
-        αβ_eff = maxwell_alv_iso(αβ_0, iso_contribs, fractions, αβ_H)
-        return _iso_blocks(αβ_eff)
+    if !_has_cracks(kw)
+        iso_contribs = _try_iso_pairs(contribs)
+        if iso_contribs !== nothing && _is_iso_block(C_0) && _is_iso_block(H_d)
+            αβ_0 = _iso_pair(C_0)
+            αβ_H = _iso_pair(H_d)
+            αβ_eff = maxwell_alv_iso(αβ_0, iso_contribs, fractions, αβ_H)
+            return _iso_blocks(αβ_eff)
+        end
+        ti_contribs = _try_ti_tuples(contribs)
+        if ti_contribs !== nothing && _is_ti_block(C_0) && _is_ti_block(H_d)
+            ℓ_0 = _ti_pair(C_0)
+            ℓ_H = _ti_pair(H_d)
+            ℓ_eff = maxwell_alv_ti(ℓ_0, ti_contribs, fractions, ℓ_H)
+            return _ti_blocks(ℓ_eff)
+        end
+        return pcw_alv(C_0, contribs, fractions; H_dist = H_d)
     end
-    ti_contribs = _try_ti_tuples(contribs)
-    if ti_contribs !== nothing && _is_ti_block(C_0) && _is_ti_block(H_d)
-        ℓ_0 = _ti_pair(C_0)
-        ℓ_H = _ti_pair(H_d)
-        ℓ_eff = maxwell_alv_ti(ℓ_0, ti_contribs, fractions, ℓ_H)
-        return _ti_blocks(ℓ_eff)
-    end
-    return pcw_alv(C_0, contribs, fractions; H_dist = H_d)
+    # Crack-aware PCW : same as Maxwell with rve distribution shape.
+    contribs_aug = vcat(contribs, [kw[:ΔC_cracks_M]])
+    fractions_aug = vcat(fractions, [1.0])
+    return pcw_alv(C_0, contribs_aug, fractions_aug; H_dist = H_d)
 end
 
 # Differential ALV.  Multi-step Euler integration of the Norris ODE.

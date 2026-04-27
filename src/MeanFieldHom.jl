@@ -180,6 +180,7 @@ export voigt_alv_order2, reuss_alv_order2, dilute_alv_order2,
 export dilute_concentration_alv_order2, dilute_contribution_alv_order2
 export homogenize_alv_order2
 export cod_kernel_alv, compliance_contribution_alv, delta_compliance_alv
+export stiffness_contribution_alv, stiffness_contribution_alv_at, delta_stiffness_alv
 
 # ── Backwards-compat aliases ─────────────────────────────────────────────────
 const HillAlgorithm = AbstractAlgorithm

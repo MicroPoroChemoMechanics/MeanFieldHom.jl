@@ -58,7 +58,8 @@ using ..Schemes: RVE, HomogenizationScheme, Voigt, Reuss, Dilute, DiluteDual,
                   inclusion_phase_names, matrix_property, phase_property,
                   volume_fraction, matrix_volume_fraction,
                   AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize,
-                  phase_symmetrize
+                  phase_symmetrize,
+                  VolumeFraction, CrackDensity, amount_value
 
 include("visco_law.jl")
 include("trapezoidal.jl")
@@ -105,5 +106,6 @@ export voigt_alv_order2, reuss_alv_order2, dilute_alv_order2,
 export dilute_concentration_alv_order2, dilute_contribution_alv_order2
 export homogenize_alv_order2
 export cod_kernel_alv, compliance_contribution_alv, delta_compliance_alv
+export stiffness_contribution_alv, stiffness_contribution_alv_at, delta_stiffness_alv
 
 end # module

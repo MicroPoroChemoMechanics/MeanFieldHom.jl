@@ -82,8 +82,15 @@ function asymmetric_self_consistent_alv(rve::RVE, prop::Symbol;
     geometries = Any[]
     fractions = Float64[]
     symmetrizes = AbstractSymmetrize[]
+    crack_data = Tuple{Any, Float64, AbstractSymmetrize}[]
     for name in incl_names
         ph = rve.phases[name]
+        a = rve.amounts[name]
+        if a isa CrackDensity
+            push!(crack_data, (ph.geometry, Float64(a.value),
+                                phase_symmetrize(rve, name)))
+            continue
+        end
         C_r_law = phase_property(rve, name, prop)
         C_r_law isa ViscoLaw ||
             throw(ArgumentError("asymmetric_self_consistent_alv: phase $name property is not a ViscoLaw"))
@@ -105,6 +112,22 @@ function asymmetric_self_consistent_alv(rve::RVE, prop::Symbol;
     for iter in 1:maxiters
         C_n_new = _asc_alv_step(C_M, C_n, C_phases, U_M_phases, V_M_phases,
                                  fractions, symmetrizes, n, Id)
+        # Crack contribution (Budiansky-O'Connell SC):
+        # `ΔJ̃_cracks(C_n)` against the running estimate, added to the
+        # compliance side of the ASC solid update.
+        if !isempty(crack_data)
+            ΔJ = zeros(eltype(C_n), size(C_n)...)
+            J_n = volterra_inverse(C_n; block_size = 6)
+            @inbounds for (geom, ε, sym) in crack_data
+                Ñ = stiffness_contribution_alv_at(geom, C_n)
+                ΔC = delta_stiffness_alv(geom, Ñ, ε)
+                ΔJ_block = -(J_n * ΔC * J_n)
+                ΔJ_block = _maybe_symmetrize_alv(ΔJ_block, sym)
+                ΔJ .+= ΔJ_block
+            end
+            J_solid_new = volterra_inverse(C_n_new; block_size = 6)
+            C_n_new = volterra_inverse(J_solid_new .+ ΔJ; block_size = 6)
+        end
         Δ = norm(C_n_new - C_n)
         norm_C = norm(C_n)
         tol_eff = abstol + reltol * norm_C
