@@ -465,3 +465,54 @@ function _homogenize_alv_dispatch(rve::RVE, sc::SelfConsistent, prop::Symbol,
     return self_consistent_alv(rve, prop; times = times,
                                sc.options..., kw...)
 end
+
+# Asymmetric Self-Consistent ALV.  Same ingredients as `SelfConsistent`
+# but the iteration update is anchored on the matrix property C_M
+# rather than the running estimate (cf. `schemes_alv_extra.jl`).
+function _homogenize_alv_dispatch(rve::RVE, asc::AsymmetricSelfConsistent, prop::Symbol,
+                                  times::AbstractVector,
+                                  C_0, C_phases, A_duts, contribs,
+                                  H_phases, fractions, f_M; kw...)
+    return asymmetric_self_consistent_alv(rve, prop; times = times,
+                                            asc.options..., kw...)
+end
+
+# Ponte-Castañeda & Willis ALV.  Algebraically identical to Maxwell in
+# the single-shape case, but uses the `rve.distribution_shape` for the
+# Hill kernel instead of a fixed sphere.
+function _homogenize_alv_dispatch(rve::RVE, ::PonteCastanedaWillis, ::Symbol,
+                                  times::AbstractVector,
+                                  C_0, C_phases, A_duts, contribs,
+                                  H_phases, fractions, f_M; kw...)
+    C_M_law = matrix_property(rve, :C)
+    dist = rve.distribution_shape
+    dist isa UniformDistribution ||
+        throw(ArgumentError("PCW-ALV: only UniformDistribution is currently supported"))
+    H_d = hill_kernel(dist.shape, C_M_law, times)
+    iso_contribs = _try_iso_pairs(contribs)
+    if iso_contribs !== nothing && _is_iso_block(C_0) && _is_iso_block(H_d)
+        αβ_0 = _iso_pair(C_0)
+        αβ_H = _iso_pair(H_d)
+        αβ_eff = maxwell_alv_iso(αβ_0, iso_contribs, fractions, αβ_H)
+        return _iso_blocks(αβ_eff)
+    end
+    ti_contribs = _try_ti_tuples(contribs)
+    if ti_contribs !== nothing && _is_ti_block(C_0) && _is_ti_block(H_d)
+        ℓ_0 = _ti_pair(C_0)
+        ℓ_H = _ti_pair(H_d)
+        ℓ_eff = maxwell_alv_ti(ℓ_0, ti_contribs, fractions, ℓ_H)
+        return _ti_blocks(ℓ_eff)
+    end
+    return pcw_alv(C_0, contribs, fractions; H_dist = H_d)
+end
+
+# Differential ALV.  Multi-step Euler integration of the Norris ODE.
+function _homogenize_alv_dispatch(rve::RVE, sch::DifferentialScheme, ::Symbol,
+                                  times::AbstractVector,
+                                  C_0, C_phases, A_duts, contribs,
+                                  H_phases, fractions, f_M; kw...)
+    nsteps = get(sch.options, :nsteps, 100)
+    return differential_alv(rve, :C; times = times,
+                              nsteps = nsteps,
+                              trajectory = sch.trajectory)
+end

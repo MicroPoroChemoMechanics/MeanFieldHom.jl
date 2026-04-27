@@ -50,7 +50,11 @@ using ..LayeredSpheres: LayeredSphere, layer_radius, layer_modulus,
                          layer_count, layer_volume_fraction, outer_radius
 import ..Schemes
 using ..Schemes: RVE, HomogenizationScheme, Voigt, Reuss, Dilute, DiluteDual,
-                  MoriTanaka, Maxwell, SelfConsistent, matrix_phase,
+                  MoriTanaka, Maxwell, SelfConsistent, AsymmetricSelfConsistent,
+                  PonteCastanedaWillis, DifferentialScheme,
+                  Proportional, Sequential, CustomPath,
+                  UniformDistribution,
+                  matrix_phase,
                   inclusion_phase_names, matrix_property, phase_property,
                   volume_fraction, matrix_volume_fraction,
                   AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize,
@@ -65,6 +69,7 @@ include("schemes_alv.jl")
 include("iso_schemes_alv.jl")
 include("ti_schemes_alv.jl")
 include("schemes_alv_sc.jl")
+include("schemes_alv_extra.jl")
 include("layered_alv.jl")
 include("homogenize_alv.jl")
 include("order2_alv.jl")
@@ -88,7 +93,8 @@ export dilute_concentration_alv_iso, dilute_contribution_alv_iso
 export voigt_alv_ti, reuss_alv_ti, dilute_alv_ti, dilute_dual_alv_ti
 export mori_tanaka_alv_ti, maxwell_alv_ti
 export dilute_concentration_alv_ti, dilute_contribution_alv_ti
-export self_consistent_alv
+export self_consistent_alv, asymmetric_self_consistent_alv,
+       pcw_alv, differential_alv
 export bulk_localization_alv, bulk_state_seq_alv, shear_localization_alv
 export strain_strain_loc_alv, stiffness_contribution_alv
 export homogenize_alv, has_visco_property

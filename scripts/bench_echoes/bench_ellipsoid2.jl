@@ -46,7 +46,7 @@ const law_I = ViscoLaw((t, tp) -> Cᵢ_inv, :creep)
 # ─── Python side ──────────────────────────────────────────────────────────
 
 py"""
-from echoes import (rve, ellipsoid, ISO, CREEP, MT, DIFF, SC,
+from echoes import (rve, ellipsoid, ISO, CREEP, MT, DIFF, SC, ASC, MAX, PCW,
                      spherical, spheroidal, stiff_Enu, tensor, tId4,
                      visco_law, homogenize_visco, homogenize)
 import numpy as np
@@ -81,7 +81,7 @@ def trapz_relax(T):
     Js_py = make_Js_py()
     return np.asarray(visco_law(Js_py, CREEP).relaxation_mat(T))
 
-_SCH = {"MT": MT, "DIFF": DIFF, "SC": SC}
+_SCH = {"MT": MT, "DIFF": DIFF, "SC": SC, "ASC": ASC, "MAX": MAX, "PCW": PCW}
 
 def homogenize_py(omega, T, sch_name, frac):
     Js_py = make_Js_py()
@@ -136,9 +136,19 @@ R̃_M_jl = volterra_inverse(J̃_M_jl; block_size = 6)
 R̃_M_py = py_trapz_relax(T_grid)
 diff_summary("R̃_M (relaxation = inv J̃)", R̃_M_jl, R̃_M_py)
 
-# ─── Step 2: full homogenisation MT, sphere, f=0.4 ─────────────────────────
+# ─── Step 2: full homogenisation across schemes ────────────────────────────
 println()
-for sch_name in ("MT", "SC")
+
+const _SCH_MAP = Dict(
+    "MT"   => MoriTanaka(),
+    "DIFF" => DifferentialScheme(; nsteps = 100),
+    "SC"   => SelfConsistent(),
+    "ASC"  => AsymmetricSelfConsistent(),
+    "MAX"  => Maxwell(),
+    "PCW"  => PonteCastanedaWillis(),
+)
+
+for sch_name in ("MT", "DIFF", "SC", "ASC", "MAX", "PCW")
     println("=== Effective relaxation matrix ($sch_name) ===")
     for omega in (1.0, 0.1)
         for f in (0.0, 0.4)
@@ -148,12 +158,21 @@ for sch_name in ("MT", "SC")
                 sh = omega == 1.0 ? Ellipsoid(1.0, 1.0, 1.0) : Spheroid(omega)
                 add_phase!(rve, :I, sh, Dict(:C => law_I);
                            fraction = f, symmetrize = :iso)
-                sch = sch_name == "MT" ? MoriTanaka() : SelfConsistent()
-                homogenize_alv(rve, sch, :C; times = T_grid)
+                homogenize_alv(rve, _SCH_MAP[sch_name], :C; times = T_grid)
             end
-            R̃_py_eff = py_homogenize(omega, T_grid, sch_name, f)
+            R̃_py_eff = try
+                py_homogenize(omega, T_grid, sch_name, f)
+            catch e
+                println("    $sch_name not in Python map; skipping py-side")
+                nothing
+            end
             label = "$(sch_name)  ω=$omega  f=$f"
-            diff_summary(label, Matrix{Float64}(R̃_jl_eff), Matrix{Float64}(R̃_py_eff))
+            if R̃_py_eff === nothing
+                @printf "  %-30s shape=%s  (Julia only)\n" label string(size(R̃_jl_eff))
+            else
+                diff_summary(label, Matrix{Float64}(R̃_jl_eff),
+                              Matrix{Float64}(R̃_py_eff))
+            end
         end
     end
     println()

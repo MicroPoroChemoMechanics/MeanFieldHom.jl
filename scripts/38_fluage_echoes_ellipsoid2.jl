@@ -96,9 +96,9 @@ const N_TIMES = 51
 const omega_v = (1.0, 0.1)
 const t0_v = (0.0, 30.0)
 const fractions = (0.0, 0.4)
-const scheme_v = (MoriTanaka(), SelfConsistent())
-const scheme_lbl = ("MT", "SC")
-const lstyles = (:solid, :dot)
+const scheme_v = (MoriTanaka(), DifferentialScheme(; nsteps = 50), SelfConsistent())
+const scheme_lbl = ("MT", "DIFF", "SC")
+const lstyles = (:solid, :dashdotdot, :dot)
 
 function build_grid(t0, n)
     if t0 == 0
@@ -109,7 +109,7 @@ function build_grid(t0, n)
 end
 
 plt = plot(layout = (1, 1), size = (1100, 700),
-           title = "ALV solid + spheroidal rigid inclusion — MT vs SC",
+           title = "ALV solid + spheroidal rigid inclusion — MT vs DIFF vs SC",
            xlabel = "t", ylabel = "Eˢ · Jₑʰᵒᵐ(t)",
            legend = :topright)
 
@@ -138,7 +138,7 @@ end
 
 # Plot order is critical: draw SC (dotted) AFTER MT (solid) so the
 # dotted lines remain visible when they coincide with the solid ones.
-const elastic_lstyles = (:dash, :dashdot)
+const elastic_lstyles = (:dash, :dashdot, :dashdot)
 
 for (i_sch, sch) in enumerate(scheme_v)
     for omega in omega_v
@@ -166,7 +166,8 @@ for (i_sch, sch) in enumerate(scheme_v)
                     # ALV creep response: solid for MT, thicker dotted for SC
                     plot!(plt, T, Jhom; color = col,
                           linestyle = lstyles[i_sch],
-                          linewidth = i_sch == 2 ? 2.5 : 1.5,
+                          linewidth = (i_sch == 3 ? 2.5 :
+                                       i_sch == 2 ? 1.7 : 1.5),
                           label = lbl_main)
                     # Per-loading-time elastic reference for THIS scheme
                     Jelas = [elastic_compliance(omega, f, t, sch) for t in T]
@@ -220,7 +221,8 @@ for (i_sch, sch) in enumerate(scheme_v)
                 Jhom = uniaxial_creep_curve(R̃, n)
                 plot!(plt2, T, Jhom; color = col,
                       linestyle = lstyles[i_sch],
-                      linewidth = i_sch == 2 ? 2.5 : 1.5,
+                      linewidth = (i_sch == 3 ? 2.5 :
+                                   i_sch == 2 ? 1.7 : 1.5),
                       label = lbl_main)
                 Jelas = [elastic_compliance(omega, f_sc, t, sch) for t in T]
                 plot!(plt2, T, Jelas; color = col,
@@ -237,5 +239,5 @@ out2 = joinpath(@__DIR__, "figures", "38_fluage_echoes_ellipsoid2_sc_omega.png")
 savefig(plt2, out2)
 println("Saved : $out2")
 
-println("Note: the Python script also covers DIFF (Differential) which is not yet")
-println("      part of the ALV pipeline; only MT and SC are reproduced here.")
+println("Includes MT, DIFF (50 steps) and SC schemes — full coverage of the")
+println("Python reference.")

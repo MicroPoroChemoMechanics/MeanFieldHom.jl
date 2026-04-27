@@ -168,7 +168,8 @@ export dilute_concentration_alv_iso, dilute_contribution_alv_iso
 export voigt_alv_ti, reuss_alv_ti, dilute_alv_ti, dilute_dual_alv_ti
 export mori_tanaka_alv_ti, maxwell_alv_ti
 export dilute_concentration_alv_ti, dilute_contribution_alv_ti
-export self_consistent_alv
+export self_consistent_alv, asymmetric_self_consistent_alv,
+       pcw_alv, differential_alv
 export bulk_localization_alv, bulk_state_seq_alv, shear_localization_alv
 export strain_strain_loc_alv, stiffness_contribution_alv
 export homogenize_alv, has_visco_property
