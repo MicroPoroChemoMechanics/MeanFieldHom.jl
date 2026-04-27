@@ -96,3 +96,114 @@ function iso_blocks_from_params(α::AbstractMatrix, β::AbstractMatrix)
     end
     return M
 end
+
+# =============================================================================
+#  TI (transversely isotropic) — Walpole basis with axis n = e_z (canonical)
+# =============================================================================
+#
+#  A TI 4-tensor in the Walpole basis is described by 6 scalars
+#  `(ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆)`.  In the canonical axis n = e₃ the
+#  6×6 Mandel block has the structure (zero entries omitted):
+#
+#      M[1,1] = M[2,2] = (ℓ₂ + ℓ₅)/2
+#      M[1,2] = M[2,1] = (ℓ₂ − ℓ₅)/2
+#      M[3,3] = ℓ₁
+#      M[1,3] = M[2,3] = ℓ₄/√2     (W₄ = (nT⊗nₙ)/√2 → column 3)
+#      M[3,1] = M[3,2] = ℓ₃/√2     (W₃ = (nₙ⊗nT)/√2 → row 3)
+#      M[4,4] = M[5,5] = ℓ₆        (out-of-plane shear)
+#      M[6,6] = ℓ₅                 (in-plane shear)
+#
+#  Major symmetry of the elastic tensor implies ℓ₃ = ℓ₄.  In ALV the
+#  Volterra product of two major-symmetric TI tensors is generally NOT
+#  major-symmetric (because the synthetic Walpole 2×2 matrices may not
+#  commute when the time grid is non-uniform), so the 6-parameter form
+#  is used internally even when inputs are major-symmetric.
+# =============================================================================
+
+const _SQRT2_ALV = sqrt(2)
+
+"""
+    ti_params_from_blocks(M; axis = (0, 0, 1))
+        -> NTuple{6, Matrix{T}}
+
+Decompose a `6n×6n` block matrix whose every 6×6 block is a TI
+4-tensor with axis `n` (only `n = e₃` is currently supported) into
+the six scalar Walpole parameter matrices `(ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆)`,
+each of size `n × n`.
+"""
+function ti_params_from_blocks(M::AbstractMatrix;
+                                axis::NTuple{3} = (0.0, 0.0, 1.0))
+    axis == (0.0, 0.0, 1.0) ||
+        throw(ArgumentError("ti_params_from_blocks: only axis = e₃ is supported"))
+    sz = size(M, 1)
+    sz == size(M, 2) ||
+        throw(ArgumentError("ti_params_from_blocks: M must be square"))
+    sz % 6 == 0 ||
+        throw(ArgumentError("ti_params_from_blocks: size $(sz) not divisible by 6"))
+    n = sz ÷ 6
+    T = eltype(M)
+    ℓ₁ = zeros(T, n, n); ℓ₂ = zeros(T, n, n)
+    ℓ₃ = zeros(T, n, n); ℓ₄ = zeros(T, n, n)
+    ℓ₅ = zeros(T, n, n); ℓ₆ = zeros(T, n, n)
+    s2 = T(_SQRT2_ALV)
+    @inbounds for i in 1:n, j in 1:n
+        r = 6 * (i - 1)
+        c = 6 * (j - 1)
+        ℓ₁[i, j] = M[r + 3, c + 3]
+        ℓ₂[i, j] = M[r + 1, c + 1] + M[r + 1, c + 2]
+        ℓ₅[i, j] = M[r + 1, c + 1] - M[r + 1, c + 2]
+        ℓ₃[i, j] = s2 * M[r + 3, c + 1]
+        ℓ₄[i, j] = s2 * M[r + 1, c + 3]
+        ℓ₆[i, j] = M[r + 4, c + 4]
+    end
+    return (ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆)
+end
+
+"""
+    ti_blocks_from_params(ℓ::NTuple{6, AbstractMatrix}; axis = (0, 0, 1))
+        -> Matrix{T}
+
+Inverse of [`ti_params_from_blocks`](@ref): rebuild a `6n×6n` block
+matrix whose every 6×6 block has the TI Mandel structure with axis
+`n = e₃` and Walpole coefficients `(ℓ₁[i,j], …, ℓ₆[i,j])`.
+"""
+function ti_blocks_from_params(ℓ::NTuple{6, <:AbstractMatrix};
+                                axis::NTuple{3} = (0.0, 0.0, 1.0))
+    axis == (0.0, 0.0, 1.0) ||
+        throw(ArgumentError("ti_blocks_from_params: only axis = e₃ is supported"))
+    n = size(ℓ[1], 1)
+    @inbounds for k in 1:6
+        size(ℓ[k]) == (n, n) ||
+            throw(ArgumentError("ti_blocks_from_params: all ℓᵢ must be n×n"))
+    end
+    T = promote_type(map(eltype, ℓ)...)
+    M = zeros(T, 6 * n, 6 * n)
+    s2 = T(_SQRT2_ALV)
+    @inbounds for i in 1:n, j in 1:n
+        rows = (6 * (i - 1) + 1):(6 * i)
+        cols = (6 * (j - 1) + 1):(6 * j)
+        ℓ₁_ij = T(ℓ[1][i, j]); ℓ₂_ij = T(ℓ[2][i, j])
+        ℓ₃_ij = T(ℓ[3][i, j]); ℓ₄_ij = T(ℓ[4][i, j])
+        ℓ₅_ij = T(ℓ[5][i, j]); ℓ₆_ij = T(ℓ[6][i, j])
+        block_diag_in = (ℓ₂_ij + ℓ₅_ij) / 2
+        block_off_in  = (ℓ₂_ij - ℓ₅_ij) / 2
+        # In-plane block (1:2, 1:2)
+        M[rows[1], cols[1]] = block_diag_in
+        M[rows[1], cols[2]] = block_off_in
+        M[rows[2], cols[1]] = block_off_in
+        M[rows[2], cols[2]] = block_diag_in
+        # Axial-axial diagonal
+        M[rows[3], cols[3]] = ℓ₁_ij
+        # Axial-transverse coupling (W₃: row 3, W₄: col 3)
+        M[rows[3], cols[1]] = ℓ₃_ij / s2
+        M[rows[3], cols[2]] = ℓ₃_ij / s2
+        M[rows[1], cols[3]] = ℓ₄_ij / s2
+        M[rows[2], cols[3]] = ℓ₄_ij / s2
+        # Out-of-plane shears (Mandel 4 = 23, 5 = 13)
+        M[rows[4], cols[4]] = ℓ₆_ij
+        M[rows[5], cols[5]] = ℓ₆_ij
+        # In-plane shear (Mandel 6 = 12)
+        M[rows[6], cols[6]] = ℓ₅_ij
+    end
+    return M
+end

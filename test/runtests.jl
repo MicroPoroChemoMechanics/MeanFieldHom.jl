@@ -69,6 +69,8 @@ using MeanFieldHom
         include("Viscoelasticity/test_schemes_alv.jl")
         include("Viscoelasticity/test_sc_alv.jl")
         include("Viscoelasticity/test_layered_alv.jl")
+        include("Viscoelasticity/test_ti_alv.jl")
+        include("Viscoelasticity/test_order2_alv.jl")
     end
 
     @testset "Regression" begin

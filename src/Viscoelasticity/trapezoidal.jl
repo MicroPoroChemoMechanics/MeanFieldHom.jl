@@ -60,16 +60,33 @@ function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
     return M
 end
 
-# Direct 6×6 Mandel matrix specialization.
+# Order-2 tensor specialization (TensND.AbstractTens{2,3}): M is `3n × 3n`.
+function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
+                               ::TensND.AbstractTens{2, 3})
+    n = length(times)
+    sample = visco_eval(law, times[1], times[1])
+    T = eltype(TensND.get_array(sample))
+    M = zeros(T, 3 * n, 3 * n)
+    _fill_trapezoidal_order2_tens!(M, law, times)
+    return M
+end
+
+# Matrix specialization: dispatches by size (3×3 → 3n×3n, 6×6 → 6n×6n).
 function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
                                sample::AbstractMatrix)
-    size(sample) == (6, 6) ||
-        throw(ArgumentError("trapezoidal_matrix: only 6×6 matrices are supported"))
     n = length(times)
     T = eltype(sample)
-    M = zeros(T, 6 * n, 6 * n)
-    _fill_trapezoidal_mandel!(M, law, times)
-    return M
+    if size(sample) == (3, 3)
+        M = zeros(T, 3 * n, 3 * n)
+        _fill_trapezoidal_order2_mat!(M, law, times)
+        return M
+    elseif size(sample) == (6, 6)
+        M = zeros(T, 6 * n, 6 * n)
+        _fill_trapezoidal_mandel!(M, law, times)
+        return M
+    else
+        throw(ArgumentError("trapezoidal_matrix: only 3×3 (order-2) or 6×6 (order-4 Mandel) matrices are supported"))
+    end
 end
 
 # ── Scalar case ─────────────────────────────────────────────────────────────

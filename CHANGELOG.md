@@ -1,5 +1,76 @@
 # Changelog
 
+## v0.6.0 — TI ALV fast path, order-2 ALV, BLAS Volterra, ALV cracks roadmap
+
+**TI Walpole-basis fast path** for ALV homogenisation : when every
+phase 4-tensor and the matrix kernel are TI 4-tensors with the
+**common canonical axis n = e₃** (every 6×6 Mandel block matches the
+Walpole structure), `homogenize_alv` now routes through new
+`*_alv_ti(ℓ_…)` primitives that operate on **6** `n × n` Volterra
+matrices `(ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆)` instead of the generic `(6n × 6n)`
+block.  The Walpole 2×2 part `[[ℓ₁, ℓ₃]; [ℓ₄, ℓ₂]]` is packed as a
+`(2n)×(2n)` block-Volterra matrix and inverted via
+`volterra_inverse(_; block_size = 2)`; the two scalar shears
+`(ℓ₅, ℓ₆)` go through the LAPACK scalar fast path below.
+
+ISO inputs are subsumed automatically (iso ⊂ TI), so a TI-matrix +
+iso-inclusion combination — common in layered concrete /
+fibre-reinforced ALV — gets the fast path "for free".  Storage is 6 ·
+n² doubles per phase (vs 36 · n² generic), and the inverse cost drops
+from `O((6n)²)` to `O((2n)²) + 2·O(n²) ≈ ×3` cheaper than the generic
+6n×6n path.
+
+The TI fast path is integrated into all six schemes (Voigt / Reuss /
+Dilute / DiluteDual / Mori-Tanaka / Maxwell), via a new
+`_try_ti_tuples` helper analogous to the existing `_try_iso_pairs`
+detection.
+
+**Order-2 ALV** : new sub-module covering vector-tensor ageing
+viscoelasticity (thermal / electrical conductivity, diffusivity,
+permittivity).  Operators are stored as `(3n × 3n)` lower-block-
+triangular matrices with 3×3 blocks.  Mirrors the order-4 API:
+
+  * `homogenize_alv_order2(rve, scheme, prop; times)` — public entry
+    point, dispatching on Voigt / Reuss / Dilute / DiluteDual /
+    Mori-Tanaka / Maxwell schemes.
+  * `hill_kernel_order2(ell, K_0_law, times)` — Hill polarisation for
+    iso ALV matrix + ellipsoidal inclusion (time-space decoupling
+    `P̃[block(i,j)] = α₀^{-vol}[i,j] · 𝐈^A`, with `𝐈^A` from the
+    existing elastic `tens_IA(ell)`).
+  * `iso_order2_params_from_blocks` / `iso_order2_blocks_from_params`
+    — per-component parameter extraction (single scalar α for iso
+    order-2).
+  * `voigt_alv_order2`, `reuss_alv_order2`, `dilute_alv_order2`,
+    `dilute_dual_alv_order2`, `mori_tanaka_alv_order2`,
+    `maxwell_alv_order2`.
+
+`trapezoidal_matrix(law, times)` now accepts both order-4 (4-tensor /
+6×6 Mandel) and order-2 (`TensND.AbstractTens{2,3}` / 3×3 matrix)
+sample types, dispatching to the appropriate (B·n)×(B·n) layout.
+
+The order-2 elastic-limit test verifies that ALV reduces to the
+existing elastic conductivity `homogenize` to machine precision for
+both spherical and spheroidal inclusions.  `scripts/bench_echoes/
+bench_order2_alv.jl` provides a template for a Julia–ECHOES
+crosscheck on the `fluage_echoes_maxwell_ordre2.py` setup.
+
+**Volterra BLAS / LAPACK fast path** : `volterra_inverse`,
+`volterra_left_divide` and `volterra_divide` now dispatch to LAPACK
+`trtri` / `trsm` via the `LowerTriangular(...)` wrapper for
+`BlasFloat` element types and `n ≥ 64` (the crossover where BLAS
+overhead amortises).  Measured speedups vs the hand-rolled forward
+substitution: **×9.7** at `n = 500`, **×14.6** at `n = 1000`.  The
+hand-rolled fallback is preserved for small grids and for
+non-BlasFloat element types (`BigFloat`, `Sym`, `ForwardDiff.Dual`).
+
+**ALV cracks roadmap** : new file
+`src/Viscoelasticity/cracks_alv.jl` documents the planned
+`cod_kernel_alv` / `compliance_contribution_alv` API, the time-space
+decoupling formulas for pure penny / interface-stiffness cracks in
+iso ALV matrices, and the integration points with the existing
+`CrackDensity` amount in `Schemes`.  Implementation is scheduled for
+v0.6.1.
+
 ## v0.5.3 — Non-uniform time grid + multi-layer ALV stability + iso fast path
 
 **Bug fix (membrane interface convention)** : when v0.5.2 introduced

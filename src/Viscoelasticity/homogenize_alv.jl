@@ -117,6 +117,17 @@ function _inclusion_alv_quantities(geom, C_r_law,
         αβ_N_dut = dilute_contribution_alv_iso(αβ_E, αβ_0, αβ_P)
         A_dut = _iso_blocks(αβ_A_dut)
         N_dut = _iso_blocks(αβ_N_dut)
+    elseif _is_ti_block(C_r) && _is_ti_block(C_0) && _is_ti_block(P_r)
+        # TI fast path: shared canonical axis e_3 across phase, matrix
+        # and Hill kernel.  Reduces the dilute concentration to a
+        # (2n)×(2n) block-Volterra inverse + 2 scalar Volterra inverses.
+        ℓ_E = _ti_pair(C_r)
+        ℓ_0 = _ti_pair(C_0)
+        ℓ_P = _ti_pair(P_r)
+        ℓ_A_dut = dilute_concentration_alv_ti(ℓ_E, ℓ_0, ℓ_P)
+        ℓ_N_dut = dilute_contribution_alv_ti(ℓ_E, ℓ_0, ℓ_P)
+        A_dut = _ti_blocks(ℓ_A_dut)
+        N_dut = _ti_blocks(ℓ_N_dut)
     else
         A_dut = dilute_concentration_alv(C_r, C_0, P_r)
         N_dut = dilute_contribution_alv(C_r, C_0, P_r)
@@ -178,6 +189,27 @@ function _try_iso_pairs(matrices::AbstractVector{<:AbstractMatrix})
     return out
 end
 
+"""
+    _try_ti_tuples(matrices) -> Vector{NTuple{6, Matrix}} or nothing
+
+If every matrix passes the TI-form check (`_is_ti_block`), return a
+`Vector` of 6-tuples of `n×n` Walpole parameter matrices extracted
+from each.  Otherwise return `nothing`.
+
+Iso block matrices automatically satisfy the TI test (iso ⊂ TI), so a
+mixed iso/TI phase setup with the canonical axis works.
+"""
+function _try_ti_tuples(matrices::AbstractVector{<:AbstractMatrix})
+    T = isempty(matrices) ? Float64 : eltype(matrices[1])
+    isempty(matrices) && return NTuple{6, Matrix{T}}[]
+    out = Vector{NTuple{6, Matrix{T}}}()
+    for M in matrices
+        _is_ti_block(M) || return nothing
+        push!(out, _ti_pair(M))
+    end
+    return out
+end
+
 # ── Dispatch table on scheme types ──────────────────────────────────────────
 
 function _homogenize_alv_dispatch(::RVE, ::Voigt, ::Symbol, ::AbstractVector,
@@ -187,6 +219,11 @@ function _homogenize_alv_dispatch(::RVE, ::Voigt, ::Symbol, ::AbstractVector,
     if iso !== nothing
         αβ_eff = voigt_alv_iso(iso, [f_M; fractions])
         return _iso_blocks(αβ_eff)
+    end
+    ti = _try_ti_tuples(C_phases)
+    if ti !== nothing
+        ℓ_eff = voigt_alv_ti(ti, [f_M; fractions])
+        return _ti_blocks(ℓ_eff)
     end
     return voigt_alv(C_phases, [f_M; fractions])
 end
@@ -198,6 +235,11 @@ function _homogenize_alv_dispatch(::RVE, ::Reuss, ::Symbol, ::AbstractVector,
     if iso !== nothing
         αβ_eff = reuss_alv_iso(iso, [f_M; fractions])
         return _iso_blocks(αβ_eff)
+    end
+    ti = _try_ti_tuples(C_phases)
+    if ti !== nothing
+        ℓ_eff = reuss_alv_ti(ti, [f_M; fractions])
+        return _ti_blocks(ℓ_eff)
     end
     return reuss_alv(C_phases, [f_M; fractions])
 end
@@ -211,6 +253,12 @@ function _homogenize_alv_dispatch(::RVE, ::Dilute, ::Symbol, ::AbstractVector,
         αβ_eff = dilute_alv_iso(αβ_0, iso_contribs, fractions)
         return _iso_blocks(αβ_eff)
     end
+    ti_contribs = _try_ti_tuples(contribs)
+    if ti_contribs !== nothing && _is_ti_block(C_0)
+        ℓ_0 = _ti_pair(C_0)
+        ℓ_eff = dilute_alv_ti(ℓ_0, ti_contribs, fractions)
+        return _ti_blocks(ℓ_eff)
+    end
     return dilute_alv(C_0, contribs, fractions)
 end
 
@@ -222,6 +270,12 @@ function _homogenize_alv_dispatch(::RVE, ::DiluteDual, ::Symbol, ::AbstractVecto
         αβ_0 = _iso_pair(C_0)
         αβ_eff = dilute_dual_alv_iso(αβ_0, iso_contribs, fractions)
         return _iso_blocks(αβ_eff)
+    end
+    ti_contribs = _try_ti_tuples(contribs)
+    if ti_contribs !== nothing && _is_ti_block(C_0)
+        ℓ_0 = _ti_pair(C_0)
+        ℓ_eff = dilute_dual_alv_ti(ℓ_0, ti_contribs, fractions)
+        return _ti_blocks(ℓ_eff)
     end
     return dilute_dual_alv(C_0, contribs, fractions)
 end
@@ -235,6 +289,13 @@ function _homogenize_alv_dispatch(::RVE, ::MoriTanaka, ::Symbol, ::AbstractVecto
         αβ_0 = _iso_pair(C_0)
         αβ_eff = mori_tanaka_alv_iso(αβ_0, iso_A, iso_contribs, fractions, f_M)
         return _iso_blocks(αβ_eff)
+    end
+    ti_contribs = _try_ti_tuples(contribs)
+    ti_A = _try_ti_tuples(A_duts)
+    if ti_contribs !== nothing && ti_A !== nothing && _is_ti_block(C_0)
+        ℓ_0 = _ti_pair(C_0)
+        ℓ_eff = mori_tanaka_alv_ti(ℓ_0, ti_A, ti_contribs, fractions, f_M)
+        return _ti_blocks(ℓ_eff)
     end
     return mori_tanaka_alv(C_0, A_duts, contribs, fractions, f_M)
 end
@@ -253,6 +314,13 @@ function _homogenize_alv_dispatch(rve::RVE, ::Maxwell, ::Symbol,
         αβ_H_0 = _iso_pair(H_0)
         αβ_eff = maxwell_alv_iso(αβ_0, iso_contribs, fractions, αβ_H_0)
         return _iso_blocks(αβ_eff)
+    end
+    ti_contribs = _try_ti_tuples(contribs)
+    if ti_contribs !== nothing && _is_ti_block(C_0) && _is_ti_block(H_0)
+        ℓ_0 = _ti_pair(C_0)
+        ℓ_H_0 = _ti_pair(H_0)
+        ℓ_eff = maxwell_alv_ti(ℓ_0, ti_contribs, fractions, ℓ_H_0)
+        return _ti_blocks(ℓ_eff)
     end
     return maxwell_alv(C_0, contribs, fractions; H_0 = H_0)
 end

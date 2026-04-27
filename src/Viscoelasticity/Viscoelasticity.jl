@@ -39,7 +39,7 @@ using ..Core
 const MFH_Core = Core
 
 import ..Elasticity
-import ..Elasticity: tens_UA, tens_VA, Ellipsoid, Spheroid
+import ..Elasticity: tens_UA, tens_VA, tens_IA, Ellipsoid, Spheroid
 import ..LayeredSpheres
 using ..LayeredSpheres: LayeredSphere, layer_radius, layer_modulus,
                          layer_interface, AbstractInterface, PerfectInterface,
@@ -58,9 +58,11 @@ include("conversions.jl")
 include("hill_alv.jl")
 include("schemes_alv.jl")
 include("iso_schemes_alv.jl")
+include("ti_schemes_alv.jl")
 include("schemes_alv_sc.jl")
 include("layered_alv.jl")
 include("homogenize_alv.jl")
+include("order2_alv.jl")
 
 # ── Exports ─────────────────────────────────────────────────────────────────
 export AbstractViscoLaw, ViscoLaw, VALID_VISCO_MODES
@@ -69,6 +71,7 @@ export maxwell_relaxation, kelvin_creep, maxwell_iso, kelvin_iso, heaviside_law
 export trapezoidal_matrix
 export volterra_inverse, volterra_product, volterra_divide, volterra_left_divide
 export iso_params_from_blocks, iso_blocks_from_params
+export ti_params_from_blocks, ti_blocks_from_params
 export hill_kernel
 export dilute_concentration_alv, dilute_contribution_alv
 export voigt_alv, reuss_alv, dilute_alv, dilute_dual_alv
@@ -76,9 +79,18 @@ export mori_tanaka_alv, maxwell_alv
 export voigt_alv_iso, reuss_alv_iso, dilute_alv_iso, dilute_dual_alv_iso
 export mori_tanaka_alv_iso, maxwell_alv_iso
 export dilute_concentration_alv_iso, dilute_contribution_alv_iso
+export voigt_alv_ti, reuss_alv_ti, dilute_alv_ti, dilute_dual_alv_ti
+export mori_tanaka_alv_ti, maxwell_alv_ti
+export dilute_concentration_alv_ti, dilute_contribution_alv_ti
 export self_consistent_alv
 export bulk_localization_alv, bulk_state_seq_alv, shear_localization_alv
 export strain_strain_loc_alv, stiffness_contribution_alv
 export homogenize_alv, has_visco_property
+export iso_order2_params_from_blocks, iso_order2_blocks_from_params
+export hill_kernel_order2
+export voigt_alv_order2, reuss_alv_order2, dilute_alv_order2,
+       dilute_dual_alv_order2, mori_tanaka_alv_order2, maxwell_alv_order2
+export dilute_concentration_alv_order2, dilute_contribution_alv_order2
+export homogenize_alv_order2
 
 end # module
