@@ -1,15 +1,10 @@
 # =============================================================================
 #  sensitivities.jl — autodiff wrappers around `homogenize`.
 #
-#  Declares the public stubs `derivative`, `gradient`, `jacobian` and
-#  `sensitivity`. Concrete methods are provided by the weak extension
-#  `MeanFieldHomForwardDiffExt` activated by `using ForwardDiff`; without
-#  ForwardDiff loaded, calls fall through to the no-method case and the
-#  caller gets a clear error.
-#
-#  The indirection keeps the package lightweight for users who never need
-#  autodiff and matches the pattern already used for NonlinearSolve and
-#  SymPy.
+#  ForwardDiff is now a strong dependency (it is also used by the
+#  built-in Newton-Raphson SC solver in `_solve_sc(::NewtonDefault, …)`)
+#  so the concrete methods live directly in this file rather than in a
+#  weak extension.
 # =============================================================================
 
 """
@@ -33,7 +28,17 @@ the extension loaded raises an explicit error pointing at the extension.
 
 See also [`gradient`](@ref), [`jacobian`](@ref), [`sensitivity`](@ref).
 """
-function derivative end
+function derivative(rve::RVE, scheme::HomogenizationScheme,
+                    p::AbstractParameter;
+                    output::Symbol = :C, indexer = identity, kw...)
+    x₀ = get_param(rve, p)
+    f = x -> begin
+        rve′ = set_param(rve, p, x)
+        out  = homogenize(rve′, scheme; property = output, kw...)
+        return indexer(out)
+    end
+    return ForwardDiff.derivative(f, x₀)
+end
 
 """
     gradient(rve, scheme, params::AbstractVector{<:AbstractParameter};
@@ -49,7 +54,23 @@ rule).
 
 Without `using ForwardDiff`: error.
 """
-function gradient end
+function gradient(rve::RVE, scheme::HomogenizationScheme,
+                  ps::AbstractVector{<:AbstractParameter};
+                  output::Symbol = :C, indexer = identity,
+                  chunk = nothing, kw...)
+    x₀ = [get_param(rve, p) for p in ps]
+    f = xs -> begin
+        rve′ = _set_many(rve, ps, xs)
+        out  = homogenize(rve′, scheme; property = output, kw...)
+        return indexer(out)
+    end
+    if chunk === nothing
+        return ForwardDiff.gradient(f, x₀)
+    else
+        cfg = ForwardDiff.GradientConfig(f, x₀, chunk)
+        return ForwardDiff.gradient(f, x₀, cfg)
+    end
+end
 
 """
     jacobian(rve, scheme, params::AbstractVector{<:AbstractParameter};
@@ -65,7 +86,33 @@ via `get_array` then `vec`.
 
 Without `using ForwardDiff`: error.
 """
-function jacobian end
+function jacobian(rve::RVE, scheme::HomogenizationScheme,
+                  ps::AbstractVector{<:AbstractParameter};
+                  output::Symbol = :C, indexer = identity,
+                  chunk = nothing, kw...)
+    x₀ = [get_param(rve, p) for p in ps]
+    f = xs -> begin
+        rve′ = _set_many(rve, ps, xs)
+        out  = homogenize(rve′, scheme; property = output, kw...)
+        return _flatten_for_jacobian(indexer(out))
+    end
+    if chunk === nothing
+        return ForwardDiff.jacobian(f, x₀)
+    else
+        cfg = ForwardDiff.JacobianConfig(f, x₀, chunk)
+        return ForwardDiff.jacobian(f, x₀, cfg)
+    end
+end
+
+# Single-parameter convenience: pass one AbstractParameter, return jacobian
+# along that single dimension (still a Matrix of size (length(output_flat), 1)).
+jacobian(rve::RVE, scheme::HomogenizationScheme,
+         p::AbstractParameter; kw...) =
+    jacobian(rve, scheme, [p]; kw...)
+
+_flatten_for_jacobian(x::Number)        = [x]
+_flatten_for_jacobian(x::AbstractArray) = vec(x)
+_flatten_for_jacobian(x::TensND.AbstractTens) = vec(collect(TensND.get_array(x)))
 
 """
     sensitivity(f, x₀; kind = :auto, kw...)
@@ -85,9 +132,30 @@ an exposed scalar field, etc.).
 
 Without `using ForwardDiff`: error.
 """
-function sensitivity end
+function sensitivity(f, x₀; kind::Symbol = :auto, kw...)
+    actual = kind === :auto ? _autoselect(f, x₀) : kind
+    if actual === :derivative
+        return ForwardDiff.derivative(f, x₀)
+    elseif actual === :gradient
+        return ForwardDiff.gradient(f, x₀)
+    elseif actual === :jacobian
+        wrapper = x -> _flatten_for_jacobian(f(x))
+        return ForwardDiff.jacobian(wrapper, x₀)
+    else
+        throw(ArgumentError("sensitivity: unknown kind=:$(actual); expected :derivative, :gradient or :jacobian"))
+    end
+end
 
-# Note: concrete methods are defined in `ext/MeanFieldHomForwardDiffExt.jl`
-# and become available only after `using ForwardDiff`. Calling these stubs
-# without the extension loaded raises a `MethodError` — load `ForwardDiff`
-# to resolve.
+function _autoselect(f, x₀::Number)
+    y = f(x₀)
+    return y isa Number ? :derivative : :jacobian
+end
+
+function _autoselect(f, x₀::AbstractVector)
+    y = f(x₀)
+    return y isa Number ? :gradient : :jacobian
+end
+
+_autoselect(f, x₀) = throw(ArgumentError(
+    "sensitivity: cannot autoselect kind for x₀ of type $(typeof(x₀)); pass `kind=:derivative|:gradient|:jacobian`"
+))

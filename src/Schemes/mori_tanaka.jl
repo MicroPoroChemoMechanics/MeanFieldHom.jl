@@ -50,8 +50,16 @@ function _mt_4(rve, C₀::TensND.AbstractTens{4, 3}, ::Val{p}; kw...) where {p}
             A_dil = _phase_dilute_concentration(rve, name, p, C₀; kw...)
             A_avg += f * A_dil
             Nsum  += f * ((P_i - C₀) ⊡ A_dil)
-        else  # CrackDensity — A_dil singular, fall back to dilute crack term
-            Nsum += _phase_stiffness_contribution(rve, name, p, C₀; kw...)
+        else  # CrackDensity — ECHOES `B · A^{-1}` form.
+            # Strain-Stress contribution: A_crack = ε·sym(H_c)·C₀.
+            # Stress-Stress contribution: 0 (traction-free).
+            # Stiffness contribution into Nsum: ΔC_crack = -ε·C₀·sym(H_c)·C₀
+            # (same as the additive form).  The non-trivial change is the
+            # crack term in the denominator A_avg, which prevents the
+            # additive form's spurious percolation at moderate density.
+            H = _phase_compliance_contribution(rve, name, p, C₀; kw...)
+            A_avg += H ⊡ C₀
+            Nsum  += _phase_stiffness_contribution(rve, name, p, C₀; kw...)
         end
     end
     return C₀ + Nsum ⊡ inv(A_avg)
@@ -71,8 +79,10 @@ function _mt_2(rve, K₀::TensND.AbstractTens{2, 3}, ::Val{p}; kw...) where {p}
             A_dil = _phase_dilute_concentration(rve, name, p, K₀; kw...)
             A_avg += f * A_dil
             Nsum  += f * ((P_i - K₀) ⋅ A_dil)
-        else
-            Nsum += _phase_stiffness_contribution(rve, name, p, K₀; kw...)
+        else  # CrackDensity — ECHOES `B · A^{-1}` form.
+            R = _phase_compliance_contribution(rve, name, p, K₀; kw...)
+            A_avg += R ⋅ K₀
+            Nsum  += _phase_stiffness_contribution(rve, name, p, K₀; kw...)
         end
     end
     return K₀ + Nsum ⋅ inv(A_avg)

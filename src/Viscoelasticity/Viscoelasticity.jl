@@ -42,7 +42,8 @@ import ..Elasticity
 import ..Elasticity: tens_UA, tens_VA, tens_IA, Ellipsoid, Spheroid
 import ..Cracks
 using ..Cracks: EllipticCrack, RibbonCrack, PennyCrack,
-                 crack_basis, crack_normal, aspect_ratio
+                 crack_basis, crack_normal, aspect_ratio,
+                 semi_minor, semi_major
 import ..LayeredSpheres
 using ..LayeredSpheres: LayeredSphere, layer_radius, layer_modulus,
                          layer_interface, AbstractInterface, PerfectInterface,
@@ -54,12 +55,14 @@ using ..Schemes: RVE, HomogenizationScheme, Voigt, Reuss, Dilute, DiluteDual,
                   PonteCastanedaWillis, DifferentialScheme,
                   Proportional, Sequential, CustomPath,
                   UniformDistribution,
+                  AndersonDefault, NewtonDefault,
                   matrix_phase,
                   inclusion_phase_names, matrix_property, phase_property,
                   volume_fraction, matrix_volume_fraction,
                   AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize,
                   phase_symmetrize,
                   VolumeFraction, CrackDensity, amount_value
+using ForwardDiff
 
 include("visco_law.jl")
 include("trapezoidal.jl")
@@ -72,6 +75,7 @@ include("ti_schemes_alv.jl")
 include("ortho_schemes_alv.jl")
 include("alv_kernel_types.jl")
 include("schemes_alv_sc.jl")
+include("schemes_alv_sc_newton.jl")
 include("schemes_alv_extra.jl")
 include("layered_alv.jl")
 include("homogenize_alv.jl")

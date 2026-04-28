@@ -1,5 +1,65 @@
 # Changelog
 
+## v0.7.0 — Sevostianov interface stiffness, ECHOES SC body, Newton-Raphson SC
+
+**Sevostianov-style crack interface stiffness** is now supported in
+all three pipelines (elasticity, conductivity, ALV).  The COD
+compliance becomes `B_eff = B · (𝟙 + b·K·B)^{-1}` with `K` a
+3×3 spring-like 2-tensor in elasticity (kept as `:K_interface` on the
+crack phase), a scalar Kapitza conductance in conductivity
+(`:α_interface`), and a `ViscoLaw`-valued kernel in ALV (a pair
+`(:Rn, :Rt)` of normal/tangential relaxation laws).  Validation
+scripts `scripts/44_alv_cracks_interface.jl` and
+`scripts/45_cracks_iso_interface.jl` cross-check the implementation
+against ECHOES C++ via PyCall (≤ 3·10⁻⁴ relative error across MT, SC,
+ASC, PCW, Maxwell, Differential at d = 0.30 ALV / d = 0.50 elastic).
+
+**MT and SC schemes now match ECHOES `B·A^{-1}` form for cracks**
+(elastic, conduction, ALV).  The textbook symmetric Hill / Budiansky
+SC iteration map collapses crack-rich RVEs to the trivial percolated
+fixed point and the additive MT for cracks similarly percolates well
+below the ECHOES-reported moduli.  Tracing the C++ reference shows
+that ECHOES' `compute_strain_Stress` returns `A_α · S_n` for solid
+inclusions but the bare `H_c` (no `S_n` factor) for void cracks, so
+the trailing `S_n` cancellation only holds for solid-only RVEs.  The
+MFH MT and SC bodies now mirror this :
+
+```julia
+A_E = (Σ_solids f·sym(A_α(C_n))) · S_n + Σ_cracks ε · sym(H_c(C_n))
+B_E = (Σ_solids f·sym(C_α·A_α(C_n))) · S_n     # cracks → 0 (traction-free)
+C_eff = B_E · A_E^{-vol}
+```
+
+Fix applied symmetrically to MT (`mori_tanaka.jl`), elastic SC
+(`self_consistent.jl`), conduction SC (same dispatcher), and ALV SC
+(`schemes_alv_sc.jl::_sc_alv_step_echoes_form`).  Brings SC for cracks
+from 74 % off ECHOES to 2·10⁻³ at d = 0.50, and ALV SC + interface
+stiffness from 1 % off to 1.4·10⁻⁴ at d = 0.30.
+
+**ForwardDiff promoted to a strong dependency.**  The four
+`derivative` / `gradient` / `jacobian` / `sensitivity` autodiff
+entry points are now available out of the box (no `using ForwardDiff`
+needed) — the previous weak extension `MeanFieldHomForwardDiffExt` is
+removed.  This also enables the new built-in Newton-Raphson SC solver
+below.
+
+**Built-in Newton-Raphson SC solver** (`SelfConsistent(; algorithm =
+NewtonDefault())`).  Replaces the prior weak-extension stub: the
+solver now ships with the package and uses `ForwardDiff.jacobian` on
+the iso / TI / ortho / aniso canonical components of the running
+estimate.  Quadratic convergence (typically 5–10 iterations vs ~100
+for `AndersonDefault` Picard) and a backtracking line search make it
+robust on high-contrast configurations.  Falls back to a single
+Picard step when the line search exhausts.  Available for both
+[`SelfConsistent`](@ref) and [`AsymmetricSelfConsistent`](@ref).
+
+**Eigenvalue guard `_sc_pd_guard`** for the SC running estimate :
+mirrors ECHOES `homogenization_scheme.h::evaluate` by detecting a
+non-positive-definite running estimate and resetting it to a tiny
+positive baseline before each step.  Prevents Picard / Newton from
+collapsing to the trivial `C = 0` fixed point near the percolation
+threshold.
+
 ## v0.6.0 — TI ALV fast path, order-2 ALV, BLAS Volterra, ALV cracks roadmap
 
 **TI Walpole-basis fast path** for ALV homogenisation : when every

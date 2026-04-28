@@ -59,8 +59,8 @@
 end
 
 """
-    cod_kernel_alv(crack::EllipticCrack, C_M_law::ViscoLaw, times)
-        -> NamedTuple
+    cod_kernel_alv(crack::EllipticCrack, C_M_law::ViscoLaw, times;
+                   Rn = nothing, Rt = nothing) -> NamedTuple
 
 Discrete ALV COD-tensor data for a penny crack `η = 1` in an isotropic
 ALV matrix.  Returns the named tuple `(B_n = …, B_t = …)` of two
@@ -68,10 +68,30 @@ ALV matrix.  Returns the named tuple `(B_n = …, B_t = …)` of two
 `B̃[i,j]` approximates the COD coefficient at the time pair
 `(t_i, t_j)`.
 
+# Interface stiffness (Sevostianov-style spring-like interface)
+
+When the crack carries finite **interface stiffness** kernels `Rn(t,t')`
+(normal) and `Rt(t,t')` (tangential), pass them as scalar `ViscoLaw`s
+through the `Rn` / `Rt` keyword arguments.  The traction-free COD
+matrices `B̃_n`, `B̃_t` are then post-corrected via the algebraic identity
+
+```
+B̃_eff = (b · K + B̃^{-1})^{-vol} = B̃ ∘ (𝟙 + b · K ∘ B̃)^{-vol}
+```
+
+(see [@sevostianovIJSS2002], [@barthelemyIJES2019]) where `b = semi_minor`
+of the elliptic crack.  Limits :
+
+* `Rn / Rt = nothing` (default) → traction-free penny limit, recovers
+  the existing `B_n`, `B_t`.
+* `Rn, Rt → ∞` (rigid bonding) → `B̃_eff_n, B̃_eff_t → 0` (no opening).
+
 Throws if the matrix law is not iso or the crack is not a penny.
 """
 function cod_kernel_alv(crack::MFH_Core.AbstractCrack, C_M_law::ViscoLaw,
-                         times::AbstractVector{<:Real})
+                         times::AbstractVector{<:Real};
+                         Rn::Union{Nothing, ViscoLaw} = nothing,
+                         Rt::Union{Nothing, ViscoLaw} = nothing)
     # Build the matrix relaxation block matrix (invert if law is :creep)
     # and check iso.
     C_M = _trapezoidal_relaxation(C_M_law, times, 6)
@@ -79,21 +99,69 @@ function cod_kernel_alv(crack::MFH_Core.AbstractCrack, C_M_law::ViscoLaw,
         throw(ArgumentError("cod_kernel_alv: matrix law is not iso (only iso ALV is supported)"))
     α, β = _iso_pair(C_M)
 
-    # Penny check (η = 1).  We cover the closed-form penny formulas; the
-    # general elliptic / ribbon ALV closed forms can be added later.
+    # Penny check (η = 1).
     η = aspect_ratio(crack)
     isapprox(η, 1.0; atol = 1e-12) ||
         throw(ArgumentError("cod_kernel_alv: only penny cracks (η = 1) are currently supported"))
 
-    # Volterra rationals for B̃_n and B̃_t.
+    # Volterra rationals for B̃_n and B̃_t — traction-free penny limit.
     α_p_2β = α .+ 2β
     α_p_βh = α .+ β ./ 2
     α_p_β  = α .+ β
-    βα1 = β * α_p_βh                   # β · (α + β/2)
-    βα2 = β * α_p_β                    # β · (α + β)
+    βα1 = β * α_p_βh
+    βα2 = β * α_p_β
     B_n = (8 / (3π)) .* volterra_left_divide(βα1, α_p_2β)
     B_t = (32 / (9π)) .* volterra_left_divide(βα2, α_p_2β)
+
+    # Interface-stiffness post-correction.
+    if Rn !== nothing || Rt !== nothing
+        B_n, B_t = _apply_interface_stiffness_alv(B_n, B_t, Rn, Rt, times,
+                                                    semi_minor(crack))
+    end
     return (B_n = B_n, B_t = B_t)
+end
+
+"""
+    _apply_interface_stiffness_alv(B_n, B_t, Rn, Rt, times, b)
+
+Apply the interface-stiffness post-correction
+`B̃_eff = B̃ ∘ (𝟙 + b · K ∘ B̃)^{-vol}`
+to the traction-free COD matrices `B_n`, `B_t`.  When one of the two
+interface laws is `nothing`, the corresponding component is left
+untouched (modelling the traction-free direction).
+"""
+function _apply_interface_stiffness_alv(B_n::AbstractMatrix, B_t::AbstractMatrix,
+                                          Rn::Union{Nothing, ViscoLaw},
+                                          Rt::Union{Nothing, ViscoLaw},
+                                          times::AbstractVector{<:Real},
+                                          b::Real)
+    n = size(B_n, 1)
+    Iₙ = Matrix{eltype(B_n)}(LinearAlgebra.I, n, n)
+    if Rn !== nothing
+        K_n = _trapezoidal_relaxation_scalar(Rn, times)
+        KB  = K_n * B_n                        # b·K_n·B_n  (Volterra product)
+        @. KB *= b
+        @. KB += Iₙ                            # 𝟙 + b·K_n·B_n
+        B_n  = B_n * volterra_inverse(KB; block_size = 1)
+    end
+    if Rt !== nothing
+        K_t = _trapezoidal_relaxation_scalar(Rt, times)
+        KB  = K_t * B_t
+        @. KB *= b
+        @. KB += Iₙ
+        B_t  = B_t * volterra_inverse(KB; block_size = 1)
+    end
+    return B_n, B_t
+end
+
+# Build the scalar (n × n) trapezoidal matrix of an interface ViscoLaw,
+# inverting if the law is in `:creep` mode (so the user can pass a creep
+# kernel and the algebra still expects a relaxation matrix).
+function _trapezoidal_relaxation_scalar(law::ViscoLaw,
+                                          times::AbstractVector{<:Real})
+    M = trapezoidal_matrix(law, times)
+    visco_mode(law) === :creep && return volterra_inverse(M; block_size = 1)
+    return M
 end
 
 """
@@ -116,10 +184,12 @@ Budiansky-O'Connell density factor is applied separately via
 """
 function compliance_contribution_alv(crack::MFH_Core.AbstractCrack,
                                        C_M_law::ViscoLaw,
-                                       times::AbstractVector{<:Real})
+                                       times::AbstractVector{<:Real};
+                                       Rn::Union{Nothing, ViscoLaw} = nothing,
+                                       Rt::Union{Nothing, ViscoLaw} = nothing)
     _crack_axis_is_e3(crack) ||
         throw(ArgumentError("compliance_contribution_alv: only crack normal n̂ = e_3 is currently supported"))
-    cod = cod_kernel_alv(crack, C_M_law, times)
+    cod = cod_kernel_alv(crack, C_M_law, times; Rn = Rn, Rt = Rt)
     n = size(cod.B_n, 1)
     T = promote_type(eltype(cod.B_n), eltype(cod.B_t))
     Z = zeros(T, n, n)
@@ -176,7 +246,9 @@ The compliance contribution is recomputed from the iso parameters of
 [`compliance_contribution_alv`](@ref)).
 """
 function stiffness_contribution_alv_at(crack::MFH_Core.AbstractCrack,
-                                          C_ref::AbstractMatrix)
+                                          C_ref::AbstractMatrix;
+                                          Rn_mat::Union{Nothing, AbstractMatrix} = nothing,
+                                          Rt_mat::Union{Nothing, AbstractMatrix} = nothing)
     # Wrap C_ref in a synthetic ViscoLaw for compliance_contribution_alv —
     # it only inspects the iso (α, β) parameters of the trapezoidal of the
     # law, so we just need a "dummy" law whose trapezoidal equals C_ref.
@@ -191,6 +263,24 @@ function stiffness_contribution_alv_at(crack::MFH_Core.AbstractCrack,
     βα2 = β * α_p_β
     B_n = (8 / (3π)) .* volterra_left_divide(βα1, α_p_2β)
     B_t = (32 / (9π)) .* volterra_left_divide(βα2, α_p_2β)
+    # Optional Sevostianov interface-stiffness correction.  Caller
+    # supplies the **already-discretised** scalar interface matrices
+    # `Rn_mat`, `Rt_mat` (n × n Volterra) — the iteration of SC against
+    # the running estimate does not need to re-trapezoidalise the
+    # interface laws each pass.
+    if Rn_mat !== nothing || Rt_mat !== nothing
+        n_t = size(α, 1)
+        Iₙ = Matrix{eltype(α)}(LinearAlgebra.I, n_t, n_t)
+        b = semi_minor(crack)
+        if Rn_mat !== nothing
+            KB = Rn_mat * B_n; @. KB *= b; @. KB += Iₙ
+            B_n = B_n * volterra_inverse(KB; block_size = 1)
+        end
+        if Rt_mat !== nothing
+            KB = Rt_mat * B_t; @. KB *= b; @. KB += Iₙ
+            B_t = B_t * volterra_inverse(KB; block_size = 1)
+        end
+    end
     n = size(α, 1)
     T = eltype(α)
     Z = zeros(T, n, n)

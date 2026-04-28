@@ -166,17 +166,98 @@ For TI (axis = e₃), the 4-tensor Walpole parameters
 
 ## 5. Cracks in ALV
 
+### 5.1 Traction-free penny crack
+
 ```julia
 add_phase!(rve, :C, PennyCrack(1.0), Dict(:C => law_M);
             density = 0.05, symmetrize = :iso)
 C_eff_cracks = homogenize_alv(rve, MoriTanaka(), :C; times = times)
 ```
 
-`PennyCrack`, `EllipticCrack` and `RibbonCrack` are accepted (penny
-limit: traction-free; the interface-stiffness extension `Rn(t,t')`,
-`Rt(t,t')` is on the roadmap). The dispatcher pre-aggregates crack
-stiffness and compliance contributions and routes them through the
-appropriate scheme branch.
+`PennyCrack`, `EllipticCrack` and `RibbonCrack` are accepted. The
+dispatcher pre-aggregates crack stiffness and compliance contributions
+and routes them through the appropriate scheme branch.
+
+### 5.2 Cracks with finite interface stiffness (Sevostianov)
+
+For a flat crack carrying a **spring-like interface stiffness** with
+time-dependent normal `Rn(t,t')` and tangential `Rt(t,t')` ageing
+kernels, attach the interface laws as `:Rn` / `:Rt` properties on the
+crack phase :
+
+```julia
+# Interface kernels — same Maxwell-iso ageing form as the matrix law
+R_n_kernel(t, tp) = (1 + 0.1 * tp^0.4) *
+                     (1.0e10 + (2.0e10 - 1.0e10) * exp(-(t - tp) / 2.0))
+R_t_kernel(t, tp) = (1 + 0.1 * tp^0.2) *
+                     (1.0e10 + (1.0e10 - 1.0e10) * exp(-(t - tp) / 3.0))
+law_Rn = ViscoLaw(R_n_kernel, :relaxation)
+law_Rt = ViscoLaw(R_t_kernel, :relaxation)
+
+add_phase!(rve, :CRACK, PennyCrack(1.0),
+            Dict(:C => law_M, :Rn => law_Rn, :Rt => law_Rt);
+            density = 0.05, symmetrize = :iso)
+
+C_eff = homogenize_alv(rve, MoriTanaka(), :C; times = times)
+```
+
+Behind the scenes the COD matrices `B̃_n`, `B̃_t` are post-corrected via
+the Sevostianov spring identity
+
+```math
+\widetilde{\mathbf B}_{\text{eff}}
+   = (b\,\mathbb K + \widetilde{\mathbf B}^{-1})^{-\text{vol}}
+   = \widetilde{\mathbf B} \circ
+     (\mathbb 1 + b\,\mathbb K \circ \widetilde{\mathbf B})^{-\text{vol}},
+```
+
+where `b = semi_minor(crack)` is the in-plane semi-axis. Limits :
+
+| Interface | Behaviour                                  |
+|-----------|--------------------------------------------|
+| `Rn = Rt = nothing`   | traction-free penny — `B̃` unchanged |
+| `Rn, Rt → 0`          | recovers traction-free                |
+| `Rn, Rt → ∞` (rigid)  | `B̃_eff → 0`, cracks behave as bonded |
+
+### 5.3 Notes on Mori-Tanaka and Self-Consistent for cracks
+
+Two well-established but **distinct** formulations co-exist in the
+literature for crack-bearing RVEs :
+
+* **Additive (Budiansky-O'Connell)** : MT adds the crack stiffness
+  contribution `(4π/3)·ε·Ñ` to the numerator with a zero
+  contribution to the denominator (cracks have no volume in the
+  strain-concentration sum).  At convergence SC writes
+  `J_eff = J_M + ε·H̃(C_eff)`.  This is what MFH currently
+  implements.
+
+* **Multiplicative (ECHOES)** : MT adds `(4π/3)·ε·H̃·C_0` to the
+  *denominator* via the strain-strain concentration tensor
+  (`strain_Strain = H̃·C_0`).  At convergence SC writes
+  `C_eff = (B_E)·(A_E)^{-vol}` where the cracks contribute to `A_E`.
+
+The two formulations differ at finite crack density (they coincide in
+the dilute limit `ε → 0`).  At `d = 0.30, traction-free` for example,
+MFH MT gives `ε_xx(t→∞) ≈ 0.481` while ECHOES MT gives `0.559`.
+PCW happens to coincide between the two implementations (at least
+numerically through the configurations exercised by
+`scripts/44_alv_cracks_interface.jl`).
+
+The MFH MT and SC additive forms are kept for internal consistency
+with the (also-additive) MFH elastic MT.  Switching all four MFH
+schemes (elastic, conduction, ALV, ALV-cracks) to the multiplicative
+ECHOES form simultaneously is left to a follow-up PR — it requires a
+coordinated refactor of `Schemes/contribution_helpers.jl`.
+
+ECHOES C++ cross-check : `scripts/44_alv_cracks_interface.jl` runs the
+same configuration through both implementations.  At low density the
+two MT and SC variants agree numerically with PCW (`rtol ≤ 1e-3`);
+at moderate density (`d ≥ 0.20`) the additive vs multiplicative
+discrepancy becomes visible (a few % to ~14% depending on density).
+
+A static (non-ageing) elastic + conductivity crack benchmark with
+matrix-only interface stiffness is in
+`scripts/45_cracks_iso_interface.jl`.
 
 | Scheme                         | Crack treatment                                     |
 |--------------------------------|-----------------------------------------------------|

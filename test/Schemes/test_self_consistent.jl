@@ -102,10 +102,17 @@ end
     @test df > 0
 end
 
-@testset "SelfConsistent — NewtonDefault errors without NonlinearSolve" begin
+@testset "SelfConsistent — NewtonDefault works out of the box (ForwardDiff)" begin
+    # Since v0.7.0 ForwardDiff is a strong dependency and the built-in
+    # `NewtonDefault` SC solver ships with the package — quadratic
+    # convergence on iso / TI / ortho canonical components.
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    @test_throws ErrorException homogenize(rve, SelfConsistent(; algorithm = NewtonDefault()))
+    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+               fraction = 0.3)
+    C_anderson = homogenize(rve, SelfConsistent(; algorithm = AndersonDefault()))
+    C_newton   = homogenize(rve, SelfConsistent(; algorithm = NewtonDefault()))
+    @test isapprox(C_anderson, C_newton; atol = 1e-6, rtol = 1e-6)
 end
 
 @testset "SelfConsistent / ASC — Symbol shortcuts" begin

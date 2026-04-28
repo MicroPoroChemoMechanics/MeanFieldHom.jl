@@ -41,7 +41,9 @@ function _phase_stiffness_contribution(
         N   = MFH_Core.stiffness_contribution(geom, P_i, P₀_proj; kw...)
         return amount_value(a) * _apply_symmetrize(N, sym)
     else  # CrackDensity
-        N = MFH_Core.stiffness_contribution(geom, P₀_proj; kw...)
+        K_int = _crack_interface_K4(rve, name)
+        N = MFH_Core.stiffness_contribution(geom, P₀_proj;
+                                             K_interface = K_int, kw...)
         return _apply_symmetrize(MFH_Core.delta_stiffness(geom, N, amount_value(a)), sym)
     end
 end
@@ -58,9 +60,30 @@ function _phase_stiffness_contribution(
         N   = MFH_Core.conductivity_contribution(geom, P_i, P₀; kw...)
         return amount_value(a) * _apply_symmetrize(N, sym)
     else
-        N = MFH_Core.conductivity_contribution(geom, P₀; kw...)
+        α_int = _crack_interface_α(rve, name)
+        N = MFH_Core.conductivity_contribution(geom, P₀;
+                                                α_interface = α_int, kw...)
         return _apply_symmetrize(MFH_Core.delta_conductivity(geom, N, amount_value(a)), sym)
     end
+end
+
+# ── Helpers : pull optional interface-stiffness properties from the RVE ────
+#
+# A crack phase can carry an optional spring-like interface stiffness via
+# either of two property keys :
+#   * `:K_interface`  for elasticity   (a `Tens{2,3}` 3×3 symmetric)
+#   * `:α_interface`  for conductivity (a `Real` scalar conductance)
+# Returns `nothing` when the property is absent — the existing
+# traction-free / free-flux pipeline is then used unchanged.
+
+function _crack_interface_K4(rve::RVE, name::Symbol)
+    props = rve.phases[name].properties
+    return haskey(props, :K_interface) ? props[:K_interface] : nothing
+end
+
+function _crack_interface_α(rve::RVE, name::Symbol)
+    props = rve.phases[name].properties
+    return haskey(props, :α_interface) ? props[:α_interface] : nothing
 end
 
 # ── Compliance / resistivity contribution ────────────────────────────────────
@@ -83,7 +106,8 @@ function _phase_compliance_contribution(
         H   = compliance_contribution(geom, P_i, P₀; kw...)
         return amount_value(a) * _apply_symmetrize(H, sym)
     else
-        H = compliance_contribution(geom, P₀; kw...)
+        K_int = _crack_interface_K4(rve, name)
+        H = compliance_contribution(geom, P₀; K_interface = K_int, kw...)
         return _apply_symmetrize(delta_compliance(geom, H, amount_value(a)), sym)
     end
 end
@@ -100,7 +124,8 @@ function _phase_compliance_contribution(
         R   = MFH_Core.resistivity_contribution(geom, P_i, P₀; kw...)
         return amount_value(a) * _apply_symmetrize(R, sym)
     else
-        R = compliance_contribution(geom, P₀; kw...)  # 2nd-order resistivity contribution
+        α_int = _crack_interface_α(rve, name)
+        R = compliance_contribution(geom, P₀; α_interface = α_int, kw...)
         return _apply_symmetrize(delta_resistivity(geom, R, amount_value(a)), sym)
     end
 end

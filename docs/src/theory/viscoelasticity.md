@@ -69,6 +69,33 @@ matrices (one normal, one tangential compliance) times geometric
 4-tensors. From `B̃` follow the compliance contribution `H̃` and the
 stiffness contribution `Ñ = -C̃_M·H̃·C̃_M`.
 
+### Interface stiffness (Sevostianov spring-like interface)
+
+When the crack carries a finite **interface stiffness** `K(t,t')`
+(normal `Rn(t,t')`, tangential `Rt(t,t')` — a 2-tensor-valued ageing
+kernel in the local crack basis), the COD matrix is post-corrected by
+the algebraic identity
+
+```math
+\widetilde{\mathbf B}_{\text{eff}}
+   = (b\,\mathbb K + \widetilde{\mathbf B}^{-1})^{-\text{vol}}
+   = \widetilde{\mathbf B} \circ
+     (\mathbb 1 + b\,\mathbb K \circ \widetilde{\mathbf B})^{-\text{vol}},
+```
+
+where `b = semi_minor(crack)` is the in-plane semi-axis and
+`b\,\mathbb K + \widetilde{\mathbf B}^{-1}` is dimensionally consistent
+(both terms have stress units). Limits :
+
+* traction-free crack `Rn = Rt = 0`  →  `B̃_eff = B̃`
+* rigid bonding      `Rn, Rt → ∞`   →  `B̃_eff → 0`
+
+In the iso ALV case the correction collapses to two **scalar Volterra
+problems** on `B̃_n`, `B̃_t` (normal / tangential COD scalars) — same
+fast-path as the traction-free penny crack, with one extra Volterra
+inverse per direction. Reference :
+[@sevostianovIJSS2002], [@barthelemyIJES2019, §3].
+
 Schemes integrate cracks as follows:
 
 | Scheme                      | Crack treatment                                       |

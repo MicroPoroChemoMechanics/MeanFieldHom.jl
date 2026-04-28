@@ -87,16 +87,48 @@ Alias: [`B_tensor`](@ref).
 function cod_tensor(
         crack::MFH_Core.AbstractCrack,
         C₀::TensND.AbstractTens{4, 3};
+        K_interface::Union{Nothing, TensND.AbstractTens{2, 3}} = nothing,
         method::Symbol = :auto,
         abstol::Float64 = 1.0e-8,
         reltol::Float64 = 1.0e-6,
         maxiters::Int = 100_000
     )
     algo = MFH_Core._resolve_algo(Val(method), crack, C₀)
-    return _kernel(crack, C₀, algo; abstol = abstol, reltol = reltol, maxiters = maxiters)
+    B = _kernel(crack, C₀, algo; abstol = abstol, reltol = reltol, maxiters = maxiters)
+    K_interface === nothing && return B
+    return _apply_interface_stiffness(B, K_interface, semi_minor(crack))
 end
 
 const B_tensor = cod_tensor
+
+"""
+    _apply_interface_stiffness(B::Tens{2,3}, K::Tens{2,3}, b) -> Tens{2,3}
+
+Apply the Sevostianov spring-like-interface correction to the COD
+2-tensor ``\\mathbf B`` :
+
+```
+B_eff = (b · K + B^{-1})^{-1} = B · (I + b · K · B)^{-1}
+```
+
+Limits :
+* ``\\mathbf K = 0`` (traction-free)        →  `B_eff = B`
+* ``\\mathbf K \\to \\infty`` (rigid bond)   →  `B_eff = 0`
+
+Reference : [Sevostianov & Kachanov 2002](@cite sevostianov2002).
+"""
+function _apply_interface_stiffness(B::TensND.AbstractTens{2, 3},
+                                     K::TensND.AbstractTens{2, 3}, b::Real)
+    B_M = TensND.get_array(B)        # 3 × 3
+    K_M = TensND.get_array(K)
+    I3 = Matrix{eltype(B_M)}(LinearAlgebra.I, 3, 3)
+    KB = Matrix(K_M) * Matrix(B_M)
+    M  = I3 + b .* KB
+    B_eff_M = Matrix(B_M) / M
+    # Symmetrise to remove rounding drift.
+    B_eff_M = (B_eff_M + B_eff_M') ./ 2
+    return TensND.TensCanonical(B_eff_M)
+end
 
 # Order-2 (conductivity) — thermal COD scalar
 """
@@ -133,10 +165,18 @@ correspondence table.
 function cod_tensor(
         crack::MFH_Core.AbstractCrack,
         K₀::TensND.AbstractTens{2, 3};
+        α_interface::Union{Nothing, Real} = nothing,
         method::Symbol = :auto,
         kw...
     )
-    return _cod_thermal(crack, K₀)
+    b_th = _cod_thermal(crack, K₀)
+    α_interface === nothing && return b_th
+    # Sevostianov correction in the conductivity case (scalar form)
+    #   b_eff = b / (1 + a · α · b),  a = semi_minor.
+    #   α → 0   ⇒ b_eff = b (free crack);
+    #   α → ∞   ⇒ b_eff = 0 (perfectly bonded interface).
+    a = semi_minor(crack)
+    return b_th / (1 + a * α_interface * b_th)
 end
 
 # Analytical dispatch: iso vs aniso.

@@ -17,6 +17,7 @@ module Schemes
 
 using LinearAlgebra
 using TensND
+using ForwardDiff
 
 import ..Core
 using ..Core

@@ -143,7 +143,7 @@ export AndersonDefault, NewtonDefault
 export DifferentialTrajectory, Proportional, Sequential, CustomPath, DifferentialScheme
 export homogenize
 
-# ── Schemes : sensitivities (autodiff via ForwardDiff weak extension) ────────
+# ── Schemes : sensitivities (autodiff via ForwardDiff strong dependency) ────
 export AbstractParameter, AmountParameter, PropertyParameter,
     GeometryParameter, DistributionShapeParameter
 export amount, property, geometry, shape_param

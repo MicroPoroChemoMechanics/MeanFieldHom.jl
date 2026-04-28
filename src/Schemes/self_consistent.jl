@@ -45,6 +45,15 @@ concentration tensor is singular). For mixed RVEs (solid + crack) use
 [`AsymmetricSelfConsistent`](@ref) instead.
 """
 function _evaluate(rve::RVE, sc::SelfConsistent, ::Val{p}; kw...) where {p}
+    # Symmetric Hill / Budiansky SC iteration on the ECHOES `B · A^{-1}`
+    # body : crack phases contribute their compliance contribution
+    # `H_c(C_n)` to the denominator A_avg via `_phase_compliance_contribution`,
+    # and their stiffness contribution `ΔC_c(C_n)` to the numerator
+    # CA_avg (traction-free → no stress contribution from solid side).
+    # The eigenvalue guard `_sc_pd_guard` mirrors ECHOES
+    # `homogenization_scheme.h::evaluate` and prevents the iteration
+    # from collapsing to the trivial percolated fixed point at moderate
+    # density.
     P_init = matrix_property(rve, p)
     solver_kw, step_kw = _split_sc_kwargs(kw)
     step = C -> _sc_step(rve, C, p; step_kw...)
@@ -83,15 +92,29 @@ end
 # Hashin-Shtrikman lower-bound percolation behaviour for porous media.
 function _sc_step_dispatch(rve::RVE, C_n::TensND.AbstractTens{4, 3}, prop::Symbol;
                            kw...)
-    A_avg  = zero(C_n)
-    CA_avg = zero(C_n)
-    # Matrix and inclusion phases enter the SC sum on equal footing.
+    # ECHOES `homogenization_scheme.h::evaluate` body :
+    #   strain_Stress_α  = A_α(C_n) · S_n   (solid) [`compute_strain_Stress`]
+    #   strain_Stress_c  = sym(H_c(C_n))    (void crack — NO trailing S_n!)
+    #   stress_Stress_α  = C_α · strain_Stress_α
+    #   stress_Stress_c  = 0                 (traction-free)
+    # Accumulators :  A_E = Σ f_α·sym(strain_Stress_α)
+    #                 B_E = Σ f_α·sym(stress_Stress_α)
+    # Result  : C_eff = sym(B_E · A_E^{-vol}).
+    # The trailing `S_n` factor cancels between A_E and B_E for solid
+    # phases — but NOT for cracks, whose `strain_Stress` is the bare
+    # compliance contribution `H_c`.  This breaks the cancellation and
+    # gives a different fixed point than the textbook
+    # `(Σ f·C·A)·(Σ f·A)^{-1}` SC body when cracks are present.
+    A_avg   = zero(C_n)   # = Σ_solids f·sym(A_α)
+    CA_avg  = zero(C_n)   # = Σ_solids f·sym(C_α·A_α)
+    H_total = zero(C_n)   # = Σ_cracks ε·sym(H_c)
+    has_cracks = false
     for name in rve.phase_names
         if name === rve.matrix_name
             f = matrix_volume_fraction(rve)
         else
             a = rve.amounts[name]
-            a isa VolumeFraction || continue   # cracks ignored (use ASC)
+            a isa VolumeFraction || continue
             f = amount_value(a)
         end
         P_α = phase_property(rve, name, prop)
@@ -99,14 +122,33 @@ function _sc_step_dispatch(rve::RVE, C_n::TensND.AbstractTens{4, 3}, prop::Symbo
         A_avg  += f * A_dil
         CA_avg += f * (P_α ⊡ A_dil)
     end
-    return CA_avg ⊡ inv(A_avg)
+    for name in inclusion_phase_names(rve)
+        a = rve.amounts[name]
+        a isa CrackDensity || continue
+        H = _phase_compliance_contribution(rve, name, prop, C_n; kw...)
+        H_total += H
+        has_cracks = true
+    end
+    if has_cracks
+        S_n = inv(C_n)
+        A_E = (A_avg ⊡ S_n) + H_total
+        B_E = CA_avg ⊡ S_n
+        return B_E ⊡ inv(A_E)
+    else
+        return CA_avg ⊡ inv(A_avg)
+    end
 end
 
 # 2nd-order — same symmetric SC structure for conductivity / diffusion.
 function _sc_step_dispatch(rve::RVE, K_n::TensND.AbstractTens{2, 3}, prop::Symbol;
                            kw...)
-    A_avg  = zero(K_n)
-    KA_avg = zero(K_n)
+    # Conduction analogue of the 4th-order ECHOES SC body :
+    # solids have `gradient_Flux = A · R_n` (R_n = inv(K_n) — resistivity),
+    # cracks contribute the bare resistivity contribution `R_c`.
+    A_avg   = zero(K_n)
+    KA_avg  = zero(K_n)
+    R_total = zero(K_n)
+    has_cracks = false
     for name in rve.phase_names
         if name === rve.matrix_name
             f = matrix_volume_fraction(rve)
@@ -120,7 +162,21 @@ function _sc_step_dispatch(rve::RVE, K_n::TensND.AbstractTens{2, 3}, prop::Symbo
         A_avg  += f * A_dil
         KA_avg += f * (P_α ⋅ A_dil)
     end
-    return KA_avg ⋅ inv(A_avg)
+    for name in inclusion_phase_names(rve)
+        a = rve.amounts[name]
+        a isa CrackDensity || continue
+        R = _phase_compliance_contribution(rve, name, prop, K_n; kw...)
+        R_total += R
+        has_cracks = true
+    end
+    if has_cracks
+        R_n = inv(K_n)
+        A_E = (A_avg ⋅ R_n) + R_total
+        B_E = KA_avg ⋅ R_n
+        return B_E ⋅ inv(A_E)
+    else
+        return KA_avg ⋅ inv(A_avg)
+    end
 end
 
 # ── Built-in solvers ────────────────────────────────────────────────────────
@@ -178,6 +234,7 @@ function _solve_sc(::AndersonDefault, step, x0::TensND.AbstractTens;
     x_best = x0
     resid_best_val = typemax(_value_eltype(x0))
     for k in 1:maxiters
+        x = _sc_pd_guard(x, x0)
         x_new = step(x)
         last_resid = _sc_residual_norm(x_new, x)
         norm_x  = _sc_residual_norm(x, zero(x))
@@ -205,11 +262,170 @@ function _solve_sc(::AndersonDefault, step, x0::TensND.AbstractTens;
     return select_best ? x_best : x
 end
 
-function _solve_sc(::NewtonDefault, step, x0::TensND.AbstractTens; kw...)
-    error("NewtonDefault requires NonlinearSolve.jl: load it with " *
-          "`using NonlinearSolve` to activate the MeanFieldHomNonlinearSolveExt " *
-          "extension. Default solver `AndersonDefault` works without any extra dependency.")
+"""
+    _solve_sc(::NewtonDefault, step, x0::AbstractTens; …) -> AbstractTens
+
+Built-in Newton-Raphson SC solver, parameterising the iterating
+estimate by its symmetry-class **canonical components**
+(`TensND.get_data` → `(α, β)` for iso, `(ℓ₁, …, ℓ₆)` for TI / Walpole,
+9 components for ortho).  At each Newton step:
+
+1. Build the residual `F(p) = canonical(step(rebuild(p))) − p`,
+2. Compute the Jacobian `J = ∂F/∂p` via `ForwardDiff.jacobian`,
+3. Take the Newton step `Δp = −J⁻¹·F(p)` with backtracking line
+   search (Armijo with shrinking factor 1/2, minimum step 1e-6).
+4. Fall back to a single Picard step when the line search fails.
+
+Compared to the SciML weak-extension path, this is dependency-free and
+specialised to the small parameter spaces of `MeanFieldHom` symmetry
+classes (≤ 21 components for the most general aniso 4-tensor); the
+Jacobian is computed once per iteration through the same `step`
+function the AndersonDefault loop calls.
+"""
+function _solve_sc(::NewtonDefault, step, x0::TensND.AbstractTens;
+                   abstol::Real = 1.0e-12, reltol::Real = 1.0e-8,
+                   maxiters::Int = 50,
+                   damping::Real = 0.0, verbose::Bool = false,
+                   select_best::Bool = false,
+                   kw...)
+    p0 = _tens_to_param_vec(x0)
+    L = length(p0)
+    Tref = float(eltype(p0))
+    rebuild = p -> _tens_from_param_vec(x0, p)
+    residual_vec = function (p)
+        x_in  = _sc_pd_guard(rebuild(p), x0)
+        x_out = step(x_in)
+        return _tens_to_param_vec(x_out) .- _tens_to_param_vec(x_in)
+    end
+    p = collect(Tref, p0)
+    p_best = copy(p); resid_best = Inf
+    for iter in 1:maxiters
+        r = residual_vec(p)
+        norm_r = sqrt(sum(abs2, r))
+        norm_p = sqrt(sum(abs2, p))
+        tol_eff = abstol + reltol * norm_p
+        verbose && @info "SC-Newton iter $iter : ‖F‖ = $norm_r   tol = $tol_eff"
+        if select_best && norm_r < resid_best
+            resid_best = norm_r
+            p_best .= p
+        end
+        if norm_r ≤ tol_eff
+            return rebuild(p)
+        end
+        # Jacobian via ForwardDiff (strong dependency).
+        J = ForwardDiff.jacobian(residual_vec, p)
+        # Solve J·δ = -r with a regularising fallback if J is singular.
+        δ = try
+            J \ (-r)
+        catch err
+            @debug "SC-Newton: linear solve failed, applying tiny Tikhonov" err
+            (J + 1e-10 * sqrt(sum(abs2, J)) * LinearAlgebra.I) \ (-r)
+        end
+        # Backtracking line search (Armijo).
+        α_step = one(Tref)
+        accepted = false
+        for _ in 1:30
+            p_new = p .+ α_step .* δ
+            r_new = residual_vec(p_new)
+            if sqrt(sum(abs2, r_new)) ≤ (1 - 1e-4 * α_step) * norm_r
+                p .= p_new
+                accepted = true
+                break
+            end
+            α_step /= 2
+            α_step < 1e-6 && break
+        end
+        if !accepted
+            # Fall back to a damped Picard step.
+            verbose && @info "SC-Newton: line search failed, taking Picard step"
+            p .= residual_vec(p) .+ p   # one Picard step
+        end
+    end
+    @debug "SC-Newton: maxiters reached without convergence" maxiters
+    return rebuild(select_best ? p_best : p)
 end
+
+# ── Positive-definite guard for the SC running estimate ───────────────────
+#
+# At high contrast (porous SC near the percolation threshold, cracks at
+# moderate density), the SC iteration map can have a stable fixed point
+# at the trivial null tensor (`C = 0`).  A Picard iteration starting
+# from `C_M` may drift into this percolation fixed point even when a
+# physically meaningful finite fixed point exists nearby.  The ECHOES
+# `homogenization_scheme.h::evaluate` mitigates this by detecting a
+# negative-definite running estimate and resetting it to a tiny
+# positive identity (`mX = EPSILON · I`) before each step — this
+# prevents the iteration from collapsing to zero and lets it find the
+# physical finite-modulus branch when it exists.  We mirror the same
+# guard here: when any canonical eigenvalue of the running estimate
+# falls below a relative threshold, we reset it to `ε · α_M_init`
+# (matrix scale).
+
+function _sc_pd_guard(x, x0)
+    α0_max = _max_canonical_value(x0)
+    ε_pos = max(α0_max * sqrt(eps(real(_value_eltype(x0)))), 1e-12)
+    return _sc_pd_guard_apply(x, ε_pos)
+end
+
+# Iso 4-tensor: check (α, β); reset to ε·𝕁 + ε·𝕂 if either component
+# is non-positive.
+function _sc_pd_guard_apply(x::TensND.TensISO{3}, ε_pos)
+    α, β = TensND.get_data(x)
+    if real(α) ≤ ε_pos || real(β) ≤ ε_pos
+        return TensND.TensISO{3}(max(real(α), ε_pos), max(real(β), ε_pos))
+    end
+    return x
+end
+
+# Default: try to detect the smallest canonical component value.  If
+# any canonical component is non-positive, reset to a tiny positive
+# baseline of the same shape.  Falls back to passthrough for tensors
+# whose `get_data` does not give a meaningful "smallest eigenvalue"
+# notion.
+function _sc_pd_guard_apply(x::TensND.AbstractTens, ε_pos)
+    try
+        d = TensND.get_data(x)
+        for v in d
+            real(v) ≤ ε_pos && return _rebuild_min_eps(x, ε_pos)
+        end
+    catch
+    end
+    return x
+end
+
+function _rebuild_min_eps(x::TensND.AbstractTens, ε_pos)
+    d = TensND.get_data(x)
+    new_d = Tuple(real(v) ≤ ε_pos ? ε_pos : v for v in d)
+    return TensND._rebuild(x, new_d)
+end
+
+# Used to scale the eigenvalue tolerance.
+_max_canonical_value(x::TensND.AbstractTens) = begin
+    try
+        d = TensND.get_data(x)
+        return maximum(abs(real(v)) for v in d)
+    catch
+        return 1.0
+    end
+end
+
+# ── Tens ↔ canonical parameter vector helpers ──────────────────────────────
+#
+# `TensND.get_data(t)` already returns the canonical tuple of an iso /
+# TI / ortho / Walpole tensor (`(α, β)` for iso, `(ℓ₁, …, ℓ₆)` for
+# Walpole TI, etc.).  We `collect` it into a `Vector` for the
+# ForwardDiff-friendly residual function, and rebuild the same
+# concrete type via the canonical constructor inferred from the
+# prototype.
+_tens_to_param_vec(t::TensND.AbstractTens) = collect(TensND.get_data(t))
+_tens_from_param_vec(prototype::TensND.AbstractTens, p::AbstractVector) =
+    _rebuild_from_data(prototype, p)
+
+# Default rebuild: `_rebuild` is TensND-internal; for known types we use
+# the public constructor.
+_rebuild_from_data(::TensND.TensISO{3}, p) = TensND.TensISO{3}(p[1], p[2])
+_rebuild_from_data(t::TensND.AbstractTens, p) =
+    TensND._rebuild(t, ntuple(i -> p[i], length(p)))
 
 # Residual norm operating on stored components (works for any tensor type).
 _sc_residual_norm(a::TensND.AbstractTens, b::TensND.AbstractTens) =
@@ -306,7 +522,14 @@ function _evaluate(rve::RVE, asc::AsymmetricSelfConsistent, ::Val{p}; kw...) whe
 end
 
 # Squared Frobenius norm — matches the C++ reference selection.
+# Crack phases (`CrackDensity`) carry no volume but still soften the
+# composite ; the Voigt heuristic above ignores them and may wrongly
+# select the stiffness form (which skips cracks → no degradation).
+# Force the compliance form whenever an RVE has at least one crack.
 function _asc_use_stiffness(rve::RVE, prop::Symbol; kw...)
+    if any(a isa CrackDensity for a in values(rve.amounts))
+        return false
+    end
     P₀      = matrix_property(rve, prop)
     P_voigt = _evaluate(rve, Voigt(), Val(prop); kw...)
     return _frob_sq(P_voigt) ≥ _frob_sq(P₀)

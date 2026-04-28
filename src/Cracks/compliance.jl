@@ -40,8 +40,11 @@ See [Kachanov 1992](@cite kachanov1992),
 [Sevostianov & Kachanov 2002](@cite sevostianov2002),
 [Barthélémy 2021](@cite barthelemyIJES2021).
 """
-function compliance_contribution(crack::MFH_Core.AbstractCrack, C₀::TensND.AbstractTens{4, 3}; kw...)
-    B = cod_tensor(crack, C₀; kw...)
+function compliance_contribution(crack::MFH_Core.AbstractCrack,
+                                   C₀::TensND.AbstractTens{4, 3};
+                                   K_interface::Union{Nothing, TensND.AbstractTens{2, 3}} = nothing,
+                                   kw...)
+    B = cod_tensor(crack, C₀; K_interface = K_interface, kw...)
     return _compliance_from_B(crack, B)
 end
 

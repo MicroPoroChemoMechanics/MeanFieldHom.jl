@@ -82,13 +82,19 @@ function asymmetric_self_consistent_alv(rve::RVE, prop::Symbol;
     geometries = Any[]
     fractions = Float64[]
     symmetrizes = AbstractSymmetrize[]
-    crack_data = Tuple{Any, Float64, AbstractSymmetrize}[]
+    crack_data = Tuple{Any, Float64, AbstractSymmetrize,
+                        Union{Nothing, Matrix{Float64}},
+                        Union{Nothing, Matrix{Float64}}}[]
     for name in incl_names
         ph = rve.phases[name]
         a = rve.amounts[name]
         if a isa CrackDensity
+            Rn_mat = haskey(ph.properties, :Rn) ?
+                _trapezoidal_relaxation_scalar(ph.properties[:Rn], times) : nothing
+            Rt_mat = haskey(ph.properties, :Rt) ?
+                _trapezoidal_relaxation_scalar(ph.properties[:Rt], times) : nothing
             push!(crack_data, (ph.geometry, Float64(a.value),
-                                phase_symmetrize(rve, name)))
+                                phase_symmetrize(rve, name), Rn_mat, Rt_mat))
             continue
         end
         C_r_law = phase_property(rve, name, prop)
@@ -118,8 +124,10 @@ function asymmetric_self_consistent_alv(rve::RVE, prop::Symbol;
         if !isempty(crack_data)
             ΔJ = zeros(eltype(C_n), size(C_n)...)
             J_n = volterra_inverse(C_n; block_size = 6)
-            @inbounds for (geom, ε, sym) in crack_data
-                Ñ = stiffness_contribution_alv_at(geom, C_n)
+            @inbounds for (geom, ε, sym, Rn_mat, Rt_mat) in crack_data
+                Ñ = stiffness_contribution_alv_at(geom, C_n;
+                                                    Rn_mat = Rn_mat,
+                                                    Rt_mat = Rt_mat)
                 ΔC = delta_stiffness_alv(geom, Ñ, ε)
                 ΔJ_block = -(J_n * ΔC * J_n)
                 ΔJ_block = _maybe_symmetrize_alv(ΔJ_block, sym)

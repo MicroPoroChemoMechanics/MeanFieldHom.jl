@@ -127,11 +127,15 @@ function _diff_crack_correction(rve::RVE, name::Symbol, prop::Symbol,
     sym  = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P_curr, sym)
     if P_curr isa TensND.AbstractTens{4, 3}
-        N = MFH_Core.stiffness_contribution(geom, P₀_proj; kw...)
+        K_int = _crack_interface_K4(rve, name)
+        N = MFH_Core.stiffness_contribution(geom, P₀_proj;
+                                             K_interface = K_int, kw...)
         return _apply_symmetrize(MFH_Core.delta_stiffness(geom, N,
                                   amount_value(rve.amounts[name]) / nsteps), sym)
     else
-        N = MFH_Core.conductivity_contribution(geom, P₀_proj; kw...)
+        α_int = _crack_interface_α(rve, name)
+        N = MFH_Core.conductivity_contribution(geom, P₀_proj;
+                                                α_interface = α_int, kw...)
         return _apply_symmetrize(MFH_Core.delta_conductivity(geom, N,
                                   amount_value(rve.amounts[name]) / nsteps), sym)
     end

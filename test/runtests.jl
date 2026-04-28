@@ -28,6 +28,7 @@ using MeanFieldHom
         include("Cracks/test_cod_ti_aligned.jl")
         include("Cracks/test_residue_accuracy.jl")
         include("Cracks/test_thermal.jl")
+        include("Cracks/test_interface_stiffness.jl")
     end
 
     @testset "Conductivity" begin

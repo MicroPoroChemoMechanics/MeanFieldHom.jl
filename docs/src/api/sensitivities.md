@@ -1,9 +1,11 @@
 # API — Sensitivities
 
 Public lenses and autodiff entry points provided by
-`MeanFieldHom.Schemes` (the four `derivative` / `gradient` / `jacobian` /
-`sensitivity` functions become callable only after `using ForwardDiff`,
-via the `MeanFieldHomForwardDiffExt` weak extension).
+`MeanFieldHom.Schemes`.  `ForwardDiff` is a **strong dependency** of
+`MeanFieldHom` since v0.7.0 — the four `derivative` / `gradient` /
+`jacobian` / `sensitivity` functions are available out of the box,
+and the built-in [`SelfConsistent`](@ref) Newton-Raphson solver
+([`NewtonDefault`](@ref)) uses the same machinery internally.
 
 ## Lenses
 
@@ -21,7 +23,7 @@ get_param
 set_param
 ```
 
-## Autodiff entry points (require `using ForwardDiff`)
+## Autodiff entry points
 
 ```@docs
 derivative

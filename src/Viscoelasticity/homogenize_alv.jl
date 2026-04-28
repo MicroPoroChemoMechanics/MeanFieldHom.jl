@@ -200,7 +200,12 @@ function homogenize_alv(rve::RVE, scheme::HomogenizationScheme,
     A_duts = Matrix{eltype(C_0)}[]
     C_phases = Matrix{eltype(C_0)}[C_0]
     H_phases = Matrix{eltype(C_0)}[]   # per-phase Hill kernels (for Maxwell distribution)
-    crack_data = Tuple{Any, Any, AbstractSymmetrize}[]   # (geom, density, sym)
+    # crack_data tuple: (geom, density, sym, H_iso_full).  `H_iso_full` is
+    # the iso-projected size-independent compliance contribution H̃ scaled
+    # by the Budiansky concentration factor (`4π/3` for 3D penny / elliptic,
+    # `π` for 2D ribbon).  Used by the ECHOES-form MT / Maxwell / PCW
+    # multiplicative formula `C_eff = C_M · (I + Σ ε_c·(4π/3)·H_iso_c·C_M)^{-1}`.
+    crack_data = Tuple{Any, Any, AbstractSymmetrize, AbstractMatrix}[]
     ΔC_cracks_M = zeros(eltype(C_0), size(C_0)...)   # cracks-against-C_M sum
     ΔJ_cracks_M = zeros(eltype(C_0), size(C_0)...)   # for Reuss/DiluteDual
 
@@ -213,14 +218,25 @@ function homogenize_alv(rve::RVE, scheme::HomogenizationScheme,
             geom isa MFH_Core.AbstractCrack ||
                 throw(ArgumentError("homogenize_alv: phase $name has CrackDensity but geometry $(typeof(geom)) is not a crack"))
             ε = a.value
-            push!(crack_data, (geom, ε, sym))
-            # Stiffness contribution of the crack against C̃_M.
-            Ñ = stiffness_contribution_alv_at(geom, C_0)
+            # Optional interface-stiffness laws (`:Rn` normal, `:Rt` tangential).
+            Rn_law = haskey(ph.properties, :Rn) ? ph.properties[:Rn] : nothing
+            Rt_law = haskey(ph.properties, :Rt) ? ph.properties[:Rt] : nothing
+            # Compliance + stiffness contributions, with optional
+            # interface-stiffness Sevostianov correction
+            # `B̃_eff = B̃ ∘ (𝟙 + b·K ∘ B̃)^{-vol}`.
+            H̃ = compliance_contribution_alv(geom, C_M_law, times;
+                                              Rn = Rn_law, Rt = Rt_law)
+            # Iso-projected, Budiansky-scaled H̃ for the ECHOES-form MT
+            # denominator (cf. ECHOES `compute_visco_strain_Stress`).  The
+            # `delta_compliance_alv` factor (4π/3 elliptic, π ribbon)
+            # absorbs the Budiansky-O'Connell density convention.
+            H̃_full = _maybe_symmetrize_alv(delta_compliance_alv(geom, H̃, ε),
+                                              sym)
+            push!(crack_data, (geom, ε, sym, H̃_full))
+            Ñ = -(C_0 * H̃ * C_0)
             ΔC = delta_stiffness_alv(geom, Ñ, ε)
             ΔC = _maybe_symmetrize_alv(ΔC, sym)
             ΔC_cracks_M .+= ΔC
-            # Compliance contribution (for Reuss / DiluteDual).
-            H̃ = compliance_contribution_alv(geom, C_M_law, times)
             ΔJ = delta_compliance_alv(geom, H̃, ε)
             ΔJ = _maybe_symmetrize_alv(ΔJ, sym)
             ΔJ_cracks_M .+= ΔJ
@@ -557,15 +573,33 @@ function _homogenize_alv_dispatch(::RVE, ::MoriTanaka, ::Symbol, ::AbstractVecto
         end
         return mori_tanaka_alv(C_0, A_duts, contribs, fractions, f_M)
     end
-    # Crack-aware MT : append a virtual phase with N̄ = ΔC̃_cracks_M,
-    # Ã = 0 (cracks have no volume in the denominator), f = 1.  This
-    # injects ΔC̃ into the numerator without polluting the denominator.
+    # Crack-aware MT — ECHOES B·A^{-vol} form.
+    #
+    # The ECHOES MT body for a phase α reads
+    #   strain_Strain_α = sym(A_α(C_M))·C_M     (solid)
+    #   stress_Strain_α = sym(C_α·A_α(C_M))·C_M (solid)
+    #   strain_Strain_c = ε·sym(H_c(C_M))·C_M   (crack — traction-free → no
+    #                                            stress contribution)
+    # accumulated as
+    #   A_E = f_M·I·C_M + Σ_α f_α·strain_Strain_α + Σ_c strain_Strain_c
+    #   B_E = f_M·C_M    + Σ_α f_α·stress_Strain_α
+    # and `C_eff = B_E · A_E^{-vol}`.  Factoring `C_M` out on the right
+    # (allowed when symmetrize is iso/TI/ortho-compatible with C_M)
+    # reduces to the MFH additive form **plus** a non-zero crack
+    # `Ã_crack = ε·sym(H_c)·C_M` term in the denominator accumulator.
+    # That is the ECHOES-equivalent MT formula at finite density.
     sz = size(C_0, 1)
     T = eltype(C_0)
-    extra_A = zeros(T, sz, sz)
+    A_crack_total = zeros(T, sz, sz)
+    @inbounds for (geom, ε, sym, H_full) in kw[:crack_data]
+        # `H_full = ε·sym(H_c)` already includes the Budiansky factor and
+        # the iso/TI projection.  Right-multiply by `C_0` (Volterra-product)
+        # to land on `ε·sym(H_c)·C_M` — the ECHOES `strain_Strain` term.
+        A_crack_total .+= H_full * C_0
+    end
     contribs_aug = vcat(contribs, [kw[:ΔC_cracks_M]])
-    A_duts_aug = vcat(A_duts, [extra_A])
-    fractions_aug = vcat(fractions, [1.0])
+    A_duts_aug = vcat(A_duts, [A_crack_total])
+    fractions_aug = vcat(fractions, [one(T)])
     return mori_tanaka_alv(C_0, A_duts_aug, contribs_aug, fractions_aug, f_M)
 end
 
