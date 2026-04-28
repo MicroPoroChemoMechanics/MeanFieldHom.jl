@@ -31,8 +31,8 @@ end
 
 p = plot(; xlabel = "porosity f", ylabel = "C_eff[1111]",
          title = "Porous iso composite — schemes vs bounds", legend = :topright)
-plot!(p, fs, [bulk_at(f, Voigt())                       for f in fs]; label = "Voigt", color = :red, lw = 2, ls = :dash)
-plot!(p, fs, [bulk_at(f, Reuss())                       for f in fs]; label = "Reuss", color = :red, lw = 2, ls = :dash)
+plot!(p, fs, [bulk_at(f, Voigt())                       for f in fs]; label = "Voigt", color = :red,  lw = 2, ls = :dash)
+plot!(p, fs, [bulk_at(f, Reuss())                       for f in fs]; label = "Reuss", color = :gray, lw = 2, ls = :dash)
 plot!(p, fs, [bulk_at(f, MoriTanaka())                  for f in fs]; label = "MoriTanaka", color = :green, lw = 2)
 plot!(p, fs, [bulk_at(f, DiluteDual())                  for f in fs]; label = "DiluteDual", color = :blue, lw = 2)
 plot!(p, fs, [bulk_at(f, AsymmetricSelfConsistent(; abstol = 1.0e-10, maxiters = 200))
