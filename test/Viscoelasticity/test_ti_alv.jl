@@ -71,13 +71,19 @@ end
     @test isapprox(M_c_via_ti, M_c_full; atol = 1e-12)
     @test _is_ti_block(M_c_full)   # algebra closure
 
-    # Inverse
+    # Inverse — random TI matrices can be ill-conditioned
+    # (`‖M_a^{-1}‖ ∼ 10⁶`), so the two computational paths
+    # (TI-inverse-then-assemble vs assemble-then-Volterra-inverse) only
+    # agree up to ~1e-13 RELATIVE error.  Use an `rtol` scaled to
+    # `‖M_a_inv_full‖` rather than a strict `atol`.
     a_inv = _ti_inv(a)
     M_a_inv_via_ti = ti_blocks_from_params(a_inv)
     M_a_inv_full = volterra_inverse(M_a; block_size = 6)
-    @test isapprox(M_a_inv_via_ti, M_a_inv_full; atol = 1e-10)
+    @test isapprox(M_a_inv_via_ti, M_a_inv_full;
+                   rtol = 1e-10, atol = 1e-12)
 
-    # Sanity: a · a⁻¹ = block-diag identity
+    # Sanity: a · a⁻¹ = block-diag identity (this product is well-
+    # conditioned by construction so a tight tol holds).
     H_id = zeros(6n, 6n)
     @inbounds for i in 1:n
         rows = (6 * (i - 1) + 1):(6 * i)
@@ -85,11 +91,11 @@ end
     end
     @test isapprox(M_a * M_a_inv_via_ti, H_id; atol = 1e-10)
 
-    # Left divide
+    # Left divide — same conditioning concern as the inverse path.
     ainvb_ti = _ti_left_divide(a, b)
     M_via_ti = ti_blocks_from_params(ainvb_ti)
     M_full = volterra_left_divide(M_a, M_b; block_size = 6)
-    @test isapprox(M_via_ti, M_full; atol = 1e-10)
+    @test isapprox(M_via_ti, M_full; rtol = 1e-10, atol = 1e-12)
 end
 
 @testset "ti_alv — schemes match 6n×6n in elastic limit" begin
