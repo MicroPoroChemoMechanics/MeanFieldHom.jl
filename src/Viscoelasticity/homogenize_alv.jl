@@ -713,13 +713,19 @@ function _homogenize_alv_dispatch(rve::RVE, ::PonteCastanedaWillis, ::Symbol,
     return pcw_alv(C_0, contribs_aug, fractions_aug; H_dist = H_d)
 end
 
-# Differential ALV.  Multi-step Euler integration of the Norris ODE.
+# Differential ALV — SciML ODE on the fictitious incorporation time τ.
 function _homogenize_alv_dispatch(rve::RVE, sch::DifferentialScheme, ::Symbol,
                                   times::AbstractVector,
                                   C_0, C_phases, A_duts, contribs,
                                   H_phases, fractions, f_M; kw...)
     nsteps = get(sch.options, :nsteps, 100)
+    abstol = get(sch.options, :abstol, 1.0e-8)
+    reltol = get(sch.options, :reltol, 1.0e-6)
+    alg    = get(sch.options, :alg,    nothing)
     return differential_alv(rve, :C; times = times,
                               nsteps = nsteps,
-                              trajectory = sch.trajectory)
+                              trajectory = sch.trajectory,
+                              abstol = abstol,
+                              reltol = reltol,
+                              alg = alg)
 end

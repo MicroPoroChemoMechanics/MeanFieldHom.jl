@@ -53,7 +53,7 @@ import ..Schemes
 using ..Schemes: RVE, HomogenizationScheme, Voigt, Reuss, Dilute, DiluteDual,
                   MoriTanaka, Maxwell, SelfConsistent, AsymmetricSelfConsistent,
                   PonteCastanedaWillis, DifferentialScheme,
-                  Proportional, Sequential, CustomPath,
+                  Proportional, Sequential, CustomPath, Path,
                   UniformDistribution,
                   AndersonDefault, NewtonDefault,
                   matrix_phase,
@@ -63,6 +63,7 @@ using ..Schemes: RVE, HomogenizationScheme, Voigt, Reuss, Dilute, DiluteDual,
                   phase_symmetrize,
                   VolumeFraction, CrackDensity, amount_value
 using ForwardDiff
+using OrdinaryDiffEq
 
 include("visco_law.jl")
 include("trapezoidal.jl")

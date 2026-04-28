@@ -140,7 +140,7 @@ export HomogenizationScheme
 export Voigt, Reuss, Dilute, DiluteDual, MoriTanaka, Maxwell, PonteCastanedaWillis
 export SelfConsistent, AsymmetricSelfConsistent
 export AndersonDefault, NewtonDefault
-export DifferentialTrajectory, Proportional, Sequential, CustomPath, DifferentialScheme
+export DifferentialTrajectory, Proportional, Sequential, CustomPath, Path, DifferentialScheme
 export homogenize
 
 # ── Schemes : sensitivities (autodiff via ForwardDiff strong dependency) ────

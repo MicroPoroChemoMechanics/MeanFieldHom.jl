@@ -3,18 +3,21 @@
 #  Asymmetric Self-Consistent (ASC) and Differential (DIFF) schemes
 #  in ageing linear viscoelasticity.
 #
-#  All three operate on the discrete `(6n × 6n)` block matrices produced
-#  by `trapezoidal_matrix` (or its `_trapezoidal_relaxation` wrapper for
+#  All operate on the discrete `(6n × 6n)` block matrices produced by
+#  `trapezoidal_matrix` (or its `_trapezoidal_relaxation` wrapper for
 #  `:creep`-mode laws).  The Volterra product is the regular matrix
 #  product (`*`); the Volterra inverse is [`volterra_inverse`](@ref).
 #
 #  References:
 #    * PCW : Ponte-Castañeda & Willis 1995 — coincides with Maxwell in
-#      the single-shape case (see `Schemes/pcw.jl`).
+#      the single-shape case.
 #    * ASC : C++ ECHOES `homogenization_asc.h` ; same fixed point as
-#      `self_consistent_alv` but the iteration update is anchored on the
-#      matrix property `C_M` rather than on the running estimate.
-#    * DIFF : Norris 1985 ; ECHOES `homogenization_differential::compute_property`.
+#      `self_consistent_alv` but the iteration update is anchored on
+#      the matrix property `C_M` rather than on the running estimate.
+#    * DIFF : Norris 1985 ; user's hand-written DEM N-component note.
+#      Solved as a SciML ODE on the fictitious incorporation time
+#      `τ ∈ [0, 1]` (`Tsit5` default ; user-overridable via the
+#      `alg = …` kwarg of [`DifferentialScheme`](@ref)).
 # =============================================================================
 
 # ── PCW : single-shape distribution ⇒ algebraically identical to Maxwell ───
@@ -39,14 +42,6 @@ function pcw_alv(C_0::AbstractMatrix,
 end
 
 # ── Asymmetric Self-Consistent (ASC) — stiffness form ──────────────────────
-#
-# C^{n+1} = C_M + Σ_i f_i (C_i − C_M) ∘ A^{dil,i}(C^n)
-#
-# where the dilute concentration `A^{dil,i}(C^n) = (𝟙 + P̃_i(C^n) ∘ (C_i − C^n))^{-vol}`
-# is built against the running estimate `C^n` but the increment is
-# applied to the matrix property `C_M`.  Same fixed point as the
-# Hill-symmetric SC (`self_consistent_alv`) but a different basin of
-# attraction and convergence rate.
 
 """
     asymmetric_self_consistent_alv(rve::RVE, prop::Symbol; times,
@@ -194,130 +189,181 @@ function _asc_alv_step(C_M::AbstractMatrix,
     return C_M .+ Δ
 end
 
-# ── Differential scheme — explicit Euler integration of the Norris ODE ──
+# =============================================================================
+#  Differential ALV — SciML ODE on the fictitious incorporation time τ.
 #
-# At each step k:
-#   1. Build the volume-balance system  M Φ = ΔF  (same as elastic).
-#   2. For every solid phase i, add  Φ_i · (C_i − C_curr) ∘ A^{dil,i}(C_curr)
-#      to the running matrix C_curr (Volterra products on (6n)×(6n)).
-#   3. For every crack phase, add a (1 / nsteps) fractional dilute
-#      contribution evaluated at C_curr.
+#  State : `vec(C̃::Matrix{Float64})` of length `(6n)²`.
+#  RHS    : reshape `u → C̃`, build the per-phase Hill kernel against
+#           `C̃`, assemble Norris terms via Sherman-Morrison and crack
+#           density terms, return the flattened tensor derivative.
+#  Solver : `OrdinaryDiffEq.solve` with `Tsit5` default.
+# =============================================================================
 
 """
     differential_alv(rve::RVE, prop::Symbol; times,
-                      nsteps = 100, trajectory = nothing) -> Matrix{T}
+                      nsteps = 100, trajectory = nothing,
+                      abstol = 1e-8, reltol = 1e-6, alg = nothing) -> Matrix{T}
 
-Differential homogenisation in ageing linear viscoelasticity.
-Integrates the Norris ODE
-    `dC̃ / df_i = (C̃_i − C̃) ∘ A^{dil,i}(C̃)`
-along the trajectory defined by `trajectory` over `nsteps` explicit
-Euler steps, using the **same volume-balance recurrence** as the
-elastic [`DifferentialScheme`](@ref) of `Schemes/differential.jl`.
+Differential homogenisation in ageing linear viscoelasticity, solved
+as a SciML ODE on the fictitious incorporation time `τ ∈ [0, 1]`
+([Norris 1985](@cite norris1985); user's hand-written DEM note) :
 
-When no trajectory is provided, the proportional path is used by
-default — i.e. every phase fraction is filled at the same fractional
-rate, mirroring the C++ ECHOES default.
+```math
+\\frac{\\mathrm d \\tilde{\\mathbb C}}{\\mathrm d \\tau}
+  = \\sum_\\alpha \\frac{\\mathrm d \\varphi_\\alpha}{\\mathrm d \\tau}
+                  (\\tilde{\\mathbb C}_\\alpha - \\tilde{\\mathbb C})
+                  \\circ \\tilde{\\mathbb A}_\\alpha^{dil}(\\tilde{\\mathbb C})
+   + \\sum_c \\frac{\\mathrm d \\varepsilon_c}{\\mathrm d \\tau}
+              \\Delta\\tilde{\\mathbb C}^{crack}_c(\\tilde{\\mathbb C})
+```
+
+with the volume balance `df = (𝟙 − f ⊗ 𝐔)·dφ` inverted by Sherman-
+Morrison for solid phases (cracks contribute their density derivative
+directly).  `nsteps` is the density of save points along τ ; the
+integration step is controlled by `abstol` / `reltol`.
 """
 function differential_alv(rve::RVE, prop::Symbol;
                             times::AbstractVector{<:Real},
                             nsteps::Int = 100,
-                            trajectory = nothing)
+                            trajectory = nothing,
+                            abstol::Real = 1.0e-8,
+                            reltol::Real = 1.0e-6,
+                            alg = nothing)
     C_M_law = matrix_property(rve, prop)
     C_M_law isa ViscoLaw ||
         throw(ArgumentError("differential_alv: matrix property is not a ViscoLaw"))
-    C_curr = _trapezoidal_relaxation(C_M_law, times, 6)
+    C_M_full = _trapezoidal_relaxation(C_M_law, times, 6)
     n = length(times)
-    Id = _identity_alv(n, eltype(C_curr))
 
-    # Inclusion data (separate solid vs crack phases).
-    incl_names = inclusion_phase_names(rve)
-    solid_data  = NamedTuple[]
-    crack_data  = NamedTuple[]
-    for name in incl_names
+    # Per-phase data : split solids vs cracks.
+    solid_data = NamedTuple[]
+    crack_data = NamedTuple[]
+    for name in inclusion_phase_names(rve)
         ph = rve.phases[name]
-        C_r_law = phase_property(rve, name, prop)
-        C_r_law isa ViscoLaw ||
-            throw(ArgumentError("differential_alv: phase $name property is not a ViscoLaw"))
         amt = rve.amounts[name]
-        record = (
-            name      = name,
-            C_r       = _trapezoidal_relaxation(C_r_law, times, 6),
-            geom      = ph.geometry,
-            target    = Float64(amt.value),
-            sym       = phase_symmetrize(rve, name),
-            U_M       = _tens_to_mandel66(tens_UA(ph.geometry)),
-            V_M       = _tens_to_mandel66(tens_VA(ph.geometry)),
-        )
         if amt isa Schemes.VolumeFraction
-            push!(solid_data, record)
-        else
-            push!(crack_data, record)
+            C_r_law = phase_property(rve, name, prop)
+            C_r_law isa ViscoLaw ||
+                throw(ArgumentError("differential_alv: phase $name property is not a ViscoLaw"))
+            push!(solid_data, (
+                name      = name,
+                C_r       = _trapezoidal_relaxation(C_r_law, times, 6),
+                geom      = ph.geometry,
+                target    = Float64(amt.value),
+                sym       = phase_symmetrize(rve, name),
+                U_M       = _tens_to_mandel66(tens_UA(ph.geometry)),
+                V_M       = _tens_to_mandel66(tens_VA(ph.geometry)),
+            ))
+        else  # CrackDensity
+            ph.geometry isa MFH_Core.AbstractCrack ||
+                throw(ArgumentError("differential_alv: phase $name has CrackDensity but geometry $(typeof(ph.geometry)) is not a crack"))
+            Rn_mat = haskey(ph.properties, :Rn) ?
+                _trapezoidal_relaxation_scalar(ph.properties[:Rn], times) : nothing
+            Rt_mat = haskey(ph.properties, :Rt) ?
+                _trapezoidal_relaxation_scalar(ph.properties[:Rt], times) : nothing
+            push!(crack_data, (
+                name      = name,
+                geom      = ph.geometry,
+                target    = Float64(amt.value),
+                sym       = phase_symmetrize(rve, name),
+                Rn_mat    = Rn_mat,
+                Rt_mat    = Rt_mat,
+            ))
         end
     end
 
-    # Trajectory : default proportional path (linear from 0 to 1 in nsteps).
-    paths = if trajectory === nothing
-        Dict{Symbol, Vector{Float64}}(
-            r.name => collect(range(0.0, 1.0; length = nsteps + 1))
-            for r in solid_data)
-    else
-        _resolve_paths_alv(trajectory, solid_data, nsteps)
-    end
+    # Trajectory : default proportional path.
+    paths = trajectory === nothing ?
+        _resolve_paths_alv(Schemes.Proportional(), rve, nsteps) :
+        _resolve_paths_alv(trajectory, rve, nsteps)
 
-    n_solid = length(solid_data)
-    for k in 1:nsteps
-        if n_solid > 0
-            f_prev = [paths[r.name][k]     * r.target for r in solid_data]
-            f_curr = [paths[r.name][k + 1] * r.target for r in solid_data]
-            ΔF = f_curr .- f_prev
-            Mlin = Matrix{Float64}(LinearAlgebra.I, n_solid, n_solid)
-            for i in 1:n_solid
-                Mlin[i, :] .-= f_prev[i]
-            end
-            Φ = Mlin \ ΔF
-
-            # Pre-compute Volterra inverses against C_curr for the Hill kernel
-            # (shared across phases at this step).
-            α_c, β_c = iso_params_from_blocks(C_curr)
-            M_long  = @. (α_c + 2 * β_c) / 3
-            M_shear = β_c ./ 2
-            J_long  = volterra_inverse(M_long;  block_size = 1)
-            J_shear = volterra_inverse(M_shear; block_size = 1)
-
-            sz = size(C_curr, 1)
-            T = eltype(C_curr)
-            for (i, r) in enumerate(solid_data)
-                Φi = Φ[i]
-                iszero(Φi) && continue
-                # Phase Hill kernel against current matrix.
-                D_M = r.V_M .- r.U_M
-                P_r = zeros(T, sz, sz)
-                @inbounds for ii in 1:n, jj in 1:ii
-                    block = J_long[ii, jj] .* r.U_M .+ J_shear[ii, jj] .* D_M
-                    rows = (6 * (ii - 1) + 1):(6 * ii)
-                    cols = (6 * (jj - 1) + 1):(6 * jj)
-                    P_r[rows, cols] = block
-                end
-                ΔC = r.C_r - C_curr
-                A_dil = volterra_inverse(Id + P_r * ΔC; block_size = 6)
-                contrib = ΔC * A_dil
-                contrib = _maybe_symmetrize_alv(contrib, r.sym)
-                @. C_curr += Φi * contrib
-            end
-        end
-        # Cracks not yet routed through the differential ALV pipeline —
-        # their compliance contribution is geometry-only and would require
-        # `compliance_contribution_alv` integration per step.  Deferred.
-    end
-    return C_curr
+    # ODE state and parameters.
+    sz = 6 * n
+    x0 = vec(copy(C_M_full))
+    ode_p = (n = n, sz = sz,
+             solid_data = solid_data,
+             crack_data = crack_data,
+             paths = paths)
+    rhs! = (du, u, p, τ) -> _diff_alv_ode_rhs!(du, u, p, τ)
+    prob = ODEProblem(rhs!, x0, (0.0, 1.0), ode_p)
+    sol = solve(prob,
+                alg === nothing ? Tsit5() : alg;
+                abstol, reltol,
+                saveat = range(0.0, 1.0; length = max(nsteps, 1) + 1),
+                dense  = false)
+    return reshape(sol.u[end], sz, sz)
 end
 
-# Resolve the path map for differential ALV given a trajectory descriptor.
-# Currently supports `Schemes.Proportional` only — extend with `Sequential`
-# / `CustomPath` analogues when needed.
-function _resolve_paths_alv(::Schemes.Proportional, solid_data,
-                              nsteps::Int)
-    return Dict{Symbol, Vector{Float64}}(
-        r.name => collect(range(0.0, 1.0; length = nsteps + 1))
-        for r in solid_data)
+# ── ALV ODE RHS ─────────────────────────────────────────────────────────────
+
+function _diff_alv_ode_rhs!(du, u, p, τ)
+    n, sz = p.n, p.sz
+    C_curr = reshape(u, sz, sz)
+    Δ = zeros(eltype(u), sz, sz)
+    Id = _identity_alv(n, eltype(u))
+
+    n_solid = length(p.solid_data)
+    if n_solid > 0
+        # Sherman-Morrison : dφ_α/dτ = df_α/dτ + (f_α / f_0) · sum(df).
+        f  = Vector{eltype(u)}(undef, n_solid)
+        df = Vector{eltype(u)}(undef, n_solid)
+        @inbounds for (i, r) in enumerate(p.solid_data)
+            nt = p.paths[r.name]
+            f[i]  = nt.f(τ)  * r.target
+            df[i] = nt.df(τ) * r.target
+        end
+        f0 = one(eltype(u)) - sum(f; init = zero(eltype(u)))
+        sum_df = sum(df; init = zero(eltype(u)))
+
+        # Pre-compute Volterra inverses against C_curr (shared across solid phases).
+        α_c, β_c = iso_params_from_blocks(C_curr)
+        M_long  = @. (α_c + 2 * β_c) / 3
+        M_shear = β_c ./ 2
+        J_long  = volterra_inverse(M_long;  block_size = 1)
+        J_shear = volterra_inverse(M_shear; block_size = 1)
+
+        @inbounds for (i, r) in enumerate(p.solid_data)
+            dφᵢ = df[i] + (f[i] / f0) * sum_df
+            iszero(dφᵢ) && continue
+            # Per-phase Hill kernel against C_curr.
+            D_M = r.V_M .- r.U_M
+            P_r = zeros(eltype(u), sz, sz)
+            for ii in 1:n, jj in 1:ii
+                block = J_long[ii, jj] .* r.U_M .+ J_shear[ii, jj] .* D_M
+                rows = (6 * (ii - 1) + 1):(6 * ii)
+                cols = (6 * (jj - 1) + 1):(6 * jj)
+                P_r[rows, cols] = block
+            end
+            ΔC = r.C_r - C_curr
+            A_dil = volterra_inverse(Id + P_r * ΔC; block_size = 6)
+            contrib = ΔC * A_dil
+            contrib = _maybe_symmetrize_alv(contrib, r.sym)
+            @. Δ += dφᵢ * contrib
+        end
+    end
+
+    # Crack contributions : dε_α/dτ · ΔC̃^crack_α(C_curr) where the
+    # crack ΔC̃^crack is the dilute stiffness contribution evaluated
+    # against the running matrix `C_curr` (with optional Sevostianov
+    # interface stiffness correction).
+    @inbounds for r in p.crack_data
+        nt = p.paths[r.name]
+        dε = nt.df(τ) * r.target
+        iszero(dε) && continue
+        Ñ = stiffness_contribution_alv_at(r.geom, C_curr;
+                                            Rn_mat = r.Rn_mat, Rt_mat = r.Rt_mat)
+        ΔC = delta_stiffness_alv(r.geom, Ñ, 1.0)
+        ΔC = _maybe_symmetrize_alv(ΔC, r.sym)
+        @. Δ += dε * ΔC
+    end
+
+    du .= vec(Δ)
+    return nothing
+end
+
+# ── Trajectory path resolution for ALV — share the elastic
+#    `_resolve_paths` (which now returns callables, not vectors) ──────────────
+function _resolve_paths_alv(trajectory::Schemes.DifferentialTrajectory,
+                              rve::RVE, nsteps::Int)
+    return Schemes._resolve_paths(trajectory, rve, nsteps)
 end

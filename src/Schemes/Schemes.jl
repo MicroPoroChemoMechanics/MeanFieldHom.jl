@@ -18,6 +18,7 @@ module Schemes
 using LinearAlgebra
 using TensND
 using ForwardDiff
+using OrdinaryDiffEq
 
 import ..Core
 using ..Core
@@ -64,7 +65,7 @@ export HomogenizationScheme
 export Voigt, Reuss, Dilute, DiluteDual, MoriTanaka, Maxwell, PonteCastanedaWillis
 export SelfConsistent, AsymmetricSelfConsistent
 export AndersonDefault, NewtonDefault
-export DifferentialTrajectory, Proportional, Sequential, CustomPath, DifferentialScheme
+export DifferentialTrajectory, Proportional, Sequential, CustomPath, Path, DifferentialScheme
 
 # Entry point
 export homogenize

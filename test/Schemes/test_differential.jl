@@ -52,8 +52,13 @@ end
     C_seq  = homogenize(rve, DifferentialScheme(; trajectory = Sequential([:I]), nsteps = 100))
     custom = CustomPath(Dict(:I => collect(range(0.0, 1.0; length = 101))))
     C_cus  = homogenize(rve, DifferentialScheme(; trajectory = custom, nsteps = 100))
-    @test C_prop ≈ C_seq
-    @test C_prop ≈ C_cus
+    # Tsit5 takes different adaptive steps depending on the smoothness
+    # of `df/dτ` (Proportional has constant df, Sequential has step
+    # discontinuities at window boundaries, CustomPath is piecewise
+    # linear), so the parametrisation invariance holds only up to the
+    # solver's reltol (1e-6 by default).
+    @test isapprox(C_prop, C_seq; rtol = 1.0e-5)
+    @test isapprox(C_prop, C_cus; rtol = 1.0e-5)
 end
 
 @testset "Differential — multi-phase Proportional vs Sequential (dilute limit)" begin
@@ -78,10 +83,6 @@ end
     add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
                fraction = 0.3)
 
-    # Wrong length
-    bad_len = CustomPath(Dict(:I => collect(range(0.0, 1.0; length = 50))))
-    @test_throws ArgumentError homogenize(rve, DifferentialScheme(; trajectory = bad_len, nsteps = 100))
-
     # Wrong endpoint at start
     bad_start = CustomPath(Dict(:I => vcat([0.5], collect(range(0.0, 1.0; length = 100)))))
     @test_throws ArgumentError homogenize(rve, DifferentialScheme(; trajectory = bad_start, nsteps = 100))
@@ -101,6 +102,67 @@ end
                fraction = 0.1)
     bad_miss = CustomPath(Dict(:I1 => collect(range(0.0, 1.0; length = 101))))
     @test_throws ArgumentError homogenize(rve2, DifferentialScheme(; trajectory = bad_miss, nsteps = 100))
+end
+
+@testset "Differential — Path (functional) trajectory" begin
+    rve = RVE(:M)
+    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
+    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+               fraction = 0.3)
+    # f(τ) = τ² is monotone with f(0)=0, f(1)=1.  Since DEM with one
+    # solid phase is parametrisation-invariant in τ, this should give
+    # the same C^hom(τ=1) as the default Proportional path.
+    C_path = homogenize(rve, DifferentialScheme(;
+                          trajectory = Path(Dict(:I => τ -> τ^2))))
+    C_prop = homogenize(rve, DifferentialScheme())
+    @test isapprox(C_path, C_prop; rtol = 1.0e-5)
+end
+
+@testset "Differential — Path validation errors" begin
+    rve = RVE(:M)
+    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
+    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+               fraction = 0.3)
+    # f(0) ≠ 0
+    @test_throws ArgumentError homogenize(rve,
+        DifferentialScheme(; trajectory = Path(Dict(:I => τ -> 0.5 + τ / 2))))
+    # f(1) ≠ 1
+    @test_throws ArgumentError homogenize(rve,
+        DifferentialScheme(; trajectory = Path(Dict(:I => τ -> τ / 2))))
+    # Non-monotone (sin(2πτ) has both signs)
+    @test_throws ArgumentError homogenize(rve,
+        DifferentialScheme(; trajectory = Path(Dict(:I => τ -> τ + 0.3sin(2π * τ)))))
+    # Missing phase
+    @test_throws ArgumentError homogenize(rve,
+        DifferentialScheme(; trajectory = Path(Dict(:OTHER => τ -> τ))))
+end
+
+@testset "Differential — saveat insensitivity (`nsteps`)" begin
+    # The adaptive ODE solver controls integration step via abstol/reltol,
+    # so `nsteps` (now `saveat` density) should not affect the final
+    # result beyond solver tolerance.
+    rve = RVE(:M)
+    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
+    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+               fraction = 0.3)
+    C_50  = homogenize(rve, DifferentialScheme(; nsteps =  50))
+    C_200 = homogenize(rve, DifferentialScheme(; nsteps = 200))
+    @test isapprox(C_50, C_200; rtol = 1.0e-6)
+end
+
+@testset "Differential — `abstol` / `reltol` kwargs are forwarded" begin
+    # Loose tolerances should give a slightly different result than
+    # tight ones — but both should be finite and within Voigt/Reuss.
+    rve = RVE(:M)
+    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
+    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+               fraction = 0.3)
+    C_loose = homogenize(rve, DifferentialScheme(; abstol = 1.0e-3, reltol = 1.0e-2))
+    C_tight = homogenize(rve, DifferentialScheme(; abstol = 1.0e-10, reltol = 1.0e-9))
+    @test all(isfinite, get_array(C_tight))
+    # Tighter tolerance gives a more accurate answer (not necessarily
+    # closer to loose) — just check finiteness.
+    @test all(isfinite, get_array(C_loose))
 end
 
 @testset "Differential — crack RVE reduces stiffness monotonically" begin

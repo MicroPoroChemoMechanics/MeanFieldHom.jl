@@ -144,12 +144,18 @@ AsymmetricSelfConsistent(; algorithm = AndersonDefault(), kwargs...) =
 Supertype describing the path through the multi-phase volume-fraction
 space used by the [`DifferentialScheme`](@ref) scheme. Concrete subtypes:
 
-- [`Proportional`](@ref) (default) — every phase grows at the same
-  relative rate `k/N` so the target fractions are reached
-  simultaneously.
+- [`Proportional`](@ref) (default) — every phase grows linearly with
+  the fictitious incorporation time `τ ∈ [0, 1]`, all phases reaching
+  their target simultaneously.
 - [`Sequential`](@ref) — phases are introduced one after the other in
-  the user-supplied order.
-- [`CustomPath`](@ref) — explicit per-phase trajectory.
+  the user-supplied order, each occupying a contiguous slice of `τ`.
+- [`CustomPath`](@ref) — explicit per-phase trajectory as a vector of
+  monotone non-decreasing values; piecewise-linear interpolated along
+  `τ ∈ [0, 1]`.
+- [`Path`](@ref) — explicit per-phase trajectory as a callable
+  `τ -> f(τ)` (auto-differentiated by `ForwardDiff`); the natural API
+  for the multi-phase incorporation-sequence ODE
+  ([Norris 1985](@cite norris1985); the user's hand-written DEM note).
 """
 abstract type DifferentialTrajectory end
 
@@ -183,15 +189,79 @@ struct CustomPath{D <: AbstractDict{Symbol, <:AbstractVector{<:Real}}} <: Differ
 end
 
 """
-    DifferentialScheme(; trajectory = Proportional(), nsteps::Int = 100, kwargs...)
+    Path(path::Dict{Symbol, <:Function}) <: DifferentialTrajectory
 
-Differential scheme: integrate the Norris ODE
-``d\\mathbb C / df = (\\mathbb C_i - \\mathbb C):\\mathbb A_\\mathrm{dil}^{(i)}(\\mathbb C)``
-along the chosen `trajectory` ([Norris 1985](@cite norris1985)).
+Explicit per-phase trajectory as a callable.  `path[:phase]` is a
+function of the fictitious incorporation time `τ ∈ [0, 1]` returning
+the **effective volume fraction ratio** `f_α(τ) / f_α^∞ ∈ [0, 1]` for
+solid phases, or the **density ratio** `ε_α(τ) / ε_α^∞` for crack
+phases — `f(0) = 0`, `f(1) = 1`, monotone non-decreasing.
+
+The derivative `df/dτ` is computed by `ForwardDiff.derivative` at
+each ODE step.  This is the natural API for the multi-phase DEM
+incorporation-sequence ODE :
+
+```math
+\\frac{\\mathrm d \\mathbb C^{hom}}{\\mathrm d \\tau}
+  = \\sum_i \\frac{\\mathrm d \\varphi_i}{\\mathrm d \\tau}
+            (\\mathbb C_i - \\mathbb C^{hom}):\\mathbb A_i^{dil}(\\mathbb C^{hom})
+```
+
+with the volumetric balance `dφ = (𝟙 - f ⊗ 𝐔)^{-1} · df` (Sherman-
+Morrison) inverted at each `τ` to translate user-supplied `f_α(τ)`
+into the increments `dφ_α / dτ`.
+
+The single-phase case is degenerate (`f₁` itself serves as `τ`) and
+does not require a `Path` — the default [`Proportional`](@ref) is
+sufficient.
+"""
+struct Path{D <: AbstractDict{Symbol, <:Function}} <: DifferentialTrajectory
+    path::D
+end
+
+"""
+    DifferentialScheme(; trajectory = Proportional(), nsteps::Int = 100,
+                         abstol::Real = 1e-8, reltol::Real = 1e-6,
+                         alg = nothing, kwargs...)
+
+Differential scheme : integrates the Norris ODE on the fictitious
+incorporation time `τ ∈ [0, 1]` ([Norris 1985](@cite norris1985)) :
+
+```math
+\\frac{\\mathrm d \\mathbb C^{hom}}{\\mathrm d \\tau}
+  = \\sum_i \\frac{\\mathrm d \\varphi_i}{\\mathrm d \\tau}\\,
+            (\\mathbb C_i - \\mathbb C^{hom}):\\mathbb A_i^{dil}(\\mathbb C^{hom})
+```
+
+with the volume balance `df = (𝟙 - f ⊗ 𝐔)·dφ` inverted by Sherman-
+Morrison so the user supplies effective volume fractions `f_α(τ)`
+along the chosen `trajectory`.
+
+# Keyword arguments
+
+- `trajectory` — one of [`Proportional`](@ref), [`Sequential`](@ref),
+  [`CustomPath`](@ref), [`Path`](@ref).  Default `Proportional()`.
+- `nsteps` — density of save points along `τ` (passed as `saveat` to
+  the SciML ODE solver).  The integration step is controlled by
+  `abstol` / `reltol`, **not** by `nsteps`.
+- `abstol`, `reltol` — ODE solver tolerances (forwarded to
+  `OrdinaryDiffEq.solve`).
+- `alg` — explicit ODE algorithm.  `nothing` selects `Tsit5()` (5th
+  order adaptive Runge-Kutta).  Pass any `OrdinaryDiffEqAlgorithm`
+  instance to override (e.g. `Vern9()` for higher accuracy, `Rosenbrock23()`
+  for stiff cases).
+- `kwargs...` — additional kwargs stored verbatim and forwarded to the
+  scheme-specific dispatch.
 """
 struct DifferentialScheme{P <: DifferentialTrajectory, K <: NamedTuple} <: HomogenizationScheme
     trajectory::P
     options::K
 end
-DifferentialScheme(; trajectory = Proportional(), nsteps::Int = 100, kwargs...) =
-    DifferentialScheme(trajectory, (; nsteps, kwargs...))
+DifferentialScheme(; trajectory = Proportional(),
+                     nsteps::Int = 100,
+                     abstol::Real = 1.0e-8,
+                     reltol::Real = 1.0e-6,
+                     alg = nothing,
+                     kwargs...) =
+    DifferentialScheme(trajectory,
+                       (; nsteps, abstol, reltol, alg, kwargs...))

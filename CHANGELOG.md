@@ -1,5 +1,68 @@
 # Changelog
 
+## v0.8.0 — Differential scheme as a SciML ODE on the fictitious incorporation time
+
+**`DifferentialScheme` is now solved by an adaptive SciML ODE
+integrator** (`Tsit5` default) on the fictitious incorporation time
+`τ ∈ [0, 1]`, replacing the explicit Euler discretisation.  The
+underlying multi-phase incorporation-sequence ODE
+([Norris 1985](@cite norris1985); user's hand-written DEM note) reads
+
+```math
+\frac{\mathrm d \mathbb C^{hom}}{\mathrm d \tau}
+  = \sum_\alpha \frac{\mathrm d \varphi_\alpha}{\mathrm d \tau}
+                (\mathbb C_\alpha - \mathbb C^{hom}):\mathbb A_\alpha^{dil}(\mathbb C^{hom})
+   + \sum_c \frac{\mathrm d \varepsilon_c}{\mathrm d \tau}
+            \Delta\mathbb C^{crack}_c(\mathbb C^{hom})
+```
+
+with the volume balance `df = (𝟙 − f ⊗ 𝐔) · dφ` inverted by
+Sherman-Morrison so the user supplies effective volume fractions
+`f_α(τ)` along the chosen `trajectory` (cracks contribute their
+density derivative `dε_c/dτ` directly — no Sherman-Morrison
+correction needed).  Implemented in elastic, conduction and ALV
+pipelines (`src/Schemes/differential.jl`,
+`src/Viscoelasticity/schemes_alv_extra.jl::differential_alv`).
+
+`OrdinaryDiffEq` is now a strong dependency.
+
+**New trajectory type `Path(Dict(:phase => τ -> f(τ)))`** for fully
+functional incorporation paths.  Derivatives `df_α/dτ` are computed
+by `ForwardDiff.derivative` automatically.  The existing
+`Proportional()`, `Sequential(order)` and `CustomPath(Dict(:phase => Vector))`
+trajectories are preserved for back-compat — internally rewritten
+as callables on `τ`.
+
+**`DifferentialScheme` constructor extended** :
+
+```julia
+DifferentialScheme(; trajectory = Proportional(),
+                     nsteps::Int = 100,
+                     abstol::Real = 1e-8,
+                     reltol::Real = 1e-6,
+                     alg = nothing,    # `nothing` → Tsit5()
+                     kwargs...)
+```
+
+`nsteps` is now reinterpreted as the **`saveat` density** along `τ`
+(the integration step is controlled by `abstol`/`reltol`).  Existing
+scripts that pass `nsteps = 50` continue to work.
+
+**ALV cracks in `differential_alv`** : the `# deferred` placeholder
+is resolved.  Crack phases now contribute `dε_c/dτ ·
+ΔC̃^crack_c(C̃)` to the RHS at every solver step (Sevostianov
+interface-stiffness correction propagated automatically when `:Rn`
+/ `:Rt` ViscoLaws are attached).
+
+**Demo script** `scripts/46_differential_loading_paths.jl` shows the
+genuine path-dependence of DEM : a 3-phase composite reaching the
+same target volume fractions `f_α^∞` along four different
+trajectories (`Proportional`, two `Sequential` orderings, and a
+functional `Path(τ -> τ², 2τ−τ²)`) yields four different effective
+moduli at `τ = 1` — the DEM iteration sees a different effective
+medium at each infinitesimal phase increment depending on the
+incorporation history.
+
 ## v0.7.0 — Sevostianov interface stiffness, ECHOES SC body, Newton-Raphson SC
 
 **Sevostianov-style crack interface stiffness** is now supported in
