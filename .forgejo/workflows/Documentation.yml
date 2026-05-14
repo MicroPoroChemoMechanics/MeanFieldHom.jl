@@ -1,0 +1,76 @@
+name: Documentation
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  build:
+    runs-on: codeberg-medium-lazy
+    timeout-minutes: 120
+    env:
+      JULIA_PKG_PRECOMPILE_AUTO: 0
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Julia
+        run: |
+          curl -fsSL https://install.julialang.org | sh -s -- --yes
+          echo "$HOME/.juliaup/bin" >> $GITHUB_PATH
+
+      - name: Cache Julia packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.julia/packages
+            ~/.julia/compiled
+            ~/.julia/conda
+          key: ${{ runner.os }}-julia-docs-${{ hashFiles('docs/Project.toml', 'docs/Manifest.toml', 'Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-julia-docs-
+
+      - name: Install Python, SymPy, git and ssh
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q python3 python3-pip python3-dev git ssh
+          pip3 install sympy --break-system-packages || pip3 install sympy
+
+      - name: Add MPCM-Registry
+        run: |
+          julia -e '
+            using Pkg
+            Pkg.Registry.add(RegistrySpec(url="https://codeberg.org/MicroPoroChemoMechanics/MPCM-Registry.git"))
+            Pkg.Registry.add("General")
+          '
+
+      - name: Install doc dependencies
+        run: |
+          julia -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=pwd()))
+            Pkg.activate("docs/")
+            ENV["PYTHON"] = Sys.which("python3")
+            Pkg.add("PyCall")
+            Pkg.build("PyCall")
+            Pkg.instantiate()
+          '
+
+      - name: Run doctests
+        run: |
+          julia --project=docs/ -e '
+            using Documenter: DocMeta, doctest
+            using MeanFieldHom
+            DocMeta.setdocmeta!(MeanFieldHom, :DocTestSetup,
+                :(using MeanFieldHom);
+                recursive=true)
+            doctest(MeanFieldHom)
+          '
+
+      - name: Build and deploy
+        env:
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+        run: julia --project=docs/ docs/make.jl

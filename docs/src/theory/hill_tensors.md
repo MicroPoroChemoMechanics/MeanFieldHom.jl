@@ -221,7 +221,7 @@ classical Eshelby closed form:
 ```
 
 Implementation:
-[`src/Elasticity/hill_3d_iso.jl`](https://github.com/MicMacTools/MeanFieldHom.jl/tree/main/src/Elasticity/hill_3d_iso.jl),
+[`src/Elasticity/hill_3d_iso.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Elasticity/hill_3d_iso.jl),
 triggered by `method = :auto` when `C₀::TensISO`.
 
 ### Anisotropic matrix
@@ -328,12 +328,12 @@ V^{\text{cyl},\circ}_{1313} = V^{\text{cyl},\circ}_{1212} = \tfrac{1}{4}.
 ```
 
 Implementation:
-[`hill_3d_cylinder_iso.jl`](https://github.com/MicMacTools/MeanFieldHom.jl/tree/main/src/Elasticity/hill_3d_cylinder_iso.jl).
+[`hill_3d_cylinder_iso.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Elasticity/hill_3d_cylinder_iso.jl).
 For arbitrarily anisotropic matrices the Masson polynomial degenerates
 at the cylinder limit (one root at infinity); MFH therefore routes
 `Cylinder` + `AbstractTens{4,3}` through a dedicated 1-D quadrature
 (`CylinderQuadrature` trait,
-[`hill_3d_cylinder_aniso.jl`](https://github.com/MicMacTools/MeanFieldHom.jl/tree/main/src/Elasticity/hill_3d_cylinder_aniso.jl)).
+[`hill_3d_cylinder_aniso.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Elasticity/hill_3d_cylinder_aniso.jl)).
 
 ### 2-D plane strain (MFH extension)
 
@@ -410,7 +410,7 @@ The semi-axes and principal directions of the fictitious ellipsoid are
 obtained by diagonalising
 ``\mathbf K^{-1/2}\cdot\mathbf A^{\!T}\!\cdot\mathbf A\cdot\mathbf K^{-1/2}``.
 Implementation:
-[`src/Conductivity/hill_order2_3d.jl`](https://github.com/MicMacTools/MeanFieldHom.jl/tree/main/src/Conductivity/hill_order2_3d.jl).
+[`src/Conductivity/hill_order2_3d.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Conductivity/hill_order2_3d.jl).
 
 ## Eshelby tensor
 

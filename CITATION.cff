@@ -17,6 +17,6 @@ keywords:
   - "stress intensity factors"
   - "automatic differentiation"
 version: "0.1.0"
-url: "https://github.com/MicMacTools/MeanFieldHom.jl"
-repository-code: "https://github.com/MicMacTools/MeanFieldHom.jl"
+url: "https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl"
+repository-code: "https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl"
 license: "MIT"

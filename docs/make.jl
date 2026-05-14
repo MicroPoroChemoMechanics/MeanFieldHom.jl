@@ -1,5 +1,4 @@
 using Documenter
-using Documenter.Remotes
 using DocumenterCitations
 using MeanFieldHom
 
@@ -28,11 +27,9 @@ makedocs(;
                 MeanFieldHom.Viscoelasticity],
     authors  = "Jean-François Barthélémy",
     sitename = "MeanFieldHom.jl",
-    remotes  = Dict(
-        joinpath(@__DIR__, "..") => (Remotes.GitHub("MicMacTools", "MeanFieldHom.jl"), "main"),
-    ),
     format   = Documenter.HTML(;
-        canonical        = "https://MicMacTools.github.io/MeanFieldHom.jl",
+        canonical        = "https://MicroPoroChemoMechanics.codeberg.page/MeanFieldHom.jl",
+        repolink         = "https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl",
         edit_link        = "main",
         assets           = ["assets/favicon.ico", "assets/custom.css"],
         prettyurls       = (get(ENV, "CI", nothing) == "true"),
@@ -92,6 +89,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo      = "github.com/MicMacTools/MeanFieldHom.jl.git",
-    devbranch = "main",
+    repo         = "git@codeberg-docs:MicroPoroChemoMechanics/MeanFieldHom.jl.git",
+    devbranch    = "main",
+    push_preview = false,
 )

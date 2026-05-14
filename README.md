@@ -4,10 +4,10 @@
 
 # MeanFieldHom
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://MicMacTools.github.io/MeanFieldHom.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://MicMacTools.github.io/MeanFieldHom.jl/dev/)
-[![Build Status](https://github.com/MicMacTools/MeanFieldHom.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/MicMacTools/MeanFieldHom.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://MicroPoroChemoMechanics.codeberg.page/MeanFieldHom.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://MicroPoroChemoMechanics.codeberg.page/MeanFieldHom.jl/dev/)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/LICENSE)
 [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-pink)](https://github.com/fredrikekre/Runic.jl)
 
 `MeanFieldHom.jl` is a Julia framework for **mean-field homogenisation**
@@ -33,24 +33,21 @@ The package is geared toward prototyping, symbolic simplification
 
 ## Installation
 
-While the package is private:
+`MeanFieldHom.jl` is released through the dedicated
+[MPCM-Registry](https://codeberg.org/MicroPoroChemoMechanics/MPCM-Registry).
+Add the registry once, then install the package:
 
 ```julia
 julia> using Pkg
-julia> Pkg.add(url = "https://github.com/MicMacTools/MeanFieldHom.jl.git")
+pkg> registry add https://codeberg.org/MicroPoroChemoMechanics/MPCM-Registry
+pkg> add MeanFieldHom
 ```
 
-`MeanFieldHom` depends on one package hosted under the `MicMacTools`
-organisation:
-
-- [`DECUHR.jl`](https://github.com/MicMacTools/DECUHR.jl) — adaptive
-  cubature backend.
-
-It is declared as a Git-URL dependency in `Project.toml`. While this
-repository is private, `Pkg.instantiate()` requires valid GitHub
-credentials (SSH key or HTTPS token). `TensND.jl`, `Elliptic.jl`,
-`Polynomials.jl`, `PolynomialRoots.jl`, `QuadGK.jl` and `Tensors.jl`
-are pulled automatically from the Julia general registry.
+The dependency [`DECUHR.jl`](https://codeberg.org/MicroPoroChemoMechanics/DECUHR.jl)
+(adaptive cubature backend) is resolved automatically through the same
+registry. `TensND.jl`, `Elliptic.jl`, `Polynomials.jl`,
+`PolynomialRoots.jl`, `QuadGK.jl` and `Tensors.jl` are pulled from the
+Julia general registry.
 
 Type-generic elliptic integrals are bundled as the
 `MeanFieldHom.Elliptic` submodule.
@@ -107,7 +104,7 @@ See [CITATION.cff](CITATION.cff) for citation details.
 @software{meanfieldhom_jl,
   author = {Barthélémy, Jean-François},
   title  = {MeanFieldHom.jl: Mean-field homogenisation of heterogeneous materials},
-  url    = {https://github.com/MicMacTools/MeanFieldHom.jl},
+  url    = {https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl},
   year   = {2026}
 }
 ```
@@ -119,7 +116,7 @@ The package accompanies:
 
 ## Credits and Acknowledgements
 
-Developed by [Jean-François Barthélémy](https://github.com/jfbarthelemy),
+Developed by [Jean-François Barthélémy](https://codeberg.org/jfbarthelemy),
 researcher at [Cerema](https://www.cerema.fr/en) in the research team
 [UMR MCD](https://mcd.univ-gustave-eiffel.fr/).
 
