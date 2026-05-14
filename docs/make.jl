@@ -25,6 +25,7 @@ makedocs(;
                 MeanFieldHom.LayeredSpheres,
                 MeanFieldHom.Schemes,
                 MeanFieldHom.Viscoelasticity],
+    remotes  = nothing,
     authors  = "Jean-François Barthélémy",
     sitename = "MeanFieldHom.jl",
     format   = Documenter.HTML(;
