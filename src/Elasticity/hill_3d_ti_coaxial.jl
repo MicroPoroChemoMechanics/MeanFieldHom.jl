@@ -147,10 +147,12 @@ the classical Mura formula.
 Reference: [barthelemyIJES2020_hilltrans](@cite), eqs. 49–58.
 """
 function _hill_ti_walpole(ω, C1111, C1122, C1133, C3333, C2323)
-    T  = promote_type(typeof(ω), typeof(C1111), typeof(C1122),
-                      typeof(C1133), typeof(C3333), typeof(C2323))
+    T = promote_type(
+        typeof(ω), typeof(C1111), typeof(C1122),
+        typeof(C1133), typeof(C3333), typeof(C2323)
+    )
     TC = T <: Real ? Complex{T} : T
-    ωc  = TC(ω)
+    ωc = TC(ω)
     C11 = TC(C1111)
     C12 = TC(C1122)
     C13 = TC(C1133)
@@ -172,7 +174,7 @@ function _hill_ti_walpole(ω, C1111, C1122, C1133, C3333, C2323)
     # partials are propagated through the appropriate iso-coaxial limit.
     disc = b^2 - 4 * a * c
     γ1, γ2 = if abs(disc) < _HILL_TI_EPS *
-                          max(abs(b^2), abs(4 * a * c), one(real(TC)))
+            max(abs(b^2), abs(4 * a * c), one(real(TC)))
         γ_iso = sqrt(-b / (2 * a))
         (γ_iso, γ_iso)
     else
@@ -196,9 +198,11 @@ function _hill_ti_walpole(ω, C1111, C1122, C1133, C3333, C2323)
     P2_c = om2 * ((om2 * C44 - C33) * j4 + (C33 - 2 * om2 * C44) * j2 + om2 * C44 * j0) / 4
     P3_c = om2 / (2 * sqrt(TC(2))) * (C44 + C13) * (j4 - j2)
     P5_c = P2_c / 2 + om2 * (i0 - i2) / 8
-    P6_c = ((om4 * C11 + C33 + 2 * om2 * C13) * j4
-                - 2 * om2 * (om2 * C11 + C13) * j2
-                + om4 * C11 * j0 + i2) / 8
+    P6_c = (
+        (om4 * C11 + C33 + 2 * om2 * C13) * j4
+            - 2 * om2 * (om2 * C11 + C13) * j2
+            + om4 * C11 * j0 + i2
+    ) / 8
 
     return (
         _strip_im(P1_c, T),

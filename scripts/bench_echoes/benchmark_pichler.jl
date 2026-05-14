@@ -147,10 +147,10 @@ const py_pichler = py"py_pichler"
 # with iso-symmetrize at oblate ω = 1e4 (very flat hydrates), mirrors the
 # `rve_hf` of the reference Python script (first SC).
 
-const ρ_w     = 1.0
-const ρ_clin  = 3.15;  const d_clin = ρ_clin / ρ_w
-const ρ_hyd   = 2.073; const d_hyd  = ρ_hyd  / ρ_w
-const ρ_san   = 2.648; const d_san  = ρ_san  / ρ_w
+const ρ_w = 1.0
+const ρ_clin = 3.15;  const d_clin = ρ_clin / ρ_w
+const ρ_hyd = 2.073; const d_hyd = ρ_hyd / ρ_w
+const ρ_san = 2.648; const d_san = ρ_san / ρ_w
 
 const K_clin, μ_clin = 116.7, 53.8
 const K_hyd_ref, μ_hyd_ref = 18.7, 11.8
@@ -159,18 +159,18 @@ const TINY = 1.0e-3
 const ω_aspect = 1.0e4
 
 f_clin(wc, α) = (1 - α) / (1 + d_clin * wc)
-f_w(wc, α)    = d_clin * (wc - 0.42 * α) / (1 + d_clin * wc)
-f_hyd(wc, α)  = 1.42 * d_clin / d_hyd * α / (1 + d_clin * wc)
+f_w(wc, α) = d_clin * (wc - 0.42 * α) / (1 + d_clin * wc)
+f_hyd(wc, α) = 1.42 * d_clin / d_hyd * α / (1 + d_clin * wc)
 fh_san(wc, sc) = sc / d_san / (1 / d_clin + wc + sc / d_san)
 αmax(wc) = min(1.0, wc / 0.42)
 
 function build_hf_jl(wc, α, μ_hyd; ω = ω_aspect)
     fclin = f_clin(wc, α)
-    fw    = f_w(wc, α)
-    fhyd  = f_hyd(wc, α)
-    fair  = max(0.0, 1 - fclin - fw - fhyd)
+    fw = f_w(wc, α)
+    fhyd = f_hyd(wc, α)
+    fair = max(0.0, 1 - fclin - fw - fhyd)
     fthyd_t = fhyd / (1 - fclin)
-    ftw_t   = fw   / (1 - fclin)
+    ftw_t = fw / (1 - fclin)
     ftair_t = fair / (1 - fclin)
     T = typeof(μ_hyd)
     # AIR is used as the implicit matrix (very soft). Its volume fraction
@@ -180,22 +180,32 @@ function build_hf_jl(wc, α, μ_hyd; ω = ω_aspect)
     # physical lower (percolating) branch — matching the C++ reference's
     # behaviour for this system.
     rve = RVE(:AIR; T = T)
-    add_matrix!(rve, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY))))
+    add_matrix!(
+        rve, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY)))
+    )
     # Aspect ratio convention matches the C++ reference's `spheroidal(omega)`:
     # the third semi-axis is `omega` and the two equatorial ones are `1`.
     # For omega >> 1 the spheroid is a needle (prolate); for omega << 1 it
     # is a flat disc (oblate). Pichler & Hellmich 2011 use omega = 1e4.
     geom_hyd = Spheroid(ω)
-    add_phase!(rve, :HYD, geom_hyd,
-                Dict(:C => TensISO{3}(convert(T, 3 * K_hyd_ref), 2 * μ_hyd));
-                fraction = fthyd_t, symmetrize = :iso)
-    add_phase!(rve, :W, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY)));
-                fraction = ftw_t)
-    return homogenize(rve, SelfConsistent(; abstol = 1.0e-6, maxiters = 100,
-                                            damping = 0.5),
-                       :C; select_best = true)
+    add_phase!(
+        rve, :HYD, geom_hyd,
+        Dict(:C => TensISO{3}(convert(T, 3 * K_hyd_ref), 2 * μ_hyd));
+        fraction = fthyd_t, symmetrize = :iso
+    )
+    add_phase!(
+        rve, :W, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY)));
+        fraction = ftw_t
+    )
+    return homogenize(
+        rve, SelfConsistent(;
+            abstol = 1.0e-6, maxiters = 100,
+            damping = 0.5
+        ),
+        :C; select_best = true
+    )
 end
 
 function build_cp_jl(wc, α, C_hf::TensND.AbstractTens)
@@ -203,9 +213,11 @@ function build_cp_jl(wc, α, C_hf::TensND.AbstractTens)
     T = eltype(C_hf)
     rve = RVE(:HF; T = T)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_hf))
-    add_phase!(rve, :CLIN, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(convert(T, 3 * K_clin), convert(T, 2 * μ_clin)));
-                fraction = fclin)
+    add_phase!(
+        rve, :CLIN, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3 * K_clin), convert(T, 2 * μ_clin)));
+        fraction = fclin
+    )
     return homogenize(rve, MoriTanaka(), :C)
 end
 
@@ -214,9 +226,11 @@ function build_mo_jl(wc, sc, C_cp::TensND.AbstractTens)
     T = eltype(C_cp)
     rve = RVE(:CP; T = T)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_cp))
-    add_phase!(rve, :SAN, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(convert(T, 3 * K_san), convert(T, 2 * μ_san)));
-                fraction = fsan)
+    add_phase!(
+        rve, :SAN, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3 * K_san), convert(T, 2 * μ_san)));
+        fraction = fsan
+    )
     return homogenize(rve, MoriTanaka(), :C)
 end
 
@@ -264,7 +278,7 @@ const NTHETA = 20
 function bin0_fraction(fthyd_in_mortar)
     # bin 0 has angular weight cos(0) - cos(π/2 / (NTHETA-1) / 2)
     # = 1 - cos(π/4 / (NTHETA-1))
-    return fthyd_in_mortar * (1.0 - cos((π/2) * 0.5 / (NTHETA - 1)))
+    return fthyd_in_mortar * (1.0 - cos((π / 2) * 0.5 / (NTHETA - 1)))
 end
 
 function pichler_fc(arr_C_mo, arr_dC, μh, f_θ)
@@ -272,8 +286,10 @@ function pichler_fc(arr_C_mo, arr_dC, μh, f_θ)
     arr_S = zeros(eltype(arr_dC), 3, 3, 3, 3)
     for i in 1:3, j in 1:3, k in 1:3, l in 1:3
         arr_S[i, j, k, l] = (i == j) * (k == l) / (9 * K) +
-                             (((i == k) * (j == l) + (i == l) * (j == k)) -
-                               2 * (i == j) * (k == l) / 3) / (4 * μ)
+            (
+            ((i == k) * (j == l) + (i == l) * (j == k)) -
+                2 * (i == j) * (k == l) / 3
+        ) / (4 * μ)
     end
     M = zeros(eltype(arr_dC), 3, 3, 3, 3)
     @inbounds for i in 1:3, j in 1:3, k in 1:3, l in 1:3
@@ -293,9 +309,9 @@ end
 # one multi-bin TI SC step, then dC*/dμ = (I − ∂F/∂C)⁻¹ ∂F/∂μ.
 
 function disc_theta_jl(N)
-    thm = vcat(0.0, [π/2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)])
-    theta = [π/2 * (i - 1) / (N - 1) for i in 1:N]
-    thp = vcat([π/2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)], π/2)
+    thm = vcat(0.0, [π / 2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)])
+    theta = [π / 2 * (i - 1) / (N - 1) for i in 1:N]
+    thp = vcat([π / 2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)], π / 2)
     return thm, theta, thp
 end
 
@@ -413,8 +429,10 @@ function _F_walpole(c_data::AbstractVector, μ_b0, wc, α_p; N = NTHETA)
     T = promote_type(eltype(c_data), typeof(μ_b0))
 
     cd = ntuple(i -> convert(T, c_data[i]), 5)
-    C_0_TI = TensND.TensTI{4, T, 5}(cd,
-                                       (convert(T, 0.0), convert(T, 0.0), convert(T, 1.0)))
+    C_0_TI = TensND.TensTI{4, T, 5}(
+        cd,
+        (convert(T, 0.0), convert(T, 0.0), convert(T, 1.0))
+    )
     α_iso0, β_iso0 = _walpole_ez_to_iso(collect(cd))
     C_0_iso = TensND.TensISO{3}(α_iso0, β_iso0)
 
@@ -501,8 +519,10 @@ end
 
 # Convert TI Walpole 5-vector to the full 81-array form of a TensTI{4,T,5}(ez).
 function _walpole_to_array(v::AbstractVector{T}) where {T}
-    a = TensND.TensTI{4, T, 5}((v[1], v[2], v[3], v[4], v[5]),
-                                 (zero(T), zero(T), one(T)))
+    a = TensND.TensTI{4, T, 5}(
+        (v[1], v[2], v[3], v[4], v[5]),
+        (zero(T), zero(T), one(T))
+    )
     return collect(get_array(a))
 end
 
@@ -512,7 +532,7 @@ function jl_pichler(wc, α; sc = 0.0)
     K_mo, μ_mo = extract_kμ(arr_C_mo)
     E_mo = extract_E(K_mo, μ_mo)
     fhyd_in_mortar = f_hyd(wc, α) * (1 - fh_san(wc, sc))
-    w_bin0 = 1.0 - cos((π/2) * 0.5 / (NTHETA - 1))
+    w_bin0 = 1.0 - cos((π / 2) * 0.5 / (NTHETA - 1))
     f_θ = fhyd_in_mortar * w_bin0
 
     # 1) C_hf from single-iso SC (gives the iso value matching Python).
@@ -529,8 +549,10 @@ function jl_pichler(wc, α; sc = 0.0)
         Cw = _iso_to_walpole(α_hf, β_hf) .+ t .* dCh_dμ
         Tt = typeof(t)
         Cwt = ntuple(i -> convert(Tt, Cw[i]), 5)
-        C_hf_perturbed = TensND.TensTI{4, Tt, 5}(Cwt,
-                                                  (zero(Tt), zero(Tt), one(Tt)))
+        C_hf_perturbed = TensND.TensTI{4, Tt, 5}(
+            Cwt,
+            (zero(Tt), zero(Tt), one(Tt))
+        )
         C_cp = build_cp_jl(wc, α, C_hf_perturbed)
         C_mo = build_mo_jl(wc, sc, C_cp)
         return get_array(C_mo)
@@ -543,8 +565,8 @@ end
 
 # ── Sweep ────────────────────────────────────────────────────────────────────
 
-const wcs = (0.157, 0.25, 0.35, 0.50, 0.65, 0.80)
-const αN  = 12
+const wcs = (0.157, 0.25, 0.35, 0.5, 0.65, 0.8)
+const αN = 12
 
 mutable struct PichlerRow
     wc::Float64
@@ -557,7 +579,7 @@ mutable struct PichlerRow
 end
 
 _relerr(a, b) = (isnan(a) || isnan(b)) ? NaN :
-                (a == 0 && b == 0) ? 0.0 : abs(a - b) / max(abs(a), abs(b), 1.0e-12)
+    (a == 0 && b == 0) ? 0.0 : abs(a - b) / max(abs(a), abs(b), 1.0e-12)
 
 function _row_pass(r; rtol_mod = 1.0e-2, rtol_fc = 1.5e-1, atol = 5.0e-2)
     # The compression-strength criterion is computed via a custom multi-bin
@@ -566,10 +588,12 @@ function _row_pass(r; rtol_mod = 1.0e-2, rtol_fc = 1.5e-1, atol = 5.0e-2)
     # discrete N=20 angular sampling drifts ~10% from Python's analytical
     # IFT; at moderate-to-high α the match tightens to a few percent, which
     # is well within the engineering precision the criterion needs.
-    for (a, b, rt) in ((r.k_jl, r.k_py, rtol_mod),
-                        (r.μ_jl, r.μ_py, rtol_mod),
-                        (r.E_jl, r.E_py, rtol_mod),
-                        (r.fc_jl, r.fc_py, rtol_fc))
+    for (a, b, rt) in (
+            (r.k_jl, r.k_py, rtol_mod),
+            (r.μ_jl, r.μ_py, rtol_mod),
+            (r.E_jl, r.E_py, rtol_mod),
+            (r.fc_jl, r.fc_py, rtol_fc),
+        )
         isnan(a) && isnan(b) && continue
         (isnan(a) || isnan(b)) && return false
         Δ = abs(a - b)
@@ -583,8 +607,12 @@ end
 rows = PichlerRow[]
 for wc in wcs
     println("[wc = $wc]  computing …")
-    αs = collect(filter(α -> α > 0.02,
-                        range(0.02, αmax(wc); length = αN)))
+    αs = collect(
+        filter(
+            α -> α > 0.02,
+            range(0.02, αmax(wc); length = αN)
+        )
+    )
     for α in αs
         py_out = py_pichler(wc, α)
         if py_out[1]
@@ -598,12 +626,14 @@ for wc in wcs
             r = jl_pichler(wc, α)
             k_jl, μ_jl, E_jl, fc_jl = r.k, r.μ, r.E, r.fc
         catch e
-            @warn "jl_pichler failed" wc α exception=(e, catch_backtrace())
+            @warn "jl_pichler failed" wc α exception = (e, catch_backtrace())
             k_jl, μ_jl, E_jl, fc_jl = NaN, NaN, NaN, NaN
         end
 
-        row = PichlerRow(wc, α, k_jl, k_py, μ_jl, μ_py, E_jl, E_py,
-                          fc_jl, fc_py, false)
+        row = PichlerRow(
+            wc, α, k_jl, k_py, μ_jl, μ_py, E_jl, E_py,
+            fc_jl, fc_py, false
+        )
         row.pass = _row_pass(row)
         push!(rows, row)
     end
@@ -613,13 +643,13 @@ end
 
 println()
 @printf "%-6s  %-5s  %-9s %-9s  %-9s %-9s  %-9s %-9s  %-9s %-9s  %s\n" "wc" "α" "k_jl" "k_py" "μ_jl" "μ_py" "E_jl" "E_py" "fc_jl" "fc_py" "pass"
-println("─" ^ 132)
+println("─"^132)
 for r in rows
     @printf "%-6.3f  %-5.3f  %-9.4g %-9.4g  %-9.4g %-9.4g  %-9.4g %-9.4g  %-9.4g %-9.4g  %s\n" r.wc r.α r.k_jl r.k_py r.μ_jl r.μ_py r.E_jl r.E_py r.fc_jl r.fc_py (r.pass ? "✓" : "✗")
 end
 n_pass = count(r -> r.pass, rows)
 n_total = length(rows)
-println("─" ^ 132)
+println("─"^132)
 @printf "Total: %d   Pass: %d   Fail: %d\n" n_total n_pass (n_total - n_pass)
 
 # CSV output

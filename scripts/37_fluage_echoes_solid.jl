@@ -42,29 +42,29 @@ using Plots
 # ─── Phase moduli (same as `fluage_echoes_solid.py`) ────────────────────────
 
 # Matrix
-const E0  = 1.0
-const ν0  = 0.2
-const k0  = E0 / (3 * (1 - 2ν0))
+const E0 = 1.0
+const ν0 = 0.2
+const k0 = E0 / (3 * (1 - 2ν0))
 const μ0_ = E0 / (2 * (1 + ν0))
-const f0  = 0.6
-const η0  = 0.2     # bulk relaxation time
-const γ0  = 0.133   # shear relaxation time
+const f0 = 0.6
+const η0 = 0.2     # bulk relaxation time
+const γ0 = 0.133   # shear relaxation time
 
 # Solidifying phase
-const E1   = 5.0
-const ν1   = 0.3
-const k1   = E1 / (3 * (1 - 2ν1))
-const μ1   = E1 / (2 * (1 + ν1))
+const E1 = 5.0
+const ν1 = 0.3
+const k1 = E1 / (3 * (1 - 2ν1))
+const μ1 = E1 / (2 * (1 + ν1))
 const finf = 0.3
-const η1   = 1.0
-const γ1   = 1.67
+const η1 = 1.0
+const γ1 = 1.67
 
 # Pore (elastic, near-zero)
-const Ep   = 1.0e-8 * E0
-const νp   = 0.2
-const kp   = Ep / (3 * (1 - 2νp))
-const μp   = Ep / (2 * (1 + νp))
-const fp   = 1 - f0 - finf
+const Ep = 1.0e-8 * E0
+const νp = 0.2
+const kp = Ep / (3 * (1 - 2νp))
+const μp = Ep / (2 * (1 + νp))
+const fp = 1 - f0 - finf
 
 const C_p_tens = TensISO{3}(3 * kp, 2 * μp)
 
@@ -92,21 +92,25 @@ function inclusion_law(t_set::Real, t_0::Real; fixed::Bool)
         if t_0 ≥ t_set
             return make_R1()
         else
-            return ViscoLaw((t, tp) -> (t < tp ? zero(C_p_tens) : C_p_tens),
-                            :relaxation)
+            return ViscoLaw(
+                (t, tp) -> (t < tp ? zero(C_p_tens) : C_p_tens),
+                :relaxation
+            )
         end
     else
         # History-dependent : check t' (= tp in our notation).
         R1 = make_R1()
-        return ViscoLaw(function (t, tp)
-            if t < tp
-                return zero(C_p_tens)
-            elseif tp ≥ t_set
-                return R1.eval_fun(t, tp)
-            else
-                return C_p_tens
-            end
-        end, :relaxation)
+        return ViscoLaw(
+            function (t, tp)
+                if t < tp
+                    return zero(C_p_tens)
+                elseif tp ≥ t_set
+                    return R1.eval_fun(t, tp)
+                else
+                    return C_p_tens
+                end
+            end, :relaxation
+        )
     end
 end
 
@@ -116,16 +120,20 @@ function build_rve_whole_pores(N::Int, α::Real, t_0::Real; fixed::Bool)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => make_R0()))
     # Pore
-    add_phase!(rve, :PORE, Ellipsoid(1.0, 1.0, 1.0),
-               Dict(:C => heaviside_law(C_p_tens));
-               fraction = fp)
+    add_phase!(
+        rve, :PORE, Ellipsoid(1.0, 1.0, 1.0),
+        Dict(:C => heaviside_law(C_p_tens));
+        fraction = fp
+    )
     # N solidifying spherical layers, each at fraction finf / N.
     t_sets = solidification_setting_times(N, α)
     for i in 1:N
         name = Symbol("INC_$i")
-        add_phase!(rve, name, Ellipsoid(1.0, 1.0, 1.0),
-                   Dict(:C => inclusion_law(t_sets[i], t_0; fixed = fixed));
-                   fraction = finf / N)
+        add_phase!(
+            rve, name, Ellipsoid(1.0, 1.0, 1.0),
+            Dict(:C => inclusion_law(t_sets[i], t_0; fixed = fixed));
+            fraction = finf / N
+        )
     end
     return rve
 end
@@ -164,9 +172,11 @@ function build_rve_layers(N::Int, α::Real, t_0::Real; fixed::Bool)
     sphere = LayeredSphere(radii, moduli)
     # Volume fraction of the LayeredSphere inclusion in the matrix
     # composite : pore + total solidifying = fp + finf.
-    add_phase!(rve, :INCLUSION, sphere,
-               Dict(:C => heaviside_law(C_p_tens));
-               fraction = fp + finf)
+    add_phase!(
+        rve, :INCLUSION, sphere,
+        Dict(:C => heaviside_law(C_p_tens));
+        fraction = fp + finf
+    )
     return rve
 end
 
@@ -192,8 +202,10 @@ function uniaxial_creep(R::AbstractMatrix)
     return [sum(J[6 * (i - 1) + 1, 6 * (j - 1) + 1] for j in 1:n) for i in 1:n]
 end
 
-function creep_curve(N::Int, α::Real, t_0::Real, T_grid::AbstractVector{<:Real},
-                     model::Symbol; fixed::Bool)
+function creep_curve(
+        N::Int, α::Real, t_0::Real, T_grid::AbstractVector{<:Real},
+        model::Symbol; fixed::Bool
+    )
     rve = build_rve(N, α, t_0, model; fixed = fixed)
     R = homogenize_alv(rve, MoriTanaka(), :C; times = T_grid)
     return uniaxial_creep(R)
@@ -211,16 +223,20 @@ const loading_ages = (1 / 3, 2 / 3, 4 / 3, 2.0, 8 / 3)
 const t_max = 10 / 3
 const npts_per_curve = 41
 
-println("Ageing creep — solidifying composite (N = $N layers, α = $α_solid, " *
-        "topology = :$MODEL)")
-println("─" ^ 70)
+println(
+    "Ageing creep — solidifying composite (N = $N layers, α = $α_solid, " *
+        "topology = :$MODEL)"
+)
+println("─"^70)
 
 # Plot.
-p = plot(; xlabel = "t", ylabel = "E₀ · J^E_{eff}(t, t₀)",
-            title = "Ageing creep — Maxwell matrix + Maxwell solidifying inclusions" *
-                    " ($(MODEL))",
-            legend = :topleft, grid = true,
-            xlims = (0, t_max), ylims = (0, 15))
+p = plot(;
+    xlabel = "t", ylabel = "E₀ · J^E_{eff}(t, t₀)",
+    title = "Ageing creep — Maxwell matrix + Maxwell solidifying inclusions" *
+        " ($(MODEL))",
+    legend = :topleft, grid = true,
+    xlims = (0, t_max), ylims = (0, 15)
+)
 
 const colors = [:viridis, :plasma, :magma, :inferno, :turbo]
 const cmap = palette(:viridis, length(loading_ages))
@@ -233,7 +249,7 @@ for (k, t_0) in enumerate(loading_ages)
     J_hist = creep_curve(N, α_solid, t_0, T_grid, MODEL; fixed = false)
     J_frozen = creep_curve(N, α_solid, t_0, T_grid, MODEL; fixed = true)
 
-    plot!(p, T_grid, E0 .* J_hist;   lw = 2, color = cmap[k], label = "history t₀=$(round(t_0; digits = 2))")
+    plot!(p, T_grid, E0 .* J_hist; lw = 2, color = cmap[k], label = "history t₀=$(round(t_0; digits = 2))")
     plot!(p, T_grid, E0 .* J_frozen; lw = 2, color = cmap[k], linestyle = :dash, label = "frozen t₀=$(round(t_0; digits = 2))")
 end
 
@@ -246,15 +262,21 @@ end
 function elastic_compliance(t::Real, N::Int, α::Real)
     t_sets = solidification_setting_times(N, α)
     rve = RVE(:M)
-    add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0),
-                Dict(:C => TensISO{3}(3 * k0, 2 * μ0_)))
-    add_phase!(rve, :PORE, Ellipsoid(1.0, 1.0, 1.0),
-               Dict(:C => C_p_tens); fraction = fp)
+    add_matrix!(
+        rve, Ellipsoid(1.0, 1.0, 1.0),
+        Dict(:C => TensISO{3}(3 * k0, 2 * μ0_))
+    )
+    add_phase!(
+        rve, :PORE, Ellipsoid(1.0, 1.0, 1.0),
+        Dict(:C => C_p_tens); fraction = fp
+    )
     for i in 1:N
         name = Symbol("INC_$i")
         Ci = (t ≥ t_sets[i]) ? TensISO{3}(3 * k1, 2 * μ1) : C_p_tens
-        add_phase!(rve, name, Ellipsoid(1.0, 1.0, 1.0),
-                   Dict(:C => Ci); fraction = finf / N)
+        add_phase!(
+            rve, name, Ellipsoid(1.0, 1.0, 1.0),
+            Dict(:C => Ci); fraction = finf / N
+        )
     end
     Chom = homogenize(rve, MoriTanaka(), :C)
     Khom, μhom = TensND.get_data(Chom)[1] / 3, TensND.get_data(Chom)[2] / 2
@@ -265,8 +287,10 @@ end
 t_sets_for_ref = solidification_setting_times(N, α_solid)
 T_ref = vcat([0.0], filter(t -> t ≤ t_max, t_sets_for_ref), [t_max])
 J_elastic = [elastic_compliance(t, N, α_solid) for t in T_ref]
-plot!(p, T_ref, J_elastic; lw = 2, color = :black, linestyle = :dot,
-      label = "1 / E^hom(t)  (elastic)")
+plot!(
+    p, T_ref, J_elastic; lw = 2, color = :black, linestyle = :dot,
+    label = "1 / E^hom(t)  (elastic)"
+)
 
 const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)

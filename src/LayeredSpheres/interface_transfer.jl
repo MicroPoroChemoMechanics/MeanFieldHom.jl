@@ -43,8 +43,8 @@ end
 
 # Surface-elastic membrane: dual (traction jump), bulk uses κs only.
 function _bulk_interface_T(intf::MembraneInterface, κ, μ, r)
-    T   = promote_type(eltype(intf), typeof(κ), typeof(μ), typeof(r))
-    Tr  = T(r)
+    T = promote_type(eltype(intf), typeof(κ), typeof(μ), typeof(r))
+    Tr = T(r)
     Tr² = Tr * Tr
     return T[one(T) zero(T); 4 * T(intf.κs) / Tr² one(T)]
 end
@@ -100,12 +100,12 @@ function _shear_interface_T(intf::MembraneInterface, κ, μ, r)
     T = promote_type(eltype(intf), typeof(κ), typeof(μ), typeof(r))
     M = Matrix{T}(LinearAlgebra.I, 4, 4)
     κs = T(intf.κs); μs = T(intf.μs)
-    Tr  = T(r)
+    Tr = T(r)
     inv_r² = one(T) / (Tr * Tr)
     six_κs_over_r² = 6 * κs * inv_r²
     M[3, 1] = -six_κs_over_r²
-    M[3, 2] =  six_κs_over_r²
+    M[3, 2] = six_κs_over_r²
     M[4, 1] = -(κs + 3 * μs) * inv_r²
-    M[4, 2] =  (3 * μs - κs) * inv_r²
+    M[4, 2] = (3 * μs - κs) * inv_r²
     return M
 end

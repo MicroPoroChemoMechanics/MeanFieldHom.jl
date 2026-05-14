@@ -24,16 +24,18 @@ using ForwardDiff
 using TensND
 using Printf
 
-println("=" ^ 78)
+println("="^78)
 println("MeanFieldHom — autodiff sensitivities tour")
-println("=" ^ 78)
+println("="^78)
 
 # 2-phase RVE with spherical inclusions ──────────────────────────────────────
 rve = RVE(:M)
 add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-add_phase!(rve, :I, Ellipsoid(1.0),
-            Dict(:C => TensISO{3}(60.0, 20.0));
-            fraction = 0.2)
+add_phase!(
+    rve, :I, Ellipsoid(1.0),
+    Dict(:C => TensISO{3}(60.0, 20.0));
+    fraction = 0.2
+)
 
 println("\nRVE :")
 display(rve)
@@ -56,11 +58,13 @@ const idxC = C -> get_array(C)[1, 1, 1, 1]
 @printf "[3] ∂C[1111]/∂a3_I   (sphere, 0)    = %.6e\n" ∂_a3
 
 # ── 4) Multi-parameter gradient ─────────────────────────────────────────────
-ps = [amount(:I),
-      property(:I, :C, :bulk),
-      property(:I, :C, :shear),
-      property(:M, :C, :bulk),
-      property(:M, :C, :shear)]
+ps = [
+    amount(:I),
+    property(:I, :C, :bulk),
+    property(:I, :C, :shear),
+    property(:M, :C, :bulk),
+    property(:M, :C, :shear),
+]
 ∇ = gradient(rve, MoriTanaka(), ps; indexer = idxC)
 println("\n[4] gradient(C[1111]) on 5 parameters [f_I, K_I, μ_I, K_M, μ_M] :")
 @printf "    [%.4f, %.4f, %.4f, %.4f, %.4f]\n" ∇[1] ∇[2] ∇[3] ∇[4] ∇[5]
@@ -73,7 +77,7 @@ J = jacobian(rve, MoriTanaka(), [amount(:I), property(:I, :C, :bulk)])
 println("\n[6] Cross-check ∂k_MT/∂f vs Christensen 1990 closed form :")
 println("    ─────────────────────────────────────────────────────────")
 @printf "    %6s   %15s   %15s   %12s\n" "f" "AD" "Closed form" "rel. error"
-@printf "    %s\n" ("─" ^ 60)
+@printf "    %s\n" ("─"^60)
 k_m, μ_m = 10.0, 5.0
 k_i, μ_i = 40.0, 20.0
 ζm = k_m + 4 * μ_m / 3

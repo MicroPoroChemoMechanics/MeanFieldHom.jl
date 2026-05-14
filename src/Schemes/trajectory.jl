@@ -42,8 +42,12 @@ end
 function _resolve_paths(s::Sequential, rve::RVE, nsteps::Int)
     inc_names = inclusion_phase_names(rve)
     Set(s.order) == Set(inc_names) ||
-        throw(ArgumentError("Sequential.order = $(s.order) must list every " *
-                            "inclusion phase exactly once; got phases $(inc_names)"))
+        throw(
+        ArgumentError(
+            "Sequential.order = $(s.order) must list every " *
+                "inclusion phase exactly once; got phases $(inc_names)"
+        )
+    )
     out = Dict{Symbol, @NamedTuple{f::Function, df::Function}}()
     n_phases = length(s.order)
     n_phases == 0 && return out
@@ -54,8 +58,8 @@ function _resolve_paths(s::Sequential, rve::RVE, nsteps::Int)
         # f_i ramps 0 → 1 over (τ_lo, τ_hi) and is otherwise saturated.
         f = let τ_lo = τ_lo, τ_hi = τ_hi, Δτ = Δτ
             τ -> τ ≤ τ_lo ? zero(τ) :
-                 τ ≥ τ_hi ? one(τ) :
-                 (τ - τ_lo) / Δτ
+                τ ≥ τ_hi ? one(τ) :
+                (τ - τ_lo) / Δτ
         end
         df = let τ_lo = τ_lo, τ_hi = τ_hi, Δτ = Δτ
             τ -> (τ_lo < τ < τ_hi) ? one(τ) / Δτ : zero(τ)
@@ -156,8 +160,12 @@ function _validate_functional_path(name::Symbol, f::Function)
         isnan(v) &&
             throw(ArgumentError("Path[:$(name)] returned NaN at τ = $τ"))
         v ≥ prev - 1.0e-10 ||
-            throw(ArgumentError("Path[:$(name)] is not monotone non-decreasing " *
-                                "(detected drop at τ = $τ : $prev → $v)"))
+            throw(
+            ArgumentError(
+                "Path[:$(name)] is not monotone non-decreasing " *
+                    "(detected drop at τ = $τ : $prev → $v)"
+            )
+        )
         prev = v
     end
     return nothing

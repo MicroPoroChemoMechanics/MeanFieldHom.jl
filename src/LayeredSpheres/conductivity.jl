@@ -40,15 +40,15 @@ between radii `r_in` and `r_out` in a layer of scalar conductivity
 reciprocals; only one division by `k_iso` appears.
 """
 @inline function _cond_layer_transfer(r_out, r_in, k_iso)
-    T  = promote_type(typeof(r_out), typeof(r_in), typeof(k_iso))
+    T = promote_type(typeof(r_out), typeof(r_in), typeof(k_iso))
     ro = T(r_out); ri = T(r_in); k = T(k_iso)
 
-    inv_ri  = 1 / ri
+    inv_ri = 1 / ri
     inv_ro² = 1 / (ro * ro)
     inv_ro³ = inv_ro² / ro
-    ri²     = ri * ri
-    ri³     = ri² * ri
-    inv_k   = 1 / k
+    ri² = ri * ri
+    ri³ = ri² * ri
+    inv_k = 1 / k
 
     # M(ri)⁻¹ = (ri²/(3k)) · [2k/ri³  -1/ri²; k  ri]
     #        = [2/(3 ri)  -1/(3k);  k ri²/(3k)  ri³/(3k)]
@@ -86,11 +86,11 @@ Extract the local-expansion coefficients `(A, B)` in a layer of
 conductivity `k_iso` given the state `(T̂, q̂_n)` at radius `r`.
 """
 @inline function _cond_extract_AB(r, k_iso, T̂, q̂n)
-    T   = promote_type(typeof(r), typeof(k_iso), typeof(T̂), typeof(q̂n))
-    Tr  = T(r)
+    T = promote_type(typeof(r), typeof(k_iso), typeof(T̂), typeof(q̂n))
+    Tr = T(r)
     Tr² = Tr * Tr
     Tr³ = Tr² * Tr
-    Tk  = T(k_iso)
+    Tk = T(k_iso)
     inv_3 = one(T) / 3
     A = (2 * T(T̂) - Tr * T(q̂n) / Tk) * inv_3 / Tr
     B = (Tr² * T(T̂) + Tr³ * T(q̂n) / Tk) * inv_3
@@ -118,7 +118,7 @@ function _cond_interface_T(intf::KapitzaInterface, k_iso, r)
 end
 
 function _cond_interface_T(intf::SurfaceConductiveInterface, k_iso, r)
-    T   = promote_type(eltype(intf), typeof(k_iso), typeof(r))
+    T = promote_type(eltype(intf), typeof(k_iso), typeof(r))
     Tr² = T(r) * T(r)
     return T[one(T) zero(T); -2 * T(intf.conductance) / Tr² one(T)]
 end
@@ -138,8 +138,10 @@ Propagate the conductivity state vector from the core outward.
 """
 function _cond_state_seq(sphere::LayeredSphere{T, N}, k₀) where {T, N}
     k_layers = _cond_layer_moduli(sphere)
-    TP = promote_type(T, typeof(k₀),
-                      ntuple(k -> typeof(k_layers[k]), N)...)
+    TP = promote_type(
+        T, typeof(k₀),
+        ntuple(k -> typeof(k_layers[k]), N)...
+    )
     radii = sphere.radii
 
     s = _cond_seed_state(TP(radii[1]), TP(k_layers[1]))
@@ -151,8 +153,10 @@ function _cond_state_seq(sphere::LayeredSphere{T, N}, k₀) where {T, N}
         Tint = _cond_interface_T(intf, TP(k_layers[k]), TP(radii[k]))
         s = Tint * s
         if k < N
-            Tlay = _cond_layer_transfer(TP(radii[k + 1]), TP(radii[k]),
-                                        TP(k_layers[k + 1]))
+            Tlay = _cond_layer_transfer(
+                TP(radii[k + 1]), TP(radii[k]),
+                TP(k_layers[k + 1])
+            )
             s = Tlay * s
         end
     end
@@ -168,8 +172,10 @@ uniform gradient.  Reduces, for `N = 1`, to the classical formula
 """
 function _cond_localization(sphere::LayeredSphere{T, N}, k₀) where {T, N}
     k_layers = _cond_layer_moduli(sphere)
-    TP = promote_type(T, typeof(k₀),
-                      ntuple(k -> typeof(k_layers[k]), N)...)
+    TP = promote_type(
+        T, typeof(k₀),
+        ntuple(k -> typeof(k_layers[k]), N)...
+    )
     inside_states, s_matrix = _cond_state_seq(sphere, k₀)
     radii = sphere.radii
 
@@ -177,8 +183,10 @@ function _cond_localization(sphere::LayeredSphere{T, N}, k₀) where {T, N}
     inv_A_inf = one(TP) / A_inf
 
     return ntuple(N) do k
-        (A_k, _) = _cond_extract_AB(TP(radii[k]), TP(k_layers[k]),
-                                    inside_states[k][1], inside_states[k][2])
+        (A_k, _) = _cond_extract_AB(
+            TP(radii[k]), TP(k_layers[k]),
+            inside_states[k][1], inside_states[k][2]
+        )
         A_k * inv_A_inf
     end
 end

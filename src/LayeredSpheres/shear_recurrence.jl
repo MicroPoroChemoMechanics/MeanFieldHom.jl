@@ -61,12 +61,12 @@ All entries are rational in `(κ, μ, r)`; no `1/(1−2ν)` remains, so the
 matrix is finite in the incompressibility limit `κ → ∞`.
 """
 @inline function _shear_M_matrix(r, κ, μ)
-    T  = promote_type(typeof(r), typeof(κ), typeof(μ))
+    T = promote_type(typeof(r), typeof(κ), typeof(μ))
     Tκ = T(κ); Tμ = T(μ); Tr = T(r)
-    x  = Tκ / Tμ
+    x = Tκ / Tμ
 
-    r²     = Tr * Tr
-    r³     = r² * Tr
+    r² = Tr * Tr
+    r³ = r² * Tr
     inv_r² = one(T) / r²
     inv_r³ = inv_r² / Tr
     inv_r⁴ = inv_r² * inv_r²
@@ -96,17 +96,17 @@ matrix is finite in the incompressibility limit `κ → ∞`.
     M[4, 2] = 2 * (24 * x + 5) * Tμ * r²
 
     # Mode 3 — (U, W) = (3/r⁴, -1/r⁴).
-    M[1, 3] =  3 * inv_r⁴
-    M[2, 3] =     -inv_r⁴
+    M[1, 3] = 3 * inv_r⁴
+    M[2, 3] = -inv_r⁴
     M[3, 3] = -24 * Tμ * inv_r⁵
-    M[4, 3] =   8 * Tμ * inv_r⁵
+    M[4, 3] = 8 * Tμ * inv_r⁵
 
     # Mode 4 — (U, W) = (3(x+1)/r², 1/r²).
     α₄ = 3 * (x + 1)
     M[1, 4] = α₄ * inv_r²
-    M[2, 4] =      inv_r²
+    M[2, 4] = inv_r²
     M[3, 4] = -2 * (9 * x + 4) * Tμ * inv_r³
-    M[4, 4] =  3 * x * Tμ * inv_r³
+    M[4, 4] = 3 * x * Tμ * inv_r³
 
     return M
 end
@@ -118,7 +118,7 @@ Intra-layer field-to-field transfer `S(r_out) = T · S(r_in)` computed
 as `M(r_out) · M(r_in)⁻¹`.
 """
 @inline function _shear_layer_transfer(r_out, r_in, κ, μ)
-    M_in  = _shear_M_matrix(r_in,  κ, μ)
+    M_in = _shear_M_matrix(r_in, κ, μ)
     M_out = _shear_M_matrix(r_out, κ, μ)
     return M_out / M_in
 end
@@ -185,8 +185,10 @@ function _shear_state_seq(sphere::LayeredSphere{T, N}, C₀::TensND.TensISO{4, 3
         sb = Tint * sb
         if k < N
             (κk1, μk1) = κμ[k + 1]
-            Tlay = _shear_layer_transfer(TP(radii[k + 1]), TP(radii[k]),
-                                         TP(κk1), TP(μk1))
+            Tlay = _shear_layer_transfer(
+                TP(radii[k + 1]), TP(radii[k]),
+                TP(κk1), TP(μk1)
+            )
             sa = Tlay * sa
             sb = Tlay * sb
         end
@@ -196,7 +198,7 @@ function _shear_state_seq(sphere::LayeredSphere{T, N}, C₀::TensND.TensISO{4, 3
     (aa, ab, _, _) = _shear_extract_amplitudes(TP(radii[N]), TP(κ₀), TP(μ₀), sa)
     (ba, bb, _, _) = _shear_extract_amplitudes(TP(radii[N]), TP(κ₀), TP(μ₀), sb)
     det_ab = aa * bb - ab * ba
-    λa =  bb / det_ab
+    λa = bb / det_ab
     λb = -ab / det_ab
 
     states = ntuple(k -> λa * inside_a[k] + λb * inside_b[k], N)
@@ -238,7 +240,7 @@ The full per-layer dev localisation is therefore
     Trb3 = Trb^3; Tra3 = Tra^3
     Trb5 = Trb^5; Tra5 = Tra^5
     geom = (Trb5 - Tra5) / (Trb3 - Tra3)
-    return T(21//5) * (3 * Tκ + Tμ) / Tμ * geom
+    return T(21 // 5) * (3 * Tκ + Tμ) / Tμ * geom
 end
 
 """

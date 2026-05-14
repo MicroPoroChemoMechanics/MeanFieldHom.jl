@@ -65,8 +65,10 @@ const law_M = ViscoLaw(R_M, :relaxation)
 function build_rve(d)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => law_M))
-    add_phase!(rve, :CRACK, PennyCrack(1.0), Dict(:C => law_M);
-               density = d, symmetrize = :iso)
+    add_phase!(
+        rve, :CRACK, PennyCrack(1.0), Dict(:C => law_M);
+        density = d, symmetrize = :iso
+    )
     return rve
 end
 
@@ -85,8 +87,8 @@ end
 # ─── Plot ──────────────────────────────────────────────────────────────────
 
 const N_TIMES = 50
-const dens_v = (0.0, 0.05, 0.10)   # physically meaningful pure-crack densities
-                                    # (Bristow-O'Connell percolation ≈ 0.18)
+const dens_v = (0.0, 0.05, 0.1)   # physically meaningful pure-crack densities
+# (Bristow-O'Connell percolation ≈ 0.18)
 const t0_v = (0.0, 10.0, 20.0)
 
 function build_grid(t0, n)
@@ -94,19 +96,21 @@ function build_grid(t0, n)
 end
 
 const SCHEMES = (
-    (Dilute(),                  "Dilute",  :gray,    :dot),
-    (MoriTanaka(),              "MT",      :blue,    :solid),
-    (Maxwell(),                 "MAX",     :purple,  :dash),
-    (PonteCastanedaWillis(),    "PCW",     :green,   :dashdot),
-    (SelfConsistent(),          "SC",      :red,     :solid),
-    (AsymmetricSelfConsistent(), "ASC",    :orange,  :dot),
+    (Dilute(), "Dilute", :gray, :dot),
+    (MoriTanaka(), "MT", :blue, :solid),
+    (Maxwell(), "MAX", :purple, :dash),
+    (PonteCastanedaWillis(), "PCW", :green, :dashdot),
+    (SelfConsistent(), "SC", :red, :solid),
+    (AsymmetricSelfConsistent(), "ASC", :orange, :dot),
     (DifferentialScheme(; nsteps = 50), "DIFF", :teal, :dashdotdot),
 )
 
-plt = plot(layout = (1, 1), size = (1200, 800),
-           title = "ALV penny cracks — all crack-aware schemes (d ∈ {0, 0.05, 0.10})",
-           xlabel = "t", ylabel = "Eₓₓ(t)",
-           legend = :topleft)
+plt = plot(
+    layout = (1, 1), size = (1200, 800),
+    title = "ALV penny cracks — all crack-aware schemes (d ∈ {0, 0.05, 0.10})",
+    xlabel = "t", ylabel = "Eₓₓ(t)",
+    legend = :topleft
+)
 
 for t0 in t0_v
     T = build_grid(t0, N_TIMES)
@@ -118,8 +122,10 @@ for t0 in t0_v
                 R̃ = homogenize_alv(rve, sch, :C; times = T)
                 E = uniaxial_response(R̃, n)
                 full_lbl = (t0 == 0.0) ? "$lbl d=$d" : ""
-                plot!(plt, T, E; color = col, linestyle = ls,
-                      linewidth = 1.5, label = full_lbl)
+                plot!(
+                    plt, T, E; color = col, linestyle = ls,
+                    linewidth = 1.5, label = full_lbl
+                )
             catch e
                 @warn "Skipping" sch d t0 exception = e
             end

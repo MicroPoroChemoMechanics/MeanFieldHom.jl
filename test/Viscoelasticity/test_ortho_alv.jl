@@ -52,7 +52,7 @@ end
         @test _is_ortho_block(M)
         o_back = ortho_params_from_blocks(M)
         for k in 1:12
-            @test isapprox(o[k], o_back[k]; atol = 1e-14)
+            @test isapprox(o[k], o_back[k]; atol = 1.0e-14)
         end
     end
 end
@@ -66,7 +66,7 @@ end
     o_extracted = _ortho_pair(M_iso)
     o_via_helper = _iso_to_ortho((α, β))
     for k in 1:12
-        @test isapprox(o_extracted[k], o_via_helper[k]; atol = 1e-14)
+        @test isapprox(o_extracted[k], o_via_helper[k]; atol = 1.0e-14)
     end
 end
 
@@ -79,7 +79,7 @@ end
     o_extracted = _ortho_pair(M_ti)
     o_via_helper = _ti_to_ortho(ℓ)
     for k in 1:12
-        @test isapprox(o_extracted[k], o_via_helper[k]; atol = 1e-14)
+        @test isapprox(o_extracted[k], o_via_helper[k]; atol = 1.0e-14)
     end
 end
 
@@ -94,14 +94,14 @@ end
     c_ortho = _ortho_prod(a, b)
     M_c_via_ortho = ortho_blocks_from_params(c_ortho)
     M_c_full = M_a * M_b
-    @test isapprox(M_c_via_ortho, M_c_full; atol = 1e-12)
+    @test isapprox(M_c_via_ortho, M_c_full; atol = 1.0e-12)
     @test _is_ortho_block(M_c_full)   # algebra closure
 
     # Inverse
     a_inv = _ortho_inv(a)
     M_a_inv_via_ortho = ortho_blocks_from_params(a_inv)
     M_a_inv_full = volterra_inverse(M_a; block_size = 6)
-    @test isapprox(M_a_inv_via_ortho, M_a_inv_full; atol = 1e-10)
+    @test isapprox(M_a_inv_via_ortho, M_a_inv_full; atol = 1.0e-10)
 
     # Sanity: a · a⁻¹ = block-diagonal identity
     H_id = zeros(6n, 6n)
@@ -109,13 +109,13 @@ end
         rows = (6 * (i - 1) + 1):(6 * i)
         H_id[rows, rows] = Matrix{Float64}(I, 6, 6)
     end
-    @test isapprox(M_a * M_a_inv_via_ortho, H_id; atol = 1e-10)
+    @test isapprox(M_a * M_a_inv_via_ortho, H_id; atol = 1.0e-10)
 
     # Left divide
     ainvb_ortho = _ortho_left_divide(a, b)
     M_via_ortho = ortho_blocks_from_params(ainvb_ortho)
     M_full = volterra_left_divide(M_a, M_b; block_size = 6)
-    @test isapprox(M_via_ortho, M_full; atol = 1e-10)
+    @test isapprox(M_via_ortho, M_full; atol = 1.0e-10)
 end
 
 @testset "ortho_alv — schemes match 6n×6n on iso phases" begin
@@ -140,13 +140,13 @@ end
     voigt_full = voigt_alv([C_M, C_I], [f_M, f_I])
     o_M = _ortho_pair(C_M); o_I = _ortho_pair(C_I)
     voigt_ortho = _ortho_blocks(voigt_alv_ortho([o_M, o_I], [f_M, f_I]))
-    @test isapprox(voigt_ortho, voigt_full; atol = 1e-12)
+    @test isapprox(voigt_ortho, voigt_full; atol = 1.0e-12)
     @test _is_ortho_block(voigt_full)
 
     # Reuss
     reuss_full = reuss_alv([C_M, C_I], [f_M, f_I])
     reuss_ortho = _ortho_blocks(reuss_alv_ortho([o_M, o_I], [f_M, f_I]))
-    @test isapprox(reuss_ortho, reuss_full; atol = 1e-10)
+    @test isapprox(reuss_ortho, reuss_full; atol = 1.0e-10)
 end
 
 @testset "ortho_alv — random ortho phases match generic algebra" begin
@@ -163,11 +163,11 @@ end
     f_a, f_b = 0.7, 0.3
     voigt_full = voigt_alv([M_a, M_b], [f_a, f_b])
     voigt_o = _ortho_blocks(voigt_alv_ortho([a, b], [f_a, f_b]))
-    @test isapprox(voigt_o, voigt_full; atol = 1e-12)
+    @test isapprox(voigt_o, voigt_full; atol = 1.0e-12)
 
     reuss_full = reuss_alv([M_a, M_b], [f_a, f_b])
     reuss_o = _ortho_blocks(reuss_alv_ortho([a, b], [f_a, f_b]))
-    @test isapprox(reuss_o, reuss_full; atol = 1e-9)
+    @test isapprox(reuss_o, reuss_full; atol = 1.0e-9)
 
     # Dilute concentration / contribution: pick a random P̃ in ortho form
     # so all three (C_E, C_0, P̃) are ortho.
@@ -176,11 +176,11 @@ end
 
     A_full = dilute_concentration_alv(M_a, M_b, P_full)
     A_o = _ortho_blocks(dilute_concentration_alv_ortho(a, b, p))
-    @test isapprox(A_o, A_full; atol = 1e-9)
+    @test isapprox(A_o, A_full; atol = 1.0e-9)
 
     N_full = dilute_contribution_alv(M_a, M_b, P_full)
     N_o = _ortho_blocks(dilute_contribution_alv_ortho(a, b, p))
-    @test isapprox(N_o, N_full; atol = 1e-9)
+    @test isapprox(N_o, N_full; atol = 1.0e-9)
 end
 
 @testset "ortho_alv — homogenize_alv routes through ortho for ortho RVE" begin
@@ -197,8 +197,10 @@ end
 
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_M_law))
-    add_phase!(rve, :I, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_I_law);
-               fraction = 0.2)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_I_law);
+        fraction = 0.2
+    )
 
     # Voigt — closed form
     C_eff = homogenize_alv(rve, Voigt(), :C; times = times)
@@ -212,5 +214,5 @@ end
     C_M = trapezoidal_matrix(C_M_law, times)
     C_I = trapezoidal_matrix(C_I_law, times)
     C_voigt_ref = voigt_alv([C_M, C_I], [0.8, 0.2])
-    @test isapprox(C_eff, C_voigt_ref; atol = 1e-12)
+    @test isapprox(C_eff, C_voigt_ref; atol = 1.0e-12)
 end

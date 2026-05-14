@@ -38,9 +38,11 @@ function volterra_inverse(M::AbstractMatrix; block_size::Int = 6)
     B ≥ 1 || throw(ArgumentError("volterra_inverse: block_size must be ≥ 1"))
     sz = size(M, 1)
     sz == size(M, 2) || throw(ArgumentError("volterra_inverse: M must be square"))
-    sz % B == 0 || throw(ArgumentError(
-        "volterra_inverse: matrix size $(sz) not divisible by block_size $(B)"
-    ))
+    sz % B == 0 || throw(
+        ArgumentError(
+            "volterra_inverse: matrix size $(sz) not divisible by block_size $(B)"
+        )
+    )
     n = sz ÷ B
     T = eltype(M)
 
@@ -65,8 +67,10 @@ In-place version of [`volterra_inverse`](@ref).  Writes the Volterra
 inverse of `M` directly into the pre-allocated `out` (which must have
 the same size as `M`).  Returns `out`.
 """
-function volterra_inverse!(out::AbstractMatrix, M::AbstractMatrix;
-                            block_size::Int = 6)
+function volterra_inverse!(
+        out::AbstractMatrix, M::AbstractMatrix;
+        block_size::Int = 6
+    )
     B = block_size
     B ≥ 1 || throw(ArgumentError("volterra_inverse!: block_size must be ≥ 1"))
     sz = size(M, 1)
@@ -102,8 +106,10 @@ end
 # ── Scalar (1×1 block) forward substitution ─────────────────────────────────
 # Solve `J̃ = M^{-vol}` block-column by block-column.
 
-@inline function _volterra_forward_scalar!(inv_M::AbstractMatrix, M::AbstractMatrix,
-                                           n::Int)
+@inline function _volterra_forward_scalar!(
+        inv_M::AbstractMatrix, M::AbstractMatrix,
+        n::Int
+    )
     @inbounds for j in 1:n
         # Diagonal: `inv_M[j, j] = 1 / M[j, j]`.
         diag_jj = M[j, j]
@@ -125,8 +131,10 @@ end
 
 # ── Block forward substitution (B×B per block, generic B) ───────────────────
 
-@inline function _volterra_forward_block!(inv_M::AbstractMatrix, M::AbstractMatrix,
-                                          n::Int, B::Int)
+@inline function _volterra_forward_block!(
+        inv_M::AbstractMatrix, M::AbstractMatrix,
+        n::Int, B::Int
+    )
     T = eltype(inv_M)
     # Pre-invert the diagonal blocks once.  We need them for both the
     # diagonal placement and the forward-substitution division below.
@@ -198,20 +206,25 @@ step-activated `ViscoLaw` kernels in multi-layer ALV recurrences.
 (scalar Volterra) and `6` (4-tensor Mandel).  The result is
 lower-block-triangular if both `M` and `S` are.
 """
-function volterra_divide(M::AbstractMatrix, S::AbstractMatrix;
-                          block_size::Int = 1)
+function volterra_divide(
+        M::AbstractMatrix, S::AbstractMatrix;
+        block_size::Int = 1
+    )
     B = block_size
     sz = size(M, 1)
     sz == size(M, 2) == size(S, 1) == size(S, 2) ||
         throw(ArgumentError("volterra_divide: M and S must be square of the same size"))
-    sz % B == 0 || throw(ArgumentError(
-        "volterra_divide: matrix size $(sz) not divisible by block_size $(B)"))
+    sz % B == 0 || throw(
+        ArgumentError(
+            "volterra_divide: matrix size $(sz) not divisible by block_size $(B)"
+        )
+    )
     n = sz ÷ B
     T = promote_type(eltype(M), eltype(S))
 
     # ── Fast path: BlasFloat scalar Volterra → BLAS trsm ───────────────────
     if B == 1 && T <: LinearAlgebra.BlasFloat &&
-       M isa StridedMatrix && S isa StridedMatrix && n ≥ 64
+            M isa StridedMatrix && S isa StridedMatrix && n ≥ 64
         Mt = eltype(M) === T ? M : convert(Matrix{T}, M)
         St = eltype(S) === T ? S : convert(Matrix{T}, S)
         return Mt / LowerTriangular(St)
@@ -228,8 +241,10 @@ end
 
 # Iterate columns from right (j = n) to left (j = 1) so that when
 # computing T[i, j] we already know T[i, k] for k > j.
-@inline function _volterra_divide_scalar!(out::AbstractMatrix, M::AbstractMatrix,
-                                           S::AbstractMatrix, n::Int)
+@inline function _volterra_divide_scalar!(
+        out::AbstractMatrix, M::AbstractMatrix,
+        S::AbstractMatrix, n::Int
+    )
     @inbounds for j in n:-1:1
         diag = S[j, j]
         iszero(diag) && throw(SingularException(j))
@@ -244,8 +259,10 @@ end
     return out
 end
 
-@inline function _volterra_divide_block!(out::AbstractMatrix, M::AbstractMatrix,
-                                          S::AbstractMatrix, n::Int, B::Int)
+@inline function _volterra_divide_block!(
+        out::AbstractMatrix, M::AbstractMatrix,
+        S::AbstractMatrix, n::Int, B::Int
+    )
     T = eltype(out)
     diag_inv = Vector{Matrix{T}}(undef, n)
     @inbounds for i in 1:n
@@ -302,20 +319,25 @@ and right-vs-left divides give different results.
 Volterra) and `6` (4-tensor Mandel).  Both arguments must be lower-
 block-triangular of the same size; the result is lower-block-triangular.
 """
-function volterra_left_divide(S::AbstractMatrix, M::AbstractMatrix;
-                              block_size::Int = 1)
+function volterra_left_divide(
+        S::AbstractMatrix, M::AbstractMatrix;
+        block_size::Int = 1
+    )
     B = block_size
     sz = size(M, 1)
     sz == size(M, 2) == size(S, 1) == size(S, 2) ||
         throw(ArgumentError("volterra_left_divide: M and S must be square of the same size"))
-    sz % B == 0 || throw(ArgumentError(
-        "volterra_left_divide: matrix size $(sz) not divisible by block_size $(B)"))
+    sz % B == 0 || throw(
+        ArgumentError(
+            "volterra_left_divide: matrix size $(sz) not divisible by block_size $(B)"
+        )
+    )
     n = sz ÷ B
     T = promote_type(eltype(M), eltype(S))
 
     # ── Fast path: BlasFloat scalar Volterra → BLAS trsm ───────────────────
     if B == 1 && T <: LinearAlgebra.BlasFloat &&
-       M isa StridedMatrix && S isa StridedMatrix && n ≥ 64
+            M isa StridedMatrix && S isa StridedMatrix && n ≥ 64
         Mt = eltype(M) === T ? M : convert(Matrix{T}, M)
         St = eltype(S) === T ? S : convert(Matrix{T}, S)
         return LowerTriangular(St) \ Mt
@@ -332,9 +354,11 @@ end
 
 # Iterate columns j = 1..n from left to right, then for each column
 # walk rows i = j..n via standard forward substitution.
-@inline function _volterra_left_divide_scalar!(out::AbstractMatrix,
-                                                M::AbstractMatrix,
-                                                S::AbstractMatrix, n::Int)
+@inline function _volterra_left_divide_scalar!(
+        out::AbstractMatrix,
+        M::AbstractMatrix,
+        S::AbstractMatrix, n::Int
+    )
     @inbounds for j in 1:n
         for i in j:n
             diag_i = S[i, i]
@@ -349,10 +373,12 @@ end
     return out
 end
 
-@inline function _volterra_left_divide_block!(out::AbstractMatrix,
-                                               M::AbstractMatrix,
-                                               S::AbstractMatrix,
-                                               n::Int, B::Int)
+@inline function _volterra_left_divide_block!(
+        out::AbstractMatrix,
+        M::AbstractMatrix,
+        S::AbstractMatrix,
+        n::Int, B::Int
+    )
     T = eltype(out)
     diag_inv = Vector{Matrix{T}}(undef, n)
     @inbounds for i in 1:n

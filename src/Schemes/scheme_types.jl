@@ -257,11 +257,15 @@ struct DifferentialScheme{P <: DifferentialTrajectory, K <: NamedTuple} <: Homog
     trajectory::P
     options::K
 end
-DifferentialScheme(; trajectory = Proportional(),
-                     nsteps::Int = 100,
-                     abstol::Real = 1.0e-8,
-                     reltol::Real = 1.0e-6,
-                     alg = nothing,
-                     kwargs...) =
-    DifferentialScheme(trajectory,
-                       (; nsteps, abstol, reltol, alg, kwargs...))
+DifferentialScheme(;
+    trajectory = Proportional(),
+    nsteps::Int = 100,
+    abstol::Real = 1.0e-8,
+    reltol::Real = 1.0e-6,
+    alg = nothing,
+    kwargs...
+) =
+    DifferentialScheme(
+    trajectory,
+    (; nsteps, abstol, reltol, alg, kwargs...)
+)

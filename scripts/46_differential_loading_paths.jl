@@ -38,11 +38,11 @@ using Printf
 
 # ─── RVE : matrix + 2 solid inclusions ─────────────────────────────────────
 
-const C_M  = TensISO{3}(3 * 5.0, 2 * 2.0)        # matrix : k = 5,    μ = 2
+const C_M = TensISO{3}(3 * 5.0, 2 * 2.0)        # matrix : k = 5,    μ = 2
 const C_I1 = TensISO{3}(3 * 30.0, 2 * 12.0)      # phase 1 : stiff   (5× stiffer)
-const C_I2 = TensISO{3}(3 * 0.5,  2 * 0.2)       # phase 2 : compliant (0.1× softer)
+const C_I2 = TensISO{3}(3 * 0.5, 2 * 0.2)       # phase 2 : compliant (0.1× softer)
 
-const F1, F2 = 0.20, 0.20    # target volume fractions
+const F1, F2 = 0.2, 0.2    # target volume fractions
 
 function build_rve()
     rve = RVE(:M)
@@ -58,7 +58,7 @@ end
 # `nsteps` (saveat density along τ) and read the saved trajectory.
 
 const NSTEPS = 200
-const TAU    = collect(range(0.0, 1.0; length = NSTEPS + 1))
+const TAU = collect(range(0.0, 1.0; length = NSTEPS + 1))
 
 function eval_path(traj)
     rve = build_rve()
@@ -70,14 +70,18 @@ function eval_path(traj)
     P_init = matrix_property(rve, :C)
     sym_tag = MeanFieldHom.Schemes._symmetry_tag(P_init)
     x0 = collect(TensND.get_data(P_init))
-    ode_p = (rve = rve, prop = :C, paths = paths,
-             solid_names = [:I1, :I2], crack_names = Symbol[],
-             targets = Dict(:I1 => F1, :I2 => F2),
-             sym_tag = sym_tag, proto = P_init, kw = NamedTuple())
+    ode_p = (
+        rve = rve, prop = :C, paths = paths,
+        solid_names = [:I1, :I2], crack_names = Symbol[],
+        targets = Dict(:I1 => F1, :I2 => F2),
+        sym_tag = sym_tag, proto = P_init, kw = NamedTuple(),
+    )
     rhs! = (du, u, p, τ) -> MeanFieldHom.Schemes._diff_ode_rhs!(du, u, p, τ)
     prob = ODEProblem(rhs!, x0, (0.0, 1.0), ode_p)
-    sol  = solve(prob, Tsit5(); abstol = 1e-9, reltol = 1e-7,
-                                saveat = TAU, dense = false)
+    sol = solve(
+        prob, Tsit5(); abstol = 1.0e-9, reltol = 1.0e-7,
+        saveat = TAU, dense = false
+    )
     # Extract bulk and shear moduli of every saved state.
     α = [u[1] for u in sol.u]   # = 3 k_eff
     β = [u[2] for u in sol.u]   # = 2 μ_eff
@@ -87,13 +91,17 @@ end
 println("Computing four loading-path scenarios on the same target (f₁=$F1, f₂=$F2)…")
 
 paths_to_run = (
-    ("Proportional",                Proportional()),
-    ("Sequential :I1 → :I2",        Sequential([:I1, :I2])),
-    ("Sequential :I2 → :I1",        Sequential([:I2, :I1])),
-    ("Path (I1 ∝ τ²,  I2 ∝ 2τ−τ²)", Path(Dict(
-        :I1 => τ -> τ^2,
-        :I2 => τ -> 2τ - τ^2,
-    ))),
+    ("Proportional", Proportional()),
+    ("Sequential :I1 → :I2", Sequential([:I1, :I2])),
+    ("Sequential :I2 → :I1", Sequential([:I2, :I1])),
+    (
+        "Path (I1 ∝ τ²,  I2 ∝ 2τ−τ²)", Path(
+            Dict(
+                :I1 => τ -> τ^2,
+                :I2 => τ -> 2τ - τ^2,
+            )
+        ),
+    ),
 )
 
 results = Dict{String, Tuple{Vector{Float64}, Vector{Float64}}}()
@@ -106,14 +114,18 @@ end
 
 # ─── Plot ──────────────────────────────────────────────────────────────────
 
-p_k = plot(xlabel = "τ  (fictitious incorporation time)",
-           ylabel = "k_eff(τ)",
-           title  = "Bulk modulus along the trajectory",
-           legend = :right)
-p_μ = plot(xlabel = "τ",
-           ylabel = "μ_eff(τ)",
-           title  = "Shear modulus along the trajectory",
-           legend = :right)
+p_k = plot(
+    xlabel = "τ  (fictitious incorporation time)",
+    ylabel = "k_eff(τ)",
+    title = "Bulk modulus along the trajectory",
+    legend = :right
+)
+p_μ = plot(
+    xlabel = "τ",
+    ylabel = "μ_eff(τ)",
+    title = "Shear modulus along the trajectory",
+    legend = :right
+)
 
 colors = (:black, :red, :blue, :green)
 for (i, (name, _)) in enumerate(paths_to_run)

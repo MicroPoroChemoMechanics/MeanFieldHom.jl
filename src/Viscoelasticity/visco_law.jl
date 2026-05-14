@@ -47,9 +47,11 @@ struct ViscoLaw{F} <: AbstractViscoLaw
 
     function ViscoLaw(eval_fun::F, mode::Symbol = :relaxation) where {F}
         mode in VALID_VISCO_MODES ||
-            throw(ArgumentError(
+            throw(
+            ArgumentError(
                 "ViscoLaw mode must be one of $(VALID_VISCO_MODES); got :$(mode)"
-            ))
+            )
+        )
         return new{F}(eval_fun, mode)
     end
 end
@@ -98,8 +100,10 @@ for `t ≥ t'`, `0` otherwise.  `C_inf` and `C_branches[i]` may be
 scalars or 4-tensors (`TensND.AbstractTens{4,3}`); `taus[i]` is a
 positive relaxation time of the `i`-th branch.
 """
-function maxwell_relaxation(C_inf, C_branches::AbstractVector, taus::AbstractVector;
-                            mode::Symbol = :relaxation)
+function maxwell_relaxation(
+        C_inf, C_branches::AbstractVector, taus::AbstractVector;
+        mode::Symbol = :relaxation
+    )
     length(C_branches) == length(taus) ||
         throw(ArgumentError("maxwell_relaxation: C_branches and taus must have the same length"))
     eval_fun = function (t, t_p)
@@ -129,8 +133,10 @@ for `t ≥ t'`, `0` otherwise.  `J_0` is the instantaneous compliance,
 `J_branches[i]` the `i`-th branch compliance, `taus[i]` its retardation
 time.
 """
-function kelvin_creep(J_0, J_branches::AbstractVector, taus::AbstractVector;
-                      mode::Symbol = :creep)
+function kelvin_creep(
+        J_0, J_branches::AbstractVector, taus::AbstractVector;
+        mode::Symbol = :creep
+    )
     length(J_branches) == length(taus) ||
         throw(ArgumentError("kelvin_creep: J_branches and taus must have the same length"))
     eval_fun = function (t, t_p)
@@ -170,8 +176,10 @@ deviatoric projector.  The output is a `TensND.TensISO{4,3}` at every
 function maxwell_iso(k, mu, eta_k, eta_mu)
     eval_fun = function (t, t_p)
         if t < t_p
-            T = promote_type(typeof(k), typeof(mu), typeof(eta_k), typeof(eta_mu),
-                             typeof(t), typeof(t_p))
+            T = promote_type(
+                typeof(k), typeof(mu), typeof(eta_k), typeof(eta_mu),
+                typeof(t), typeof(t_p)
+            )
             return TensND.TensISO{3}(zero(T), zero(T))
         end
         Δt = t - t_p
@@ -196,11 +204,13 @@ J(t, t') = (1/(3 k_0)) 𝕁 + (1/(2 mu_0)) 𝕂
 `k_branches`, `mu_branches`, `taus_k`, `taus_mu` may be empty if no
 Kelvin branches are required (instantaneous-only compliance).
 """
-function kelvin_iso(k_0, mu_0,
-                    k_branches::AbstractVector = Float64[],
-                    mu_branches::AbstractVector = Float64[],
-                    taus_k::AbstractVector = Float64[],
-                    taus_mu::AbstractVector = Float64[])
+function kelvin_iso(
+        k_0, mu_0,
+        k_branches::AbstractVector = Float64[],
+        mu_branches::AbstractVector = Float64[],
+        taus_k::AbstractVector = Float64[],
+        taus_mu::AbstractVector = Float64[]
+    )
     length(k_branches) == length(taus_k) ||
         throw(ArgumentError("kelvin_iso: k_branches and taus_k length mismatch"))
     length(mu_branches) == length(taus_mu) ||

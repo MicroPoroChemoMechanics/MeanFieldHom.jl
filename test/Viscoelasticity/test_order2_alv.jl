@@ -97,5 +97,5 @@ end
     @test size(M) == (3n, 3n)
     @test MeanFieldHom.Viscoelasticity._is_iso_order2_block(M)
     α_back = iso_order2_params_from_blocks(M)
-    @test isapprox(α, α_back; atol = 1e-14)
+    @test isapprox(α, α_back; atol = 1.0e-14)
 end

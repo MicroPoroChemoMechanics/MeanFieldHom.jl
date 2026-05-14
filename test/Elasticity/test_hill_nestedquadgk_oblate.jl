@@ -20,11 +20,11 @@ const basis4 = TensND.CanonicalBasis{3, Float64}()
 # Triclinic reference stiffness (same hand-picked matrix as test_anisotropic.jl)
 const _KM_obl = [
     210.0 80.0 75.0 5.0 4.0 3.0;
-     80.0 195.0 90.0 -2.0 3.0 -1.0;
-     75.0 90.0 220.0 1.0 -2.0 2.0;
-      5.0 -2.0 1.0 60.0 2.5 1.5;
-      4.0 3.0 -2.0 2.5 65.0 -1.0;
-      3.0 -1.0 2.0 1.5 -1.0 55.0
+    80.0 195.0 90.0 -2.0 3.0 -1.0;
+    75.0 90.0 220.0 1.0 -2.0 2.0;
+    5.0 -2.0 1.0 60.0 2.5 1.5;
+    4.0 3.0 -2.0 2.5 65.0 -1.0;
+    3.0 -1.0 2.0 1.5 -1.0 55.0
 ]
 
 
@@ -37,8 +37,10 @@ const _KM_obl = [
     P_nqg = hill_tensor(ell, C; method = :nestedquadgk)
     P_dec = hill_tensor(ell, C; method = :decuhr, reltol = 1.0e-9)
 
-    diff = maximum(abs(P_nqg[i, j, k, l] - P_dec[i, j, k, l])
-                   for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+    diff = maximum(
+        abs(P_nqg[i, j, k, l] - P_dec[i, j, k, l])
+            for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+    )
     @test diff < ATOL4
     @test all(isfinite(P_nqg[i, j, k, l]) for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
 end
@@ -52,8 +54,10 @@ end
     P_nqg = hill_tensor(ell, C; method = :nestedquadgk)
     P_dec = hill_tensor(ell, C; method = :decuhr, reltol = 1.0e-9)
 
-    diff = maximum(abs(P_nqg[i, j, k, l] - P_dec[i, j, k, l])
-                   for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+    diff = maximum(
+        abs(P_nqg[i, j, k, l] - P_dec[i, j, k, l])
+            for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+    )
     @test diff < ATOL4
     @test all(isfinite(P_nqg[i, j, k, l]) for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
 end
@@ -68,9 +72,13 @@ end
     P_nqg = hill_tensor(ell, C; method = :nestedquadgk, reltol = 1.0e-12)
     P_res = hill_tensor(ell, C; method = :residues)
 
-    scale = maximum(abs(P_nqg[i, j, k, l])
-                    for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
-    diff = maximum(abs(P_nqg[i, j, k, l] - P_res[i, j, k, l])
-                   for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+    scale = maximum(
+        abs(P_nqg[i, j, k, l])
+            for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+    )
+    diff = maximum(
+        abs(P_nqg[i, j, k, l] - P_res[i, j, k, l])
+            for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+    )
     @test diff < 1.0e-7 * scale
 end

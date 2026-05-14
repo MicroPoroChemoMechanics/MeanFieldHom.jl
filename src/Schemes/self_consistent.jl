@@ -63,12 +63,14 @@ end
 # Solver-only kwargs are intercepted at this level and never forwarded
 # to the underlying `_sc_step` (which would otherwise leak them down to
 # `hill_tensor` and trigger a `MethodError` on the unknown kwarg).
-const _SC_SOLVER_KWARGS = (:abstol, :reltol, :maxiters, :damping,
-                            :verbose, :select_best)
+const _SC_SOLVER_KWARGS = (
+    :abstol, :reltol, :maxiters, :damping,
+    :verbose, :select_best,
+)
 
 function _split_sc_kwargs(kw)
     solver = Dict{Symbol, Any}()
-    step   = Dict{Symbol, Any}()
+    step = Dict{Symbol, Any}()
     for (k, v) in kw
         if k in _SC_SOLVER_KWARGS
             solver[k] = v
@@ -90,8 +92,10 @@ end
 # concentration A_α = inv(I + P(C_α - C_n)) computed in the iterating
 # effective medium C_n. This gives the textbook SC fixed point with
 # Hashin-Shtrikman lower-bound percolation behaviour for porous media.
-function _sc_step_dispatch(rve::RVE, C_n::TensND.AbstractTens{4, 3}, prop::Symbol;
-                           kw...)
+function _sc_step_dispatch(
+        rve::RVE, C_n::TensND.AbstractTens{4, 3}, prop::Symbol;
+        kw...
+    )
     # ECHOES `homogenization_scheme.h::evaluate` body :
     #   strain_Stress_α  = A_α(C_n) · S_n   (solid) [`compute_strain_Stress`]
     #   strain_Stress_c  = sym(H_c(C_n))    (void crack — NO trailing S_n!)
@@ -105,8 +109,8 @@ function _sc_step_dispatch(rve::RVE, C_n::TensND.AbstractTens{4, 3}, prop::Symbo
     # compliance contribution `H_c`.  This breaks the cancellation and
     # gives a different fixed point than the textbook
     # `(Σ f·C·A)·(Σ f·A)^{-1}` SC body when cracks are present.
-    A_avg   = zero(C_n)   # = Σ_solids f·sym(A_α)
-    CA_avg  = zero(C_n)   # = Σ_solids f·sym(C_α·A_α)
+    A_avg = zero(C_n)   # = Σ_solids f·sym(A_α)
+    CA_avg = zero(C_n)   # = Σ_solids f·sym(C_α·A_α)
     H_total = zero(C_n)   # = Σ_cracks ε·sym(H_c)
     has_cracks = false
     for name in rve.phase_names
@@ -119,7 +123,7 @@ function _sc_step_dispatch(rve::RVE, C_n::TensND.AbstractTens{4, 3}, prop::Symbo
         end
         P_α = phase_property(rve, name, prop)
         A_dil = _phase_dilute_concentration(rve, name, prop, C_n; kw...)
-        A_avg  += f * A_dil
+        A_avg += f * A_dil
         CA_avg += f * (P_α ⊡ A_dil)
     end
     for name in inclusion_phase_names(rve)
@@ -140,13 +144,15 @@ function _sc_step_dispatch(rve::RVE, C_n::TensND.AbstractTens{4, 3}, prop::Symbo
 end
 
 # 2nd-order — same symmetric SC structure for conductivity / diffusion.
-function _sc_step_dispatch(rve::RVE, K_n::TensND.AbstractTens{2, 3}, prop::Symbol;
-                           kw...)
+function _sc_step_dispatch(
+        rve::RVE, K_n::TensND.AbstractTens{2, 3}, prop::Symbol;
+        kw...
+    )
     # Conduction analogue of the 4th-order ECHOES SC body :
     # solids have `gradient_Flux = A · R_n` (R_n = inv(K_n) — resistivity),
     # cracks contribute the bare resistivity contribution `R_c`.
-    A_avg   = zero(K_n)
-    KA_avg  = zero(K_n)
+    A_avg = zero(K_n)
+    KA_avg = zero(K_n)
     R_total = zero(K_n)
     has_cracks = false
     for name in rve.phase_names
@@ -159,7 +165,7 @@ function _sc_step_dispatch(rve::RVE, K_n::TensND.AbstractTens{2, 3}, prop::Symbo
         end
         P_α = phase_property(rve, name, prop)
         A_dil = _phase_dilute_concentration(rve, name, prop, K_n; kw...)
-        A_avg  += f * A_dil
+        A_avg += f * A_dil
         KA_avg += f * (P_α ⋅ A_dil)
     end
     for name in inclusion_phase_names(rve)
@@ -223,12 +229,14 @@ matrix-property scale; the returned iterate is informative even when
 the strict tolerance is not reached, so a default warning would be
 noise.
 """
-function _solve_sc(::AndersonDefault, step, x0::TensND.AbstractTens;
-                   abstol::Real = 1.0e-12, reltol::Real = 1.0e-8,
-                   maxiters::Int = 100,
-                   damping::Real = 0.0, verbose::Bool = false,
-                   select_best::Bool = false,
-                   kw...)
+function _solve_sc(
+        ::AndersonDefault, step, x0::TensND.AbstractTens;
+        abstol::Real = 1.0e-12, reltol::Real = 1.0e-8,
+        maxiters::Int = 100,
+        damping::Real = 0.0, verbose::Bool = false,
+        select_best::Bool = false,
+        kw...
+    )
     x = x0
     last_resid = _sc_residual_zero(x0)
     x_best = x0
@@ -237,7 +245,7 @@ function _solve_sc(::AndersonDefault, step, x0::TensND.AbstractTens;
         x = _sc_pd_guard(x, x0)
         x_new = step(x)
         last_resid = _sc_residual_norm(x_new, x)
-        norm_x  = _sc_residual_norm(x, zero(x))
+        norm_x = _sc_residual_norm(x, zero(x))
         tol_eff = abstol + reltol * _scalar_value(norm_x)
         verbose && @info "SC iter $k : ‖Δ‖ = $last_resid   tol = $tol_eff"
         if select_best
@@ -282,18 +290,20 @@ classes (≤ 21 components for the most general aniso 4-tensor); the
 Jacobian is computed once per iteration through the same `step`
 function the AndersonDefault loop calls.
 """
-function _solve_sc(::NewtonDefault, step, x0::TensND.AbstractTens;
-                   abstol::Real = 1.0e-12, reltol::Real = 1.0e-8,
-                   maxiters::Int = 50,
-                   damping::Real = 0.0, verbose::Bool = false,
-                   select_best::Bool = false,
-                   kw...)
+function _solve_sc(
+        ::NewtonDefault, step, x0::TensND.AbstractTens;
+        abstol::Real = 1.0e-12, reltol::Real = 1.0e-8,
+        maxiters::Int = 50,
+        damping::Real = 0.0, verbose::Bool = false,
+        select_best::Bool = false,
+        kw...
+    )
     p0 = _tens_to_param_vec(x0)
     L = length(p0)
     Tref = float(eltype(p0))
     rebuild = p -> _tens_from_param_vec(x0, p)
     residual_vec = function (p)
-        x_in  = _sc_pd_guard(rebuild(p), x0)
+        x_in = _sc_pd_guard(rebuild(p), x0)
         x_out = step(x_in)
         return _tens_to_param_vec(x_out) .- _tens_to_param_vec(x_in)
     end
@@ -319,7 +329,7 @@ function _solve_sc(::NewtonDefault, step, x0::TensND.AbstractTens;
             J \ (-r)
         catch err
             @debug "SC-Newton: linear solve failed, applying tiny Tikhonov" err
-            (J + 1e-10 * sqrt(sum(abs2, J)) * LinearAlgebra.I) \ (-r)
+            (J + 1.0e-10 * sqrt(sum(abs2, J)) * LinearAlgebra.I) \ (-r)
         end
         # Backtracking line search (Armijo).
         α_step = one(Tref)
@@ -327,13 +337,13 @@ function _solve_sc(::NewtonDefault, step, x0::TensND.AbstractTens;
         for _ in 1:30
             p_new = p .+ α_step .* δ
             r_new = residual_vec(p_new)
-            if sqrt(sum(abs2, r_new)) ≤ (1 - 1e-4 * α_step) * norm_r
+            if sqrt(sum(abs2, r_new)) ≤ (1 - 1.0e-4 * α_step) * norm_r
                 p .= p_new
                 accepted = true
                 break
             end
             α_step /= 2
-            α_step < 1e-6 && break
+            α_step < 1.0e-6 && break
         end
         if !accepted
             # Fall back to a damped Picard step.
@@ -363,7 +373,7 @@ end
 
 function _sc_pd_guard(x, x0)
     α0_max = _max_canonical_value(x0)
-    ε_pos = max(α0_max * sqrt(eps(real(_value_eltype(x0)))), 1e-12)
+    ε_pos = max(α0_max * sqrt(eps(real(_value_eltype(x0)))), 1.0e-12)
     return _sc_pd_guard_apply(x, ε_pos)
 end
 
@@ -439,7 +449,7 @@ _sc_residual_zero(x0::TensND.AbstractTens) = zero(real(eltype(x0)))
 # so that comparisons and best-iterate tracking work uniformly.
 _scalar_value(r::Real) = float(r)
 _scalar_value(r) = hasfield(typeof(r), :value) ? float(_scalar_value(getfield(r, :value))) :
-                   throw(ArgumentError("cannot reduce residual of type $(typeof(r)) to a Float64"))
+    throw(ArgumentError("cannot reduce residual of type $(typeof(r)) to a Float64"))
 
 # Float64 type of `_scalar_value(zero_like_eltype(x0))`. Used to pick a
 # safe `typemax` for `resid_best_val` regardless of whether x0 is real
@@ -530,7 +540,7 @@ function _asc_use_stiffness(rve::RVE, prop::Symbol; kw...)
     if any(a isa CrackDensity for a in values(rve.amounts))
         return false
     end
-    P₀      = matrix_property(rve, prop)
+    P₀ = matrix_property(rve, prop)
     P_voigt = _evaluate(rve, Voigt(), Val(prop); kw...)
     return _frob_sq(P_voigt) ≥ _frob_sq(P₀)
 end
@@ -544,9 +554,11 @@ _frob_sq(t::TensND.AbstractTens) = sum(abs2, get_array(t))
 # Sum runs over INCLUSIONS only (matrix excluded, treated implicitly via
 # C_m). This is the C++ reference's `evaluate_dilute(X)` body.
 
-function _asc_iterate_stiffness(rve::RVE, asc::AsymmetricSelfConsistent,
-                                 ::Val{p}; kw...) where {p}
-    C_m  = matrix_property(rve, p)
+function _asc_iterate_stiffness(
+        rve::RVE, asc::AsymmetricSelfConsistent,
+        ::Val{p}; kw...
+    ) where {p}
+    C_m = matrix_property(rve, p)
     solver_kw, step_kw = _split_sc_kwargs(kw)
     step = C_n -> _asc_step_stiffness(rve, p, C_m, C_n; step_kw...)
     return _solve_sc(asc.algorithm, step, C_m; asc.options..., solver_kw...)
@@ -556,9 +568,11 @@ function _asc_step_stiffness(rve::RVE, prop::Symbol, C_m, C_n; kw...)
     return _asc_step_stiffness_dispatch(rve, prop, C_m, C_n; kw...)
 end
 
-function _asc_step_stiffness_dispatch(rve::RVE, prop::Symbol,
-                                       C_m::TensND.AbstractTens{4, 3},
-                                       C_n::TensND.AbstractTens{4, 3}; kw...)
+function _asc_step_stiffness_dispatch(
+        rve::RVE, prop::Symbol,
+        C_m::TensND.AbstractTens{4, 3},
+        C_n::TensND.AbstractTens{4, 3}; kw...
+    )
     Δ = zero(C_n)
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
@@ -571,9 +585,11 @@ function _asc_step_stiffness_dispatch(rve::RVE, prop::Symbol,
     return C_m + Δ
 end
 
-function _asc_step_stiffness_dispatch(rve::RVE, prop::Symbol,
-                                       K_m::TensND.AbstractTens{2, 3},
-                                       K_n::TensND.AbstractTens{2, 3}; kw...)
+function _asc_step_stiffness_dispatch(
+        rve::RVE, prop::Symbol,
+        K_m::TensND.AbstractTens{2, 3},
+        K_n::TensND.AbstractTens{2, 3}; kw...
+    )
     Δ = zero(K_n)
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
@@ -597,8 +613,10 @@ end
 # only. We then invert `S^{n+1}` to recover `C^{n+1}` so the iteration
 # stays in stiffness space and the same `_solve_sc` driver is reused.
 
-function _asc_iterate_compliance(rve::RVE, asc::AsymmetricSelfConsistent,
-                                  ::Val{p}; kw...) where {p}
+function _asc_iterate_compliance(
+        rve::RVE, asc::AsymmetricSelfConsistent,
+        ::Val{p}; kw...
+    ) where {p}
     C_m = matrix_property(rve, p)
     S_m = inv(C_m)
     solver_kw, step_kw = _split_sc_kwargs(kw)
@@ -610,12 +628,14 @@ function _asc_step_compliance(rve::RVE, prop::Symbol, C_m, S_m, C_n; kw...)
     return _asc_step_compliance_dispatch(rve, prop, C_m, S_m, C_n; kw...)
 end
 
-function _asc_step_compliance_dispatch(rve::RVE, prop::Symbol,
-                                        C_m::TensND.AbstractTens{4, 3},
-                                        S_m::TensND.AbstractTens{4, 3},
-                                        C_n::TensND.AbstractTens{4, 3}; kw...)
+function _asc_step_compliance_dispatch(
+        rve::RVE, prop::Symbol,
+        C_m::TensND.AbstractTens{4, 3},
+        S_m::TensND.AbstractTens{4, 3},
+        C_n::TensND.AbstractTens{4, 3}; kw...
+    )
     S_n = inv(C_n)
-    A_avg  = zero(C_n)
+    A_avg = zero(C_n)
     CA_avg = zero(C_n)
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
@@ -627,7 +647,7 @@ function _asc_step_compliance_dispatch(rve::RVE, prop::Symbol,
             f = amount_value(a)
             C_i = phase_property(rve, name, prop)
             A_dil = _phase_dilute_concentration(rve, name, prop, C_n; kw...)
-            A_avg  += f * A_dil
+            A_avg += f * A_dil
             CA_avg += f * (C_i ⊡ A_dil)
         end
     end
@@ -642,12 +662,14 @@ function _asc_step_compliance_dispatch(rve::RVE, prop::Symbol,
     return inv(S_new)
 end
 
-function _asc_step_compliance_dispatch(rve::RVE, prop::Symbol,
-                                        K_m::TensND.AbstractTens{2, 3},
-                                        R_m::TensND.AbstractTens{2, 3},
-                                        K_n::TensND.AbstractTens{2, 3}; kw...)
+function _asc_step_compliance_dispatch(
+        rve::RVE, prop::Symbol,
+        K_m::TensND.AbstractTens{2, 3},
+        R_m::TensND.AbstractTens{2, 3},
+        K_n::TensND.AbstractTens{2, 3}; kw...
+    )
     R_n = inv(K_n)
-    A_avg  = zero(K_n)
+    A_avg = zero(K_n)
     KA_avg = zero(K_n)
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
@@ -655,7 +677,7 @@ function _asc_step_compliance_dispatch(rve::RVE, prop::Symbol,
         f = amount_value(a)
         K_i = phase_property(rve, name, prop)
         A_dil = _phase_dilute_concentration(rve, name, prop, K_n; kw...)
-        A_avg  += f * A_dil
+        A_avg += f * A_dil
         KA_avg += f * (K_i ⋅ A_dil)
     end
     R_new = R_m + (A_avg - R_m ⋅ KA_avg) ⋅ R_n
@@ -664,20 +686,26 @@ end
 
 # ── Legacy compliance-space RVE builder (kept for reference) ────────────────
 function _rve_in_compliance_space(rve::RVE{T, S}, prop::Symbol) where {T, S}
-    rve_S = RVE(rve.matrix_name; T = T,
-                distribution_shape = rve.distribution_shape)
+    rve_S = RVE(
+        rve.matrix_name; T = T,
+        distribution_shape = rve.distribution_shape
+    )
     m_phase = matrix_phase(rve)
     add_matrix!(rve_S, m_phase.geometry, Dict(:S => inv(m_phase.properties[prop])))
     for name in inclusion_phase_names(rve)
         ph = rve.phases[name]
-        a  = rve.amounts[name]
+        a = rve.amounts[name]
         new_props = Dict(:S => inv(ph.properties[prop]))
         if a isa VolumeFraction
-            add_phase!(rve_S, name, ph.geometry, new_props;
-                       fraction = amount_value(a))
+            add_phase!(
+                rve_S, name, ph.geometry, new_props;
+                fraction = amount_value(a)
+            )
         else
-            add_phase!(rve_S, name, ph.geometry, new_props;
-                       density = amount_value(a))
+            add_phase!(
+                rve_S, name, ph.geometry, new_props;
+                density = amount_value(a)
+            )
         end
     end
     return rve_S

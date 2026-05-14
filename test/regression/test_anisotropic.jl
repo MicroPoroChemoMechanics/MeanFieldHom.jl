@@ -23,11 +23,11 @@ using LinearAlgebra
 # test_residue_accuracy.jl to keep the same reference across suites.
 const _KM_tri = [
     210.0 80.0 75.0 5.0 4.0 3.0;
-     80.0 195.0 90.0 -2.0 3.0 -1.0;
-     75.0 90.0 220.0 1.0 -2.0 2.0;
-      5.0 -2.0 1.0 60.0 2.5 1.5;
-      4.0 3.0 -2.0 2.5 65.0 -1.0;
-      3.0 -1.0 2.0 1.5 -1.0 55.0
+    80.0 195.0 90.0 -2.0 3.0 -1.0;
+    75.0 90.0 220.0 1.0 -2.0 2.0;
+    5.0 -2.0 1.0 60.0 2.5 1.5;
+    4.0 3.0 -2.0 2.5 65.0 -1.0;
+    3.0 -1.0 2.0 1.5 -1.0 55.0
 ]
 
 # Cubic stiffness (Fe-like)
@@ -35,9 +35,9 @@ const _KM_cubic = [
     237.0 141.0 141.0 0.0  0.0  0.0;
     141.0 237.0 141.0 0.0  0.0  0.0;
     141.0 141.0 237.0 0.0  0.0  0.0;
-      0.0   0.0   0.0 232.0 0.0  0.0;
-      0.0   0.0   0.0 0.0  232.0 0.0;
-      0.0   0.0   0.0 0.0  0.0  232.0
+    0.0   0.0   0.0 232.0 0.0  0.0;
+    0.0   0.0   0.0 0.0  232.0 0.0;
+    0.0   0.0   0.0 0.0  0.0  232.0
 ]
 
 # Fully-anisotropic K₀ (n̂ is NOT an eigenvector of K₀)
@@ -55,8 +55,10 @@ const _K_aniso = TensND.Tens([3.0 0.5 0.3; 0.5 2.0 0.2; 0.3 0.2 1.5])
         P_nqg = hill_tensor(ell, C_tri; method = :nestedquadgk, reltol = 1.0e-12)
         P_dec = hill_tensor(ell, C_tri; method = :decuhr, reltol = 1.0e-10)
 
-        scale = maximum(abs(P_nqg[i, j, k, l])
-                        for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+        scale = maximum(
+            abs(P_nqg[i, j, k, l])
+                for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+        )
         for i in 1:3, j in 1:3, k in 1:3, l in 1:3
             @test abs(P_res[i, j, k, l] - P_nqg[i, j, k, l]) < 1.0e-7 * scale
             @test abs(P_dec[i, j, k, l] - P_nqg[i, j, k, l]) < 1.0e-7 * scale
@@ -88,8 +90,8 @@ const _K_aniso = TensND.Tens([3.0 0.5 0.3; 0.5 2.0 0.2; 0.3 0.2 1.5])
         # Just assert finiteness here; detailed numerical equality is case-
         # specific.  The purpose is smoke testing the new constructor
         # through the aniso Hill path.
-        @test all(isfinite, (P1[i,j,k,l] for i=1:3,j=1:3,k=1:3,l=1:3))
-        @test all(isfinite, (P2[i,j,k,l] for i=1:3,j=1:3,k=1:3,l=1:3))
+        @test all(isfinite, (P1[i, j, k, l] for i in 1:3,j in 1:3,k in 1:3,l in 1:3))
+        @test all(isfinite, (P2[i, j, k, l] for i in 1:3,j in 1:3,k in 1:3,l in 1:3))
     end
 end
 
@@ -123,8 +125,10 @@ end
         ec = EllipticCrack(1.0, 0.3)
         H_res = compliance_contribution(ec, C_tri; method = :residues)
         H_dec = compliance_contribution(ec, C_tri; method = :decuhr, reltol = 1.0e-10)
-        scale = maximum(abs(H_res[i, j, k, l])
-                        for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+        scale = maximum(
+            abs(H_res[i, j, k, l])
+                for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+        )
         for i in 1:3, j in 1:3, k in 1:3, l in 1:3
             @test abs(H_res[i, j, k, l] - H_dec[i, j, k, l]) < 1.0e-6 * scale
         end
@@ -155,8 +159,10 @@ end
     H_dec = compliance_contribution(pc, C_tri; method = :decuhr, reltol = 1.0e-10)
     H_nqg = compliance_contribution(pc, C_tri; method = :nestedquadgk, reltol = 1.0e-10)
 
-    scale = maximum(abs(H_res[i, j, k, l])
-                    for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+    scale = maximum(
+        abs(H_res[i, j, k, l])
+            for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+    )
     for i in 1:3, j in 1:3, k in 1:3, l in 1:3
         @test abs(H_res[i, j, k, l] - H_dec[i, j, k, l]) < 1.0e-6 * scale
         @test abs(H_res[i, j, k, l] - H_nqg[i, j, k, l]) < 1.0e-6 * scale

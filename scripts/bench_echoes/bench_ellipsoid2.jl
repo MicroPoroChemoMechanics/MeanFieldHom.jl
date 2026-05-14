@@ -16,7 +16,7 @@ using MeanFieldHom
 using TensND
 
 const echoes = pyimport("echoes")
-const np     = pyimport("numpy")
+const np = pyimport("numpy")
 
 # ─── Phase definitions (identical to script 38 / Python) ───────────────────
 
@@ -34,13 +34,13 @@ const _K_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(𝕂₄)
 
 # Julia matrix law (creep mode).
 function Js(t, tp)
-    α = fk(tp) / (3 * kₛ) + 1e-1 / kₛ * log(1 + (t - tp) / 2.0)
-    β = fμ(tp) / (2 * μₛ) + 1e-1 / μₛ * log(1 + (t - tp) / 1.0)
+    α = fk(tp) / (3 * kₛ) + 1.0e-1 / kₛ * log(1 + (t - tp) / 2.0)
+    β = fμ(tp) / (2 * μₛ) + 1.0e-1 / μₛ * log(1 + (t - tp) / 1.0)
     return α .* _J_M .+ β .* _K_M
 end
 const law_M = ViscoLaw(Js, :creep)
 
-const Cᵢ_inv = (1.0 / 1e6) * Matrix{Float64}(I, 6, 6)
+const Cᵢ_inv = (1.0 / 1.0e6) * Matrix{Float64}(I, 6, 6)
 const law_I = ViscoLaw((t, tp) -> Cᵢ_inv, :creep)
 
 # ─── Python side ──────────────────────────────────────────────────────────
@@ -106,16 +106,16 @@ def homogenize_py(omega, T, sch_name, frac):
 
 const py_trapz_creep = py"trapz_creep"
 const py_trapz_relax = py"trapz_relax"
-const py_homogenize  = py"homogenize_py"
+const py_homogenize = py"homogenize_py"
 
 # ─── Helpers ───────────────────────────────────────────────────────────────
 
-block(M, i, j) = M[(6*(i-1)+1):(6*i), (6*(j-1)+1):(6*j)]
+block(M, i, j) = M[(6 * (i - 1) + 1):(6 * i), (6 * (j - 1) + 1):(6 * j)]
 
 function diff_summary(label, M_jl, M_py)
-    rel = norm(M_jl - M_py) / max(norm(M_py), 1e-30)
+    rel = norm(M_jl - M_py) / max(norm(M_py), 1.0e-30)
     @printf "  %-30s shape=%s  rel err = %.3e\n" label string(size(M_jl)) rel
-    if rel > 1e-6
+    if rel > 1.0e-6
         @printf "    block(1,1) Julia : %s\n" string(round.(block(M_jl, 1, 1); digits = 5))
         @printf "    block(1,1) Python: %s\n" string(round.(block(M_py, 1, 1); digits = 5))
     end
@@ -140,12 +140,12 @@ diff_summary("R̃_M (relaxation = inv J̃)", R̃_M_jl, R̃_M_py)
 println()
 
 const _SCH_MAP = Dict(
-    "MT"   => MoriTanaka(),
+    "MT" => MoriTanaka(),
     "DIFF" => DifferentialScheme(; nsteps = 100),
-    "SC"   => SelfConsistent(),
-    "ASC"  => AsymmetricSelfConsistent(),
-    "MAX"  => Maxwell(),
-    "PCW"  => PonteCastanedaWillis(),
+    "SC" => SelfConsistent(),
+    "ASC" => AsymmetricSelfConsistent(),
+    "MAX" => Maxwell(),
+    "PCW" => PonteCastanedaWillis(),
 )
 
 for sch_name in ("MT", "DIFF", "SC", "ASC", "MAX", "PCW")
@@ -156,8 +156,10 @@ for sch_name in ("MT", "DIFF", "SC", "ASC", "MAX", "PCW")
                 rve = RVE(:M)
                 add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => law_M))
                 sh = omega == 1.0 ? Ellipsoid(1.0, 1.0, 1.0) : Spheroid(omega)
-                add_phase!(rve, :I, sh, Dict(:C => law_I);
-                           fraction = f, symmetrize = :iso)
+                add_phase!(
+                    rve, :I, sh, Dict(:C => law_I);
+                    fraction = f, symmetrize = :iso
+                )
                 homogenize_alv(rve, _SCH_MAP[sch_name], :C; times = T_grid)
             end
             R̃_py_eff = try
@@ -170,8 +172,10 @@ for sch_name in ("MT", "DIFF", "SC", "ASC", "MAX", "PCW")
             if R̃_py_eff === nothing
                 @printf "  %-30s shape=%s  (Julia only)\n" label string(size(R̃_jl_eff))
             else
-                diff_summary(label, Matrix{Float64}(R̃_jl_eff),
-                              Matrix{Float64}(R̃_py_eff))
+                diff_summary(
+                    label, Matrix{Float64}(R̃_jl_eff),
+                    Matrix{Float64}(R̃_py_eff)
+                )
             end
         end
     end

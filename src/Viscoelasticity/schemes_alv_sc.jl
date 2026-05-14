@@ -41,14 +41,16 @@ Returns the converged effective relaxation matrix.
 - `select_best`— return the best iterate seen (rather than the last)
   when convergence stalls.
 """
-function self_consistent_alv(rve::RVE, prop::Symbol;
-                             times::AbstractVector{<:Real},
-                             abstol::Real = 1.0e-10,
-                             reltol::Real = 1.0e-8,
-                             maxiters::Int = 200,
-                             damping::Real = 0.0,
-                             verbose::Bool = false,
-                             select_best::Bool = false)
+function self_consistent_alv(
+        rve::RVE, prop::Symbol;
+        times::AbstractVector{<:Real},
+        abstol::Real = 1.0e-10,
+        reltol::Real = 1.0e-8,
+        maxiters::Int = 200,
+        damping::Real = 0.0,
+        verbose::Bool = false,
+        select_best::Bool = false
+    )
     # 1. Discretise every phase's kernel once.
     C_M_law = matrix_property(rve, prop)
     C_M_law isa ViscoLaw ||
@@ -65,9 +67,11 @@ function self_consistent_alv(rve::RVE, prop::Symbol;
     # matrices are pre-discretised once on the times grid and reused by
     # every SC iteration when computing the crack stiffness contribution
     # against the running estimate C_m.
-    crack_data = Tuple{Any, Float64, AbstractSymmetrize,
-                        Union{Nothing, Matrix{Float64}},
-                        Union{Nothing, Matrix{Float64}}}[]
+    crack_data = Tuple{
+        Any, Float64, AbstractSymmetrize,
+        Union{Nothing, Matrix{Float64}},
+        Union{Nothing, Matrix{Float64}},
+    }[]
     for name in incl_names
         ph = rve.phases[name]
         a = rve.amounts[name]
@@ -78,8 +82,12 @@ function self_consistent_alv(rve::RVE, prop::Symbol;
                 _trapezoidal_relaxation_scalar(ph.properties[:Rn], times) : nothing
             Rt_mat = haskey(ph.properties, :Rt) ?
                 _trapezoidal_relaxation_scalar(ph.properties[:Rt], times) : nothing
-            push!(crack_data, (ph.geometry, Float64(a.value),
-                                phase_symmetrize(rve, name), Rn_mat, Rt_mat))
+            push!(
+                crack_data, (
+                    ph.geometry, Float64(a.value),
+                    phase_symmetrize(rve, name), Rn_mat, Rt_mat,
+                )
+            )
             continue
         end
         C_r_law = phase_property(rve, name, prop)
@@ -119,13 +127,17 @@ function self_consistent_alv(rve::RVE, prop::Symbol;
         # giving the ECHOES SC fixed point that doesn't match the
         # textbook `(Σ f·C·A)·(Σ f·A)^{-1}` form.
         if isempty(crack_data)
-            C_m_new = _sc_alv_step(C_m, C_phases, U_M_phases, V_M_phases,
-                                    fractions, n, Id, symmetrizes)
+            C_m_new = _sc_alv_step(
+                C_m, C_phases, U_M_phases, V_M_phases,
+                fractions, n, Id, symmetrizes
+            )
         else
-            C_m_new = _sc_alv_step_echoes_form(C_m, C_phases,
-                                                 U_M_phases, V_M_phases,
-                                                 fractions, n, Id, symmetrizes,
-                                                 crack_data)
+            C_m_new = _sc_alv_step_echoes_form(
+                C_m, C_phases,
+                U_M_phases, V_M_phases,
+                fractions, n, Id, symmetrizes,
+                crack_data
+            )
         end
         Δ = norm(C_m_new - C_m)
         norm_C = norm(C_m)
@@ -162,22 +174,24 @@ end
 # but not for cracks, whose `strain_Stress` is the bare compliance
 # contribution `H_c` without `J_m` factor.  This is the ECHOES SC
 # fixed point.
-function _sc_alv_step_echoes_form(C_m::AbstractMatrix,
-                                    C_phases::AbstractVector{<:AbstractMatrix},
-                                    U_M_phases::AbstractVector{<:AbstractMatrix},
-                                    V_M_phases::AbstractVector{<:AbstractMatrix},
-                                    fractions::AbstractVector{<:Real},
-                                    n::Int, Id::AbstractMatrix,
-                                    symmetrizes::AbstractVector{<:AbstractSymmetrize},
-                                    crack_data)
+function _sc_alv_step_echoes_form(
+        C_m::AbstractMatrix,
+        C_phases::AbstractVector{<:AbstractMatrix},
+        U_M_phases::AbstractVector{<:AbstractMatrix},
+        V_M_phases::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector{<:Real},
+        n::Int, Id::AbstractMatrix,
+        symmetrizes::AbstractVector{<:AbstractSymmetrize},
+        crack_data
+    )
     sz = size(C_m, 1)
     T = eltype(C_m)
-    A_avg  = zeros(T, sz, sz)   # = Σ f·sym(A_α)            (no J_m yet)
+    A_avg = zeros(T, sz, sz)   # = Σ f·sym(A_α)            (no J_m yet)
     CA_avg = zeros(T, sz, sz)   # = Σ f·sym(C_α·A_α)        (no J_m yet)
     α_m, β_m = iso_params_from_blocks(C_m)
-    M_long  = @. (α_m + 2 * β_m) / 3
+    M_long = @. (α_m + 2 * β_m) / 3
     M_shear = β_m ./ 2
-    J_long  = volterra_inverse(M_long;  block_size = 1)
+    J_long = volterra_inverse(M_long; block_size = 1)
     J_shear = volterra_inverse(M_shear; block_size = 1)
     @inbounds for α in eachindex(C_phases)
         U_M = U_M_phases[α]
@@ -194,7 +208,7 @@ function _sc_alv_step_echoes_form(C_m::AbstractMatrix,
         A_dil = volterra_inverse(Id + P_α * ΔC; block_size = 6)
         sym = symmetrizes[α]
         A_dil_sym = _maybe_symmetrize_alv(A_dil, sym)
-        CA_sym    = _maybe_symmetrize_alv(C_phases[α] * A_dil, sym)
+        CA_sym = _maybe_symmetrize_alv(C_phases[α] * A_dil, sym)
         f = T(fractions[α])
         @. A_avg += f * A_dil_sym
         @. CA_avg += f * CA_sym
@@ -231,7 +245,7 @@ function _build_sc_crack_extra_J(C_m::AbstractMatrix, crack_data)
     α_c, β_c = _iso_pair(C_m)
     α_p_2β = α_c .+ 2β_c
     α_p_βh = α_c .+ β_c ./ 2
-    α_p_β  = α_c .+ β_c
+    α_p_β = α_c .+ β_c
     βα1 = β_c * α_p_βh
     βα2 = β_c * α_p_β
     B_n_base = (8 / (3π)) .* volterra_left_divide(βα1, α_p_2β)
@@ -271,24 +285,26 @@ end
 # against C_m, cracks added to A).  This is exactly the ECHOES MT body
 # applied iteratively with the running estimate as reference — a
 # strict implicit-MT view of SC.
-function _sc_alv_mt_body_against(C_m::AbstractMatrix,
-                                  fractions::AbstractVector{<:Real},
-                                  f_M::Real,
-                                  C_phases::AbstractVector{<:AbstractMatrix},
-                                  U_M_phases::AbstractVector{<:AbstractMatrix},
-                                  V_M_phases::AbstractVector{<:AbstractMatrix},
-                                  n::Int, Id::AbstractMatrix,
-                                  symmetrizes::AbstractVector{<:AbstractSymmetrize},
-                                  crack_data)
+function _sc_alv_mt_body_against(
+        C_m::AbstractMatrix,
+        fractions::AbstractVector{<:Real},
+        f_M::Real,
+        C_phases::AbstractVector{<:AbstractMatrix},
+        U_M_phases::AbstractVector{<:AbstractMatrix},
+        V_M_phases::AbstractVector{<:AbstractMatrix},
+        n::Int, Id::AbstractMatrix,
+        symmetrizes::AbstractVector{<:AbstractSymmetrize},
+        crack_data
+    )
     sz = size(C_m, 1)
     T = eltype(C_m)
     A = T(f_M) .* Id
     B = T(f_M) .* C_m
     # Solid inclusions iterated with the Hill kernel computed against C_m.
     α_m, β_m = iso_params_from_blocks(C_m)
-    M_long  = @. (α_m + 2 * β_m) / 3
+    M_long = @. (α_m + 2 * β_m) / 3
     M_shear = β_m ./ 2
-    J_long  = volterra_inverse(M_long;  block_size = 1)
+    J_long = volterra_inverse(M_long; block_size = 1)
     J_shear = volterra_inverse(M_shear; block_size = 1)
     @inbounds for s in 2:length(C_phases)
         U_M = U_M_phases[s]
@@ -319,7 +335,7 @@ function _sc_alv_mt_body_against(C_m::AbstractMatrix,
         α_c, β_c = _iso_pair(C_m)
         α_p_2β = α_c .+ 2β_c
         α_p_βh = α_c .+ β_c ./ 2
-        α_p_β  = α_c .+ β_c
+        α_p_β = α_c .+ β_c
         βα1 = β_c * α_p_βh
         βα2 = β_c * α_p_β
         B_n = (8 / (3π)) .* volterra_left_divide(βα1, α_p_2β)
@@ -351,14 +367,16 @@ end
 # Single SC step (legacy MFH form, retained for external callers /
 # internal sub-steps that still rely on the standard
 # `(Σ f A) ↔ (Σ f C A)` accumulators).
-function _sc_alv_step(C_m::AbstractMatrix,
-                      C_phases::AbstractVector{<:AbstractMatrix},
-                      U_M_phases::AbstractVector{<:AbstractMatrix},
-                      V_M_phases::AbstractVector{<:AbstractMatrix},
-                      fractions::AbstractVector{<:Real},
-                      n::Int, Id::AbstractMatrix,
-                      symmetrizes::AbstractVector{<:AbstractSymmetrize};
-                      extra_A::Union{Nothing, AbstractMatrix} = nothing)
+function _sc_alv_step(
+        C_m::AbstractMatrix,
+        C_phases::AbstractVector{<:AbstractMatrix},
+        U_M_phases::AbstractVector{<:AbstractMatrix},
+        V_M_phases::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector{<:Real},
+        n::Int, Id::AbstractMatrix,
+        symmetrizes::AbstractVector{<:AbstractSymmetrize};
+        extra_A::Union{Nothing, AbstractMatrix} = nothing
+    )
     sz = size(C_m, 1)
     T = eltype(C_m)
     A_avg = zeros(T, sz, sz)
@@ -369,9 +387,9 @@ function _sc_alv_step(C_m::AbstractMatrix,
     # Iso parameters of the running estimate → scalar Volterra inverses
     # for the Hill-kernel time-space decoupling.
     α_m, β_m = iso_params_from_blocks(C_m)
-    M_long  = @. (α_m + 2 * β_m) / 3
+    M_long = @. (α_m + 2 * β_m) / 3
     M_shear = β_m ./ 2
-    J_long  = volterra_inverse(M_long;  block_size = 1)
+    J_long = volterra_inverse(M_long; block_size = 1)
     J_shear = volterra_inverse(M_shear; block_size = 1)
 
     @inbounds for α in eachindex(C_phases)
@@ -389,14 +407,14 @@ function _sc_alv_step(C_m::AbstractMatrix,
         # Dilute concentration & scaled contribution.
         ΔC = C_phases[α] - C_m
         A_dil = volterra_inverse(Id + P_α * ΔC; block_size = 6)
-        CA   = C_phases[α] * A_dil
+        CA = C_phases[α] * A_dil
         # Apply orientation-averaging projection (`symmetrize=[ISO]` for
         # ECHOES) to both the dilute concentration and its scaled
         # contribution.  This matters per SC iteration so that the
         # running C_m converges to the iso-symmetrized fixed point.
         sym = symmetrizes[α]
         A_dil = _maybe_symmetrize_alv(A_dil, sym)
-        CA    = _maybe_symmetrize_alv(CA,    sym)
+        CA = _maybe_symmetrize_alv(CA, sym)
         f = fractions[α]
         @. A_avg += f * A_dil
         @. CA_avg += f * CA
@@ -414,15 +432,17 @@ end
 # where X = C_m (running estimate) and `strain_Strain = A_εε · C_m`,
 # `stress_Strain = C_inc · A_εε · C_m`.  Cracks contribute the
 # `(4π/3)·ε·H̃_iso(C_m)·C_m` term to `A_E`.
-function _sc_alv_step_echoes(C_m::AbstractMatrix,
-                              C_phases::AbstractVector{<:AbstractMatrix},
-                              U_M_phases::AbstractVector{<:AbstractMatrix},
-                              V_M_phases::AbstractVector{<:AbstractMatrix},
-                              fractions::AbstractVector{<:Real},
-                              f_M::Real,
-                              n::Int, Id::AbstractMatrix,
-                              symmetrizes::AbstractVector{<:AbstractSymmetrize},
-                              crack_data)
+function _sc_alv_step_echoes(
+        C_m::AbstractMatrix,
+        C_phases::AbstractVector{<:AbstractMatrix},
+        U_M_phases::AbstractVector{<:AbstractMatrix},
+        V_M_phases::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector{<:Real},
+        f_M::Real,
+        n::Int, Id::AbstractMatrix,
+        symmetrizes::AbstractVector{<:AbstractSymmetrize},
+        crack_data
+    )
     sz = size(C_m, 1)
     T = eltype(C_m)
     # Matrix part.
@@ -431,9 +451,9 @@ function _sc_alv_step_echoes(C_m::AbstractMatrix,
     # Iso parameters of the running estimate for the Hill-kernel
     # time-space decoupling.
     α_m, β_m = iso_params_from_blocks(C_m)
-    M_long  = @. (α_m + 2 * β_m) / 3
+    M_long = @. (α_m + 2 * β_m) / 3
     M_shear = β_m ./ 2
-    J_long  = volterra_inverse(M_long;  block_size = 1)
+    J_long = volterra_inverse(M_long; block_size = 1)
     J_shear = volterra_inverse(M_shear; block_size = 1)
     # Solid inclusions (loop indices 2..end correspond to solids; the
     # matrix lives at C_phases[1] but is handled separately above).
@@ -466,7 +486,7 @@ function _sc_alv_step_echoes(C_m::AbstractMatrix,
         α_c, β_c = _iso_pair(C_m)
         α_p_2β = α_c .+ 2β_c
         α_p_βh = α_c .+ β_c ./ 2
-        α_p_β  = α_c .+ β_c
+        α_p_β = α_c .+ β_c
         βα1 = β_c * α_p_βh
         βα2 = β_c * α_p_β
         B_n = (8 / (3π)) .* volterra_left_divide(βα1, α_p_2β)

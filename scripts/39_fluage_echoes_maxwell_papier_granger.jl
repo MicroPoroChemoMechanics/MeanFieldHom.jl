@@ -54,18 +54,20 @@ function granger_Jk_Jg(E, ν, j_list, τ_list, ageing_f)
     j_k = [1 / kmu_Enu(1 / j, ν)[1] for j in j_list]
     j_g = [1 / kmu_Enu(1 / j, ν)[2] for j in j_list]
     return granger_scalar(k, j_k, τ_list, ageing_f),
-           granger_scalar(g, j_g, τ_list, ageing_f)
+        granger_scalar(g, j_g, τ_list, ageing_f)
 end
 
 # ── Matrix law ──
 const Jk_mat, Jg_mat = granger_Jk_Jg(
     1.0, 0.25, [2.0, 3.0], [2.0, 10.0],
-    tp -> tp < 0 ? 1.0 : exp(-(tp / 30.0)^2))
+    tp -> tp < 0 ? 1.0 : exp(-(tp / 30.0)^2)
+)
 
 # ── Inclusion law ──
 const Jk_inc, Jg_inc = granger_Jk_Jg(
     10.0, 0.15, [0.5, 0.7], [0.1, 7.0],
-    tp -> tp < 0 ? 1.0 : exp(-(tp / 15.0)^2))
+    tp -> tp < 0 ? 1.0 : exp(-(tp / 15.0)^2)
+)
 
 # Iso projectors in Mandel form (constant 6×6 matrices).
 const _, 𝕁₄, 𝕂₄ = TensND.iso_projectors(Val(3), Val(Float64))
@@ -117,15 +119,19 @@ end
 
 const FRACTIONS = (0.05, 0.1, 0.2)
 const FRAC_COLORS = (:blue, :black, :red)
-const SCHEMES_LSTYLE = ((Maxwell(), :solid, "MAX"),
-                        (Dilute(), :dash, "DIL"),
-                        (MoriTanaka(), :dot, "MTB"))
+const SCHEMES_LSTYLE = (
+    (Maxwell(), :solid, "MAX"),
+    (Dilute(), :dash, "DIL"),
+    (MoriTanaka(), :dot, "MTB"),
+)
 
 # Figure 1: φ effect at ω = 0.1
-plt1 = plot(layout = (1, 1), size = (1100, 700),
-            title = "Granger ALV — shear creep, ω=0.1, varying φ",
-            xlabel = "t", ylabel = "Lμ(t)",
-            legend = :topleft)
+plt1 = plot(
+    layout = (1, 1), size = (1100, 700),
+    title = "Granger ALV — shear creep, ω=0.1, varying φ",
+    xlabel = "t", ylabel = "Lμ(t)",
+    legend = :topleft
+)
 
 for t0 in t0_v
     T = build_grid(t0, N_TIMES)
@@ -133,34 +139,46 @@ for t0 in t0_v
 
     Vmat = phase_shear_curve(law_M, T)
     Vinc = phase_shear_curve(law_I, T)
-    plot!(plt1, Tp, vcat(0.0, Vmat); color = :green,
-          label = (t0 == 0.0 ? "matrix" : ""))
-    plot!(plt1, Tp, vcat(0.0, Vinc); color = :magenta,
-          label = (t0 == 0.0 ? "inhomogeneity" : ""))
+    plot!(
+        plt1, Tp, vcat(0.0, Vmat); color = :green,
+        label = (t0 == 0.0 ? "matrix" : "")
+    )
+    plot!(
+        plt1, Tp, vcat(0.0, Vinc); color = :magenta,
+        label = (t0 == 0.0 ? "inhomogeneity" : "")
+    )
 
     for (sch, ls, sch_lbl) in SCHEMES_LSTYLE
         for (f, col) in zip(FRACTIONS, FRAC_COLORS)
             rve = build_rve(0.1, f)
             R̃ = homogenize_alv(rve, sch, :C; times = T)
             yvals = vcat(0.0, shear_creep_curve(R̃))
-            plot!(plt1, Tp, yvals; color = col, linestyle = ls,
-                  label = (t0 == 0.0 ? "$sch_lbl φ=$f" : ""))
+            plot!(
+                plt1, Tp, yvals; color = col, linestyle = ls,
+                label = (t0 == 0.0 ? "$sch_lbl φ=$f" : "")
+            )
         end
     end
 end
 
 mkpath(joinpath(@__DIR__, "figures"))
-savefig(plt1, joinpath(@__DIR__, "figures",
-                       "39_fluage_echoes_maxwell_papier_granger_frac.png"))
+savefig(
+    plt1, joinpath(
+        @__DIR__, "figures",
+        "39_fluage_echoes_maxwell_papier_granger_frac.png"
+    )
+)
 
 # Figure 2: ω effect at φ = 0.2
 const OMEGAS_2 = (0.1, 1.0)
 const OMEGA_COLORS = (:blue, :black)
 
-plt2 = plot(layout = (1, 1), size = (1100, 700),
-            title = "Granger ALV — shear creep, φ=0.2, varying ω",
-            xlabel = "t", ylabel = "Lμ(t)",
-            legend = :topleft)
+plt2 = plot(
+    layout = (1, 1), size = (1100, 700),
+    title = "Granger ALV — shear creep, φ=0.2, varying ω",
+    xlabel = "t", ylabel = "Lμ(t)",
+    legend = :topleft
+)
 
 for t0 in t0_v
     T = build_grid(t0, N_TIMES)
@@ -168,23 +186,33 @@ for t0 in t0_v
 
     Vmat = phase_shear_curve(law_M, T)
     Vinc = phase_shear_curve(law_I, T)
-    plot!(plt2, Tp, vcat(0.0, Vmat); color = :green,
-          label = (t0 == 0.0 ? "matrix" : ""))
-    plot!(plt2, Tp, vcat(0.0, Vinc); color = :magenta,
-          label = (t0 == 0.0 ? "inhomogeneity" : ""))
+    plot!(
+        plt2, Tp, vcat(0.0, Vmat); color = :green,
+        label = (t0 == 0.0 ? "matrix" : "")
+    )
+    plot!(
+        plt2, Tp, vcat(0.0, Vinc); color = :magenta,
+        label = (t0 == 0.0 ? "inhomogeneity" : "")
+    )
 
     for (sch, ls, sch_lbl) in SCHEMES_LSTYLE
         for (ω, col) in zip(OMEGAS_2, OMEGA_COLORS)
             rve = build_rve(ω, 0.2)
             R̃ = homogenize_alv(rve, sch, :C; times = T)
             yvals = vcat(0.0, shear_creep_curve(R̃))
-            plot!(plt2, Tp, yvals; color = col, linestyle = ls,
-                  label = (t0 == 0.0 ? "$sch_lbl ω=$ω" : ""))
+            plot!(
+                plt2, Tp, yvals; color = col, linestyle = ls,
+                label = (t0 == 0.0 ? "$sch_lbl ω=$ω" : "")
+            )
         end
     end
 end
 
-savefig(plt2, joinpath(@__DIR__, "figures",
-                       "39_fluage_echoes_maxwell_papier_granger_omega.png"))
+savefig(
+    plt2, joinpath(
+        @__DIR__, "figures",
+        "39_fluage_echoes_maxwell_papier_granger_omega.png"
+    )
+)
 
 println("Saved : 39_fluage_echoes_maxwell_papier_granger_{frac,omega}.png")

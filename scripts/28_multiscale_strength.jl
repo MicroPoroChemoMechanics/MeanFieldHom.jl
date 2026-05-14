@@ -46,32 +46,32 @@ using LinearAlgebra
 using Plots
 
 # ── Physical constants ─────────────────────────────────────────────────────
-const ρ_w     = 1.0
-const ρ_clin  = 3.15;  const d_clin = ρ_clin / ρ_w
-const ρ_hyd   = 2.073; const d_hyd  = ρ_hyd  / ρ_w
-const ρ_san   = 2.648; const d_san  = ρ_san  / ρ_w
+const ρ_w = 1.0
+const ρ_clin = 3.15;  const d_clin = ρ_clin / ρ_w
+const ρ_hyd = 2.073; const d_hyd = ρ_hyd / ρ_w
+const ρ_san = 2.648; const d_san = ρ_san / ρ_w
 
 const K_clin, μ_clin = 116.7, 53.8
 const K_hyd_ref, μ_hyd_ref = 18.7, 11.8
-const K_san, μ_san  = 37.8, 44.3
+const K_san, μ_san = 37.8, 44.3
 const TINY = 1.0e-3   # numerical regularisation for water and air (≈ zero stiffness)
 
 # Hydrate spheroid aspect ratio and angular discretisation (Pichler 2011)
-const NTHETA   = 20
+const NTHETA = 20
 const ω_aspect = 1.0e4
 
 # ── Powers volume fractions ────────────────────────────────────────────────
 f_clin(wc, α) = (1 - α) / (1 + d_clin * wc)
-f_w(wc, α)    = d_clin * (wc - 0.42 * α) / (1 + d_clin * wc)
-f_hyd(wc, α)  = 1.42 * d_clin / d_hyd * α / (1 + d_clin * wc)
+f_w(wc, α) = d_clin * (wc - 0.42 * α) / (1 + d_clin * wc)
+f_hyd(wc, α) = 1.42 * d_clin / d_hyd * α / (1 + d_clin * wc)
 fh_san(wc, sc) = sc / d_san / (1 / d_clin + wc + sc / d_san)
-αmax(wc)       = min(1.0, wc / 0.42)
+αmax(wc) = min(1.0, wc / 0.42)
 
 # ── Angular discretisation : N polar bins on (0, π/2) ──────────────────────
 function disc_theta(N::Int)
-    thm   = vcat(0.0, [π / 2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)])
+    thm = vcat(0.0, [π / 2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)])
     theta = [π / 2 * (i - 1) / (N - 1) for i in 1:N]
-    thp   = vcat([π / 2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)], π / 2)
+    thp = vcat([π / 2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)], π / 2)
     return thm, theta, thp
 end
 
@@ -87,18 +87,24 @@ end
 # index `θ_idx`, which can be Dual; the others stay at `μ_ref`.
 function build_hf(wc, α_p, μ_hyd; ω::Real = ω_aspect)
     fclin = f_clin(wc, α_p)
-    fw    = f_w(wc, α_p)
-    fhyd  = f_hyd(wc, α_p)
-    fair  = max(0.0, 1 - fclin - fw - fhyd)
+    fw = f_w(wc, α_p)
+    fhyd = f_hyd(wc, α_p)
+    fair = max(0.0, 1 - fclin - fw - fhyd)
     fthyd_t = fhyd / (1 - fclin)
-    ftw_t   = fw   / (1 - fclin)
+    ftw_t = fw / (1 - fclin)
     ftair_t = fair / (1 - fclin)
 
     T = typeof(μ_hyd)
     rve = RVE(:M; T = T)
-    add_matrix!(rve, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(convert(T, 3 * K_hyd_ref),
-                                       convert(T, 2 * μ_hyd_ref))))
+    add_matrix!(
+        rve, Ellipsoid(1.0),
+        Dict(
+            :C => TensISO{3}(
+                convert(T, 3 * K_hyd_ref),
+                convert(T, 2 * μ_hyd_ref)
+            )
+        )
+    )
     # Single hydrate phase as a flat oblate spheroid with iso-symmetrize :
     # the localization tensor is averaged over the uniform spatial
     # distribution of orientations, producing an isotropic homogenised
@@ -106,18 +112,28 @@ function build_hf(wc, α_p, μ_hyd; ω::Real = ω_aspect)
     # Prolate hydrate spheroid (axes (1, 1, ω) with ω >> 1 = needle-shape).
     # Iso symmetrize gives a uniform spatial distribution of orientations.
     geom_hyd = Spheroid(ω)
-    add_phase!(rve, :HYD, geom_hyd,
-                Dict(:C => TensISO{3}(convert(T, 3 * K_hyd_ref), 2 * μ_hyd));
-                fraction = fthyd_t, symmetrize = :iso)
-    add_phase!(rve, :W, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY)));
-                fraction = ftw_t)
-    add_phase!(rve, :AIR, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY)));
-                fraction = ftair_t)
-    return homogenize(rve, SelfConsistent(; abstol = 1.0e-8, maxiters = 1000,
-                                            damping = 0.5),
-                       :C; select_best = true)
+    add_phase!(
+        rve, :HYD, geom_hyd,
+        Dict(:C => TensISO{3}(convert(T, 3 * K_hyd_ref), 2 * μ_hyd));
+        fraction = fthyd_t, symmetrize = :iso
+    )
+    add_phase!(
+        rve, :W, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY)));
+        fraction = ftw_t
+    )
+    add_phase!(
+        rve, :AIR, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY)));
+        fraction = ftair_t
+    )
+    return homogenize(
+        rve, SelfConsistent(;
+            abstol = 1.0e-8, maxiters = 1000,
+            damping = 0.5
+        ),
+        :C; select_best = true
+    )
 end
 
 # ── Cement paste : MT(HF, clinker) ─────────────────────────────────────────
@@ -126,9 +142,11 @@ function build_cp(wc, α_p, C_hf::TensND.AbstractTens)
     T = eltype(C_hf)
     rve = RVE(:HF; T = T)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_hf))
-    add_phase!(rve, :CLIN, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(convert(T, 3 * K_clin), convert(T, 2 * μ_clin)));
-                fraction = fclin)
+    add_phase!(
+        rve, :CLIN, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3 * K_clin), convert(T, 2 * μ_clin)));
+        fraction = fclin
+    )
     return homogenize(rve, MoriTanaka(), :C)
 end
 
@@ -138,9 +156,11 @@ function build_mo(wc, sc, C_cp::TensND.AbstractTens)
     T = eltype(C_cp)
     rve = RVE(:CP; T = T)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_cp))
-    add_phase!(rve, :SAN, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(convert(T, 3 * K_san), convert(T, 2 * μ_san)));
-                fraction = fsan)
+    add_phase!(
+        rve, :SAN, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3 * K_san), convert(T, 2 * μ_san)));
+        fraction = fsan
+    )
     return homogenize(rve, MoriTanaka(), :C)
 end
 
@@ -166,10 +186,12 @@ extract_E(K, μ) = 9K * μ / (3K + μ)
 # At a value point where C_mo is iso, S_mo is also iso. M = S_mo : dC : S_mo
 # is computed by tensor double-dot :  M_ijkl = S_ijab · dC_abcd · S_cdkl.
 # The Pichler component is M[2,2,2,2] (axial-axial in compliance pull-back).
-function pichler_strength(arr_C_mo::AbstractArray,
-                          arr_dC::AbstractArray,
-                          μh::Real,
-                          f_θ::Real)
+function pichler_strength(
+        arr_C_mo::AbstractArray,
+        arr_dC::AbstractArray,
+        μh::Real,
+        f_θ::Real
+    )
     K_mo, μ_mo = extract_kμ(arr_C_mo)
     # Iso compliance S_mo = (1/9K) δ_ij δ_kl + (1/4μ)(δ_ik δ_jl + δ_il δ_jk - 2/3 δ_ij δ_kl)
     Sα = 1 / (3 * 3 * K_mo)        # spherical projector coefficient
@@ -177,12 +199,16 @@ function pichler_strength(arr_C_mo::AbstractArray,
     arr_S = zeros(eltype(arr_dC), 3, 3, 3, 3)
     for i in 1:3, j in 1:3, k in 1:3, l in 1:3
         sph = Sα * (i == j) * (k == l)
-        dev = Sβ * (((i == k) * (j == l) + (i == l) * (j == k)) -
-                     2 * (i == j) * (k == l) / 3)
+        dev = Sβ * (
+            ((i == k) * (j == l) + (i == l) * (j == k)) -
+                2 * (i == j) * (k == l) / 3
+        )
         # Note : S_ijkl = (1/9K) δ_ij δ_kl + (1/4μ) (...)
         arr_S[i, j, k, l] = (i == j) * (k == l) / (9 * K_mo) +
-                             (((i == k) * (j == l) + (i == l) * (j == k)) -
-                              2 * (i == j) * (k == l) / 3) / (4 * μ_mo)
+            (
+            ((i == k) * (j == l) + (i == l) * (j == k)) -
+                2 * (i == j) * (k == l) / 3
+        ) / (4 * μ_mo)
     end
     M = zeros(eltype(arr_dC), 3, 3, 3, 3)
     @inbounds for i in 1:3, j in 1:3, k in 1:3, l in 1:3
@@ -215,9 +241,9 @@ end
 # scalar perturbation along that direction.
 
 function _disc_theta(N)
-    thm = vcat(0.0, [π/2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)])
-    theta = [π/2 * (i - 1) / (N - 1) for i in 1:N]
-    thp = vcat([π/2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)], π/2)
+    thm = vcat(0.0, [π / 2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)])
+    theta = [π / 2 * (i - 1) / (N - 1) for i in 1:N]
+    thp = vcat([π / 2 * (i - 0.5) / (N - 1) for i in 1:(N - 1)], π / 2)
     return thm, theta, thp
 end
 
@@ -294,8 +320,10 @@ function _F_walpole(c_data::AbstractVector, μ_b0, wc, α_p; N = NTHETA)
     T = promote_type(eltype(c_data), typeof(μ_b0))
 
     cd = ntuple(i -> convert(T, c_data[i]), 5)
-    C_0_TI = TensND.TensTI{4, T, 5}(cd,
-                                       (convert(T, 0.0), convert(T, 0.0), convert(T, 1.0)))
+    C_0_TI = TensND.TensTI{4, T, 5}(
+        cd,
+        (convert(T, 0.0), convert(T, 0.0), convert(T, 1.0))
+    )
     α_iso0, β_iso0 = _walpole_ez_to_iso(collect(cd))
     C_0_iso = TensND.TensISO{3}(α_iso0, β_iso0)
 
@@ -355,7 +383,7 @@ function _dCh_dμb0_walpole(α_hf, β_hf, wc, α_p)
     # Linearise at one SC step from the iso `C_hf` (mirroring the C++
     # reference's `homogenize(... maxnb=1)` before `homogenize_derivative`).
     c1 = _F_walpole(c0, μ_hyd_ref, wc, α_p)
-    J_c   = ForwardDiff.jacobian(c -> _F_walpole(c, μ_hyd_ref, wc, α_p), c1)
+    J_c = ForwardDiff.jacobian(c -> _F_walpole(c, μ_hyd_ref, wc, α_p), c1)
     df_dμ = ForwardDiff.derivative(μ -> _F_walpole(c1, μ, wc, α_p), μ_hyd_ref)
     # Divide by 2 to convert from `d/dμ` (our parameterisation) to
     # `d/d(2μ)` (the iso parameter index used in the reference's strength
@@ -386,8 +414,10 @@ function compute_point(wc, α_p; sc = 0.0)
         Cw = _iso_to_walpole(α_hf, β_hf) .+ t .* dCh_dμ
         Tt = typeof(t)
         Cwt = ntuple(i -> convert(Tt, Cw[i]), 5)
-        C_hf_perturbed = TensND.TensTI{4, Tt, 5}(Cwt,
-                                                  (zero(Tt), zero(Tt), one(Tt)))
+        C_hf_perturbed = TensND.TensTI{4, Tt, 5}(
+            Cwt,
+            (zero(Tt), zero(Tt), one(Tt))
+        )
         C_cp = build_cp(wc, α_p, C_hf_perturbed)
         C_mo = build_mo(wc, sc, C_cp)
         return get_array(C_mo)
@@ -399,24 +429,32 @@ function compute_point(wc, α_p; sc = 0.0)
 end
 
 # ── Sweep + plot (figure structure of Pichler & Hellmich 2011, Fig. 4) ────
-println("=" ^ 78)
+println("="^78)
 println("Multi-scale upscaling of cement-paste / mortar (Pichler-Hellmich 2011)")
 println("(NTHETA = $NTHETA, ω = $ω_aspect)")
-println("=" ^ 78)
+println("="^78)
 
-const wcs = [0.157, 0.25, 0.35, 0.50, 0.65, 0.80]
+const wcs = [0.157, 0.25, 0.35, 0.5, 0.65, 0.8]
 const sc_default = 0.0
 const N_α = 20
 const α_min = 0.005   # minimum hydration degree to plot (curves go to zero as α→0)
 
-p1 = plot(; xlabel = "α", ylabel = "k_mortar (GPa)",
-            xlims = (0, 1), ylims = (0, 35), legend = :topleft)
-p2 = plot(; xlabel = "α", ylabel = "μ_mortar (GPa)",
-            xlims = (0, 1), ylims = (0, 20), legend = false)
-p3 = plot(; xlabel = "α", ylabel = "f_c / σ_ult",
-            xlims = (0, 1), ylims = (0, 2), legend = false)
-p4 = plot(; xlabel = "f_c / σ_ult", ylabel = "E_mortar (GPa)",
-            xlims = (0, 2), ylims = (0, 50), legend = false)
+p1 = plot(;
+    xlabel = "α", ylabel = "k_mortar (GPa)",
+    xlims = (0, 1), ylims = (0, 35), legend = :topleft
+)
+p2 = plot(;
+    xlabel = "α", ylabel = "μ_mortar (GPa)",
+    xlims = (0, 1), ylims = (0, 20), legend = false
+)
+p3 = plot(;
+    xlabel = "α", ylabel = "f_c / σ_ult",
+    xlims = (0, 1), ylims = (0, 2), legend = false
+)
+p4 = plot(;
+    xlabel = "f_c / σ_ult", ylabel = "E_mortar (GPa)",
+    xlims = (0, 2), ylims = (0, 50), legend = false
+)
 
 for wc in wcs
     # Clamp αmax just below 1 to avoid the matrix-fraction = -ε rounding
@@ -441,8 +479,10 @@ for wc in wcs
     end
 end
 
-p_full = plot(p1, p2, p3, p4; layout = (2, 2), size = (1000, 800),
-               plot_title = "Multi-scale strength upscaling — MeanFieldHom v0.4")
+p_full = plot(
+    p1, p2, p3, p4; layout = (2, 2), size = (1000, 800),
+    plot_title = "Multi-scale strength upscaling — MeanFieldHom v0.4"
+)
 
 figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
@@ -453,8 +493,8 @@ savefig(p_full, figpath)
 # Tabular summary at one wc
 println("\n[Tabular] wc = 0.50")
 @printf "  %5s   %10s   %10s   %10s   %10s\n" "α" "k_mo" "μ_mo" "fc" "E_mo"
-println("  " * "─" ^ 60)
-let wc = 0.50
+println("  " * "─"^60)
+let wc = 0.5
     αs = collect(filter(α -> α > 0.05, range(0.05, αmax(wc); length = 6)))
     for α_p in αs
         try

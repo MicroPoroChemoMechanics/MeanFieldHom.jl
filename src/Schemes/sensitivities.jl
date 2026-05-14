@@ -28,13 +28,15 @@ the extension loaded raises an explicit error pointing at the extension.
 
 See also [`gradient`](@ref), [`jacobian`](@ref), [`sensitivity`](@ref).
 """
-function derivative(rve::RVE, scheme::HomogenizationScheme,
-                    p::AbstractParameter;
-                    output::Symbol = :C, indexer = identity, kw...)
+function derivative(
+        rve::RVE, scheme::HomogenizationScheme,
+        p::AbstractParameter;
+        output::Symbol = :C, indexer = identity, kw...
+    )
     x₀ = get_param(rve, p)
     f = x -> begin
         rve′ = set_param(rve, p, x)
-        out  = homogenize(rve′, scheme; property = output, kw...)
+        out = homogenize(rve′, scheme; property = output, kw...)
         return indexer(out)
     end
     return ForwardDiff.derivative(f, x₀)
@@ -54,14 +56,16 @@ rule).
 
 Without `using ForwardDiff`: error.
 """
-function gradient(rve::RVE, scheme::HomogenizationScheme,
-                  ps::AbstractVector{<:AbstractParameter};
-                  output::Symbol = :C, indexer = identity,
-                  chunk = nothing, kw...)
+function gradient(
+        rve::RVE, scheme::HomogenizationScheme,
+        ps::AbstractVector{<:AbstractParameter};
+        output::Symbol = :C, indexer = identity,
+        chunk = nothing, kw...
+    )
     x₀ = [get_param(rve, p) for p in ps]
     f = xs -> begin
         rve′ = _set_many(rve, ps, xs)
-        out  = homogenize(rve′, scheme; property = output, kw...)
+        out = homogenize(rve′, scheme; property = output, kw...)
         return indexer(out)
     end
     if chunk === nothing
@@ -86,14 +90,16 @@ via `get_array` then `vec`.
 
 Without `using ForwardDiff`: error.
 """
-function jacobian(rve::RVE, scheme::HomogenizationScheme,
-                  ps::AbstractVector{<:AbstractParameter};
-                  output::Symbol = :C, indexer = identity,
-                  chunk = nothing, kw...)
+function jacobian(
+        rve::RVE, scheme::HomogenizationScheme,
+        ps::AbstractVector{<:AbstractParameter};
+        output::Symbol = :C, indexer = identity,
+        chunk = nothing, kw...
+    )
     x₀ = [get_param(rve, p) for p in ps]
     f = xs -> begin
         rve′ = _set_many(rve, ps, xs)
-        out  = homogenize(rve′, scheme; property = output, kw...)
+        out = homogenize(rve′, scheme; property = output, kw...)
         return _flatten_for_jacobian(indexer(out))
     end
     if chunk === nothing
@@ -106,11 +112,13 @@ end
 
 # Single-parameter convenience: pass one AbstractParameter, return jacobian
 # along that single dimension (still a Matrix of size (length(output_flat), 1)).
-jacobian(rve::RVE, scheme::HomogenizationScheme,
-         p::AbstractParameter; kw...) =
+jacobian(
+    rve::RVE, scheme::HomogenizationScheme,
+    p::AbstractParameter; kw...
+) =
     jacobian(rve, scheme, [p]; kw...)
 
-_flatten_for_jacobian(x::Number)        = [x]
+_flatten_for_jacobian(x::Number) = [x]
 _flatten_for_jacobian(x::AbstractArray) = vec(x)
 _flatten_for_jacobian(x::TensND.AbstractTens) = vec(collect(TensND.get_array(x)))
 
@@ -156,6 +164,8 @@ function _autoselect(f, x₀::AbstractVector)
     return y isa Number ? :gradient : :jacobian
 end
 
-_autoselect(f, x₀) = throw(ArgumentError(
-    "sensitivity: cannot autoselect kind for x₀ of type $(typeof(x₀)); pass `kind=:derivative|:gradient|:jacobian`"
-))
+_autoselect(f, x₀) = throw(
+    ArgumentError(
+        "sensitivity: cannot autoselect kind for x₀ of type $(typeof(x₀)); pass `kind=:derivative|:gradient|:jacobian`"
+    )
+)

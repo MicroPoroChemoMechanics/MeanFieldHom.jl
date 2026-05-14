@@ -35,8 +35,10 @@ end
 @testset "Differential — bracketed by Voigt/Reuss" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     Vv = get_array(homogenize(rve, Voigt()))[1, 1, 1, 1]
     Vr = get_array(homogenize(rve, Reuss()))[1, 1, 1, 1]
     Vd = get_array(homogenize(rve, DifferentialScheme(; nsteps = 200)))[1, 1, 1, 1]
@@ -46,12 +48,14 @@ end
 @testset "Differential — trajectory invariance for single-inclusion RVE" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     C_prop = homogenize(rve, DifferentialScheme(; trajectory = Proportional(), nsteps = 100))
-    C_seq  = homogenize(rve, DifferentialScheme(; trajectory = Sequential([:I]), nsteps = 100))
+    C_seq = homogenize(rve, DifferentialScheme(; trajectory = Sequential([:I]), nsteps = 100))
     custom = CustomPath(Dict(:I => collect(range(0.0, 1.0; length = 101))))
-    C_cus  = homogenize(rve, DifferentialScheme(; trajectory = custom, nsteps = 100))
+    C_cus = homogenize(rve, DifferentialScheme(; trajectory = custom, nsteps = 100))
     # Tsit5 takes different adaptive steps depending on the smoothness
     # of `df/dτ` (Proportional has constant df, Sequential has step
     # discontinuities at window boundaries, CustomPath is piecewise
@@ -64,15 +68,30 @@ end
 @testset "Differential — multi-phase Proportional vs Sequential (dilute limit)" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I1, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.01)
-    add_phase!(rve, :I2, Ellipsoid(1.0), Dict(:C => TensISO{3}(15.0, 5.0));
-               fraction = 0.01)
-    Cp = get_array(homogenize(rve, DifferentialScheme(; trajectory = Proportional(),
-                                                      nsteps = 200)))[1, 1, 1, 1]
-    Cs = get_array(homogenize(rve, DifferentialScheme(;
-                                                      trajectory = Sequential([:I1, :I2]),
-                                                      nsteps = 200)))[1, 1, 1, 1]
+    add_phase!(
+        rve, :I1, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.01
+    )
+    add_phase!(
+        rve, :I2, Ellipsoid(1.0), Dict(:C => TensISO{3}(15.0, 5.0));
+        fraction = 0.01
+    )
+    Cp = get_array(
+        homogenize(
+            rve, DifferentialScheme(;
+                trajectory = Proportional(),
+                nsteps = 200
+            )
+        )
+    )[1, 1, 1, 1]
+    Cs = get_array(
+        homogenize(
+            rve, DifferentialScheme(;
+                trajectory = Sequential([:I1, :I2]),
+                nsteps = 200
+            )
+        )
+    )[1, 1, 1, 1]
     # Dilute-limit difference is O(f²)
     @test abs(Cp - Cs) < 1.0e-3
 end
@@ -80,8 +99,10 @@ end
 @testset "Differential — CustomPath validation errors" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
 
     # Wrong endpoint at start
     bad_start = CustomPath(Dict(:I => vcat([0.5], collect(range(0.0, 1.0; length = 100)))))
@@ -96,10 +117,14 @@ end
     # Missing phase
     rve2 = RVE(:M)
     add_matrix!(rve2, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve2, :I1, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.1)
-    add_phase!(rve2, :I2, Ellipsoid(1.0), Dict(:C => TensISO{3}(15.0, 5.0));
-               fraction = 0.1)
+    add_phase!(
+        rve2, :I1, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.1
+    )
+    add_phase!(
+        rve2, :I2, Ellipsoid(1.0), Dict(:C => TensISO{3}(15.0, 5.0));
+        fraction = 0.1
+    )
     bad_miss = CustomPath(Dict(:I1 => collect(range(0.0, 1.0; length = 101))))
     @test_throws ArgumentError homogenize(rve2, DifferentialScheme(; trajectory = bad_miss, nsteps = 100))
 end
@@ -107,13 +132,18 @@ end
 @testset "Differential — Path (functional) trajectory" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     # f(τ) = τ² is monotone with f(0)=0, f(1)=1.  Since DEM with one
     # solid phase is parametrisation-invariant in τ, this should give
     # the same C^hom(τ=1) as the default Proportional path.
-    C_path = homogenize(rve, DifferentialScheme(;
-                          trajectory = Path(Dict(:I => τ -> τ^2))))
+    C_path = homogenize(
+        rve, DifferentialScheme(;
+            trajectory = Path(Dict(:I => τ -> τ^2))
+        )
+    )
     C_prop = homogenize(rve, DifferentialScheme())
     @test isapprox(C_path, C_prop; rtol = 1.0e-5)
 end
@@ -121,20 +151,30 @@ end
 @testset "Differential — Path validation errors" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     # f(0) ≠ 0
-    @test_throws ArgumentError homogenize(rve,
-        DifferentialScheme(; trajectory = Path(Dict(:I => τ -> 0.5 + τ / 2))))
+    @test_throws ArgumentError homogenize(
+        rve,
+        DifferentialScheme(; trajectory = Path(Dict(:I => τ -> 0.5 + τ / 2)))
+    )
     # f(1) ≠ 1
-    @test_throws ArgumentError homogenize(rve,
-        DifferentialScheme(; trajectory = Path(Dict(:I => τ -> τ / 2))))
+    @test_throws ArgumentError homogenize(
+        rve,
+        DifferentialScheme(; trajectory = Path(Dict(:I => τ -> τ / 2)))
+    )
     # Non-monotone (sin(2πτ) has both signs)
-    @test_throws ArgumentError homogenize(rve,
-        DifferentialScheme(; trajectory = Path(Dict(:I => τ -> τ + 0.3sin(2π * τ)))))
+    @test_throws ArgumentError homogenize(
+        rve,
+        DifferentialScheme(; trajectory = Path(Dict(:I => τ -> τ + 0.3sin(2π * τ))))
+    )
     # Missing phase
-    @test_throws ArgumentError homogenize(rve,
-        DifferentialScheme(; trajectory = Path(Dict(:OTHER => τ -> τ))))
+    @test_throws ArgumentError homogenize(
+        rve,
+        DifferentialScheme(; trajectory = Path(Dict(:OTHER => τ -> τ)))
+    )
 end
 
 @testset "Differential — saveat insensitivity (`nsteps`)" begin
@@ -143,9 +183,11 @@ end
     # result beyond solver tolerance.
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
-    C_50  = homogenize(rve, DifferentialScheme(; nsteps =  50))
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
+    C_50 = homogenize(rve, DifferentialScheme(; nsteps = 50))
     C_200 = homogenize(rve, DifferentialScheme(; nsteps = 200))
     @test isapprox(C_50, C_200; rtol = 1.0e-6)
 end
@@ -155,8 +197,10 @@ end
     # tight ones — but both should be finite and within Voigt/Reuss.
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     C_loose = homogenize(rve, DifferentialScheme(; abstol = 1.0e-3, reltol = 1.0e-2))
     C_tight = homogenize(rve, DifferentialScheme(; abstol = 1.0e-10, reltol = 1.0e-9))
     @test all(isfinite, get_array(C_tight))
@@ -168,8 +212,10 @@ end
 @testset "Differential — crack RVE reduces stiffness monotonically" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :CRACK, PennyCrack(1.0), Dict(:C => TensISO{3}(30.0, 10.0));
-               density = 0.05)
+    add_phase!(
+        rve, :CRACK, PennyCrack(1.0), Dict(:C => TensISO{3}(30.0, 10.0));
+        density = 0.05
+    )
     C_d = homogenize(rve, DifferentialScheme(; nsteps = 200))
     @test get_array(C_d)[3, 3, 3, 3] < get_array(TensISO{3}(30.0, 10.0))[3, 3, 3, 3]
     @test all(isfinite, get_array(C_d))
@@ -181,8 +227,12 @@ end
     add_phase!(rve, :I, Ellipsoid(1.0), Dict(:K => TensISO{3}(8.0)); fraction = 0.3)
     Kv = get_array(homogenize(rve, Voigt(); property = :K))[1, 1]
     Kr = get_array(homogenize(rve, Reuss(); property = :K))[1, 1]
-    Kd = get_array(homogenize(rve, DifferentialScheme(; nsteps = 200);
-                              property = :K))[1, 1]
+    Kd = get_array(
+        homogenize(
+            rve, DifferentialScheme(; nsteps = 200);
+            property = :K
+        )
+    )[1, 1]
     @test Kr - RTOL_DIFF * abs(Kr) ≤ Kd ≤ Kv + RTOL_DIFF * abs(Kv)
 end
 
@@ -191,8 +241,10 @@ end
         DT = typeof(f)
         rve = RVE(:M; T = DT)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-        add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-                   fraction = f)
+        add_phase!(
+            rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+            fraction = f
+        )
         get_array(homogenize(rve, DifferentialScheme(; nsteps = 50)))[1, 1, 1, 1]
     end
     df = ForwardDiff.derivative(f_diff, 0.3)
@@ -203,9 +255,11 @@ end
 @testset "Differential — Symbol shortcuts" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     @test homogenize(rve, :differential) ≈ homogenize(rve, DifferentialScheme())
-    @test homogenize(rve, :diff)         ≈ homogenize(rve, DifferentialScheme())
-    @test homogenize(rve, :DIFF)         ≈ homogenize(rve, DifferentialScheme())
+    @test homogenize(rve, :diff) ≈ homogenize(rve, DifferentialScheme())
+    @test homogenize(rve, :DIFF) ≈ homogenize(rve, DifferentialScheme())
 end

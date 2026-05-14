@@ -30,14 +30,14 @@ T_grid = collect(Float64.(ref.T))
 n = length(T_grid)
 
 # Coerce the JSON-loaded scalars to Float64 (JSON3 keeps integers as Int).
-const k0    = Float64(ref.k0)
-const mu0   = Float64(ref.mu0)
-const eta_k0  = Float64(ref.eta_k0)
+const k0 = Float64(ref.k0)
+const mu0 = Float64(ref.mu0)
+const eta_k0 = Float64(ref.eta_k0)
 const eta_mu0 = Float64(ref.eta_mu0)
-const k1    = Float64(ref.k1)
-const mu1   = Float64(ref.mu1)
-const k2    = Float64(ref.k2)
-const mu2   = Float64(ref.mu2)
+const k1 = Float64(ref.k1)
+const mu1 = Float64(ref.mu1)
+const k2 = Float64(ref.k2)
+const mu2 = Float64(ref.mu2)
 
 # Matrix Maxwell relaxation kernel.
 make_R0() = maxwell_iso(k0, mu0, eta_k0, eta_mu0)
@@ -97,13 +97,14 @@ function compare(label, A_jl, A_py)
         return
     end
     diff = A_jl .- A_py
-    rel = maximum(abs, diff) / max(maximum(abs, A_py), 1e-300)
+    rel = maximum(abs, diff) / max(maximum(abs, A_py), 1.0e-300)
     @printf "  max |Δ|       = %.3e\n" maximum(abs, diff)
     @printf "  relative      = %.3e\n" rel
     println("  diagonal (jl − py) :")
     for i in 1:size(diff, 1)
         @printf "    [%d, %d] : Δ = %+.3e   (jl = %+.6e ; py = %+.6e)\n" i i diff[i, i] A_jl[i, i] A_py[i, i]
     end
+    return
 end
 
 compare("layer 1 (core)  α", α_jl[1], α_py_0)

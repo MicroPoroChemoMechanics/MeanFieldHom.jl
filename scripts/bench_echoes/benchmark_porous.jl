@@ -64,26 +64,32 @@ const py_chom_porous = py"py_chom_porous"
 
 # ── Julia-side wrapper ───────────────────────────────────────────────────────
 
-const k_s, μ_s   = 72.0, 32.0
-const k_p, μ_p   = 1.0e-6, 1.0e-6
-const C_s        = TensISO{3}(3 * k_s, 2 * μ_s)
-const C_p        = TensISO{3}(3 * k_p, 2 * μ_p)
+const k_s, μ_s = 72.0, 32.0
+const k_p, μ_p = 1.0e-6, 1.0e-6
+const C_s = TensISO{3}(3 * k_s, 2 * μ_s)
+const C_p = TensISO{3}(3 * k_p, 2 * μ_p)
 
 # Schemes table — Symbol form (used here) plus a label for the Python side.
 const SCHEMES = [
-    (:voigt,        Voigt(),                         "VOIGT"),
-    (:reuss,        Reuss(),                         "REUSS"),
-    (:dilute,       Dilute(),                        "DIL"),
-    (:dilute_dual,  DiluteDual(),                    "DILD"),
-    (:mori_tanaka,  MoriTanaka(),                    "MT"),
-    (:maxwell,      Maxwell(),                       "MAX"),
-    (:pcw,          PonteCastanedaWillis(),          "PCW"),
-    (:sc,           SelfConsistent(; abstol = 1.0e-10, maxiters = 300),
-                                                     "SC"),
-    (:asc,          AsymmetricSelfConsistent(; abstol = 1.0e-10, maxiters = 300),
-                                                     "ASC"),
-    (:differential, DifferentialScheme(; nsteps = 300),
-                                                     "DIFF"),
+    (:voigt, Voigt(), "VOIGT"),
+    (:reuss, Reuss(), "REUSS"),
+    (:dilute, Dilute(), "DIL"),
+    (:dilute_dual, DiluteDual(), "DILD"),
+    (:mori_tanaka, MoriTanaka(), "MT"),
+    (:maxwell, Maxwell(), "MAX"),
+    (:pcw, PonteCastanedaWillis(), "PCW"),
+    (
+        :sc, SelfConsistent(; abstol = 1.0e-10, maxiters = 300),
+        "SC",
+    ),
+    (
+        :asc, AsymmetricSelfConsistent(; abstol = 1.0e-10, maxiters = 300),
+        "ASC",
+    ),
+    (
+        :differential, DifferentialScheme(; nsteps = 300),
+        "DIFF",
+    ),
 ]
 
 # Aspect-ratio convention: `ω = c/a` (matches the C++ reference's
@@ -92,14 +98,18 @@ const SCHEMES = [
 # reference Python script.  For SC the matrix-distinguished
 # Picard iteration with `select_best = true` is enough to track the
 # physical (lower) branch through the percolation point.
-function _build_rve(scheme, φ; ω_s = 1.0, ω_p = 1.0,
-                    sym_s = nothing, sym_p = nothing)
+function _build_rve(
+        scheme, φ; ω_s = 1.0, ω_p = 1.0,
+        sym_s = nothing, sym_p = nothing
+    )
     rve = RVE(:SOLID)
     geom_s = Spheroid(ω_s)
     geom_p = Spheroid(ω_p)
     add_matrix!(rve, geom_s, Dict(:C => C_s); symmetrize = sym_s)
-    add_phase!(rve, :PORE, geom_p, Dict(:C => C_p);
-               fraction = φ, symmetrize = sym_p)
+    add_phase!(
+        rve, :PORE, geom_p, Dict(:C => C_p);
+        fraction = φ, symmetrize = sym_p
+    )
     return rve
 end
 
@@ -115,11 +125,15 @@ function _extract_kμ(C::TensND.AbstractTens)
     return max(K, 0.0), max(μ, 0.0)
 end
 
-function jl_porous(scheme, φ; ω_s = 1.0, ω_p = 1.0,
-                   sym_s = nothing, sym_p = nothing)
+function jl_porous(
+        scheme, φ; ω_s = 1.0, ω_p = 1.0,
+        sym_s = nothing, sym_p = nothing
+    )
     try
-        rve = _build_rve(scheme, φ; ω_s = ω_s, ω_p = ω_p,
-                         sym_s = sym_s, sym_p = sym_p)
+        rve = _build_rve(
+            scheme, φ; ω_s = ω_s, ω_p = ω_p,
+            sym_s = sym_s, sym_p = sym_p
+        )
         # `select_best` is an SC/ASC-specific kwarg; do not forward it to
         # closed-form schemes, which would otherwise fail on the unknown
         # keyword.
@@ -130,7 +144,7 @@ function jl_porous(scheme, φ; ω_s = 1.0, ω_p = 1.0,
         end
         return _extract_kμ(C)
     catch e
-        @warn "Julia homogenize failed" scheme φ ω_s ω_p sym_s sym_p exception=(e, catch_backtrace())
+        @warn "Julia homogenize failed" scheme φ ω_s ω_p sym_s sym_p exception = (e, catch_backtrace())
         return (NaN, NaN)
     end
 end
@@ -154,7 +168,7 @@ function _tol(ω, φ)
 end
 
 _relerr(a, b) = (isnan(a) || isnan(b)) ? NaN :
-                (a == 0 && b == 0) ? 0.0 : abs(a - b) / max(abs(a), abs(b), 1.0e-12)
+    (a == 0 && b == 0) ? 0.0 : abs(a - b) / max(abs(a), abs(b), 1.0e-12)
 
 function _within(a, b; atol, rtol)
     isnan(a) && isnan(b) && return true
@@ -186,25 +200,31 @@ function run_sweep!(rows::Vector{BenchRow})
     # `spheroidal(omega)` convention.
     cases = [
         (ω = 1.0, sym = nothing, iso = false),
-        (ω = 0.2, sym = :iso,    iso = true),  # oblate spheroid; iso symmetrize
+        (ω = 0.2, sym = :iso, iso = true),  # oblate spheroid; iso symmetrize
     ]
     for (_, scheme, lbl) in SCHEMES
         for case in cases
             ω = case.ω
             sym = case.sym
             for φ in φs
-                k_jl, μ_jl = jl_porous(scheme, φ;
-                                        ω_s = ω, ω_p = ω,
-                                        sym_s = sym, sym_p = sym)
+                k_jl, μ_jl = jl_porous(
+                    scheme, φ;
+                    ω_s = ω, ω_p = ω,
+                    sym_s = sym, sym_p = sym
+                )
                 k_py, μ_py = py_chom_porous(φ, lbl, ω, ω, case.iso)
                 tol = _tol(ω, φ)
                 pass_k = _within(k_jl, k_py; tol...)
                 pass_μ = _within(μ_jl, μ_py; tol...)
-                push!(rows, BenchRow(lbl, ω, case.iso, φ,
-                                      k_jl, k_py, μ_jl, μ_py,
-                                      _relerr(k_jl, k_py),
-                                      _relerr(μ_jl, μ_py),
-                                      pass_k && pass_μ))
+                push!(
+                    rows, BenchRow(
+                        lbl, ω, case.iso, φ,
+                        k_jl, k_py, μ_jl, μ_py,
+                        _relerr(k_jl, k_py),
+                        _relerr(μ_jl, μ_py),
+                        pass_k && pass_μ
+                    )
+                )
             end
         end
     end
@@ -216,13 +236,13 @@ end
 function print_table(rows::Vector{BenchRow})
     println()
     @printf "%-6s  %-6s  %-3s  %-5s  %-12s  %-12s  %-12s  %-12s  %-9s  %-9s  %s\n" "scheme" "ω" "iso" "φ" "k_jl" "k_py" "μ_jl" "μ_py" "Δk_rel" "Δμ_rel" "pass"
-    println("─" ^ 130)
+    println("─"^130)
     for r in rows
         @printf "%-6s  %-6.2f  %-3s  %-5.2f  %-12.6g  %-12.6g  %-12.6g  %-12.6g  %-9.2e  %-9.2e  %s\n" r.scheme r.ω string(r.iso) r.φ r.k_jl r.k_py r.μ_jl r.μ_py r.k_relerr r.μ_relerr (r.pass ? "✓" : "✗")
     end
     n_total = length(rows)
     n_fail = count(r -> !r.pass, rows)
-    println("─" ^ 130)
+    println("─"^130)
     @printf "Total cases: %d   Pass: %d   Fail: %d\n" n_total (n_total - n_fail) n_fail
     if n_fail > 0
         println("\n[FAILED CASES]")
@@ -244,7 +264,7 @@ function write_csv(rows::Vector{BenchRow})
             @printf io "%s,%g,%s,%g,%g,%g,%g,%g,%g,%g,%s\n" r.scheme r.ω r.iso r.φ r.k_jl r.k_py r.μ_jl r.μ_py r.k_relerr r.μ_relerr (r.pass ? "1" : "0")
         end
     end
-    @printf "\nCSV: %s\n" path
+    return @printf "\nCSV: %s\n" path
 end
 
 # ── Main ─────────────────────────────────────────────────────────────────────

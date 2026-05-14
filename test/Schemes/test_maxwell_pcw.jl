@@ -35,16 +35,20 @@ end
 @testset "Maxwell ≡ PCW with UniformDistribution" begin
     rve = RVE(:M; distribution_shape = Ellipsoid(1.0, 1.0, 0.5))
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 0.5), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0, 1.0, 0.5),
-               Dict(:C => TensISO{3}(60.0, 20.0)); fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0, 1.0, 0.5),
+        Dict(:C => TensISO{3}(60.0, 20.0)); fraction = 0.3
+    )
     @test homogenize(rve, Maxwell()) ≈ homogenize(rve, PonteCastanedaWillis())
 end
 
 @testset "Maxwell — bracketed by Voigt/Reuss" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
 
     Vv = get_array(homogenize(rve, Voigt()))[1, 1, 1, 1]
     Vr = get_array(homogenize(rve, Reuss()))[1, 1, 1, 1]
@@ -59,8 +63,10 @@ end
     # shape, Maxwell coincides with Mori-Tanaka by construction.
     rve = RVE(:M; distribution_shape = Ellipsoid(1.0))   # sphere outer
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     @test homogenize(rve, Maxwell()) ≈ homogenize(rve, MoriTanaka())
 end
 
@@ -69,8 +75,10 @@ end
     # symmetry (axial vs transverse components differ).
     rve = RVE(:M; distribution_shape = Ellipsoid(1.0, 1.0, 0.3))
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     Cm = get_array(homogenize(rve, Maxwell()))
     # transverse [1111] and axial [3333] no longer equal
     @test !isapprox(Cm[1, 1, 1, 1], Cm[3, 3, 3, 3]; atol = 1.0e-3)
@@ -79,8 +87,10 @@ end
 @testset "Maxwell / PCW — conductivity" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:K => TensISO{3}(2.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:K => TensISO{3}(8.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:K => TensISO{3}(8.0));
+        fraction = 0.3
+    )
     Kv = get_array(homogenize(rve, Voigt(); property = :K))[1, 1]
     Kr = get_array(homogenize(rve, Reuss(); property = :K))[1, 1]
     Km = get_array(homogenize(rve, Maxwell(); property = :K))[1, 1]
@@ -94,8 +104,10 @@ end
         DT = typeof(f)
         rve = RVE(:M; T = DT)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-        add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-                   fraction = f)
+        add_phase!(
+            rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+            fraction = f
+        )
         get_array(homogenize(rve, Maxwell()))[1, 1, 1, 1]
     end
     df = ForwardDiff.derivative(f_max, 0.3)
@@ -106,11 +118,15 @@ end
 @testset "Maxwell / PCW — Complex moduli" begin
     δ = 0.05
     rve = RVE(:M)
-    add_matrix!(rve, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(30.0 + δ * im, 10.0 + 0.5δ * im)))
-    add_phase!(rve, :I, Ellipsoid(1.0),
-               Dict(:C => TensISO{3}(60.0 + δ * im, 20.0 + 0.5δ * im));
-               fraction = 0.3)
+    add_matrix!(
+        rve, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(30.0 + δ * im, 10.0 + 0.5δ * im))
+    )
+    add_phase!(
+        rve, :I, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(60.0 + δ * im, 20.0 + 0.5δ * im));
+        fraction = 0.3
+    )
 
     for sch in (Maxwell(), PonteCastanedaWillis())
         Cs = homogenize(rve, sch)
@@ -121,31 +137,37 @@ end
     # Im → 0 limit
     rve_re = RVE(:M)
     add_matrix!(rve_re, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve_re, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve_re, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     rve_0 = RVE(:M)
     add_matrix!(rve_0, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0 + 0im, 10.0 + 0im)))
-    add_phase!(rve_0, :I, Ellipsoid(1.0),
-               Dict(:C => TensISO{3}(60.0 + 0im, 20.0 + 0im)); fraction = 0.3)
+    add_phase!(
+        rve_0, :I, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(60.0 + 0im, 20.0 + 0im)); fraction = 0.3
+    )
     for sch in (Maxwell(), PonteCastanedaWillis())
         C_re = get_array(homogenize(rve_re, sch))
-        C_0  = get_array(homogenize(rve_0, sch))
+        C_0 = get_array(homogenize(rve_0, sch))
         @test maximum(abs.(real.(C_0) .- C_re)) < ATOL_MX
-        @test maximum(abs.(imag.(C_0)))         < ATOL_MX
+        @test maximum(abs.(imag.(C_0))) < ATOL_MX
     end
 end
 
 @testset "Maxwell / PCW — Symbol shortcuts (lowercase canonical)" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
 
     @test homogenize(rve, :maxwell) ≈ homogenize(rve, Maxwell())
     @test homogenize(rve, :Maxwell) ≈ homogenize(rve, Maxwell())
-    @test homogenize(rve, :MAX)     ≈ homogenize(rve, Maxwell())
-    @test homogenize(rve, :pcw)     ≈ homogenize(rve, PonteCastanedaWillis())
-    @test homogenize(rve, :PCW)     ≈ homogenize(rve, PonteCastanedaWillis())
+    @test homogenize(rve, :MAX) ≈ homogenize(rve, Maxwell())
+    @test homogenize(rve, :pcw) ≈ homogenize(rve, PonteCastanedaWillis())
+    @test homogenize(rve, :PCW) ≈ homogenize(rve, PonteCastanedaWillis())
     @test homogenize(rve, :ponte_castaneda_willis) ≈
         homogenize(rve, PonteCastanedaWillis())
 end

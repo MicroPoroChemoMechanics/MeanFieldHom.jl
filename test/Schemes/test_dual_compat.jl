@@ -17,19 +17,23 @@ using ForwardDiff
 const RTOL_AD = 1.0e-5
 
 @testset "Schemes — ForwardDiff sensitivity to f (every scheme)" begin
-    schemes = [Voigt(), Reuss(), Dilute(), DiluteDual(), MoriTanaka(),
-               Maxwell(), PonteCastanedaWillis(),
-               SelfConsistent(; abstol = 1.0e-12, maxiters = 200),
-               AsymmetricSelfConsistent(; abstol = 1.0e-12, maxiters = 200),
-               DifferentialScheme(; nsteps = 50)]
+    schemes = [
+        Voigt(), Reuss(), Dilute(), DiluteDual(), MoriTanaka(),
+        Maxwell(), PonteCastanedaWillis(),
+        SelfConsistent(; abstol = 1.0e-12, maxiters = 200),
+        AsymmetricSelfConsistent(; abstol = 1.0e-12, maxiters = 200),
+        DifferentialScheme(; nsteps = 50),
+    ]
 
     for sch in schemes
         f_eff(f) = begin
             DT = typeof(f)
             rve = RVE(:M; T = DT)
             add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-            add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-                       fraction = f)
+            add_phase!(
+                rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+                fraction = f
+            )
             return get_array(homogenize(rve, sch))[1, 1, 1, 1]
         end
         df_ad = ForwardDiff.derivative(f_eff, 0.25)
@@ -42,18 +46,22 @@ const RTOL_AD = 1.0e-5
 end
 
 @testset "Schemes — ForwardDiff sensitivity to a modulus (every scheme)" begin
-    schemes = [Voigt(), Reuss(), Dilute(), DiluteDual(), MoriTanaka(),
-               Maxwell(), PonteCastanedaWillis(),
-               SelfConsistent(; abstol = 1.0e-12, maxiters = 200),
-               AsymmetricSelfConsistent(; abstol = 1.0e-12, maxiters = 200),
-               DifferentialScheme(; nsteps = 50)]
+    schemes = [
+        Voigt(), Reuss(), Dilute(), DiluteDual(), MoriTanaka(),
+        Maxwell(), PonteCastanedaWillis(),
+        SelfConsistent(; abstol = 1.0e-12, maxiters = 200),
+        AsymmetricSelfConsistent(; abstol = 1.0e-12, maxiters = 200),
+        DifferentialScheme(; nsteps = 50),
+    ]
 
     for sch in schemes
         f_eff(α) = begin
             rve = RVE(:M)
             add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(α, 10.0)))
-            add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-                       fraction = 0.3)
+            add_phase!(
+                rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+                fraction = 0.3
+            )
             return get_array(homogenize(rve, sch))[1, 1, 1, 1]
         end
         df_ad = ForwardDiff.derivative(f_eff, 30.0)

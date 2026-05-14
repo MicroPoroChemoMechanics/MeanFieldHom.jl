@@ -12,9 +12,11 @@ using LinearAlgebra
 const _to_mandel = MeanFieldHom.Viscoelasticity._tens_to_mandel66
 
 # Helper: build a 2-phase elastic-limit setup (sphere inclusion in iso matrix).
-function _setup_2phase_elastic(; k_M = 10.0, μ_M = 4.0,
-                                k_I = 20.0, μ_I = 8.0,
-                                f_I = 0.2, n_times = 5)
+function _setup_2phase_elastic(;
+        k_M = 10.0, μ_M = 4.0,
+        k_I = 20.0, μ_I = 8.0,
+        f_I = 0.2, n_times = 5
+    )
     C_M_t = TensISO{3}(3 * k_M, 2 * μ_M)
     C_I_t = TensISO{3}(3 * k_I, 2 * μ_I)
     times = n_times == 1 ? [0.0] : collect(range(0.0, 2.0; length = n_times))
@@ -33,14 +35,18 @@ end
 function _reference_elastic(scheme, ctx)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => ctx.C_M_t))
-    add_phase!(rve, :I, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => ctx.C_I_t);
-               fraction = ctx.f_I)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => ctx.C_I_t);
+        fraction = ctx.f_I
+    )
     return _to_mandel(homogenize(rve, scheme, :C))
 end
 
 # Generic checker: ALV scheme diag block equals elastic homogenisation.
-function _check_alv_elastic(C_alv::AbstractMatrix, M_ref::AbstractMatrix,
-                            n::Int; rtol = 1.0e-12, atol = 1.0e-12)
+function _check_alv_elastic(
+        C_alv::AbstractMatrix, M_ref::AbstractMatrix,
+        n::Int; rtol = 1.0e-12, atol = 1.0e-12
+    )
     for i in 1:n
         rows = (6 * (i - 1) + 1):(6 * i)
         @test isapprox(C_alv[rows, rows], M_ref; rtol = rtol, atol = atol)
@@ -49,6 +55,7 @@ function _check_alv_elastic(C_alv::AbstractMatrix, M_ref::AbstractMatrix,
             @test maximum(abs, C_alv[rows, cols]) ≤ atol
         end
     end
+    return
 end
 
 @testset "schemes_alv — Voigt elastic limit" begin
@@ -70,8 +77,10 @@ end
 @testset "schemes_alv — Mori-Tanaka elastic limit" begin
     ctx = _setup_2phase_elastic()
     n = length(ctx.times)
-    C_mt = mori_tanaka_alv(ctx.C_M, [ctx.A_dil_I], [ctx.N_dil_I],
-                           [ctx.f_I], ctx.f_M)
+    C_mt = mori_tanaka_alv(
+        ctx.C_M, [ctx.A_dil_I], [ctx.N_dil_I],
+        [ctx.f_I], ctx.f_M
+    )
     M_ref = _reference_elastic(MoriTanaka(), ctx)
     _check_alv_elastic(C_mt, M_ref, n; atol = 1.0e-10)
 end
@@ -107,8 +116,10 @@ end
     # n = 1 reduces the trapezoidal matrix to a single 6×6 block ; the
     # whole pipeline must collapse to the static elastic MT.
     ctx = _setup_2phase_elastic(n_times = 1)
-    C_mt = mori_tanaka_alv(ctx.C_M, [ctx.A_dil_I], [ctx.N_dil_I],
-                           [ctx.f_I], ctx.f_M)
+    C_mt = mori_tanaka_alv(
+        ctx.C_M, [ctx.A_dil_I], [ctx.N_dil_I],
+        [ctx.f_I], ctx.f_M
+    )
     M_ref = _reference_elastic(MoriTanaka(), ctx)
     @test isapprox(C_mt, M_ref; atol = 1.0e-12)
 end

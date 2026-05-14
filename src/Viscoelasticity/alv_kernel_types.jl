@@ -77,26 +77,34 @@ TI ALV kernel: stores the six `n × n` Walpole parameter matrices
 struct ALVKernelTI{T} <: AbstractALVKernel{T}
     ℓ::NTuple{6, Matrix{T}}
     axis::NTuple{3, Float64}
-    function ALVKernelTI{T}(ℓ::NTuple{6, <:AbstractMatrix},
-                              axis::NTuple{3, <:Real}) where {T}
+    function ALVKernelTI{T}(
+            ℓ::NTuple{6, <:AbstractMatrix},
+            axis::NTuple{3, <:Real}
+        ) where {T}
         n = size(ℓ[1], 1)
         @inbounds for k in 1:6
             size(ℓ[k]) == (n, n) ||
                 throw(ArgumentError("ALVKernelTI: all components must be n×n"))
         end
-        return new{T}(ntuple(k -> Matrix{T}(ℓ[k]), 6),
-                       (Float64(axis[1]), Float64(axis[2]), Float64(axis[3])))
+        return new{T}(
+            ntuple(k -> Matrix{T}(ℓ[k]), 6),
+            (Float64(axis[1]), Float64(axis[2]), Float64(axis[3]))
+        )
     end
 end
 
-function ALVKernelTI(ℓ::NTuple{6, <:AbstractMatrix};
-                      axis::NTuple{3, <:Real} = (0.0, 0.0, 1.0))
+function ALVKernelTI(
+        ℓ::NTuple{6, <:AbstractMatrix};
+        axis::NTuple{3, <:Real} = (0.0, 0.0, 1.0)
+    )
     T = promote_type(map(eltype, ℓ)...)
     return ALVKernelTI{T}(ℓ, axis)
 end
 
-ALVKernelTI(M::AbstractMatrix;
-             axis::NTuple{3, <:Real} = (0.0, 0.0, 1.0)) =
+ALVKernelTI(
+    M::AbstractMatrix;
+    axis::NTuple{3, <:Real} = (0.0, 0.0, 1.0)
+) =
     ALVKernelTI(ti_params_from_blocks(M; axis = (Float64.(axis)...,)); axis = axis)
 
 # ─── ALVKernelOrtho ────────────────────────────────────────────────────────
@@ -113,38 +121,54 @@ Mandel form + 3 shears) with the canonical material frame
 struct ALVKernelOrtho{T} <: AbstractALVKernel{T}
     o::NTuple{12, Matrix{T}}
     axes::NTuple{3, NTuple{3, Float64}}
-    function ALVKernelOrtho{T}(o::NTuple{12, <:AbstractMatrix},
-                                 axes::NTuple{3, <:NTuple{3, <:Real}}) where {T}
+    function ALVKernelOrtho{T}(
+            o::NTuple{12, <:AbstractMatrix},
+            axes::NTuple{3, <:NTuple{3, <:Real}}
+        ) where {T}
         n = size(o[1], 1)
         @inbounds for k in 1:12
             size(o[k]) == (n, n) ||
                 throw(ArgumentError("ALVKernelOrtho: all components must be n×n"))
         end
-        return new{T}(ntuple(k -> Matrix{T}(o[k]), 12),
-                       ntuple(i -> (Float64(axes[i][1]), Float64(axes[i][2]),
-                                     Float64(axes[i][3])), 3))
+        return new{T}(
+            ntuple(k -> Matrix{T}(o[k]), 12),
+            ntuple(
+                i -> (
+                    Float64(axes[i][1]), Float64(axes[i][2]),
+                    Float64(axes[i][3]),
+                ), 3
+            )
+        )
     end
 end
 
 const _CANON_AXES_F64 = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
 
-function ALVKernelOrtho(o::NTuple{12, <:AbstractMatrix};
-                          axes::NTuple{3, <:NTuple{3, <:Real}} = _CANON_AXES_F64)
+function ALVKernelOrtho(
+        o::NTuple{12, <:AbstractMatrix};
+        axes::NTuple{3, <:NTuple{3, <:Real}} = _CANON_AXES_F64
+    )
     T = promote_type(map(eltype, o)...)
     return ALVKernelOrtho{T}(o, axes)
 end
 
-ALVKernelOrtho(M::AbstractMatrix;
-                axes::NTuple{3, <:NTuple{3, <:Real}} = _CANON_AXES_F64) =
-    ALVKernelOrtho(ortho_params_from_blocks(M;
-                    axes = ntuple(i -> (Float64.(axes[i])...,), 3));
-                   axes = axes)
+ALVKernelOrtho(
+    M::AbstractMatrix;
+    axes::NTuple{3, <:NTuple{3, <:Real}} = _CANON_AXES_F64
+) =
+    ALVKernelOrtho(
+    ortho_params_from_blocks(
+        M;
+        axes = ntuple(i -> (Float64.(axes[i])...,), 3)
+    );
+    axes = axes
+)
 
 # ─── AbstractMatrix interface ──────────────────────────────────────────────
 
 # Number of `(t, t')` time steps stored.
-@inline _ntimes(K::ALVKernelISO)   = size(K.α, 1)
-@inline _ntimes(K::ALVKernelTI)    = size(K.ℓ[1], 1)
+@inline _ntimes(K::ALVKernelISO) = size(K.α, 1)
+@inline _ntimes(K::ALVKernelTI) = size(K.ℓ[1], 1)
 @inline _ntimes(K::ALVKernelOrtho) = size(K.o[1], 1)
 
 @inline Base.size(K::AbstractALVKernel) = (n = _ntimes(K); (6 * n, 6 * n))
@@ -216,8 +240,8 @@ end
 
 # ─── Materialisation to dense (6n × 6n) ────────────────────────────────────
 
-Base.Matrix(K::ALVKernelISO)   = iso_blocks_from_params(K.α, K.β)
-Base.Matrix(K::ALVKernelTI)    = ti_blocks_from_params(K.ℓ; axis = K.axis)
+Base.Matrix(K::ALVKernelISO) = iso_blocks_from_params(K.α, K.β)
+Base.Matrix(K::ALVKernelTI) = ti_blocks_from_params(K.ℓ; axis = K.axis)
 Base.Matrix(K::ALVKernelOrtho) = ortho_blocks_from_params(K.o; axes = K.axes)
 
 Base.convert(::Type{Matrix}, K::AbstractALVKernel) = Matrix(K)
@@ -365,33 +389,39 @@ function volterra_left_divide(S::ALVKernelOrtho, M::ALVKernelOrtho)
 end
 
 # Mixed: promote up the ladder before solving
-volterra_left_divide(S::ALVKernelISO,  M::ALVKernelTI)    = volterra_left_divide(ALVKernelTI(S), M)
-volterra_left_divide(S::ALVKernelTI,   M::ALVKernelISO)   = volterra_left_divide(S, ALVKernelTI(M))
-volterra_left_divide(S::ALVKernelISO,  M::ALVKernelOrtho) = volterra_left_divide(ALVKernelOrtho(S), M)
-volterra_left_divide(S::ALVKernelOrtho, M::ALVKernelISO)  = volterra_left_divide(S, ALVKernelOrtho(M))
-volterra_left_divide(S::ALVKernelTI,    M::ALVKernelOrtho) = volterra_left_divide(ALVKernelOrtho(S), M)
-volterra_left_divide(S::ALVKernelOrtho, M::ALVKernelTI)    = volterra_left_divide(S, ALVKernelOrtho(M))
+volterra_left_divide(S::ALVKernelISO, M::ALVKernelTI) = volterra_left_divide(ALVKernelTI(S), M)
+volterra_left_divide(S::ALVKernelTI, M::ALVKernelISO) = volterra_left_divide(S, ALVKernelTI(M))
+volterra_left_divide(S::ALVKernelISO, M::ALVKernelOrtho) = volterra_left_divide(ALVKernelOrtho(S), M)
+volterra_left_divide(S::ALVKernelOrtho, M::ALVKernelISO) = volterra_left_divide(S, ALVKernelOrtho(M))
+volterra_left_divide(S::ALVKernelTI, M::ALVKernelOrtho) = volterra_left_divide(ALVKernelOrtho(S), M)
+volterra_left_divide(S::ALVKernelOrtho, M::ALVKernelTI) = volterra_left_divide(S, ALVKernelOrtho(M))
 
 # ─── Pretty printing ───────────────────────────────────────────────────────
 
 function Base.show(io::IO, ::MIME"text/plain", K::ALVKernelISO{T}) where {T}
     n = _ntimes(K)
-    println(io, "ALVKernelISO{$T} — iso ALV kernel, n = $n time steps, ",
-            "size $(6n)×$(6n), 2 stored components (α, β)")
+    println(
+        io, "ALVKernelISO{$T} — iso ALV kernel, n = $n time steps, ",
+        "size $(6n)×$(6n), 2 stored components (α, β)"
+    )
     println(io, "  α (= 3K(t,t')) :")
     show(io, MIME"text/plain"(), K.α)
     println(io, "\n  β (= 2μ(t,t')) :")
-    show(io, MIME"text/plain"(), K.β)
+    return show(io, MIME"text/plain"(), K.β)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", K::ALVKernelTI{T}) where {T}
     n = _ntimes(K)
-    println(io, "ALVKernelTI{$T} — TI ALV kernel (axis $(K.axis)), n = $n, ",
-            "size $(6n)×$(6n), 6 stored Walpole components")
+    return println(
+        io, "ALVKernelTI{$T} — TI ALV kernel (axis $(K.axis)), n = $n, ",
+        "size $(6n)×$(6n), 6 stored Walpole components"
+    )
 end
 
 function Base.show(io::IO, ::MIME"text/plain", K::ALVKernelOrtho{T}) where {T}
     n = _ntimes(K)
-    println(io, "ALVKernelOrtho{$T} — ortho ALV kernel, n = $n, ",
-            "size $(6n)×$(6n), 12 stored components (9 normal + 3 shear)")
+    return println(
+        io, "ALVKernelOrtho{$T} — ortho ALV kernel, n = $n, ",
+        "size $(6n)×$(6n), 12 stored components (9 normal + 3 shear)"
+    )
 end

@@ -117,9 +117,11 @@ function _hill_3d_aniso_residue(
     # back to the DECUHR backend, which handles those cases via its internal
     # singularity treatment rather than via complex-plane residues.
     if any(isnan, P_vals)
-        return _hill_3d_aniso_decuhr(ell, C₀;
-                                     abstol = abstol, reltol = reltol,
-                                     maxiters = maxiters)
+        return _hill_3d_aniso_decuhr(
+            ell, C₀;
+            abstol = abstol, reltol = reltol,
+            maxiters = maxiters
+        )
     end
 
     P_vals ./= π

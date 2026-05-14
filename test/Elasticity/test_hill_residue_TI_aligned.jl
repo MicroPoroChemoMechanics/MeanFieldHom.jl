@@ -37,8 +37,10 @@ const basis = TensND.CanonicalBasis{3, Float64}()
     P_res = hill_tensor(ell, C_TI; method = :residues)
     P_dec = hill_tensor(ell, C_TI; method = :decuhr)
 
-    diff = maximum(abs(P_res[i, j, k, l] - P_dec[i, j, k, l])
-                   for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+    diff = maximum(
+        abs(P_res[i, j, k, l] - P_dec[i, j, k, l])
+            for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+    )
     @test diff < ATOL
     @test all(isfinite(P_res[i, j, k, l]) for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
 end
@@ -60,8 +62,10 @@ end
     P_res = hill_tensor(ell, C_O; method = :residues)
     P_dec = hill_tensor(ell, C_O; method = :decuhr)
 
-    diff = maximum(abs(P_res[i, j, k, l] - P_dec[i, j, k, l])
-                   for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+    diff = maximum(
+        abs(P_res[i, j, k, l] - P_dec[i, j, k, l])
+            for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+    )
     @test diff < ATOL
 end
 
@@ -86,8 +90,10 @@ end
     P_res = hill_tensor(ell, C_TI; method = :residues)
     P_dec = hill_tensor(ell, C_TI; method = :decuhr)
 
-    diff = maximum(abs(P_res[i, j, k, l] - P_dec[i, j, k, l])
-                   for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+    diff = maximum(
+        abs(P_res[i, j, k, l] - P_dec[i, j, k, l])
+            for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+    )
     @test diff < ATOL
 end
 
@@ -97,11 +103,11 @@ end
     # still work to guard against regression.
     KM = [
         210.0  80.0  75.0   5.0  4.0   3.0;
-         80.0 195.0  90.0  -2.0  3.0  -1.0;
-         75.0  90.0 220.0   1.0 -2.0   2.0;
-          5.0  -2.0   1.0 120.0  5.0   3.0;
-          4.0   3.0  -2.0   5.0 130.0 -2.0;
-          3.0  -1.0   2.0   3.0 -2.0 110.0
+        80.0 195.0  90.0  -2.0  3.0  -1.0;
+        75.0  90.0 220.0   1.0 -2.0   2.0;
+        5.0  -2.0   1.0 120.0  5.0   3.0;
+        4.0   3.0  -2.0   5.0 130.0 -2.0;
+        3.0  -1.0   2.0   3.0 -2.0 110.0
     ]
     C = TensND.inv_KM(KM, basis)
     ell = Ellipsoid(10.6, 1.2, 0.5)
@@ -109,7 +115,9 @@ end
     P_res = hill_tensor(ell, C; method = :residues)
     P_dec = hill_tensor(ell, C; method = :decuhr)
 
-    diff = maximum(abs(P_res[i, j, k, l] - P_dec[i, j, k, l])
-                   for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+    diff = maximum(
+        abs(P_res[i, j, k, l] - P_dec[i, j, k, l])
+            for i in 1:3, j in 1:3, k in 1:3, l in 1:3
+    )
     @test diff < 1.0e-6
 end

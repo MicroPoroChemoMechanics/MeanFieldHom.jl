@@ -81,7 +81,7 @@ Whether the amount counts towards the matrix-fraction complement
 [`VolumeFraction`](@ref), `false` for [`CrackDensity`](@ref).
 """
 _sums_to_unit(::VolumeFraction) = true
-_sums_to_unit(::CrackDensity)   = false
+_sums_to_unit(::CrackDensity) = false
 
 # =============================================================================
 #  Symmetrize: orientation-distribution projection of a phase's contribution
@@ -208,8 +208,8 @@ Coerce `x` to a concrete `AbstractDistributionShape`. Accepts:
 - an `AbstractInclusion` → wrapped as `UniformDistribution(x)`,
 - an `AbstractDistributionShape` → passed through.
 """
-_to_distribution_shape(::Nothing)                = UniformDistribution()
-_to_distribution_shape(s::AbstractInclusion)     = UniformDistribution(s)
+_to_distribution_shape(::Nothing) = UniformDistribution()
+_to_distribution_shape(s::AbstractInclusion) = UniformDistribution(s)
 _to_distribution_shape(s::AbstractDistributionShape) = s
 
 # =============================================================================
@@ -292,9 +292,11 @@ the amounts is fixed by the `T` keyword (default `Float64`); use
 `T = ForwardDiff.Dual{...}` or `T = Complex{Float64}` for AD or
 frequency-domain workflows.
 """
-function RVE(matrix_name::Symbol;
-             T::Type{<:Number} = Float64,
-             distribution_shape = nothing)
+function RVE(
+        matrix_name::Symbol;
+        T::Type{<:Number} = Float64,
+        distribution_shape = nothing
+    )
     ds = _to_distribution_shape(distribution_shape)
     return RVE{T, typeof(ds)}(
         matrix_name,
@@ -320,8 +322,10 @@ Pass a `symmetrize = :iso | :ti | TISymmetrize(axis) | NoSymmetrize()` kwarg
 to declare an orientation-distribution projection of the matrix's
 localization tensor (see [`AbstractSymmetrize`](@ref)).
 """
-function add_matrix!(rve::RVE, geometry::AbstractInclusion, properties::AbstractDict;
-                     symmetrize = nothing)
+function add_matrix!(
+        rve::RVE, geometry::AbstractInclusion, properties::AbstractDict;
+        symmetrize = nothing
+    )
     name = rve.matrix_name
     haskey(rve.phases, name) &&
         throw(ArgumentError("matrix phase :$(name) already registered"))
@@ -355,10 +359,12 @@ explicit [`AbstractSymmetrize`](@ref) instance. The default
 [`NoSymmetrize`](@ref) keeps the inclusion's actual single-orientation
 tensor.
 """
-function add_phase!(rve::RVE{T}, name::Symbol, geometry::AbstractInclusion,
-                    properties::AbstractDict;
-                    fraction = nothing, density = nothing,
-                    symmetrize = nothing) where {T}
+function add_phase!(
+        rve::RVE{T}, name::Symbol, geometry::AbstractInclusion,
+        properties::AbstractDict;
+        fraction = nothing, density = nothing,
+        symmetrize = nothing
+    ) where {T}
     name === rve.matrix_name &&
         throw(ArgumentError("name :$(name) is reserved for the matrix phase"))
     haskey(rve.phases, name) &&
@@ -508,7 +514,7 @@ end
 #  Pretty printing
 # =============================================================================
 
-function Base.show(io::IO, ::MIME"text/plain", rve::RVE{T,S}) where {T,S}
+function Base.show(io::IO, ::MIME"text/plain", rve::RVE{T, S}) where {T, S}
     println(io, "RVE{$T} with ", length(rve.phase_names), " phase(s)")
     println(io, "  matrix : :$(rve.matrix_name)")
     for name in rve.phase_names

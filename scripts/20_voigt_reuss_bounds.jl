@@ -24,15 +24,19 @@ function effective_bulk(rve, scheme)
 end
 
 fs = collect(range(0.0, 0.6; length = 25))
-schemes = [(Voigt(), :red, :solid),
-           (Reuss(), :red, :dash),
-           (Dilute(), :blue, :solid),
-           (MoriTanaka(), :green, :solid),
-           (SelfConsistent(; abstol = 1.0e-10, maxiters = 200), :purple, :solid),
-           (DifferentialScheme(; nsteps = 200), :orange, :solid)]
+schemes = [
+    (Voigt(), :red, :solid),
+    (Reuss(), :red, :dash),
+    (Dilute(), :blue, :solid),
+    (MoriTanaka(), :green, :solid),
+    (SelfConsistent(; abstol = 1.0e-10, maxiters = 200), :purple, :solid),
+    (DifferentialScheme(; nsteps = 200), :orange, :solid),
+]
 
-p = plot(; xlabel = "inclusion volume fraction f", ylabel = "C[1111]",
-         title = "Bounds and schemes — iso 2-phase", legend = :topleft)
+p = plot(;
+    xlabel = "inclusion volume fraction f", ylabel = "C[1111]",
+    title = "Bounds and schemes — iso 2-phase", legend = :topleft
+)
 
 for (sch, col, ls) in schemes
     ys = Float64[]
@@ -40,13 +44,17 @@ for (sch, col, ls) in schemes
         rve = RVE(:M)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(k_m, μ_m)))
         if f > 0
-            add_phase!(rve, :I, Ellipsoid(1.0),
-                       Dict(:C => TensISO{3}(k_i, μ_i)); fraction = f)
+            add_phase!(
+                rve, :I, Ellipsoid(1.0),
+                Dict(:C => TensISO{3}(k_i, μ_i)); fraction = f
+            )
         end
         push!(ys, effective_bulk(rve, sch))
     end
-    plot!(p, fs, ys; label = string(typeof(sch).name.name), color = col, linestyle = ls,
-          lw = 2)
+    plot!(
+        p, fs, ys; label = string(typeof(sch).name.name), color = col, linestyle = ls,
+        lw = 2
+    )
 end
 
 figdir = joinpath(@__DIR__, "figures")

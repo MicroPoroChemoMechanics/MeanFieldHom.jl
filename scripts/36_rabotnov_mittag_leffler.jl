@@ -79,35 +79,39 @@ const law_matrix = ViscoLaw(R_matrix, :relaxation)
 
 function Lmu_sph_rig_DIL(t, f)
     μ_0d = μ_0 * (1 + 5f / 6 * (3k_0 + 4μ_0) / (k_0 + 2μ_0))
-    a0μ  = λ_0 * μ_0 * (3 + 5f) / (3μ_0d)
-    a1μ  = 5f / (2 * (3 + 5f)) * (k_0 / (k_0 + 2μ_0))^2 * a0μ
-    β_1  = β_0 + 2 * λ_0 * μ_0 / (k_0 + 2μ_0)
+    a0μ = λ_0 * μ_0 * (3 + 5f) / (3μ_0d)
+    a1μ = 5f / (2 * (3 + 5f)) * (k_0 / (k_0 + 2μ_0))^2 * a0μ
+    β_1 = β_0 + 2 * λ_0 * μ_0 / (k_0 + 2μ_0)
     B = β_0 + a0μ + β_1 + a1μ
     C = a0μ * β_1 + a1μ * β_0 + β_0 * β_1
     sqD = sqrt(B^2 - 4C)
     β_3 = (B - sqD) / 2;  β_4 = (B + sqD) / 2
     a3μ = (β_0 - β_3) * (β_3 - β_1) / (β_3 - β_4)
     a4μ = (β_0 - β_4) * (β_4 - β_1) / (β_4 - β_3)
-    return (1 + a3μ * I_Rabotnov(t, α_0, β_3)
-              + a4μ * I_Rabotnov(t, α_0, β_4)) / μ_0d
+    return (
+        1 + a3μ * I_Rabotnov(t, α_0, β_3)
+            + a4μ * I_Rabotnov(t, α_0, β_4)
+    ) / μ_0d
 end
 
 function mu_sph_rig_DIL(t, f)
     μ_0d = μ_0 * (1 + 5f / 6 * (3k_0 + 4μ_0) / (k_0 + 2μ_0))
-    a0μ  = λ_0 * μ_0 * (3 + 5f) / (3μ_0d)
-    a1μ  = 5f / (2 * (3 + 5f)) * (k_0 / (k_0 + 2μ_0))^2 * a0μ
-    β_1  = β_0 + 2 * λ_0 * μ_0 / (k_0 + 2μ_0)
-    return μ_0d * (1 + a0μ * I_Rabotnov(t, α_0, β_0)
-                     + a1μ * I_Rabotnov(t, α_0, β_1))
+    a0μ = λ_0 * μ_0 * (3 + 5f) / (3μ_0d)
+    a1μ = 5f / (2 * (3 + 5f)) * (k_0 / (k_0 + 2μ_0))^2 * a0μ
+    β_1 = β_0 + 2 * λ_0 * μ_0 / (k_0 + 2μ_0)
+    return μ_0d * (
+        1 + a0μ * I_Rabotnov(t, α_0, β_0)
+            + a1μ * I_Rabotnov(t, α_0, β_1)
+    )
 end
 
 function Lmu_sph_rig_MAX(t, f)
     μ_0X = μ_0 * (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0)) /
-           (6 * (1 - f) * (k_0 + 2μ_0))
+        (6 * (1 - f) * (k_0 + 2μ_0))
     b0μ = 2 * (k_0 + 2μ_0) * (3 + 2f) * λ_0 /
-          (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0))
+        (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0))
     b1μ = 5f * k_0^2 * λ_0 /
-          (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0)) / (k_0 + 2μ_0)
+        (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0)) / (k_0 + 2μ_0)
     β_1 = β_0 + 2 * λ_0 * μ_0 / (k_0 + 2μ_0)
     B = β_0 + b0μ + β_1 + b1μ
     C = b0μ * β_1 + b1μ * β_0 + β_0 * β_1
@@ -115,39 +119,47 @@ function Lmu_sph_rig_MAX(t, f)
     δ_3 = (B - sqD) / 2;  δ_4 = (B + sqD) / 2
     b3μ = (β_0 - δ_3) * (δ_3 - β_1) / (δ_3 - δ_4)
     b4μ = (β_0 - δ_4) * (δ_4 - β_1) / (δ_4 - δ_3)
-    return (1 + b3μ * I_Rabotnov(t, α_0, δ_3)
-              + b4μ * I_Rabotnov(t, α_0, δ_4)) / μ_0X
+    return (
+        1 + b3μ * I_Rabotnov(t, α_0, δ_3)
+            + b4μ * I_Rabotnov(t, α_0, δ_4)
+    ) / μ_0X
 end
 
 function mu_sph_rig_MAX(t, f)
     μ_0X = μ_0 * (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0)) /
-           (6 * (1 - f) * (k_0 + 2μ_0))
+        (6 * (1 - f) * (k_0 + 2μ_0))
     b0μ = 2 * (k_0 + 2μ_0) * (3 + 2f) * λ_0 /
-          (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0))
+        (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0))
     b1μ = 5f * k_0^2 * λ_0 /
-          (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0)) / (k_0 + 2μ_0)
+        (6 * (k_0 + 2μ_0) + f * (9k_0 + 8μ_0)) / (k_0 + 2μ_0)
     β_1 = β_0 + 2 * λ_0 * μ_0 / (k_0 + 2μ_0)
-    return μ_0X * (1 + b0μ * I_Rabotnov(t, α_0, β_0)
-                     + b1μ * I_Rabotnov(t, α_0, β_1))
+    return μ_0X * (
+        1 + b0μ * I_Rabotnov(t, α_0, β_0)
+            + b1μ * I_Rabotnov(t, α_0, β_1)
+    )
 end
 
 # ─── Build the RVE for a given inclusion stiffness contrast and scheme ─────
 
-function homogenize_shear(scheme, f::Real;
-                           contrast::Symbol = :rigid, n::Int = 200, t_max::Real = 100.0)
+function homogenize_shear(
+        scheme, f::Real;
+        contrast::Symbol = :rigid, n::Int = 200, t_max::Real = 100.0
+    )
     times = vcat(0.0, 10 .^ range(-8, log10(t_max); length = n))
 
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => law_matrix))
     if contrast === :rigid
-        C_inc = 1e6 * TensISO{3}(3 * k_0, 2 * μ_0)
+        C_inc = 1.0e6 * TensISO{3}(3 * k_0, 2 * μ_0)
     elseif contrast === :pore
-        C_inc = 1e-10 * TensISO{3}(3 * k_0, 2 * μ_0)
+        C_inc = 1.0e-10 * TensISO{3}(3 * k_0, 2 * μ_0)
     else
         throw(ArgumentError("contrast must be :rigid or :pore"))
     end
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(C_inc));
-               fraction = f, symmetrize = :iso)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(C_inc));
+        fraction = f, symmetrize = :iso
+    )
 
     R̃ = homogenize_alv(rve, scheme, :C; times = times)
     α, β = iso_params_from_blocks(R̃)            # 3K(t,t'), 2μ(t,t')
@@ -155,9 +167,9 @@ function homogenize_shear(scheme, f::Real;
     # Trace : "step strain at t = 0" → strain history `e ≡ 1` on [0, t_max].
     # Shear modulus μ(t) = (β · 1) [t]   (the 2μ component evaluated at all times)
     # Shear creep   L^μ(t) = ((β)^{-vol} · 1)[t]
-    one_vec    = ones(eltype(α), n + 1)
-    μ_t        = (β * one_vec) ./ 2          # 2μ → μ
-    Lμ_t       = (volterra_inverse(β; block_size = 1) * one_vec) .* 2
+    one_vec = ones(eltype(α), n + 1)
+    μ_t = (β * one_vec) ./ 2          # 2μ → μ
+    Lμ_t = (volterra_inverse(β; block_size = 1) * one_vec) .* 2
     return times, μ_t, Lμ_t
 end
 
@@ -166,7 +178,7 @@ end
 println("Running ALV homogenisation for the Rabotnov benchmark…")
 
 results_rigid = Dict{Tuple{Symbol, Float64}, NamedTuple}()
-for f in (0.05, 0.10, 0.20)
+for f in (0.05, 0.1, 0.2)
     for sch in (Maxwell(), Dilute())
         sch_name = sch isa Maxwell ? :Maxwell : :Dilute
         @printf "  rigid  f=%.2f  scheme=%s\n" f sch_name
@@ -178,45 +190,67 @@ end
 # ─── Plot creep + relaxation overlays (rigid spheres) ──────────────────────
 
 const N_REF = 200
-const COLOR_OF_F = Dict(0.05 => :blue, 0.10 => :black, 0.20 => :red)
+const COLOR_OF_F = Dict(0.05 => :blue, 0.1 => :black, 0.2 => :red)
 
-p_creep = plot(xscale = :log10, xlabel = "t [h]",
-               ylabel = raw"L^μ(t)  [GPa^{-1}]",
-               title = "Rigid spheres — shear creep",
-               legend = :bottomright)
-p_relax = plot(xscale = :log10, xlabel = "t [h]",
-               ylabel = raw"μ(t)  [GPa]",
-               title = "Rigid spheres — shear relaxation",
-               legend = :topright)
+p_creep = plot(
+    xscale = :log10, xlabel = "t [h]",
+    ylabel = raw"L^μ(t)  [GPa^{-1}]",
+    title = "Rigid spheres — shear creep",
+    legend = :bottomright
+)
+p_relax = plot(
+    xscale = :log10, xlabel = "t [h]",
+    ylabel = raw"μ(t)  [GPa]",
+    title = "Rigid spheres — shear relaxation",
+    legend = :topright
+)
 
-for f in (0.05, 0.10, 0.20)
+for f in (0.05, 0.1, 0.2)
     col = COLOR_OF_F[f]
     # Numerical (markers) — skip t = 0 for log-axis safety.
     res_max = results_rigid[(:Maxwell, f)]
-    res_dil = results_rigid[(:Dilute,  f)]
-    keep    = 2:length(res_max.times)
-    scatter!(p_creep, res_max.times[keep], res_max.Lμ_t[keep];
-             label = "", color = col, marker = :x, markersize = 4)
-    scatter!(p_creep, res_dil.times[keep], res_dil.Lμ_t[keep];
-             label = "", color = col, marker = :x, markersize = 4)
-    scatter!(p_relax, res_max.times[keep], res_max.μ_t[keep];
-             label = "", color = col, marker = :x, markersize = 4)
-    scatter!(p_relax, res_dil.times[keep], res_dil.μ_t[keep];
-             label = "", color = col, marker = :x, markersize = 4)
+    res_dil = results_rigid[(:Dilute, f)]
+    keep = 2:length(res_max.times)
+    scatter!(
+        p_creep, res_max.times[keep], res_max.Lμ_t[keep];
+        label = "", color = col, marker = :x, markersize = 4
+    )
+    scatter!(
+        p_creep, res_dil.times[keep], res_dil.Lμ_t[keep];
+        label = "", color = col, marker = :x, markersize = 4
+    )
+    scatter!(
+        p_relax, res_max.times[keep], res_max.μ_t[keep];
+        label = "", color = col, marker = :x, markersize = 4
+    )
+    scatter!(
+        p_relax, res_dil.times[keep], res_dil.μ_t[keep];
+        label = "", color = col, marker = :x, markersize = 4
+    )
     # Closed form (lines) — strictly positive log-grid.
     t_ref = 10 .^ range(-7, log10(100.0); length = N_REF)
-    plot!(p_creep, t_ref, Lmu_sph_rig_MAX.(t_ref, f);
-          label = "MAX f=$(f)", color = col, linestyle = :solid, linewidth = 1.5)
-    plot!(p_creep, t_ref, Lmu_sph_rig_DIL.(t_ref, f);
-          label = "DIL f=$(f)", color = col, linestyle = :dash,  linewidth = 1.5)
-    plot!(p_relax, t_ref, mu_sph_rig_MAX.(t_ref, f);
-          label = "", color = col, linestyle = :solid, linewidth = 1.5)
-    plot!(p_relax, t_ref, mu_sph_rig_DIL.(t_ref, f);
-          label = "", color = col, linestyle = :dash,  linewidth = 1.5)
+    plot!(
+        p_creep, t_ref, Lmu_sph_rig_MAX.(t_ref, f);
+        label = "MAX f=$(f)", color = col, linestyle = :solid, linewidth = 1.5
+    )
+    plot!(
+        p_creep, t_ref, Lmu_sph_rig_DIL.(t_ref, f);
+        label = "DIL f=$(f)", color = col, linestyle = :dash, linewidth = 1.5
+    )
+    plot!(
+        p_relax, t_ref, mu_sph_rig_MAX.(t_ref, f);
+        label = "", color = col, linestyle = :solid, linewidth = 1.5
+    )
+    plot!(
+        p_relax, t_ref, mu_sph_rig_DIL.(t_ref, f);
+        label = "", color = col, linestyle = :dash, linewidth = 1.5
+    )
 end
 
-fig = plot(p_creep, p_relax;
-           layout = (1, 2), size = (1400, 600))
+fig = plot(
+    p_creep, p_relax;
+    layout = (1, 2), size = (1400, 600)
+)
 
 mkpath(joinpath(@__DIR__, "figures"))
 out = joinpath(@__DIR__, "figures", "36_rabotnov_mittag_leffler.png")
@@ -227,29 +261,33 @@ println()
 println("═══════════════════════════════════════════════════════════════════")
 println(" Quantitative agreement (numerical ↔ closed-form) at f = 0.10")
 println("═══════════════════════════════════════════════════════════════════")
-let res = results_rigid[(:Maxwell, 0.10)]
+let res = results_rigid[(:Maxwell, 0.1)]
     times = res.times
     keep_idx = findall(t -> t > 0, times)
     rel_max = -Inf
     for i in keep_idx
-        Lμ_ref = Lmu_sph_rig_MAX(times[i], 0.10)
-        μ_ref  = mu_sph_rig_MAX(times[i], 0.10)
-        rel_max = max(rel_max,
-                       abs(res.Lμ_t[i] - Lμ_ref) / abs(Lμ_ref),
-                       abs(res.μ_t[i]  - μ_ref ) / abs(μ_ref ))
+        Lμ_ref = Lmu_sph_rig_MAX(times[i], 0.1)
+        μ_ref = mu_sph_rig_MAX(times[i], 0.1)
+        rel_max = max(
+            rel_max,
+            abs(res.Lμ_t[i] - Lμ_ref) / abs(Lμ_ref),
+            abs(res.μ_t[i] - μ_ref) / abs(μ_ref)
+        )
     end
     @printf "  Maxwell  rigid  f=0.10 : max relative error vs closed-form = %.2e\n" rel_max
 end
-let res = results_rigid[(:Dilute, 0.10)]
+let res = results_rigid[(:Dilute, 0.1)]
     times = res.times
     keep_idx = findall(t -> t > 0, times)
     rel_max = -Inf
     for i in keep_idx
-        Lμ_ref = Lmu_sph_rig_DIL(times[i], 0.10)
-        μ_ref  = mu_sph_rig_DIL(times[i], 0.10)
-        rel_max = max(rel_max,
-                       abs(res.Lμ_t[i] - Lμ_ref) / abs(Lμ_ref),
-                       abs(res.μ_t[i]  - μ_ref ) / abs(μ_ref ))
+        Lμ_ref = Lmu_sph_rig_DIL(times[i], 0.1)
+        μ_ref = mu_sph_rig_DIL(times[i], 0.1)
+        rel_max = max(
+            rel_max,
+            abs(res.Lμ_t[i] - Lμ_ref) / abs(Lμ_ref),
+            abs(res.μ_t[i] - μ_ref) / abs(μ_ref)
+        )
     end
     @printf "  Dilute   rigid  f=0.10 : max relative error vs closed-form = %.2e\n" rel_max
 end

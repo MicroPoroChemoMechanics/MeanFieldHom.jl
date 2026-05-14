@@ -39,8 +39,10 @@ Iso form of the `(6n × 6n)` block-diagonal identity matrix in the
 `(α, β)` parameter space — both components reduce to the scalar
 `n × n` identity.
 """
-@inline _iso_identity(n::Int, T::Type) = (Matrix{T}(LinearAlgebra.I, n, n),
-                                          Matrix{T}(LinearAlgebra.I, n, n))
+@inline _iso_identity(n::Int, T::Type) = (
+    Matrix{T}(LinearAlgebra.I, n, n),
+    Matrix{T}(LinearAlgebra.I, n, n),
+)
 
 """
     _iso_add!(αβ_acc, c, αβ_r) -> αβ_acc
@@ -81,8 +83,10 @@ end
 Iso-form Volterra inverse.  The two components are inverted
 independently as scalar `n × n` Volterra matrices.
 """
-@inline _iso_inv(a::Tuple) = (volterra_inverse(a[1]; block_size = 1),
-                              volterra_inverse(a[2]; block_size = 1))
+@inline _iso_inv(a::Tuple) = (
+    volterra_inverse(a[1]; block_size = 1),
+    volterra_inverse(a[2]; block_size = 1),
+)
 
 """
     _iso_inv!(out, a) -> out
@@ -104,8 +108,10 @@ scalar Volterra system `S_x · T_x = M_x` by forward substitution
 (see [`volterra_left_divide`](@ref)).
 """
 @inline function _iso_left_divide(S::Tuple, M::Tuple)
-    return (volterra_left_divide(S[1], M[1]; block_size = 1),
-            volterra_left_divide(S[2], M[2]; block_size = 1))
+    return (
+        volterra_left_divide(S[1], M[1]; block_size = 1),
+        volterra_left_divide(S[2], M[2]; block_size = 1),
+    )
 end
 
 # ── Iso form detection and conversion ───────────────────────────────────────
@@ -208,8 +214,10 @@ Promote element types of an iso ALV pipeline : `αβ_list` is a vector of
 promotion.  Used to lift `Tuple{Matrix{Float64}, Matrix{Float64}}` to
 the right element type when sensibilities are run with `Dual` fractions.
 """
-function _promote_iso_eltype(αβ_list::AbstractVector, fractions::AbstractVector,
-                              αβ_0::Tuple...)
+function _promote_iso_eltype(
+        αβ_list::AbstractVector, fractions::AbstractVector,
+        αβ_0::Tuple...
+    )
     T = eltype(fractions)
     if !isempty(αβ_list)
         T = promote_type(T, eltype(αβ_list[1][1]), eltype(αβ_list[1][2]))
@@ -239,9 +247,11 @@ end
 
 Iso-form Dilute scheme: `αβ_eff = αβ_0 + Σ_r f_r · (Ñ_r in iso form)`.
 """
-function dilute_alv_iso(αβ_0::Tuple,
-                         contribs_iso::AbstractVector,
-                         fractions::AbstractVector)
+function dilute_alv_iso(
+        αβ_0::Tuple,
+        contribs_iso::AbstractVector,
+        fractions::AbstractVector
+    )
     length(contribs_iso) == length(fractions) ||
         throw(ArgumentError("dilute_alv_iso: phase counts mismatch"))
     T = _promote_iso_eltype(contribs_iso, fractions, αβ_0)
@@ -286,15 +296,19 @@ Iso-form Mori-Tanaka:
   `C̃_eff = C̃_0 + (Σ_r f_r Ñ_r) ∘ (f_0 𝟙 + Σ_s f_s Ã_s)^{-vol}`,
 reduced to two scalar Volterra problems on `(α, β)`.
 """
-function mori_tanaka_alv_iso(αβ_0::Tuple, A_duts_iso::AbstractVector,
-                              contribs_iso::AbstractVector,
-                              fractions::AbstractVector, f_M::Real)
+function mori_tanaka_alv_iso(
+        αβ_0::Tuple, A_duts_iso::AbstractVector,
+        contribs_iso::AbstractVector,
+        fractions::AbstractVector, f_M::Real
+    )
     length(A_duts_iso) == length(contribs_iso) == length(fractions) ||
         throw(ArgumentError("mori_tanaka_alv_iso: phase counts mismatch"))
     n = size(αβ_0[1], 1)
-    T = promote_type(_promote_iso_eltype(A_duts_iso, fractions, αβ_0),
-                     _promote_iso_eltype(contribs_iso, fractions),
-                     typeof(f_M))
+    T = promote_type(
+        _promote_iso_eltype(A_duts_iso, fractions, αβ_0),
+        _promote_iso_eltype(contribs_iso, fractions),
+        typeof(f_M)
+    )
     Id = _iso_identity(n, T)
     num = (zeros(T, n, n), zeros(T, n, n))
     den = (T(f_M) .* Id[1], T(f_M) .* Id[2])
@@ -313,8 +327,10 @@ Iso-form Maxwell scheme:
   `C̃_eff = C̃_0 + Σ̃ ∘ (𝟙 - P̃_d ∘ Σ̃)^{-vol}`,
 reduced to two scalar Volterra problems on `(α, β)`.
 """
-function maxwell_alv_iso(αβ_0::Tuple, contribs_iso::AbstractVector,
-                          fractions::AbstractVector, αβ_H_0::Tuple)
+function maxwell_alv_iso(
+        αβ_0::Tuple, contribs_iso::AbstractVector,
+        fractions::AbstractVector, αβ_H_0::Tuple
+    )
     length(contribs_iso) == length(fractions) ||
         throw(ArgumentError("maxwell_alv_iso: phase counts mismatch"))
     n = size(αβ_0[1], 1)
@@ -335,8 +351,10 @@ end
 Iso-form DiluteDual: invert the matrix to compliance space, average,
 invert back.
 """
-function dilute_dual_alv_iso(αβ_0::Tuple, contribs_compliance_iso::AbstractVector,
-                              fractions::AbstractVector)
+function dilute_dual_alv_iso(
+        αβ_0::Tuple, contribs_compliance_iso::AbstractVector,
+        fractions::AbstractVector
+    )
     αβ_J_0 = _iso_inv(αβ_0)
     αβ_J_eff = dilute_alv_iso(αβ_J_0, contribs_compliance_iso, fractions)
     return _iso_inv(αβ_J_eff)

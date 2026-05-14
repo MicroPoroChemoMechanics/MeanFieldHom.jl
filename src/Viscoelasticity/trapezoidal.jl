@@ -40,8 +40,10 @@ function trapezoidal_matrix(law::ViscoLaw, times::AbstractVector{<:Real})
 end
 
 # Scalar specialization: M is `n × n`.
-function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
-                               ::Number)
+function _trapezoidal_dispatch(
+        law::ViscoLaw, times::AbstractVector{<:Real},
+        ::Number
+    )
     n = length(times)
     T = typeof(visco_eval(law, times[1], times[1]))
     M = zeros(T, n, n)
@@ -50,8 +52,10 @@ function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
 end
 
 # Tensor specialization (TensND.AbstractTens{4,3}): M is `6n × 6n`.
-function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
-                               ::TensND.AbstractTens{4, 3})
+function _trapezoidal_dispatch(
+        law::ViscoLaw, times::AbstractVector{<:Real},
+        ::TensND.AbstractTens{4, 3}
+    )
     n = length(times)
     sample = visco_eval(law, times[1], times[1])
     T = eltype(TensND.get_array(sample))
@@ -61,8 +65,10 @@ function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
 end
 
 # Order-2 tensor specialization (TensND.AbstractTens{2,3}): M is `3n × 3n`.
-function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
-                               ::TensND.AbstractTens{2, 3})
+function _trapezoidal_dispatch(
+        law::ViscoLaw, times::AbstractVector{<:Real},
+        ::TensND.AbstractTens{2, 3}
+    )
     n = length(times)
     sample = visco_eval(law, times[1], times[1])
     T = eltype(TensND.get_array(sample))
@@ -72,8 +78,10 @@ function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
 end
 
 # Matrix specialization: dispatches by size (3×3 → 3n×3n, 6×6 → 6n×6n).
-function _trapezoidal_dispatch(law::ViscoLaw, times::AbstractVector{<:Real},
-                               sample::AbstractMatrix)
+function _trapezoidal_dispatch(
+        law::ViscoLaw, times::AbstractVector{<:Real},
+        sample::AbstractMatrix
+    )
     n = length(times)
     T = eltype(sample)
     if size(sample) == (3, 3)
@@ -91,8 +99,10 @@ end
 
 # ── Scalar case ─────────────────────────────────────────────────────────────
 
-@inline function _fill_trapezoidal_scalar!(M::AbstractMatrix, law::ViscoLaw,
-                                           times::AbstractVector)
+@inline function _fill_trapezoidal_scalar!(
+        M::AbstractMatrix, law::ViscoLaw,
+        times::AbstractVector
+    )
     n = length(times)
     n == 0 && return M
     T = eltype(M)
@@ -170,8 +180,10 @@ end
 # Fill the (6×6)-block-structured matrix from a 4-tensor kernel.
 # Per-row cache halves the number of `visco_eval` + `_to_mandel` calls.
 # (Threading reverted: see note in `_fill_trapezoidal_scalar!`.)
-@inline function _fill_trapezoidal_tensor!(M::AbstractMatrix, law::ViscoLaw,
-                                           times::AbstractVector)
+@inline function _fill_trapezoidal_tensor!(
+        M::AbstractMatrix, law::ViscoLaw,
+        times::AbstractVector
+    )
     n = length(times)
     n == 0 && return M
     T = eltype(M)
@@ -189,8 +201,10 @@ end
     return M
 end
 
-@inline function _fill_trapezoidal_mandel!(M::AbstractMatrix, law::ViscoLaw,
-                                           times::AbstractVector)
+@inline function _fill_trapezoidal_mandel!(
+        M::AbstractMatrix, law::ViscoLaw,
+        times::AbstractVector
+    )
     n = length(times)
     n == 0 && return M
     T = eltype(M)
@@ -211,9 +225,11 @@ end
 # Place row `i` blocks into `M` from the cache `cache[1..i]` of
 # `_to_mandel(visco_eval(law, times[i], times[k]))`.  Writes blocks
 # directly entry-by-entry, no temporary `(a ± b) / 2` allocation.
-@inline function _fill_row_blocks_from_cache!(M::AbstractMatrix,
-                                               cache::Vector{<:AbstractMatrix},
-                                               i::Int, ::Type{T}) where {T}
+@inline function _fill_row_blocks_from_cache!(
+        M::AbstractMatrix,
+        cache::Vector{<:AbstractMatrix},
+        i::Int, ::Type{T}
+    ) where {T}
     half = inv(T(2))
     @inbounds begin
         # j = 1 : (cache[1] - cache[2]) / 2

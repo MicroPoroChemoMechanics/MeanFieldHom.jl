@@ -42,31 +42,33 @@ using Plots
 # ─── ECHOES import via PyCall ──────────────────────────────────────────────
 
 const echoes = pyimport("echoes")
-const np     = pyimport("numpy")
+const np = pyimport("numpy")
 println("ECHOES imported : MT=$(echoes.MT), SC=$(echoes.SC), PCW=$(echoes.PCW)")
 
 # ─── Common parameters (mirror `fluage_echoes_cracks.py` §10–14) ───────────
 
-const k₀  = 5.0;  const μ₀  = 2.0
-const k∞  = 3.0;  const μ∞  = 1.0
+const k₀ = 5.0;  const μ₀ = 2.0
+const k∞ = 3.0;  const μ∞ = 1.0
 const τ_M = 1.0
 # Interface stiffness values: chosen moderate so the cracks are not
 # rigidly bonded (the ECHOES default `kn = 2e10` makes all schemes
 # converge to the matrix-only response, which hides scheme differences).
 # Here we pick (kn, kt) ≈ O(matrix shear modulus) and time-decreasing
 # so schemes give visibly different effective creep curves.
-const k_n   = 10.0
-const k_t   = 5.0
-const k_n∞  = 5.0
-const k_t∞  = 2.5
+const k_n = 10.0
+const k_t = 5.0
+const k_n∞ = 5.0
+const k_t∞ = 2.5
 const τ_n = 2.0
 const τ_t = 3.0
-const t₀  = 0.0
+const t₀ = 0.0
 const N_TIMES = 50
-const DENSITY = 0.30                          # below Bristow-O'Connell perco
+const DENSITY = 0.3                          # below Bristow-O'Connell perco
 
-const TIMES = vcat(t₀ + 0.0,
-                    t₀ .+ 10 .^ range(-2, log10(50 - t₀); length = N_TIMES))
+const TIMES = vcat(
+    t₀ + 0.0,
+    t₀ .+ 10 .^ range(-2, log10(50 - t₀); length = N_TIMES)
+)
 
 # ─── ECHOES side ───────────────────────────────────────────────────────────
 
@@ -101,9 +103,11 @@ def run_echoes(t0, T, density, scheme_name):
     return iV.dot(S)[::6]
 """
 
-const JULIA_SCHEME_OBJ = Dict("MT" => MoriTanaka(),
-                                 "SC" => SelfConsistent(),
-                                 "PCW" => PonteCastanedaWillis())
+const JULIA_SCHEME_OBJ = Dict(
+    "MT" => MoriTanaka(),
+    "SC" => SelfConsistent(),
+    "PCW" => PonteCastanedaWillis()
+)
 const SCHEME_NAMES = ("MT", "SC", "PCW")
 const SCHEME_COLOURS = Dict("MT" => :blue, "SC" => :red, "PCW" => :green)
 
@@ -136,13 +140,17 @@ const law_Rt = ViscoLaw(R_t_kernel, :relaxation)
 function julia_creep_response(scheme)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => law_M))
-    add_phase!(rve, :CRACK, PennyCrack(1.0),
-                Dict(:C => law_M, :Rn => law_Rn, :Rt => law_Rt);
-                density = DENSITY, symmetrize = :iso)
+    add_phase!(
+        rve, :CRACK, PennyCrack(1.0),
+        Dict(:C => law_M, :Rn => law_Rn, :Rt => law_Rt);
+        density = DENSITY, symmetrize = :iso
+    )
     R̃ = scheme isa SelfConsistent ?
-        homogenize_alv(rve, scheme, :C; times = TIMES,
-                        abstol = 1e-10, reltol = 1e-9, maxiters = 2000,
-                        damping = 0.85) :
+        homogenize_alv(
+            rve, scheme, :C; times = TIMES,
+            abstol = 1.0e-10, reltol = 1.0e-9, maxiters = 2000,
+            damping = 0.85
+        ) :
         homogenize_alv(rve, scheme, :C; times = TIMES)
     J̃ = volterra_inverse(R̃; block_size = 6)
     n_t = length(TIMES)
@@ -168,26 +176,34 @@ println(" Numerical comparison  Julia ↔ ECHOES C++")
 println("═══════════════════════════════════════════════════════════════════")
 keep = TIMES .> 0
 for name in SCHEME_NAMES
-    rel = maximum(abs.(ε_julia[name][keep] .- ε_echoes[name][keep]) ./
-                   abs.(ε_echoes[name][keep]))
+    rel = maximum(
+        abs.(ε_julia[name][keep] .- ε_echoes[name][keep]) ./
+            abs.(ε_echoes[name][keep])
+    )
     @printf "  %-3s  max |ε_julia − ε_echoes| / |ε_echoes|  =  %.3e   (ε_end Julia=%.5e, ECHOES=%.5e)\n" name rel ε_julia[name][end] ε_echoes[name][end]
 end
 
 # ─── Plot ──────────────────────────────────────────────────────────────────
 
-plt = plot(xscale = :log10,
-           xlabel = "t",
-           ylabel = "ε_xx(t)  (creep response)",
-           title  = "ALV penny cracks + interface stiffness — Julia vs ECHOES (3 schemes)",
-           legend = :bottomright, size = (1200, 800))
+plt = plot(
+    xscale = :log10,
+    xlabel = "t",
+    ylabel = "ε_xx(t)  (creep response)",
+    title = "ALV penny cracks + interface stiffness — Julia vs ECHOES (3 schemes)",
+    legend = :bottomright, size = (1200, 800)
+)
 for name in SCHEME_NAMES
     col = SCHEME_COLOURS[name]
-    plot!(plt, TIMES[keep], ε_echoes[name][keep];
-          label = "ECHOES C++ ($name)", color = col, linestyle = :solid,
-          linewidth = 2.0)
-    scatter!(plt, TIMES[keep], ε_julia[name][keep];
-             label = "MeanFieldHom.jl ($name)", color = col, marker = :circle,
-             markersize = 4, markerstrokecolor = col, alpha = 0.6)
+    plot!(
+        plt, TIMES[keep], ε_echoes[name][keep];
+        label = "ECHOES C++ ($name)", color = col, linestyle = :solid,
+        linewidth = 2.0
+    )
+    scatter!(
+        plt, TIMES[keep], ε_julia[name][keep];
+        label = "MeanFieldHom.jl ($name)", color = col, marker = :circle,
+        markersize = 4, markerstrokecolor = col, alpha = 0.6
+    )
 end
 
 mkpath(joinpath(@__DIR__, "figures"))

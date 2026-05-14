@@ -79,7 +79,7 @@ const sphere = LayeredSphere(radii, C_layers)
 # ─── Print summary ───────────────────────────────────────────────────────────
 
 println("Random n-layer sphere — n = $n, R = $R")
-println("─" ^ 78)
+println("─"^78)
 println("Per-layer (E, ν) :")
 for k in 1:n
     @printf "  k=%2d  E = %6.3f  ν = %5.3f\n" k E_rand[k] ν_rand[k]
@@ -93,10 +93,14 @@ println()
 println("Geometry :")
 @printf "  outer radius          : %.5f\n" radii[end]
 @printf "  Σ layer_fraction      : %.10f  (should be 1)\n" sum(
-    layer_volume_fraction(sphere, k) for k in 1:n)
+    layer_volume_fraction(sphere, k) for k in 1:n
+)
 println("  layer_radius          : ", join(map(r -> @sprintf("%.4f", r), radii), ", "))
-println("  layer_volume_fraction : ", join(
-    map(k -> @sprintf("%.5f", layer_volume_fraction(sphere, k)), 1:n), ", "))
+println(
+    "  layer_volume_fraction : ", join(
+        map(k -> @sprintf("%.5f", layer_volume_fraction(sphere, k)), 1:n), ", "
+    )
+)
 println()
 
 # ─── Per-layer localisation tensors A_k (iso 4-tensor) ───────────────────────
@@ -121,12 +125,16 @@ A_whole_β = sum(layer_volume_fraction(sphere, k) * β_k[k] for k in 1:n)
 # Cross-check: stiffness_contribution N satisfies  N = <(C_k − C₀) : A_k>.
 N_tensor = stiffness_contribution(sphere, C_ref)
 N_α, N_β = TensND.get_data(N_tensor)
-N_α_check = sum(layer_volume_fraction(sphere, k) *
-                (TensND.get_data(C_layers[k])[1] - TensND.get_data(C_ref)[1]) *
-                α_k[k] for k in 1:n)
-N_β_check = sum(layer_volume_fraction(sphere, k) *
-                (TensND.get_data(C_layers[k])[2] - TensND.get_data(C_ref)[2]) *
-                β_k[k] for k in 1:n)
+N_α_check = sum(
+    layer_volume_fraction(sphere, k) *
+        (TensND.get_data(C_layers[k])[1] - TensND.get_data(C_ref)[1]) *
+        α_k[k] for k in 1:n
+)
+N_β_check = sum(
+    layer_volume_fraction(sphere, k) *
+        (TensND.get_data(C_layers[k])[2] - TensND.get_data(C_ref)[2]) *
+        β_k[k] for k in 1:n
+)
 @printf "stiffness_contribution :  N_α = %+12.6f  (rec. %+12.6f, diff=%.2e)\n" N_α N_α_check abs(N_α - N_α_check)
 @printf "                         N_β = %+12.6f  (rec. %+12.6f, diff=%.2e)\n" N_β N_β_check abs(N_β - N_β_check)
 println()
@@ -145,29 +153,41 @@ println()
 const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 
-p1 = bar(1:n, α_k;
-         xlabel = "layer k", ylabel = "α_k (bulk)",
-         title = "Bulk localisation per layer",
-         legend = false, color = :steelblue)
-hline!(p1, [A_whole_α]; lw = 2, color = :red, linestyle = :dash,
-       label = "<α> = $(round(A_whole_α; digits = 4))")
+p1 = bar(
+    1:n, α_k;
+    xlabel = "layer k", ylabel = "α_k (bulk)",
+    title = "Bulk localisation per layer",
+    legend = false, color = :steelblue
+)
+hline!(
+    p1, [A_whole_α]; lw = 2, color = :red, linestyle = :dash,
+    label = "<α> = $(round(A_whole_α; digits = 4))"
+)
 p1 = plot!(p1; legend = :topright)
 
-p2 = bar(1:n, β_k;
-         xlabel = "layer k", ylabel = "β_k (shear)",
-         title = "Shear localisation per layer",
-         legend = false, color = :darkorange)
-hline!(p2, [A_whole_β]; lw = 2, color = :red, linestyle = :dash,
-       label = "<β> = $(round(A_whole_β; digits = 4))")
+p2 = bar(
+    1:n, β_k;
+    xlabel = "layer k", ylabel = "β_k (shear)",
+    title = "Shear localisation per layer",
+    legend = false, color = :darkorange
+)
+hline!(
+    p2, [A_whole_β]; lw = 2, color = :red, linestyle = :dash,
+    label = "<β> = $(round(A_whole_β; digits = 4))"
+)
 p2 = plot!(p2; legend = :topright)
 
-p3 = bar(1:n, [layer_volume_fraction(sphere, k) for k in 1:n];
-         xlabel = "layer k", ylabel = "f_k",
-         title = "Layer volume fractions",
-         legend = false, color = :seagreen)
+p3 = bar(
+    1:n, [layer_volume_fraction(sphere, k) for k in 1:n];
+    xlabel = "layer k", ylabel = "f_k",
+    title = "Layer volume fractions",
+    legend = false, color = :seagreen
+)
 
-p_full = plot(p1, p2, p3; layout = (1, 3), size = (1500, 450),
-              plot_title = "n-layer sphere ($n layers, R=$R) — average localisations")
+p_full = plot(
+    p1, p2, p3; layout = (1, 3), size = (1500, 450),
+    plot_title = "n-layer sphere ($n layers, R=$R) — average localisations"
+)
 
 figpath = joinpath(figdir, "31_average_nlayers.png")
 savefig(p_full, figpath)

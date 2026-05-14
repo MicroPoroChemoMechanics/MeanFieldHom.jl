@@ -33,20 +33,28 @@ using Plots
 
 function build_R(r0, r1, r2, τ1, τ2, fag, finst)
     return (t, tp) ->
-        finst(tp) * r0 +
-            fag(tp) * (r1 * (1 - exp(-(t - tp) / τ1)) +
-                       r2 * (1 - exp(-(t - tp) / τ2)))
+    finst(tp) * r0 +
+        fag(tp) * (
+        r1 * (1 - exp(-(t - tp) / τ1)) +
+            r2 * (1 - exp(-(t - tp) / τ2))
+    )
 end
 
-const Rs = build_R(1.0, 2.0, 3.0, 2.0, 10.0,
-                   t -> exp(-(t / 30.0)^2), _ -> 1.0)
-const Ri = build_R(0.2, 0.3, 1.2, 1.0, 15.0,
-                   t -> exp(-(t / 15.0)^2),
-                   t -> exp(-(t / 30.0)^2))
+const Rs = build_R(
+    1.0, 2.0, 3.0, 2.0, 10.0,
+    t -> exp(-(t / 30.0)^2), _ -> 1.0
+)
+const Ri = build_R(
+    0.2, 0.3, 1.2, 1.0, 15.0,
+    t -> exp(-(t / 15.0)^2),
+    t -> exp(-(t / 30.0)^2)
+)
 
 # Wrap as 3×3-matrix-valued ALV laws (creep mode, like ECHOES).
-make_law(scalar) = ViscoLaw((t, tp) -> scalar(t, tp) * Matrix{Float64}(I, 3, 3),
-                            :creep)
+make_law(scalar) = ViscoLaw(
+    (t, tp) -> scalar(t, tp) * Matrix{Float64}(I, 3, 3),
+    :creep
+)
 const law_M = make_law(Rs)
 const law_I = make_law(Ri)
 
@@ -90,10 +98,12 @@ function build_grid(t0, n)
     return t0 .+ vcat(0.0, 10 .^ range(-8.0, log10(100.0 - t0); length = n))
 end
 
-plt = plot(layout = (1, 1), size = (1100, 700),
-           xlabel = "t", ylabel = "R(t)",
-           title = "Order-2 ALV — fluage_echoes_maxwell_ordre2 (φ=0.2)",
-           legend = :topleft)
+plt = plot(
+    layout = (1, 1), size = (1100, 700),
+    xlabel = "t", ylabel = "R(t)",
+    title = "Order-2 ALV — fluage_echoes_maxwell_ordre2 (φ=0.2)",
+    legend = :topleft
+)
 
 for t0 in t0_v
     T = build_grid(t0, N_TIMES)
@@ -101,22 +111,29 @@ for t0 in t0_v
 
     Vmat = phase_response(law_M, T)
     Vinc = phase_response(law_I, T)
-    plot!(plt, Tplot, vcat(0.0, Vmat); color = :green,
-          label = (t0 == 0.0 ? "matrix" : ""))
-    plot!(plt, Tplot, vcat(0.0, Vinc); color = :magenta,
-          label = (t0 == 0.0 ? "inhomogeneity" : ""))
+    plot!(
+        plt, Tplot, vcat(0.0, Vmat); color = :green,
+        label = (t0 == 0.0 ? "matrix" : "")
+    )
+    plot!(
+        plt, Tplot, vcat(0.0, Vinc); color = :magenta,
+        label = (t0 == 0.0 ? "inhomogeneity" : "")
+    )
 
     for omega in omega_v
         col = omega == 0.1 ? :blue : :black
         for (sch, lstyle, sch_lbl) in (
-                (Maxwell(),    :solid, "MAX"),
-                (Dilute(),     :dash,  "DIL"),
-                (MoriTanaka(), :dot,   "MT"))
+                (Maxwell(), :solid, "MAX"),
+                (Dilute(), :dash, "DIL"),
+                (MoriTanaka(), :dot, "MT"),
+            )
             rve = build_rve(omega, f)
             R̃ = homogenize_alv(rve, sch, :Y; times = T)
             yvals = vcat(0.0, resistance_curve(R̃))
-            plot!(plt, Tplot, yvals; color = col, linestyle = lstyle,
-                  label = (t0 == 0.0 ? "$sch_lbl ω=$omega" : ""))
+            plot!(
+                plt, Tplot, yvals; color = col, linestyle = lstyle,
+                label = (t0 == 0.0 ? "$sch_lbl ω=$omega" : "")
+            )
         end
     end
 end
@@ -124,7 +141,9 @@ end
 xlims!(plt, (0.0, 130.0))
 
 mkpath(joinpath(@__DIR__, "figures"))
-out = joinpath(@__DIR__, "figures",
-               "40_fluage_echoes_maxwell_ordre2.png")
+out = joinpath(
+    @__DIR__, "figures",
+    "40_fluage_echoes_maxwell_ordre2.png"
+)
 savefig(plt, out)
 println("Saved : $out")

@@ -38,12 +38,14 @@ function _phase_stiffness_contribution(
     P₀_proj = _project_matrix(P₀, sym)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        N   = MFH_Core.stiffness_contribution(geom, P_i, P₀_proj; kw...)
+        N = MFH_Core.stiffness_contribution(geom, P_i, P₀_proj; kw...)
         return amount_value(a) * _apply_symmetrize(N, sym)
     else  # CrackDensity
         K_int = _crack_interface_K4(rve, name)
-        N = MFH_Core.stiffness_contribution(geom, P₀_proj;
-                                             K_interface = K_int, kw...)
+        N = MFH_Core.stiffness_contribution(
+            geom, P₀_proj;
+            K_interface = K_int, kw...
+        )
         return _apply_symmetrize(MFH_Core.delta_stiffness(geom, N, amount_value(a)), sym)
     end
 end
@@ -57,12 +59,14 @@ function _phase_stiffness_contribution(
     sym = phase_symmetrize(rve, name)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        N   = MFH_Core.conductivity_contribution(geom, P_i, P₀; kw...)
+        N = MFH_Core.conductivity_contribution(geom, P_i, P₀; kw...)
         return amount_value(a) * _apply_symmetrize(N, sym)
     else
         α_int = _crack_interface_α(rve, name)
-        N = MFH_Core.conductivity_contribution(geom, P₀;
-                                                α_interface = α_int, kw...)
+        N = MFH_Core.conductivity_contribution(
+            geom, P₀;
+            α_interface = α_int, kw...
+        )
         return _apply_symmetrize(MFH_Core.delta_conductivity(geom, N, amount_value(a)), sym)
     end
 end
@@ -103,7 +107,7 @@ function _phase_compliance_contribution(
     sym = phase_symmetrize(rve, name)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        H   = compliance_contribution(geom, P_i, P₀; kw...)
+        H = compliance_contribution(geom, P_i, P₀; kw...)
         return amount_value(a) * _apply_symmetrize(H, sym)
     else
         K_int = _crack_interface_K4(rve, name)
@@ -121,7 +125,7 @@ function _phase_compliance_contribution(
     sym = phase_symmetrize(rve, name)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        R   = MFH_Core.resistivity_contribution(geom, P_i, P₀; kw...)
+        R = MFH_Core.resistivity_contribution(geom, P_i, P₀; kw...)
         return amount_value(a) * _apply_symmetrize(R, sym)
     else
         α_int = _crack_interface_α(rve, name)

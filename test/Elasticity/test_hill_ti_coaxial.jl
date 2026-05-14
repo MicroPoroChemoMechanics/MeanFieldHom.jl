@@ -20,9 +20,9 @@ using MeanFieldHom
 using TensND
 using LinearAlgebra
 
-const ATOL_ANA_ISO  = 1.0e-8
-const ATOL_ANA_RES  = 1.0e-12
-const ATOL_ANA_DEC  = 1.0e-8
+const ATOL_ANA_ISO = 1.0e-8
+const ATOL_ANA_RES = 1.0e-12
+const ATOL_ANA_DEC = 1.0e-8
 
 @testset "Hill TI coaxial — sphere recovers isotropic builder" begin
     # Build an isotropic stiffness, then re-express it as a (degenerate) TI
@@ -31,7 +31,7 @@ const ATOL_ANA_DEC  = 1.0e-8
     n_axis = [0.0, 0.0, 1.0]
     ell = Ellipsoid(1.0, 1.0, 1.0)                     # sphere
     C_iso = TensISO{3}(30.0, 10.0)                     # 3k=30, 2μ=10
-    C_ti  = fromISO(C_iso, n_axis)                     # TensTI{4,T,5}
+    C_ti = fromISO(C_iso, n_axis)                     # TensTI{4,T,5}
     @test C_ti isa TensND.TensTI{4, Float64, 5}
 
     P_iso = hill_tensor(ell, C_iso)                    # isotropic builder
@@ -133,8 +133,10 @@ end
 
     # 1. eltype propagation — complex inputs ⇒ complex output.
     δ = 0.05
-    C_c = tens_TI(2.179 + δ * im, 0.579 + 0.0im, 0.689 + 0.0im,
-                  10.345 + δ * im, 1.0 + 0.5δ * im, n_axis)
+    C_c = tens_TI(
+        2.179 + δ * im, 0.579 + 0.0im, 0.689 + 0.0im,
+        10.345 + δ * im, 1.0 + 0.5δ * im, n_axis
+    )
     @test eltype(C_c) <: Complex
     P_c = hill_tensor(ell, C_c; method = :auto)
     @test eltype(P_c) <: Complex
@@ -142,12 +144,14 @@ end
 
     # 2. Limit Im → 0 must reproduce the real-modulus result exactly.
     C_r = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
-    C_0 = tens_TI(2.179 + 0.0im, 0.579 + 0.0im, 0.689 + 0.0im,
-                  10.345 + 0.0im, 1.0 + 0.0im, n_axis)
+    C_0 = tens_TI(
+        2.179 + 0.0im, 0.579 + 0.0im, 0.689 + 0.0im,
+        10.345 + 0.0im, 1.0 + 0.0im, n_axis
+    )
     P_r = hill_tensor(ell, C_r)
     P_0 = hill_tensor(ell, C_0)
     @test maximum(abs.(real.(get_array(P_0)) .- get_array(P_r))) < 1.0e-14
-    @test maximum(abs.(imag.(get_array(P_0))))                   < 1.0e-14
+    @test maximum(abs.(imag.(get_array(P_0)))) < 1.0e-14
 end
 
 @testset "Hill TI coaxial — explicit :residues / :decuhr still work on coaxial" begin

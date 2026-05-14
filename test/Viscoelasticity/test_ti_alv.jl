@@ -38,7 +38,7 @@ end
         @test _is_ti_block(M)
         ℓ_back = ti_params_from_blocks(M)
         for k in 1:6
-            @test isapprox(ℓ[k], ℓ_back[k]; atol = 1e-14)
+            @test isapprox(ℓ[k], ℓ_back[k]; atol = 1.0e-14)
         end
     end
 end
@@ -53,7 +53,7 @@ end
     ℓ_extracted = _ti_pair(M_iso)
     ℓ_via_helper = _iso_to_ti((α, β))
     for k in 1:6
-        @test isapprox(ℓ_extracted[k], ℓ_via_helper[k]; atol = 1e-14)
+        @test isapprox(ℓ_extracted[k], ℓ_via_helper[k]; atol = 1.0e-14)
     end
 end
 
@@ -68,7 +68,7 @@ end
     c_ti = _ti_prod(a, b)
     M_c_via_ti = ti_blocks_from_params(c_ti)
     M_c_full = M_a * M_b
-    @test isapprox(M_c_via_ti, M_c_full; atol = 1e-12)
+    @test isapprox(M_c_via_ti, M_c_full; atol = 1.0e-12)
     @test _is_ti_block(M_c_full)   # algebra closure
 
     # Inverse — random TI matrices can be ill-conditioned
@@ -79,8 +79,10 @@ end
     a_inv = _ti_inv(a)
     M_a_inv_via_ti = ti_blocks_from_params(a_inv)
     M_a_inv_full = volterra_inverse(M_a; block_size = 6)
-    @test isapprox(M_a_inv_via_ti, M_a_inv_full;
-                   rtol = 1e-10, atol = 1e-12)
+    @test isapprox(
+        M_a_inv_via_ti, M_a_inv_full;
+        rtol = 1.0e-10, atol = 1.0e-12
+    )
 
     # Sanity: a · a⁻¹ = block-diag identity (this product is well-
     # conditioned by construction so a tight tol holds).
@@ -89,13 +91,13 @@ end
         rows = (6 * (i - 1) + 1):(6 * i)
         H_id[rows, rows] = Matrix{Float64}(I, 6, 6)
     end
-    @test isapprox(M_a * M_a_inv_via_ti, H_id; atol = 1e-10)
+    @test isapprox(M_a * M_a_inv_via_ti, H_id; atol = 1.0e-10)
 
     # Left divide — same conditioning concern as the inverse path.
     ainvb_ti = _ti_left_divide(a, b)
     M_via_ti = ti_blocks_from_params(ainvb_ti)
     M_full = volterra_left_divide(M_a, M_b; block_size = 6)
-    @test isapprox(M_via_ti, M_full; rtol = 1e-10, atol = 1e-12)
+    @test isapprox(M_via_ti, M_full; rtol = 1.0e-10, atol = 1.0e-12)
 end
 
 @testset "ti_alv — schemes match 6n×6n in elastic limit" begin
@@ -125,13 +127,13 @@ end
     voigt_full = voigt_alv([C_M, C_I], [f_M, f_I])
     ti_M = _ti_pair(C_M); ti_I = _ti_pair(C_I)
     voigt_ti = _ti_blocks(voigt_alv_ti([ti_M, ti_I], [f_M, f_I]))
-    @test isapprox(voigt_ti, voigt_full; atol = 1e-12)
+    @test isapprox(voigt_ti, voigt_full; atol = 1.0e-12)
     @test _is_ti_block(voigt_full)
 
     # Reuss
     reuss_full = reuss_alv([C_M, C_I], [f_M, f_I])
     reuss_ti = _ti_blocks(reuss_alv_ti([ti_M, ti_I], [f_M, f_I]))
-    @test isapprox(reuss_ti, reuss_full; atol = 1e-10)
+    @test isapprox(reuss_ti, reuss_full; atol = 1.0e-10)
 end
 
 @testset "ti_alv — homogenize_alv routes through TI for TI matrix" begin
@@ -151,8 +153,10 @@ end
 
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_M_law))
-    add_phase!(rve, :I, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_I_law);
-               fraction = 0.2)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_I_law);
+        fraction = 0.2
+    )
 
     # Voigt — has a closed-form TI fast path
     C_eff = homogenize_alv(rve, Voigt(), :C; times = times)
@@ -163,5 +167,5 @@ end
     C_M = trapezoidal_matrix(C_M_law, times)
     C_I = trapezoidal_matrix(C_I_law, times)
     C_voigt_ref = voigt_alv([C_M, C_I], [0.8, 0.2])
-    @test isapprox(C_eff, C_voigt_ref; atol = 1e-12)
+    @test isapprox(C_eff, C_voigt_ref; atol = 1.0e-12)
 end

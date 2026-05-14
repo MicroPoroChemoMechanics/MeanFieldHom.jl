@@ -121,8 +121,10 @@ end
 @testset "Input-order robustness — unsorted semi-axes rotate the basis" begin
     # Ellipsoid 3D: any permutation of (0.5, 3.0, 1.0) must produce the
     # same physical geometry in the canonical frame.
-    for perm in ((0.5, 3.0, 1.0), (3.0, 0.5, 1.0), (1.0, 0.5, 3.0),
-                 (0.5, 1.0, 3.0), (3.0, 1.0, 0.5), (1.0, 3.0, 0.5))
+    for perm in (
+            (0.5, 3.0, 1.0), (3.0, 0.5, 1.0), (1.0, 0.5, 3.0),
+            (0.5, 1.0, 3.0), (3.0, 1.0, 0.5), (1.0, 3.0, 0.5),
+        )
         ell = Ellipsoid(perm...)
         # Internal invariant — axes always sorted descending
         @test ell.semi_axes == (3.0, 1.0, 0.5)
@@ -174,20 +176,20 @@ end
     A_arr = [A[i, j] for i in 1:3, j in 1:3]
     Aref = change_tens_canon(shape_tensor(ell_ref))
     Aref_arr = [Aref[i, j] for i in 1:3, j in 1:3]
-    @test sort(eigvals(Symmetric(A_arr));    rev = true) ≈ [3.0, 1.0, 0.5]
+    @test sort(eigvals(Symmetric(A_arr)); rev = true) ≈ [3.0, 1.0, 0.5]
     @test sort(eigvals(Symmetric(Aref_arr)); rev = true) ≈ [3.0, 1.0, 0.5]
     @test tr(A_arr) ≈ tr(Aref_arr) rtol = 1.0e-12
 end
 
 @testset "euler_angles — flexibility (padding + mixed types)" begin
     # Padding with trailing zeros
-    ell_pad1 = Ellipsoid(4., 2., 1.; euler_angles = (π / 2,))
-    ell_pad2 = Ellipsoid(4., 2., 1.; euler_angles = (π / 2, 0.0, 0.0))
+    ell_pad1 = Ellipsoid(4.0, 2.0, 1.0; euler_angles = (π / 2,))
+    ell_pad2 = Ellipsoid(4.0, 2.0, 1.0; euler_angles = (π / 2, 0.0, 0.0))
     @test change_tens_canon(shape_tensor(ell_pad1))[1, 1] ≈
         change_tens_canon(shape_tensor(ell_pad2))[1, 1] rtol = 1.0e-12
 
-    ell_pad3 = Ellipsoid(4., 2., 1.; euler_angles = ())
-    ell_pad4 = Ellipsoid(4., 2., 1.)
+    ell_pad3 = Ellipsoid(4.0, 2.0, 1.0; euler_angles = ())
+    ell_pad4 = Ellipsoid(4.0, 2.0, 1.0)
     A3 = change_tens_canon(shape_tensor(ell_pad3))
     A4 = change_tens_canon(shape_tensor(ell_pad4))
     for i in 1:3, j in 1:3
@@ -195,12 +197,12 @@ end
     end
 
     # Mixed types — Int + Float
-    ell_mix = Ellipsoid(4., 2., 1.; euler_angles = (π / 2, 0, 0))
+    ell_mix = Ellipsoid(4.0, 2.0, 1.0; euler_angles = (π / 2, 0, 0))
     @test change_tens_canon(shape_tensor(ell_mix))[1, 1] ≈
         change_tens_canon(shape_tensor(ell_pad2))[1, 1] rtol = 1.0e-12
 
     # Irrational (π directly) + Float
-    ell_irr = Ellipsoid(4., 2., 1.; euler_angles = (π, 0., 0.))
+    ell_irr = Ellipsoid(4.0, 2.0, 1.0; euler_angles = (π, 0.0, 0.0))
     @test !(shape_tensor(ell_irr) === nothing)  # constructs without error
 
     # Coverage across the other inclusion types
@@ -210,7 +212,7 @@ end
     @test_nowarn PennyCrack(1.0; euler_angles = (0.5,))
 
     # Length > 3 → ArgumentError
-    @test_throws ArgumentError Ellipsoid(4., 2., 1.; euler_angles = (0.1, 0.2, 0.3, 0.4))
+    @test_throws ArgumentError Ellipsoid(4.0, 2.0, 1.0; euler_angles = (0.1, 0.2, 0.3, 0.4))
 end
 
 @testset "shape_tensor — eltype propagation" begin

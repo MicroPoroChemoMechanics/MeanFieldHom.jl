@@ -24,10 +24,14 @@ const k_w, μ_w = 5.0, 2.0       # soft inclusion
 function build(f1, f2)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(k_m, μ_m)))
-    f1 > 0 && add_phase!(rve, :STIFF, Ellipsoid(1.0),
-                         Dict(:C => TensISO{3}(k_s, μ_s)); fraction = f1)
-    f2 > 0 && add_phase!(rve, :SOFT, Ellipsoid(1.0),
-                         Dict(:C => TensISO{3}(k_w, μ_w)); fraction = f2)
+    f1 > 0 && add_phase!(
+        rve, :STIFF, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(k_s, μ_s)); fraction = f1
+    )
+    f2 > 0 && add_phase!(
+        rve, :SOFT, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(k_w, μ_w)); fraction = f2
+    )
     return rve
 end
 
@@ -42,21 +46,37 @@ for ftot in fs
     f1 = f2 = ftot / 2
     rve = build(f1, f2)
     push!(y_prop, get_array(homogenize(rve, DifferentialScheme(; nsteps = 200)))[1, 1, 1, 1])
-    push!(y_stiff_first,
-          get_array(homogenize(rve, DifferentialScheme(;
-              trajectory = Sequential([:STIFF, :SOFT]), nsteps = 200)))[1, 1, 1, 1])
-    push!(y_soft_first,
-          get_array(homogenize(rve, DifferentialScheme(;
-              trajectory = Sequential([:SOFT, :STIFF]), nsteps = 200)))[1, 1, 1, 1])
+    push!(
+        y_stiff_first,
+        get_array(
+            homogenize(
+                rve, DifferentialScheme(;
+                    trajectory = Sequential([:STIFF, :SOFT]), nsteps = 200
+                )
+            )
+        )[1, 1, 1, 1]
+    )
+    push!(
+        y_soft_first,
+        get_array(
+            homogenize(
+                rve, DifferentialScheme(;
+                    trajectory = Sequential([:SOFT, :STIFF]), nsteps = 200
+                )
+            )
+        )[1, 1, 1, 1]
+    )
 end
 
-p = plot(; xlabel = "total inclusion fraction f₁ + f₂",
-         ylabel = "C_eff[1111]",
-         title = "Differential scheme — trajectory dependence",
-         legend = :topleft)
-plot!(p, fs, y_prop;        label = "Proportional",          lw = 2, color = :blue)
+p = plot(;
+    xlabel = "total inclusion fraction f₁ + f₂",
+    ylabel = "C_eff[1111]",
+    title = "Differential scheme — trajectory dependence",
+    legend = :topleft
+)
+plot!(p, fs, y_prop; label = "Proportional", lw = 2, color = :blue)
 plot!(p, fs, y_stiff_first; label = "Sequential [stiff,soft]", lw = 2, color = :green)
-plot!(p, fs, y_soft_first;  label = "Sequential [soft,stiff]", lw = 2, color = :red)
+plot!(p, fs, y_soft_first; label = "Sequential [soft,stiff]", lw = 2, color = :red)
 
 figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
@@ -67,7 +87,9 @@ println("Saved : ", figpath)
 @printf("\nf_total      Prop          Stiff→Soft     Soft→Stiff\n")
 for (i, ftot) in enumerate(fs)
     if i % 4 == 1
-        @printf("  %.3f       %.4f       %.4f       %.4f\n",
-                ftot, y_prop[i], y_stiff_first[i], y_soft_first[i])
+        @printf(
+            "  %.3f       %.4f       %.4f       %.4f\n",
+            ftot, y_prop[i], y_stiff_first[i], y_soft_first[i]
+        )
     end
 end

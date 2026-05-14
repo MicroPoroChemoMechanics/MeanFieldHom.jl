@@ -27,7 +27,7 @@ using Printf
 #
 function mt_closed_form(km, μm, ki, μi, f)
     k_eff = km + f * (ki - km) / (1 + (1 - f) * (ki - km) / (km + 4μm / 3))
-    ζm    = μm * (9km + 8μm) / (6 * (km + 2μm))
+    ζm = μm * (9km + 8μm) / (6 * (km + 2μm))
     μ_eff = μm + f * (μi - μm) / (1 + (1 - f) * (μi - μm) / (μm + ζm))
     return (k_eff, μ_eff)
 end
@@ -45,16 +45,20 @@ ki, μi = 40.0, 20.0
 for f in (0.05, 0.1, 0.2, 0.3, 0.4)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(3km, 2μm)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(3ki, 2μi));
-               fraction = f)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(3ki, 2μi));
+        fraction = f
+    )
     C_mt = homogenize(rve, MoriTanaka())
     # TensISO{3}(α, β) stores (3k, 2μ) directly in `data`.
     α, β = TensND.get_data(C_mt)
     k_mfh = α / 3
     μ_mfh = β / 2
     k_cf, μ_cf = mt_closed_form(km, μm, ki, μi, f)
-    @printf("%6.3f   %12.6f   %12.6f   %12.6f   %12.6f\n",
-            f, k_mfh, k_cf, μ_mfh, μ_cf)
+    @printf(
+        "%6.3f   %12.6f   %12.6f   %12.6f   %12.6f\n",
+        f, k_mfh, k_cf, μ_mfh, μ_cf
+    )
 end
 println()
 
@@ -71,19 +75,23 @@ println()
 function porous_iso(f, scheme)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(1.0, 1.0)))   # 3k=1, 2μ=1
-    f > 0 && add_phase!(rve, :PORE, Ellipsoid(1.0),
-                        Dict(:C => TensISO{3}(1.0e-6, 1.0e-6)); fraction = f)
+    f > 0 && add_phase!(
+        rve, :PORE, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(1.0e-6, 1.0e-6)); fraction = f
+    )
     return get_array(homogenize(rve, scheme))[1, 1, 1, 1]
 end
 
-@printf("%6s   %12s   %12s   %12s   %12s\n",
-        "f", "Voigt", "MT", "ASC", "Differential")
+@printf(
+    "%6s   %12s   %12s   %12s   %12s\n",
+    "f", "Voigt", "MT", "ASC", "Differential"
+)
 println("─"^65)
 for f in (0.05, 0.1, 0.2, 0.3, 0.4)
-    Cv  = porous_iso(f, Voigt())
+    Cv = porous_iso(f, Voigt())
     Cmt = porous_iso(f, MoriTanaka())
     Casc = porous_iso(f, AsymmetricSelfConsistent(; abstol = 1.0e-10, maxiters = 200))
-    Cd  = porous_iso(f, DifferentialScheme(; nsteps = 200))
+    Cd = porous_iso(f, DifferentialScheme(; nsteps = 200))
     @printf("%6.3f   %12.6f   %12.6f   %12.6f   %12.6f\n", f, Cv, Cmt, Casc, Cd)
 end
 println()

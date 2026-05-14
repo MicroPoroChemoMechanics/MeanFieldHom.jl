@@ -23,7 +23,7 @@ Phases carrying a [`CrackDensity`](@ref) are ignored, see [`Voigt`](@ref).
 Reference: [Hill (1965)](@cite hill1965).
 """
 function _evaluate(rve::RVE, ::Reuss, ::Val{p}; kw...) where {p}
-    f_m  = matrix_volume_fraction(rve)
+    f_m = matrix_volume_fraction(rve)
     Seff = f_m * inv(matrix_property(rve, p))
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]

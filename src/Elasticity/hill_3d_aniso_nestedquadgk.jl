@@ -118,7 +118,7 @@ function _hill_3d_aniso_nestedquadgk(
         maxevals = maxiters
     ) do u
         one_minus_u = 1.0 - u
-        z   = 1.0 - one_minus_u^α
+        z = 1.0 - one_minus_u^α
         jac = α * one_minus_u^(α - 1.0)
         inner, _ = QuadGK.quadgk(
             0.0, 2π;

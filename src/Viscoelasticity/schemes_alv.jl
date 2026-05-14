@@ -30,8 +30,10 @@ Dilute strain concentration kernel `Ã^dil = (𝟙 + P̃ ∘ ΔC̃)^{-vol}`
 ([@barthelemyIJES2019] eq. 16).  All inputs are `(6n × 6n)` block
 matrices ; the result is also `(6n × 6n)` and lower-block-triangular.
 """
-function dilute_concentration_alv(C_E::AbstractMatrix, C_0::AbstractMatrix,
-                                  P::AbstractMatrix)
+function dilute_concentration_alv(
+        C_E::AbstractMatrix, C_0::AbstractMatrix,
+        P::AbstractMatrix
+    )
     sz = size(C_E, 1)
     @assert size(C_E) == size(C_0) == size(P) == (sz, sz)
     @assert sz % 6 == 0
@@ -49,8 +51,10 @@ Dilute strain contribution kernel `Ñ = ΔC̃ ∘ Ã^dil`
 ([@barthelemyIJES2019] eq. 17).  This is the size-independent stiffness
 contribution of a single inclusion.
 """
-function dilute_contribution_alv(C_E::AbstractMatrix, C_0::AbstractMatrix,
-                                 P::AbstractMatrix)
+function dilute_contribution_alv(
+        C_E::AbstractMatrix, C_0::AbstractMatrix,
+        P::AbstractMatrix
+    )
     A_dil = dilute_concentration_alv(C_E, C_0, P)
     ΔC = C_E - C_0
     return ΔC * A_dil
@@ -65,8 +69,10 @@ Voigt (uniform-strain) bound: `C_eff = Σ_r f_r · C̃^r`.  Each `C_phases[r]`
 is a `(6n × 6n)` block matrix and `fractions[r]` is the volume fraction
 of phase `r`.
 """
-function voigt_alv(C_phases::AbstractVector{<:AbstractMatrix},
-                   fractions::AbstractVector{<:Real})
+function voigt_alv(
+        C_phases::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector{<:Real}
+    )
     length(C_phases) == length(fractions) ||
         throw(ArgumentError("voigt_alv: C_phases and fractions length mismatch"))
     isempty(C_phases) && throw(ArgumentError("voigt_alv: at least one phase required"))
@@ -86,8 +92,10 @@ of compliances, then invert the result.
 
   J̃_eff = Σ_r f_r · J̃^r ,  C̃_eff = (J̃_eff)^{-vol}
 """
-function reuss_alv(C_phases::AbstractVector{<:AbstractMatrix},
-                   fractions::AbstractVector{<:Real})
+function reuss_alv(
+        C_phases::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector{<:Real}
+    )
     length(C_phases) == length(fractions) ||
         throw(ArgumentError("reuss_alv: C_phases and fractions length mismatch"))
     isempty(C_phases) && throw(ArgumentError("reuss_alv: at least one phase required"))
@@ -110,14 +118,18 @@ Note that for the dilute scheme the matrix volume fraction `f_0`
 does *not* appear: the inclusions are treated as if they were
 embedded in an infinite matrix.
 """
-function dilute_alv(C_0::AbstractMatrix,
-                    contribs::AbstractVector{<:AbstractMatrix},
-                    fractions::AbstractVector{<:Real})
+function dilute_alv(
+        C_0::AbstractMatrix,
+        contribs::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector{<:Real}
+    )
     length(contribs) == length(fractions) ||
         throw(ArgumentError("dilute_alv: contribs and fractions length mismatch"))
-    T = promote_type(eltype(C_0),
-                     (isempty(contribs) ? Float64 : eltype(contribs[1])),
-                     eltype(fractions))
+    T = promote_type(
+        eltype(C_0),
+        (isempty(contribs) ? Float64 : eltype(contribs[1])),
+        eltype(fractions)
+    )
     C = T.(C_0)
     @inbounds for r in eachindex(contribs)
         @. C += fractions[r] * contribs[r]
@@ -141,19 +153,23 @@ average.
 `contribs[r] = ΔC^r ∘ A_duts[r]`, `fractions[r]` its volume fraction
 in the RVE, and `f_matrix` the matrix volume fraction `f_0`.
 """
-function mori_tanaka_alv(C_0::AbstractMatrix,
-                         A_duts::AbstractVector{<:AbstractMatrix},
-                         contribs::AbstractVector{<:AbstractMatrix},
-                         fractions::AbstractVector{<:Real},
-                         f_matrix::Real)
+function mori_tanaka_alv(
+        C_0::AbstractMatrix,
+        A_duts::AbstractVector{<:AbstractMatrix},
+        contribs::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector{<:Real},
+        f_matrix::Real
+    )
     length(A_duts) == length(contribs) == length(fractions) ||
         throw(ArgumentError("mori_tanaka_alv: phase counts mismatch"))
     sz = size(C_0, 1)
     @assert sz % 6 == 0
     n = sz ÷ 6
-    T = promote_type(eltype(C_0),
-                     (isempty(A_duts) ? Float64 : eltype(A_duts[1])),
-                     eltype(fractions), typeof(f_matrix))
+    T = promote_type(
+        eltype(C_0),
+        (isempty(A_duts) ? Float64 : eltype(A_duts[1])),
+        eltype(fractions), typeof(f_matrix)
+    )
     Id = _identity_alv(n, T)
     # Numerator: Σ_r f_r Ñ^{r,dil}
     num = zeros(T, sz, sz)
@@ -187,18 +203,22 @@ the matrix is the reference, Maxwell reduces to Mori-Tanaka.
 Pass `H_0 = hill_kernel(distribution_shape, C_0_law, times)` for the
 default uniform-sphere distribution.
 """
-function maxwell_alv(C_0::AbstractMatrix,
-                     contribs::AbstractVector{<:AbstractMatrix},
-                     fractions::AbstractVector{<:Real};
-                     H_0::AbstractMatrix)
+function maxwell_alv(
+        C_0::AbstractMatrix,
+        contribs::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector{<:Real};
+        H_0::AbstractMatrix
+    )
     length(contribs) == length(fractions) ||
         throw(ArgumentError("maxwell_alv: phase counts mismatch"))
     sz = size(C_0, 1)
     @assert sz % 6 == 0
     n = sz ÷ 6
-    T = promote_type(eltype(C_0),
-                     (isempty(contribs) ? Float64 : eltype(contribs[1])),
-                     eltype(fractions), eltype(H_0))
+    T = promote_type(
+        eltype(C_0),
+        (isempty(contribs) ? Float64 : eltype(contribs[1])),
+        eltype(fractions), eltype(H_0)
+    )
     Id = _identity_alv(n, T)
     Σ = zeros(T, sz, sz)
     @inbounds for r in eachindex(contribs)
@@ -229,9 +249,11 @@ for the dual formulation in the elastic case.
 Implementation routes through `volterra_inverse` of `C_0` to obtain
 `J^0` and back.
 """
-function dilute_dual_alv(C_0::AbstractMatrix,
-                         contribs_compliance::AbstractVector{<:AbstractMatrix},
-                         fractions::AbstractVector{<:Real})
+function dilute_dual_alv(
+        C_0::AbstractMatrix,
+        contribs_compliance::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector{<:Real}
+    )
     length(contribs_compliance) == length(fractions) ||
         throw(ArgumentError("dilute_dual_alv: phase counts mismatch"))
     J_0 = volterra_inverse(C_0; block_size = 6)

@@ -48,7 +48,8 @@ end
 
     # Analytical elastic Hill in iso matrix for the same ellipsoid.
     P_elas = MeanFieldHom.Elasticity.hill_tensor(
-        Ellipsoid(1.0, 1.0, 0.3), C0)
+        Ellipsoid(1.0, 1.0, 0.3), C0
+    )
     P_elas_M = _to_mandel(P_elas)
     n = length(times)
     for i in 1:n

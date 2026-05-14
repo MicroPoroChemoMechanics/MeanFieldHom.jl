@@ -31,20 +31,24 @@ function _maxwell(rve::RVE, ds::UniformDistribution, ::Val{p}; kw...) where {p}
 end
 
 # 4th-order (elasticity)
-function _maxwell_kernel(rve, shape, C₀::TensND.AbstractTens{4, 3}, ::Val{p};
-                         kw...) where {p}
-    Σ   = _accumulate_contributions(rve, C₀, p; kw...)
+function _maxwell_kernel(
+        rve, shape, C₀::TensND.AbstractTens{4, 3}, ::Val{p};
+        kw...
+    ) where {p}
+    Σ = _accumulate_contributions(rve, C₀, p; kw...)
     P_d = hill_tensor(shape, C₀; kw...)
-    I4  = _identity_like(C₀)
+    I4 = _identity_like(C₀)
     return C₀ + Σ ⊡ inv(I4 - P_d ⊡ Σ)
 end
 
 # 2nd-order (conductivity)
-function _maxwell_kernel(rve, shape, K₀::TensND.AbstractTens{2, 3}, ::Val{p};
-                         kw...) where {p}
-    Σ   = _accumulate_contributions(rve, K₀, p; kw...)
+function _maxwell_kernel(
+        rve, shape, K₀::TensND.AbstractTens{2, 3}, ::Val{p};
+        kw...
+    ) where {p}
+    Σ = _accumulate_contributions(rve, K₀, p; kw...)
     P_d = hill_tensor(shape, K₀; kw...)
-    I2  = _identity_like(K₀)
+    I2 = _identity_like(K₀)
     return K₀ + Σ ⋅ inv(I2 - P_d ⋅ Σ)
 end
 

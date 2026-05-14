@@ -81,10 +81,10 @@ function Core.stiffness_contribution(
     ) where {T, N}
     κ₀, μ₀ = _iso_bulk_shear(C₀)
     κμ = _bulk_layer_moduli(sphere)
-    α  = _bulk_localization(sphere, κ₀, μ₀)
-    β  = _shear_localization(sphere, C₀)
-    f  = ntuple(k -> layer_volume_fraction(sphere, k), Val(N))
-    N_bulk  = sum(f[k] * (κμ[k][1] - κ₀) * α[k] for k in 1:N)
+    α = _bulk_localization(sphere, κ₀, μ₀)
+    β = _shear_localization(sphere, C₀)
+    f = ntuple(k -> layer_volume_fraction(sphere, k), Val(N))
+    N_bulk = sum(f[k] * (κμ[k][1] - κ₀) * α[k] for k in 1:N)
     N_shear = sum(f[k] * (κμ[k][2] - μ₀) * β[k] for k in 1:N)
     return TensISO{3}(3 * N_bulk, 2 * N_shear)
 end

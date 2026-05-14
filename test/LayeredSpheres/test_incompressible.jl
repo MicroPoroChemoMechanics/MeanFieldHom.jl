@@ -32,7 +32,7 @@ end
 @testset "Exactly incompressible core (κ_1 = 1e30)" begin
     κ₀, μ₀ = 100.0, 70.0
     C₀ = TensISO{3}(3κ₀, 2μ₀)
-    C_inc = TensISO{3}(3e30, 2 * 80.0)
+    C_inc = TensISO{3}(3.0e30, 2 * 80.0)
 
     # Single layer — α should be very small but finite.
     s1 = LayeredSphere((1.0,), (C_inc,))

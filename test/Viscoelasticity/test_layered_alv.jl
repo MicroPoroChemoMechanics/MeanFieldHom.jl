@@ -85,8 +85,10 @@ end
     C_1 = TensISO{3}(60.0, 16.0)
     C_2 = TensISO{3}(90.0, 24.0)
     intf = SpringInterface(0.05)
-    sphere = LayeredSphere((0.5, 1.0), (C_1, C_2);
-                           interfaces = (intf, PerfectInterface()))
+    sphere = LayeredSphere(
+        (0.5, 1.0), (C_1, C_2);
+        interfaces = (intf, PerfectInterface())
+    )
     times = collect(0.0:0.5:1.0)
 
     α_alv = bulk_localization_alv(sphere, heaviside_law(C_M), times)
@@ -102,8 +104,10 @@ end
     C_1 = TensISO{3}(60.0, 16.0)
     C_2 = TensISO{3}(90.0, 24.0)
     intf = MembraneInterface(0.1, 0.05)
-    sphere = LayeredSphere((0.5, 1.0), (C_1, C_2);
-                           interfaces = (intf, PerfectInterface()))
+    sphere = LayeredSphere(
+        (0.5, 1.0), (C_1, C_2);
+        interfaces = (intf, PerfectInterface())
+    )
     times = collect(0.0:0.5:1.0)
 
     α_alv = bulk_localization_alv(sphere, heaviside_law(C_M), times)
@@ -125,7 +129,8 @@ end
     n = length(times)
 
     β_alv = MeanFieldHom.Viscoelasticity.shear_localization_alv(
-        sphere, heaviside_law(C_M), times)
+        sphere, heaviside_law(C_M), times
+    )
     @test length(β_alv) == 2
     @test all(size(β) == (n, n) for β in β_alv)
 
@@ -149,7 +154,8 @@ end
     times = collect(0.0:0.5:1.0)
 
     β_alv = MeanFieldHom.Viscoelasticity.shear_localization_alv(
-        sphere, heaviside_law(C_M), times)
+        sphere, heaviside_law(C_M), times
+    )
     β_elas = MeanFieldHom.LayeredSpheres._shear_localization(sphere, C_M)
     diag_β = [β_alv[1][i, i] for i in 1:length(times)]
     @test maximum(abs.(diag_β .- β_elas[1])) ≤ 1.0e-10
@@ -180,12 +186,15 @@ end
     C_1 = TensISO{3}(60.0, 16.0)
     C_2 = TensISO{3}(90.0, 24.0)
     intf = SpringInterface(0.05, 0.07)
-    sphere = LayeredSphere((0.5, 1.0), (C_1, C_2);
-                           interfaces = (intf, PerfectInterface()))
+    sphere = LayeredSphere(
+        (0.5, 1.0), (C_1, C_2);
+        interfaces = (intf, PerfectInterface())
+    )
     times = collect(0.0:0.5:1.0)
 
     β_alv = MeanFieldHom.Viscoelasticity.shear_localization_alv(
-        sphere, heaviside_law(C_M), times)
+        sphere, heaviside_law(C_M), times
+    )
     β_elas = MeanFieldHom.LayeredSpheres._shear_localization(sphere, C_M)
     for k in 1:2
         diag_β = [β_alv[k][i, i] for i in 1:length(times)]
@@ -198,12 +207,15 @@ end
     C_1 = TensISO{3}(60.0, 16.0)
     C_2 = TensISO{3}(90.0, 24.0)
     intf = MembraneInterface(0.1, 0.05)
-    sphere = LayeredSphere((0.5, 1.0), (C_1, C_2);
-                           interfaces = (intf, PerfectInterface()))
+    sphere = LayeredSphere(
+        (0.5, 1.0), (C_1, C_2);
+        interfaces = (intf, PerfectInterface())
+    )
     times = collect(0.0:0.5:1.0)
 
     β_alv = MeanFieldHom.Viscoelasticity.shear_localization_alv(
-        sphere, heaviside_law(C_M), times)
+        sphere, heaviside_law(C_M), times
+    )
     β_elas = MeanFieldHom.LayeredSpheres._shear_localization(sphere, C_M)
     for k in 1:2
         diag_β = [β_alv[k][i, i] for i in 1:length(times)]
@@ -252,8 +264,10 @@ end
 
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => heaviside_law(C_M)))
-    add_phase!(rve, :I, sphere, Dict(:C => heaviside_law(C_M));
-               fraction = f_I)
+    add_phase!(
+        rve, :I, sphere, Dict(:C => heaviside_law(C_M));
+        fraction = f_I
+    )
 
     C_alv = homogenize_alv(rve, Dilute(), :C; times = times)
     # Reference elastic dilute.
@@ -263,8 +277,10 @@ end
 
     for i in 1:n
         rows = (6 * (i - 1) + 1):(6 * i)
-        @test isapprox(C_alv[rows, rows], C_eff_elas_M;
-                       rtol = 1.0e-10, atol = 1.0e-10)
+        @test isapprox(
+            C_alv[rows, rows], C_eff_elas_M;
+            rtol = 1.0e-10, atol = 1.0e-10
+        )
         for j in 1:(i - 1)
             cols = (6 * (j - 1) + 1):(6 * j)
             @test maximum(abs, C_alv[rows, cols]) ≤ 1.0e-10
@@ -276,13 +292,17 @@ end
     # Reference values produced by `scripts/bench_echoes/bench_layered_alv.py`
     # (ECHOES Python `sphere_nlayers.layer_visco_eE` with `visco_paramsym(_, ISO)`).
     # Setup: Maxwell matrix, two elastic Heaviside layers.
-    k0   = 1.0; mu0   = 0.5
+    k0 = 1.0; mu0 = 0.5
     eta_k0 = 0.6; eta_mu0 = 2.0
     k1, mu1 = 2.0, 1.0   # core
     k2, mu2 = 3.0, 1.5   # shell
-    sphere = LayeredSphere((0.5^(1 / 3), 1.0),
-                            (heaviside_law(TensISO{3}(3 * k1, 2 * mu1)),
-                             heaviside_law(TensISO{3}(3 * k2, 2 * mu2))))
+    sphere = LayeredSphere(
+        (0.5^(1 / 3), 1.0),
+        (
+            heaviside_law(TensISO{3}(3 * k1, 2 * mu1)),
+            heaviside_law(TensISO{3}(3 * k2, 2 * mu2)),
+        )
+    )
     times = [0.0, 0.5, 1.0, 1.5, 2.0]
     C0_law = maxwell_iso(k0, mu0, eta_k0, eta_mu0)
 
@@ -290,8 +310,8 @@ end
     β_jl = MeanFieldHom.Viscoelasticity.shear_localization_alv(sphere, C0_law, times)
 
     # ECHOES Python diagonal (== single-time elastic limit) reference values.
-    α_py_diag_core  = [0.5952381, 0.4792996, 0.4792996, 0.4792996, 0.4792996]
-    β_py_diag_core  = [0.6503830, 0.5938882, 0.5938882, 0.5938882, 0.5938882]
+    α_py_diag_core = [0.5952381, 0.4792996, 0.4792996, 0.4792996, 0.4792996]
+    β_py_diag_core = [0.650383, 0.5938882, 0.5938882, 0.5938882, 0.5938882]
     α_py_diag_shell = [0.4761905, 0.3834397, 0.3834397, 0.3834397, 0.3834397]
     β_py_diag_shell = [0.5293026, 0.4816787, 0.4816787, 0.4816787, 0.4816787]
 
@@ -330,7 +350,9 @@ end
     N_elas_t0 = stiffness_contribution(sphere, C_M_t0)
     C_eff_t0 = C_M_t0 + 0.2 * N_elas_t0
     block11 = C_alv[1:6, 1:6]
-    @test isapprox(block11,
-                   MeanFieldHom.Viscoelasticity._tens_to_mandel66(C_eff_t0);
-                   rtol = 1.0e-10, atol = 1.0e-10)
+    @test isapprox(
+        block11,
+        MeanFieldHom.Viscoelasticity._tens_to_mandel66(C_eff_t0);
+        rtol = 1.0e-10, atol = 1.0e-10
+    )
 end

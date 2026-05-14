@@ -14,10 +14,14 @@ using ForwardDiff
 @testset "AmountParameter — round-trip & type promotion" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.2)
-    add_phase!(rve, :C, Ellipsoid(1.0, 1.0, 0.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               density = 0.1)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.2
+    )
+    add_phase!(
+        rve, :C, Ellipsoid(1.0, 1.0, 0.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        density = 0.1
+    )
 
     p_f = amount(:I)
     p_e = amount(:C)
@@ -53,31 +57,35 @@ end
 @testset "PropertyParameter — TensISO selectors" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.2)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.2
+    )
 
     # bulk / shear named selectors map to indices 1, 2 of TensISO{4,3}
-    @test get_param(rve, property(:I, :C, :bulk))  ≈ 60.0
+    @test get_param(rve, property(:I, :C, :bulk)) ≈ 60.0
     @test get_param(rve, property(:I, :C, :shear)) ≈ 20.0
-    @test get_param(rve, property(:I, :C, :K))     ≈ 60.0
-    @test get_param(rve, property(:I, :C, :μ))     ≈ 20.0
-    @test get_param(rve, property(:I, :C, 1))      ≈ 60.0
-    @test get_param(rve, property(:I, :C, 2))      ≈ 20.0
+    @test get_param(rve, property(:I, :C, :K)) ≈ 60.0
+    @test get_param(rve, property(:I, :C, :μ)) ≈ 20.0
+    @test get_param(rve, property(:I, :C, 1)) ≈ 60.0
+    @test get_param(rve, property(:I, :C, 2)) ≈ 20.0
 
     # set_param: bulk replaced, shear preserved
     rve2 = set_param(rve, property(:I, :C, :bulk), 90.0)
-    @test get_param(rve2, property(:I, :C, :bulk))  ≈ 90.0
+    @test get_param(rve2, property(:I, :C, :bulk)) ≈ 90.0
     @test get_param(rve2, property(:I, :C, :shear)) ≈ 20.0    # unchanged
 
     # Original tensor reference untouched
-    @test get_param(rve, property(:I, :C, :bulk))  ≈ 60.0
+    @test get_param(rve, property(:I, :C, :bulk)) ≈ 60.0
 end
 
 @testset "PropertyParameter — error on unknown selector" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.2)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.2
+    )
 
     @test_throws ArgumentError get_param(rve, property(:I, :C, :nonexistent))
     @test_throws ArgumentError get_param(rve, property(:I, :K, :scalar))   # no :K key
@@ -85,10 +93,14 @@ end
 
 @testset "GeometryParameter — Ellipsoid semi_axes" begin
     rve = RVE(:M)
-    add_matrix!(rve, Ellipsoid(2.0, 1.5, 1.0),
-                Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0, 1.0, 0.5),
-                Dict(:C => TensISO{3}(60.0, 20.0)); fraction = 0.2)
+    add_matrix!(
+        rve, Ellipsoid(2.0, 1.5, 1.0),
+        Dict(:C => TensISO{3}(30.0, 10.0))
+    )
+    add_phase!(
+        rve, :I, Ellipsoid(1.0, 1.0, 0.5),
+        Dict(:C => TensISO{3}(60.0, 20.0)); fraction = 0.2
+    )
 
     p_a3 = geometry(:I, :semi_axes, 3)
     p_a1 = geometry(:I, :semi_axes, 1)
@@ -113,8 +125,10 @@ end
     shape = Ellipsoid(2.0, 1.0, 0.5)
     rve = RVE(:M; distribution_shape = shape)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.2)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.2
+    )
 
     p_d2 = shape_param(:semi_axes, 2)
     @test get_param(rve, p_d2) ≈ 1.0
@@ -129,8 +143,10 @@ end
 @testset "_set_many — batch composition" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.2)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.2
+    )
 
     ps = [amount(:I), property(:I, :C, :bulk), property(:M, :C, :shear)]
     vs = [0.3, 90.0, 12.0]

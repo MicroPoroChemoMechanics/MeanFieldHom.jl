@@ -168,29 +168,31 @@ _resolve_selector(::TensND.TensTI{2}, sel::Symbol) =
 # TensTI{4, T, 5} — major-symmetric : (ℓ₁, ℓ₂, ℓ₃, ℓ₅, ℓ₆) with ℓ₄ = ℓ₃
 _resolve_selector(::TensND.TensTI{4, T, 5}, sel::Symbol) where {T} = begin
     sel === :ℓ₁ || sel === :l1 ? 1 :
-    sel === :ℓ₂ || sel === :l2 ? 2 :
-    sel === :ℓ₃ || sel === :l3 || sel === :ℓ₄ || sel === :l4 ? 3 :
-    sel === :ℓ₅ || sel === :l5 ? 4 :
-    sel === :ℓ₆ || sel === :l6 ? 5 :
-    throw(ArgumentError("TensTI{4} (major-sym) accepts :ℓ₁..:ℓ₆ (with ℓ₃=ℓ₄); got :$(sel)"))
+        sel === :ℓ₂ || sel === :l2 ? 2 :
+        sel === :ℓ₃ || sel === :l3 || sel === :ℓ₄ || sel === :l4 ? 3 :
+        sel === :ℓ₅ || sel === :l5 ? 4 :
+        sel === :ℓ₆ || sel === :l6 ? 5 :
+        throw(ArgumentError("TensTI{4} (major-sym) accepts :ℓ₁..:ℓ₆ (with ℓ₃=ℓ₄); got :$(sel)"))
 end
 
 # TensTI{4, T, 6} — general : (ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆)
 _resolve_selector(::TensND.TensTI{4, T, 6}, sel::Symbol) where {T} = begin
     sel === :ℓ₁ || sel === :l1 ? 1 :
-    sel === :ℓ₂ || sel === :l2 ? 2 :
-    sel === :ℓ₃ || sel === :l3 ? 3 :
-    sel === :ℓ₄ || sel === :l4 ? 4 :
-    sel === :ℓ₅ || sel === :l5 ? 5 :
-    sel === :ℓ₆ || sel === :l6 ? 6 :
-    throw(ArgumentError("TensTI{4} general accepts :ℓ₁..:ℓ₆ ; got :$(sel)"))
+        sel === :ℓ₂ || sel === :l2 ? 2 :
+        sel === :ℓ₃ || sel === :l3 ? 3 :
+        sel === :ℓ₄ || sel === :l4 ? 4 :
+        sel === :ℓ₅ || sel === :l5 ? 5 :
+        sel === :ℓ₆ || sel === :l6 ? 6 :
+        throw(ArgumentError("TensTI{4} general accepts :ℓ₁..:ℓ₆ ; got :$(sel)"))
 end
 
 _resolve_selector(_, sel::Int) = sel
 
-_resolve_selector(t::TensND.AbstractTens, sel::Symbol) = throw(ArgumentError(
-    "no named selector :$(sel) defined for tensor of type $(typeof(t)); use an Int positional index"
-))
+_resolve_selector(t::TensND.AbstractTens, sel::Symbol) = throw(
+    ArgumentError(
+        "no named selector :$(sel) defined for tensor of type $(typeof(t)); use an Int positional index"
+    )
+)
 
 # =============================================================================
 #  Tensor reconstruction with one coefficient replaced
@@ -208,9 +210,11 @@ Return a new tensor of the same structural type as `t`, with the scalar
 at index `i` (in `get_data`) replaced by `v`. The element type is
 promoted to absorb `typeof(v)`.
 """
-_replace_data_at(t, i, v) = throw(ArgumentError(
-    "_replace_data_at not implemented for tensor of type $(typeof(t)); add a method"
-))
+_replace_data_at(t, i, v) = throw(
+    ArgumentError(
+        "_replace_data_at not implemented for tensor of type $(typeof(t)); add a method"
+    )
+)
 
 function _replace_data_at(t::TensND.TensISO{order, dim, T, N}, i::Int, v::Tv) where {order, dim, T, N, Tv}
     Tnew = promote_type(T, Tv)
@@ -221,7 +225,7 @@ end
 function _replace_data_at(t::TensND.TensTI{order, T, N}, i::Int, v::Tv) where {order, T, N, Tv}
     Tnew = promote_type(T, Tv)
     new_data = ntuple(k -> k == i ? convert(Tnew, v) : convert(Tnew, t.data[k]), N)
-    new_n    = ntuple(k -> convert(Tnew, t.n[k]), 3)
+    new_n = ntuple(k -> convert(Tnew, t.n[k]), 3)
     return TensND.TensTI{order, Tnew, N}(new_data, new_n)
 end
 
@@ -258,13 +262,17 @@ function _replace_geom_field end
 # (e.g. `MyBlob{T<:Number}` with two `T`-typed fields).
 @generated function _replace_geom_field(geom, ::Val{name}, ::Nothing, value) where {name}
     fields = fieldnames(geom)
-    name in fields || return :(throw(ArgumentError(
-        "geometry type $(typeof(geom)) has no field :$($(QuoteNode(name)))"
-    )))
+    name in fields || return :(
+        throw(
+            ArgumentError(
+                "geometry type $(typeof(geom)) has no field :$($(QuoteNode(name)))"
+            )
+        )
+    )
     types = [fieldtype(geom, f) for f in fields]
     # Identify numeric-valued fields whose type may need promotion.
-    nums  = [t <: Number for t in types]
-    args  = Any[]
+    nums = [t <: Number for t in types]
+    args = Any[]
     for (i, f) in enumerate(fields)
         if f === name
             push!(args, :(__T(value)))
@@ -284,17 +292,25 @@ function _replace_geom_field end
             push!(sibling_types.args, :(typeof(getfield(geom, $(QuoteNode(f))))))
         end
     end
-    return :(let __T = $(sibling_types); $(UA)($(args...)) end)
+    return :(
+        let __T = $(sibling_types)
+            $(UA)($(args...))
+        end
+    )
 end
 
 @generated function _replace_geom_field(geom, ::Val{name}, idx::Int, value) where {name}
     fields = fieldnames(geom)
-    name in fields || return :(throw(ArgumentError(
-        "geometry type $(typeof(geom)) has no field :$($(QuoteNode(name)))"
-    )))
+    name in fields || return :(
+        throw(
+            ArgumentError(
+                "geometry type $(typeof(geom)) has no field :$($(QuoteNode(name)))"
+            )
+        )
+    )
     types = [fieldtype(geom, f) for f in fields]
-    nums  = [t <: Number for t in types]
-    args  = Any[]
+    nums = [t <: Number for t in types]
+    args = Any[]
     for (i, f) in enumerate(fields)
         if f === name
             # tuple field: replace at idx, promote across siblings + value
@@ -313,7 +329,11 @@ end
             push!(sibling_types.args, :(typeof(getfield(geom, $(QuoteNode(f))))))
         end
     end
-    return :(let __T = $(sibling_types); $(UA)($(args...)) end)
+    return :(
+        let __T = $(sibling_types)
+            $(UA)($(args...))
+        end
+    )
 end
 
 # Tuple element replacement with explicit promoted type (used by @generated
@@ -336,18 +356,22 @@ end
 # inner-constructor arguments.
 
 # Ellipsoid{dim, S, T, B} — preserves `dim, S, B`, recomputes `T`.
-function _replace_geom_field(geom::Ellipsoid{dim, S, T, B},
-                             ::Val{:semi_axes},
-                             idx::Int, value::Tv) where {dim, S, T, B, Tv}
+function _replace_geom_field(
+        geom::Ellipsoid{dim, S, T, B},
+        ::Val{:semi_axes},
+        idx::Int, value::Tv
+    ) where {dim, S, T, B, Tv}
     Tnew = promote_type(T, Tv)
     new_axes = ntuple(k -> k == idx ? convert(Tnew, value) : convert(Tnew, geom.semi_axes[k]), dim)
     return Ellipsoid{dim, S, Tnew, B}(new_axes, geom.basis)
 end
 
-function _replace_geom_field(geom::Ellipsoid{dim, S, T, B},
-                             ::Val{:semi_axes},
-                             ::Nothing,
-                             value::NTuple{dim, Tv}) where {dim, S, T, B, Tv}
+function _replace_geom_field(
+        geom::Ellipsoid{dim, S, T, B},
+        ::Val{:semi_axes},
+        ::Nothing,
+        value::NTuple{dim, Tv}
+    ) where {dim, S, T, B, Tv}
     Tnew = promote_type(T, Tv)
     new_axes = ntuple(k -> convert(Tnew, value[k]), dim)
     return Ellipsoid{dim, S, Tnew, B}(new_axes, geom.basis)
@@ -373,16 +397,20 @@ Immutable reconstruction of a `RVE` with a subset of fields replaced.
 Preserves `phase_names` (insertion order) and recomputes the parametric
 type `RVE{T, S}` from the new `amounts` and `distribution_shape`.
 """
-function _rebuild_rve(rve::RVE;
-                      phases   = rve.phases,
-                      amounts  = rve.amounts,
-                      symmetrize = rve.symmetrize,
-                      distribution_shape = rve.distribution_shape)
+function _rebuild_rve(
+        rve::RVE;
+        phases = rve.phases,
+        amounts = rve.amounts,
+        symmetrize = rve.symmetrize,
+        distribution_shape = rve.distribution_shape
+    )
     # Determine the new amount eltype T from the dict's value type.
     T = isempty(amounts) ? eltype(rve) : eltype(valtype(amounts))
     S = typeof(distribution_shape)
-    return RVE{T, S}(rve.matrix_name, copy(rve.phase_names),
-                     phases, amounts, symmetrize, distribution_shape)
+    return RVE{T, S}(
+        rve.matrix_name, copy(rve.phase_names),
+        phases, amounts, symmetrize, distribution_shape
+    )
 end
 
 Base.eltype(::Type{<:RVE{T}}) where {T} = T
@@ -400,8 +428,10 @@ end
 # Same dict but with one entry replaced by `new_amount` (any type that subtypes
 # AbstractAmount). The new dict's eltype is inferred from the union of the
 # replaced amount's eltype and the existing entries.
-function _amounts_with_replacement(amounts::AbstractDict, name::Symbol,
-                                   new_amount::AbstractAmount)
+function _amounts_with_replacement(
+        amounts::AbstractDict, name::Symbol,
+        new_amount::AbstractAmount
+    )
     # Compute promoted eltype.
     Tnew = eltype(new_amount)
     for (k, v) in amounts
@@ -452,9 +482,11 @@ function get_param(rve::RVE, p::AmountParameter)
 end
 
 function set_param(rve::RVE, p::AmountParameter, value)
-    p.phase === rve.matrix_name && throw(ArgumentError(
-        "matrix amount is implicit (1 - Σ f_inc); differentiate w.r.t. an inclusion amount instead"
-    ))
+    p.phase === rve.matrix_name && throw(
+        ArgumentError(
+            "matrix amount is implicit (1 - Σ f_inc); differentiate w.r.t. an inclusion amount instead"
+        )
+    )
     haskey(rve.amounts, p.phase) ||
         throw(ArgumentError("phase :$(p.phase) has no amount in RVE"))
     old = rve.amounts[p.phase]
@@ -521,18 +553,22 @@ end
 
 function get_param(rve::RVE, p::DistributionShapeParameter)
     ds = rve.distribution_shape
-    ds isa UniformDistribution || throw(ArgumentError(
-        "distribution shape parameter only supported for UniformDistribution; got $(typeof(ds))"
-    ))
+    ds isa UniformDistribution || throw(
+        ArgumentError(
+            "distribution shape parameter only supported for UniformDistribution; got $(typeof(ds))"
+        )
+    )
     val = getfield(ds.shape, p.field)
     return p.index === nothing ? val : val[p.index]
 end
 
 function set_param(rve::RVE, p::DistributionShapeParameter, value)
     ds = rve.distribution_shape
-    ds isa UniformDistribution || throw(ArgumentError(
-        "distribution shape parameter only supported for UniformDistribution; got $(typeof(ds))"
-    ))
+    ds isa UniformDistribution || throw(
+        ArgumentError(
+            "distribution shape parameter only supported for UniformDistribution; got $(typeof(ds))"
+        )
+    )
     new_shape = _replace_geom_field(ds.shape, Val(p.field), p.index, value)
     new_ds = UniformDistribution(new_shape)
     return _rebuild_rve(rve; distribution_shape = new_ds)
@@ -555,9 +591,11 @@ amounts), a future optimisation could fuse the passes. Correctness is
 preserved by composition.
 """
 function _set_many(rve::RVE, params::AbstractVector{<:AbstractParameter}, values::AbstractVector)
-    length(params) == length(values) || throw(ArgumentError(
-        "params and values must have the same length"
-    ))
+    length(params) == length(values) || throw(
+        ArgumentError(
+            "params and values must have the same length"
+        )
+    )
     out = rve
     for (p, v) in zip(params, values)
         out = set_param(out, p, v)

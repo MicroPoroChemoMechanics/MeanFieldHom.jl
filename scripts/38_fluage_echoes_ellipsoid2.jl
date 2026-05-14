@@ -52,15 +52,15 @@ const _K_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(𝕂₄)
 
 # Matrix law (Js, CREEP).
 const Js = (t, tp) -> begin
-    α = fk(tp) / (3 * kₛ) + 1e-1 / kₛ * log(1 + (t - tp) / 2.0)
-    β = fμ(tp) / (2 * μₛ) + 1e-1 / μₛ * log(1 + (t - tp) / 1.0)
+    α = fk(tp) / (3 * kₛ) + 1.0e-1 / kₛ * log(1 + (t - tp) / 2.0)
+    β = fμ(tp) / (2 * μₛ) + 1.0e-1 / μₛ * log(1 + (t - tp) / 1.0)
     return α .* _J_M .+ β .* _K_M
 end
 const law_M = ViscoLaw(Js, :creep)
 
 # Inclusion law : near-rigid stiffness (pore-like = inverse).  Same
 # Mandel matrix at all times → trivial creep matrix.
-const Cᵢ_inv = (1.0 / 1e6) * Matrix{Float64}(I, 6, 6)
+const Cᵢ_inv = (1.0 / 1.0e6) * Matrix{Float64}(I, 6, 6)
 const Ji_const = (t, tp) -> Cᵢ_inv
 const law_I = ViscoLaw(Ji_const, :creep)
 
@@ -72,8 +72,10 @@ function build_rve(omega, f)
     sh = omega == 1.0 ? Ellipsoid(1.0, 1.0, 1.0) : Spheroid(omega)
     # Mirrors the ECHOES `symmetrize=[ISO]` keyword: orientation-average
     # the inclusion's stiffness contribution to iso form.
-    add_phase!(rve, :I, sh, Dict(:C => law_I);
-               fraction = f, symmetrize = :iso)
+    add_phase!(
+        rve, :I, sh, Dict(:C => law_I);
+        fraction = f, symmetrize = :iso
+    )
     return rve
 end
 
@@ -108,10 +110,12 @@ function build_grid(t0, n)
     end
 end
 
-plt = plot(layout = (1, 1), size = (1100, 700),
-           title = "ALV solid + spheroidal rigid inclusion — MT vs DIFF vs SC",
-           xlabel = "t", ylabel = "Eˢ · Jₑʰᵒᵐ(t)",
-           legend = :topright)
+plt = plot(
+    layout = (1, 1), size = (1100, 700),
+    title = "ALV solid + spheroidal rigid inclusion — MT vs DIFF vs SC",
+    xlabel = "t", ylabel = "Eˢ · Jₑʰᵒᵐ(t)",
+    legend = :topright
+)
 
 # Pre-compute the elastic limit at each loading time for the dashed
 # reference curves (ECHOES Python plots `1/C.E` per t with the SAME
@@ -125,8 +129,10 @@ function elastic_compliance(omega, f, t, sch::HomogenizationScheme)
     add_matrix!(rve_e, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_M_t))
     sh = omega == 1.0 ? Ellipsoid(1.0, 1.0, 1.0) : Spheroid(omega)
     C_I_t = TensISO{3}(3.0e6, 2.0e6)
-    add_phase!(rve_e, :I, sh, Dict(:C => C_I_t);
-               fraction = f, symmetrize = :iso)
+    add_phase!(
+        rve_e, :I, sh, Dict(:C => C_I_t);
+        fraction = f, symmetrize = :iso
+    )
     C_eff = homogenize(rve_e, sch, :C)
     arr = TensND.get_array(C_eff)
     α_eff = arr[1, 1, 1, 1] + 2 * arr[1, 1, 2, 2]
@@ -154,27 +160,33 @@ for (i_sch, sch) in enumerate(scheme_v)
                     :black
                 end
                 lbl_main = (t0 == 0.0) ?
-                      @sprintf("%s f=%.1f ω=%.1f", scheme_lbl[i_sch], f, omega) :
-                      ""
+                    @sprintf("%s f=%.1f ω=%.1f", scheme_lbl[i_sch], f, omega) :
+                    ""
                 lbl_elas = (t0 == 0.0 && i_sch == 1) ?
-                      @sprintf("elastic ref. f=%.1f ω=%.1f", f, omega) :
-                      ""
+                    @sprintf("elastic ref. f=%.1f ω=%.1f", f, omega) :
+                    ""
                 try
                     R̃ = homogenize_alv(rve, sch, :C; times = T)
                     n = length(T)
                     Jhom = uniaxial_creep_curve(R̃, n)
                     # ALV creep response: solid for MT, thicker dotted for SC
-                    plot!(plt, T, Jhom; color = col,
-                          linestyle = lstyles[i_sch],
-                          linewidth = (i_sch == 3 ? 2.5 :
-                                       i_sch == 2 ? 1.7 : 1.5),
-                          label = lbl_main)
+                    plot!(
+                        plt, T, Jhom; color = col,
+                        linestyle = lstyles[i_sch],
+                        linewidth = (
+                            i_sch == 3 ? 2.5 :
+                                i_sch == 2 ? 1.7 : 1.5
+                        ),
+                        label = lbl_main
+                    )
                     # Per-loading-time elastic reference for THIS scheme
                     Jelas = [elastic_compliance(omega, f, t, sch) for t in T]
-                    plot!(plt, T, Jelas; color = col,
-                          linestyle = elastic_lstyles[i_sch],
-                          linewidth = 1.0,
-                          label = lbl_elas)
+                    plot!(
+                        plt, T, Jelas; color = col,
+                        linestyle = elastic_lstyles[i_sch],
+                        linewidth = 1.0,
+                        label = lbl_elas
+                    )
                 catch e
                     @warn "Skipping" sch omega f t0 exception = e
                 end
@@ -198,10 +210,12 @@ println("Saved : $out")
 const omega_sweep = (2.0, 1.0, 0.5, 0.2, 0.1)
 const omega_palette = (:purple, :blue, :teal, :orange, :red)
 
-plt2 = plot(layout = (1, 1), size = (1100, 700),
-            title = "ALV — SC vs MT, varying ω at f = 0.4",
-            xlabel = "t", ylabel = "Eˢ · Jₑʰᵒᵐ(t)",
-            legend = :topright)
+plt2 = plot(
+    layout = (1, 1), size = (1100, 700),
+    title = "ALV — SC vs MT, varying ω at f = 0.4",
+    xlabel = "t", ylabel = "Eˢ · Jₑʰᵒᵐ(t)",
+    legend = :topright
+)
 
 const f_sc = 0.4
 for (i_sch, sch) in enumerate(scheme_v)
@@ -210,24 +224,30 @@ for (i_sch, sch) in enumerate(scheme_v)
         for (omega, col) in zip(omega_sweep, omega_palette)
             rve = build_rve(omega, f_sc)
             lbl_main = (t0 == 0.0) ?
-                  @sprintf("%s ω=%.2f", scheme_lbl[i_sch], omega) :
-                  ""
+                @sprintf("%s ω=%.2f", scheme_lbl[i_sch], omega) :
+                ""
             lbl_elas = (t0 == 0.0 && i_sch == 2) ?
-                  @sprintf("elastic %s ω=%.2f", scheme_lbl[i_sch], omega) :
-                  ""
+                @sprintf("elastic %s ω=%.2f", scheme_lbl[i_sch], omega) :
+                ""
             try
                 R̃ = homogenize_alv(rve, sch, :C; times = T)
                 n = length(T)
                 Jhom = uniaxial_creep_curve(R̃, n)
-                plot!(plt2, T, Jhom; color = col,
-                      linestyle = lstyles[i_sch],
-                      linewidth = (i_sch == 3 ? 2.5 :
-                                   i_sch == 2 ? 1.7 : 1.5),
-                      label = lbl_main)
+                plot!(
+                    plt2, T, Jhom; color = col,
+                    linestyle = lstyles[i_sch],
+                    linewidth = (
+                        i_sch == 3 ? 2.5 :
+                            i_sch == 2 ? 1.7 : 1.5
+                    ),
+                    label = lbl_main
+                )
                 Jelas = [elastic_compliance(omega, f_sc, t, sch) for t in T]
-                plot!(plt2, T, Jelas; color = col,
-                      linestyle = elastic_lstyles[i_sch],
-                      linewidth = 1.0, label = lbl_elas)
+                plot!(
+                    plt2, T, Jelas; color = col,
+                    linestyle = elastic_lstyles[i_sch],
+                    linewidth = 1.0, label = lbl_elas
+                )
             catch e
                 @warn "Skipping" sch omega t0 exception = e
             end

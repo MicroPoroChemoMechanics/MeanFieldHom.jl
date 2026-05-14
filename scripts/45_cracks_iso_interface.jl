@@ -41,9 +41,9 @@ using Plots
 
 # ─── Common parameters ────────────────────────────────────────────────────
 
-const ω      = 1.0e-3
-const k_o    = 1.0e-9
-const K_t    = 1.0
+const ω = 1.0e-3
+const k_o = 1.0e-9
+const K_t = 1.0
 const E_s, ν_s = 1.0, 0.25
 const k_s = E_s / (3 * (1 - 2 * ν_s))
 const μ_s = E_s / (2 * (1 + ν_s))
@@ -51,9 +51,11 @@ const C_s = TensISO{3}(3 * k_s, 2 * μ_s)
 const K_s = TensISO{3}(k_o)
 
 const DENS = collect(range(0.0, 1.0; length = 30))
-const SCHEME_NAMES   = ("MT", "SC", "ASC", "DIFF", "PCW", "MAX")
-const SCHEME_COLOURS = Dict("MT"=>:black, "SC"=>:red, "ASC"=>:orange,
-                              "DIFF"=>:blue, "PCW"=>:green, "MAX"=>:purple)
+const SCHEME_NAMES = ("MT", "SC", "ASC", "DIFF", "PCW", "MAX")
+const SCHEME_COLOURS = Dict(
+    "MT" => :black, "SC" => :red, "ASC" => :orange,
+    "DIFF" => :blue, "PCW" => :green, "MAX" => :purple
+)
 
 # ─── ECHOES side via PyCall ────────────────────────────────────────────────
 
@@ -115,19 +117,21 @@ end
 #              translation for thin oblate spheroids).
 
 const JULIA_SCHEME_OBJ = Dict(
-    "MT"   => MoriTanaka(),
-    "SC"   => SelfConsistent(),
-    "ASC"  => AsymmetricSelfConsistent(),
+    "MT" => MoriTanaka(),
+    "SC" => SelfConsistent(),
+    "ASC" => AsymmetricSelfConsistent(),
     "DIFF" => DifferentialScheme(; nsteps = 100),
-    "PCW"  => PonteCastanedaWillis(),
-    "MAX"  => Maxwell(),
+    "PCW" => PonteCastanedaWillis(),
+    "MAX" => Maxwell(),
 )
 
 function _build_rve_elastic(d::Real)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_s))
-    add_phase!(rve, :CRACK, PennyCrack(1.0), Dict(:C => C_s);
-                density = d, symmetrize = :iso)
+    add_phase!(
+        rve, :CRACK, PennyCrack(1.0), Dict(:C => C_s);
+        density = d, symmetrize = :iso
+    )
     return rve
 end
 
@@ -137,16 +141,20 @@ function _build_rve_conduction(d::Real)
     # Thin spheroid (aspect ratio ω) with high conductivity ; volume
     # fraction ↔ density translation : f ≈ (4π/3) · ε · ω.
     f = (4π / 3) * d * ω
-    add_phase!(rve, :CRACK_K, Spheroid(ω),
-                Dict(:K => TensISO{3}(K_t));
-                fraction = f, symmetrize = :iso)
+    add_phase!(
+        rve, :CRACK_K, Spheroid(ω),
+        Dict(:K => TensISO{3}(K_t));
+        fraction = f, symmetrize = :iso
+    )
     return rve
 end
 
 function _kμK_julia(scheme, d::Real)
     extra_kw = scheme isa Union{SelfConsistent, AsymmetricSelfConsistent} ?
-        (; abstol = 1e-9, reltol = 1e-7, maxiters = 500,
-            select_best = true, damping = 0.3) : (;)
+        (;
+            abstol = 1.0e-9, reltol = 1.0e-7, maxiters = 500,
+            select_best = true, damping = 0.3,
+        ) : (;)
     k_r, μ_r, K_r = NaN, NaN, NaN
     rve_C = _build_rve_elastic(d)
     try
@@ -179,34 +187,50 @@ end
 
 # ─── Plot ──────────────────────────────────────────────────────────────────
 
-p_elastic = plot(xlabel = "crack density",
-                  ylabel = "k_eff/k_s,  μ_eff/μ_s",
-                  title  = "Elasticity (traction-free cracks)",
-                  legend = :bottomleft)
-p_perm    = plot(xlabel = "crack density",
-                  ylabel = "K_eff / (ω · K_t)",
-                  title  = "Conductivity (high-K thin spheroid)",
-                  legend = :topleft)
+p_elastic = plot(
+    xlabel = "crack density",
+    ylabel = "k_eff/k_s,  μ_eff/μ_s",
+    title = "Elasticity (traction-free cracks)",
+    legend = :bottomleft
+)
+p_perm = plot(
+    xlabel = "crack density",
+    ylabel = "K_eff / (ω · K_t)",
+    title = "Conductivity (high-K thin spheroid)",
+    legend = :topleft
+)
 
 for name in SCHEME_NAMES
     col = SCHEME_COLOURS[name]
     e = echoes_results[name]
     j = julia_results[name]
-    plot!(p_elastic, DENS, e.k;
-          color = col, linestyle = :solid, linewidth = 1.6,
-          label = "ECHOES k $name")
-    plot!(p_elastic, DENS, e.μ;
-          color = col, linestyle = :dash, linewidth = 1.6, alpha = 0.6,
-          label = "ECHOES μ $name")
-    scatter!(p_elastic, DENS, j.k;
-             color = col, marker = :circle, markersize = 3, label = "")
-    scatter!(p_elastic, DENS, j.μ;
-             color = col, marker = :diamond, markersize = 3, alpha = 0.6,
-             label = "")
-    plot!(p_perm, DENS, e.K;
-          color = col, linestyle = :solid, linewidth = 1.6, label = "ECHOES $name")
-    scatter!(p_perm, DENS, j.K;
-             color = col, marker = :circle, markersize = 3, label = "Julia $name")
+    plot!(
+        p_elastic, DENS, e.k;
+        color = col, linestyle = :solid, linewidth = 1.6,
+        label = "ECHOES k $name"
+    )
+    plot!(
+        p_elastic, DENS, e.μ;
+        color = col, linestyle = :dash, linewidth = 1.6, alpha = 0.6,
+        label = "ECHOES μ $name"
+    )
+    scatter!(
+        p_elastic, DENS, j.k;
+        color = col, marker = :circle, markersize = 3, label = ""
+    )
+    scatter!(
+        p_elastic, DENS, j.μ;
+        color = col, marker = :diamond, markersize = 3, alpha = 0.6,
+        label = ""
+    )
+    plot!(
+        p_perm, DENS, e.K;
+        color = col, linestyle = :solid, linewidth = 1.6, label = "ECHOES $name"
+    )
+    scatter!(
+        p_perm, DENS, j.K;
+        color = col, marker = :circle, markersize = 3, label = "Julia $name"
+    )
 end
 
 fig = plot(p_elastic, p_perm; layout = (1, 2), size = (1500, 700))
@@ -227,11 +251,13 @@ i_05 = argmin(abs.(DENS .- 0.5))
 for name in SCHEME_NAMES
     j = julia_results[name]
     e = echoes_results[name]
-    for (qty, jq, eq) in (("k", j.k[i_05], e.k[i_05]),
-                            ("μ", j.μ[i_05], e.μ[i_05]),
-                            ("K", j.K[i_05], e.K[i_05]))
+    for (qty, jq, eq) in (
+            ("k", j.k[i_05], e.k[i_05]),
+            ("μ", j.μ[i_05], e.μ[i_05]),
+            ("K", j.K[i_05], e.K[i_05]),
+        )
         rel = isnan(jq) || isnan(eq) || iszero(eq) ? NaN :
-              abs(jq - eq) / abs(eq)
+            abs(jq - eq) / abs(eq)
         @printf "  %-4s  %-7s  %-12.4e %-12.4e %-12.2e\n" name qty jq eq rel
     end
 end

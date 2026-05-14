@@ -37,10 +37,12 @@ and the three shears are each `𝟙`.
 @inline function _ortho_identity(n::Int, T::Type)
     Iₙ = Matrix{T}(LinearAlgebra.I, n, n)
     Zₙ = zeros(T, n, n)
-    return (Iₙ, copy(Zₙ), copy(Zₙ),
-            copy(Zₙ), copy(Iₙ), copy(Zₙ),
-            copy(Zₙ), copy(Zₙ), copy(Iₙ),
-            copy(Iₙ), copy(Iₙ), copy(Iₙ))
+    return (
+        Iₙ, copy(Zₙ), copy(Zₙ),
+        copy(Zₙ), copy(Iₙ), copy(Zₙ),
+        copy(Zₙ), copy(Zₙ), copy(Iₙ),
+        copy(Iₙ), copy(Iₙ), copy(Iₙ),
+    )
 end
 
 """
@@ -48,8 +50,10 @@ end
 
 In-place ortho scalar AXPY: `acc[k] .+= c · a[k]` for k = 1..12.
 """
-@inline function _ortho_add!(acc::NTuple{12, <:Matrix}, c::Real,
-                              a::NTuple{12, <:Matrix})
+@inline function _ortho_add!(
+        acc::NTuple{12, <:Matrix}, c::Real,
+        a::NTuple{12, <:Matrix}
+    )
     @inbounds for k in 1:12
         @. acc[k] += c * a[k]
     end
@@ -88,9 +92,11 @@ In-place ortho Volterra product.  27 `mul!` for the normal block + 3
 for the shears.  No allocation when `out`'s components are sized
 correctly.
 """
-@inline function _ortho_prod!(out::NTuple{12, <:Matrix},
-                                a::NTuple{12, <:Matrix},
-                                b::NTuple{12, <:Matrix})
+@inline function _ortho_prod!(
+        out::NTuple{12, <:Matrix},
+        a::NTuple{12, <:Matrix},
+        b::NTuple{12, <:Matrix}
+    )
     T = eltype(out[1])
     one_T = one(T)
     # Normal 3×3 block c_{ij} = Σ_k a_{ik} · b_{kj}
@@ -123,9 +129,11 @@ end
 
 @inline function _ortho_pack_normal(a::NTuple{12, <:Matrix})
     n = size(a[1], 1)
-    T = promote_type(eltype(a[1]), eltype(a[2]), eltype(a[3]),
-                     eltype(a[4]), eltype(a[5]), eltype(a[6]),
-                     eltype(a[7]), eltype(a[8]), eltype(a[9]))
+    T = promote_type(
+        eltype(a[1]), eltype(a[2]), eltype(a[3]),
+        eltype(a[4]), eltype(a[5]), eltype(a[6]),
+        eltype(a[7]), eltype(a[8]), eltype(a[9])
+    )
     M = zeros(T, 3 * n, 3 * n)
     @inbounds for i in 1:n, j in 1:n
         r = 3 * (i - 1)
@@ -176,10 +184,12 @@ function _ortho_inv(a::NTuple{12, <:Matrix})
     o10 = volterra_inverse(a[10]; block_size = 1)
     o11 = volterra_inverse(a[11]; block_size = 1)
     o12 = volterra_inverse(a[12]; block_size = 1)
-    return (o_norm[1], o_norm[2], o_norm[3],
-            o_norm[4], o_norm[5], o_norm[6],
-            o_norm[7], o_norm[8], o_norm[9],
-            o10, o11, o12)
+    return (
+        o_norm[1], o_norm[2], o_norm[3],
+        o_norm[4], o_norm[5], o_norm[6],
+        o_norm[7], o_norm[8], o_norm[9],
+        o10, o11, o12,
+    )
 end
 
 """
@@ -189,8 +199,10 @@ Ortho form of the Volterra left-divide `T = S^{-vol} ∘ M`.  Solves the
 normal 3×3 part as a `(3n)×(3n)` block-Volterra system and the three
 scalar shears independently.
 """
-function _ortho_left_divide(S::NTuple{12, <:Matrix},
-                             M::NTuple{12, <:Matrix})
+function _ortho_left_divide(
+        S::NTuple{12, <:Matrix},
+        M::NTuple{12, <:Matrix}
+    )
     n = size(S[1], 1)
     S_pack = _ortho_pack_normal(S)
     M_pack = _ortho_pack_normal(M)
@@ -199,10 +211,12 @@ function _ortho_left_divide(S::NTuple{12, <:Matrix},
     o10 = volterra_left_divide(S[10], M[10]; block_size = 1)
     o11 = volterra_left_divide(S[11], M[11]; block_size = 1)
     o12 = volterra_left_divide(S[12], M[12]; block_size = 1)
-    return (o_norm[1], o_norm[2], o_norm[3],
-            o_norm[4], o_norm[5], o_norm[6],
-            o_norm[7], o_norm[8], o_norm[9],
-            o10, o11, o12)
+    return (
+        o_norm[1], o_norm[2], o_norm[3],
+        o_norm[4], o_norm[5], o_norm[6],
+        o_norm[7], o_norm[8], o_norm[9],
+        o10, o11, o12,
+    )
 end
 
 # ── Ortho form detection and conversion ────────────────────────────────────
@@ -255,10 +269,14 @@ end
 Extract the 12 ortho parameter matrices from a `(6n × 6n)` block matrix.
 Wrapper around [`ortho_params_from_blocks`](@ref).
 """
-@inline _ortho_pair(M::AbstractMatrix;
-                     axes::NTuple{3, NTuple{3}} = ((1.0, 0.0, 0.0),
-                                                    (0.0, 1.0, 0.0),
-                                                    (0.0, 0.0, 1.0))) =
+@inline _ortho_pair(
+    M::AbstractMatrix;
+    axes::NTuple{3, NTuple{3}} = (
+        (1.0, 0.0, 0.0),
+        (0.0, 1.0, 0.0),
+        (0.0, 0.0, 1.0),
+    )
+) =
     ortho_params_from_blocks(M; axes = axes)
 
 """
@@ -267,10 +285,14 @@ Wrapper around [`ortho_params_from_blocks`](@ref).
 Reassemble a `(6n × 6n)` ortho block matrix from the 12-tuple of Volterra
 parameter matrices.  Wrapper around [`ortho_blocks_from_params`](@ref).
 """
-@inline _ortho_blocks(o::NTuple{12, <:AbstractMatrix};
-                      axes::NTuple{3, NTuple{3}} = ((1.0, 0.0, 0.0),
-                                                     (0.0, 1.0, 0.0),
-                                                     (0.0, 0.0, 1.0))) =
+@inline _ortho_blocks(
+    o::NTuple{12, <:AbstractMatrix};
+    axes::NTuple{3, NTuple{3}} = (
+        (1.0, 0.0, 0.0),
+        (0.0, 1.0, 0.0),
+        (0.0, 0.0, 1.0),
+    )
+) =
     ortho_blocks_from_params(o; axes = axes)
 
 """
@@ -283,12 +305,14 @@ material frame.  Iso `α 𝕁 + β 𝕂` corresponds to:
 """
 function _iso_to_ortho(αβ::Tuple)
     α, β = αβ
-    diag = α ./ 3 .+ (2//3) .* β
-    off  = (α .- β) ./ 3
-    return (copy(diag), copy(off),  copy(off),
-            copy(off),  copy(diag), copy(off),
-            copy(off),  copy(off),  copy(diag),
-            copy(β),    copy(β),    copy(β))
+    diag = α ./ 3 .+ (2 // 3) .* β
+    off = (α .- β) ./ 3
+    return (
+        copy(diag), copy(off), copy(off),
+        copy(off), copy(diag), copy(off),
+        copy(off), copy(off), copy(diag),
+        copy(β), copy(β), copy(β),
+    )
 end
 
 """
@@ -301,16 +325,18 @@ the inclusion-ladder tests.
 function _ti_to_ortho(ℓ::NTuple{6, <:AbstractMatrix})
     s2 = sqrt(2)
     ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆ = ℓ
-    diag_in  = (ℓ₂ .+ ℓ₅) ./ 2
-    off_in   = (ℓ₂ .- ℓ₅) ./ 2
-    o3       = ℓ₄ ./ s2          # M[1,3]
-    o7       = ℓ₃ ./ s2          # M[3,1]
-    o6       = ℓ₄ ./ s2          # M[2,3]
-    o8       = ℓ₃ ./ s2          # M[3,2]
-    return (copy(diag_in), copy(off_in),  copy(o3),
-            copy(off_in),  copy(diag_in), copy(o6),
-            copy(o7),      copy(o8),      copy(ℓ₁),
-            copy(ℓ₆),      copy(ℓ₆),      copy(ℓ₅))
+    diag_in = (ℓ₂ .+ ℓ₅) ./ 2
+    off_in = (ℓ₂ .- ℓ₅) ./ 2
+    o3 = ℓ₄ ./ s2          # M[1,3]
+    o7 = ℓ₃ ./ s2          # M[3,1]
+    o6 = ℓ₄ ./ s2          # M[2,3]
+    o8 = ℓ₃ ./ s2          # M[3,2]
+    return (
+        copy(diag_in), copy(off_in), copy(o3),
+        copy(off_in), copy(diag_in), copy(o6),
+        copy(o7), copy(o8), copy(ℓ₁),
+        copy(ℓ₆), copy(ℓ₆), copy(ℓ₅),
+    )
 end
 
 # ── Ortho scheme implementations ────────────────────────────────────────────
@@ -352,9 +378,11 @@ end
 
 Ortho-form dilute concentration `Ã^dil = (𝟙 + P̃ ∘ ΔC̃)^{-vol}`.
 """
-function dilute_concentration_alv_ortho(o_E::NTuple{12, <:Matrix},
-                                          o_0::NTuple{12, <:Matrix},
-                                          o_P::NTuple{12, <:Matrix})
+function dilute_concentration_alv_ortho(
+        o_E::NTuple{12, <:Matrix},
+        o_0::NTuple{12, <:Matrix},
+        o_P::NTuple{12, <:Matrix}
+    )
     n = size(o_E[1], 1)
     T = promote_type(eltype(o_E[1]), eltype(o_0[1]), eltype(o_P[1]))
     Δ = ntuple(k -> o_E[k] .- o_0[k], 12)
@@ -369,9 +397,11 @@ end
 
 Ortho-form dilute contribution `Ñ = ΔC̃ ∘ Ã^dil`.
 """
-function dilute_contribution_alv_ortho(o_E::NTuple{12, <:Matrix},
-                                         o_0::NTuple{12, <:Matrix},
-                                         o_P::NTuple{12, <:Matrix})
+function dilute_contribution_alv_ortho(
+        o_E::NTuple{12, <:Matrix},
+        o_0::NTuple{12, <:Matrix},
+        o_P::NTuple{12, <:Matrix}
+    )
     A_dil = dilute_concentration_alv_ortho(o_E, o_0, o_P)
     Δ = ntuple(k -> o_E[k] .- o_0[k], 12)
     return _ortho_prod(Δ, A_dil)
@@ -382,9 +412,11 @@ end
 
 Ortho-form Dilute scheme: `o_eff = o_0 + Σ_r f_r · Ñ_r`.
 """
-function dilute_alv_ortho(o_0::NTuple{12, <:Matrix},
-                            contribs_ortho::AbstractVector,
-                            fractions::AbstractVector)
+function dilute_alv_ortho(
+        o_0::NTuple{12, <:Matrix},
+        contribs_ortho::AbstractVector,
+        fractions::AbstractVector
+    )
     length(contribs_ortho) == length(fractions) ||
         throw(ArgumentError("dilute_alv_ortho: phase counts mismatch"))
     out = ntuple(k -> copy(o_0[k]), 12)
@@ -401,9 +433,11 @@ end
 Ortho-form DiluteDual: invert to compliance ortho form, average, invert
 back.
 """
-function dilute_dual_alv_ortho(o_0::NTuple{12, <:Matrix},
-                                 contribs_compliance_ortho::AbstractVector,
-                                 fractions::AbstractVector)
+function dilute_dual_alv_ortho(
+        o_0::NTuple{12, <:Matrix},
+        contribs_compliance_ortho::AbstractVector,
+        fractions::AbstractVector
+    )
     o_J_0 = _ortho_inv(o_0)
     o_J_eff = dilute_alv_ortho(o_J_0, contribs_compliance_ortho, fractions)
     return _ortho_inv(o_J_eff)
@@ -417,10 +451,12 @@ Ortho-form Mori-Tanaka:
    `C̃_eff = C̃_0 + (Σ_r f_r Ñ_r) ∘ (f_0 𝟙 + Σ_s f_s Ã_s)^{-vol}`,
 all in ortho form.
 """
-function mori_tanaka_alv_ortho(o_0::NTuple{12, <:Matrix},
-                                 A_duts_ortho::AbstractVector,
-                                 contribs_ortho::AbstractVector,
-                                 fractions::AbstractVector, f_M::Real)
+function mori_tanaka_alv_ortho(
+        o_0::NTuple{12, <:Matrix},
+        A_duts_ortho::AbstractVector,
+        contribs_ortho::AbstractVector,
+        fractions::AbstractVector, f_M::Real
+    )
     length(A_duts_ortho) == length(contribs_ortho) == length(fractions) ||
         throw(ArgumentError("mori_tanaka_alv_ortho: phase counts mismatch"))
     n = size(o_0[1], 1)
@@ -441,10 +477,12 @@ end
 
 Ortho-form Maxwell scheme.
 """
-function maxwell_alv_ortho(o_0::NTuple{12, <:Matrix},
-                             contribs_ortho::AbstractVector,
-                             fractions::AbstractVector,
-                             o_H_0::NTuple{12, <:Matrix})
+function maxwell_alv_ortho(
+        o_0::NTuple{12, <:Matrix},
+        contribs_ortho::AbstractVector,
+        fractions::AbstractVector,
+        o_H_0::NTuple{12, <:Matrix}
+    )
     length(contribs_ortho) == length(fractions) ||
         throw(ArgumentError("maxwell_alv_ortho: phase counts mismatch"))
     n = size(o_0[1], 1)

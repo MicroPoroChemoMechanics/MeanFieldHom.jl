@@ -10,26 +10,28 @@ using Printf
 T_grid = [0.5, 0.7, 1.0, 1.5, 2.0]
 n = length(T_grid)
 
-k1 = 5.0 / (3 * (1 - 2*0.3))
+k1 = 5.0 / (3 * (1 - 2 * 0.3))
 mu1 = 5.0 / (2 * (1 + 0.3))
 eta1 = 1.0; gamma1 = 1.67
-kp = 1e-8 / (3 * (1 - 2*0.2))
-mup = 1e-8 / (2 * (1 + 0.2))
+kp = 1.0e-8 / (3 * (1 - 2 * 0.2))
+mup = 1.0e-8 / (2 * (1 + 0.2))
 t_set = 0.669
 
 C_p_tens = TensISO{3}(3 * kp, 2 * mup)
 R1 = maxwell_iso(k1, mu1, eta1, gamma1)
 
 # Build the same step kernel as Python (history-dep).
-step_law = ViscoLaw(function (t, tp)
-    if t < tp
-        return zero(C_p_tens)
-    elseif tp ≥ t_set
-        return R1.eval_fun(t, tp)
-    else
-        return C_p_tens
-    end
-end, :relaxation)
+step_law = ViscoLaw(
+    function (t, tp)
+        if t < tp
+            return zero(C_p_tens)
+        elseif tp ≥ t_set
+            return R1.eval_fun(t, tp)
+        else
+            return C_p_tens
+        end
+    end, :relaxation
+)
 
 R = trapezoidal_matrix(step_law, T_grid)
 α, β = iso_params_from_blocks(R)

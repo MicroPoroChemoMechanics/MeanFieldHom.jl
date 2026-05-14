@@ -173,7 +173,7 @@ scale-relative multiplicity test. Falls back to 1 if Q is identically zero.
         a = abs(c)
         a > s && (s = a)
     end
-    s == 0.0 ? 1.0 : s
+    return s == 0.0 ? 1.0 : s
 end
 
 """
@@ -216,13 +216,13 @@ list with its true multiplicity, even if no Bairstow root landed nearby.
 function _gather_almost_multiple_roots(
         Q::Polynomial,
         roots::AbstractVector{ComplexF64};
-        ε_poly::Float64    = 1.0e-3,
-        ε_match::Float64   = 1.0e-4,
+        ε_poly::Float64 = 1.0e-3,
+        ε_match::Float64 = 1.0e-4,
         ε_cluster::Float64 = 1.0e-3,
         ref::Union{Nothing, ComplexF64} = nothing
     )
     z_list = ComplexF64[r for r in roots]
-    mults  = Int[1 for _ in roots]
+    mults = Int[1 for _ in roots]
 
     # Insert the reference point at the beginning if it does not already
     # appear in the cluster list (needed so the log_I term sees its
@@ -323,9 +323,11 @@ function _residue_logI(P::Polynomial, Q::Polynomial, mult::Int)
         Q3 = derivative(Q2); q3 = Q3(z); Q4 = derivative(Q3); q4 = Q4(z)
         t1 = q2 * q2
         t7 = q3 * q3
-        return (-99.0 * t1 * p0 - 15.0 * p0 * q2 * q4 + 20.0 * t7 * p0
+        return (
+            -99.0 * t1 * p0 - 15.0 * p0 * q2 * q4 + 20.0 * t7 * p0
                 + 150.0 * t1 * p1 * z + 90.0 * t1 * p2
-                - 50.0 * z * p0 * q2 * q3 - 60.0 * p1 * q2 * q3) / (90.0 * t1 * q2)
+                - 50.0 * z * p0 * q2 * q3 - 60.0 * p1 * q2 * q3
+        ) / (90.0 * t1 * q2)
     elseif mult == 3 && degree(Q) == 6
         # Closed form for the special degenerate case Q = Q[6]·(z²+1)³·…
         # (only the leading coefficient of Q matters; the rest cancels).
@@ -358,19 +360,19 @@ function _residue_logz(P::Polynomial, Q::Polynomial, z::ComplexF64, mult::Int)
         p0 = P(z); P1 = derivative(P); p1 = P1(z)
         Q1 = derivative(Q); Q2 = derivative(Q1); q2 = Q2(z)
         Q3 = derivative(Q2); q3 = Q3(z)
-        t2  = z * z
-        t3  = 1.0 + t2
-        t4  = sqrt(t3)
-        t6  = log(z + t4)
+        t2 = z * z
+        t3 = 1.0 + t2
+        t4 = sqrt(t3)
+        t6 = log(z + t4)
         t10 = im * q2
         t29 = q3 * p0
         t32 = im * p0
         t44 = -18.0 * t6 * p0 * q2 * z + 9.0 * z * p0 * π * t10 +
-              6.0 * t6 * p1 * t2 * q2 - 3.0 * π * p1 * t2 * t10 +
-              6.0 * t6 * p1 * q2 - 3.0 * p1 * π * t10 -
-              2.0 * t6 * t29 + q3 * π * t32 -
-              2.0 * t6 * t2 * t29 + π * t2 * q3 * t32 +
-              6.0 * q2 * t4 * p0
+            6.0 * t6 * p1 * t2 * q2 - 3.0 * π * p1 * t2 * t10 +
+            6.0 * t6 * p1 * q2 - 3.0 * p1 * π * t10 -
+            2.0 * t6 * t29 + q3 * π * t32 -
+            2.0 * t6 * t2 * t29 + π * t2 * q3 * t32 +
+            6.0 * q2 * t4 * p0
         t45 = t3 * t3
         t49 = q2 * q2
         return -2.0 / 3.0 / t49 / t4 / t45 * t44

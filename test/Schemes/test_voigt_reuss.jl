@@ -22,8 +22,8 @@ using LinearAlgebra
 using ForwardDiff
 using Random
 
-const ATOL_VR  = 1.0e-12
-const RTOL_VR  = 1.0e-10
+const ATOL_VR = 1.0e-12
+const RTOL_VR = 1.0e-10
 
 @testset "Voigt / Reuss — sanity (single-phase RVE)" begin
     C_m = TensISO{3}(30.0, 10.0)
@@ -64,8 +64,10 @@ end
         f = 0.05 + 0.85rand()
         rve = RVE(:M)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(3km, 2μm)))
-        add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(3ki, 2μi));
-                   fraction = f)
+        add_phase!(
+            rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(3ki, 2μi));
+            fraction = f
+        )
 
         Cv = homogenize(rve, Voigt())
         Cr = homogenize(rve, Reuss())
@@ -108,14 +110,16 @@ end
         DT = typeof(f)
         rve = RVE(:M; T = DT)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(C_m_arr...)))
-        add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(C_i_arr...));
-                   fraction = f)
+        add_phase!(
+            rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(C_i_arr...));
+            fraction = f
+        )
         get_array(homogenize(rve, Voigt()))[1, 1, 1, 1]
     end
     df = ForwardDiff.derivative(f_voigt, 0.3)
     # ∂Voigt[1111]/∂f at iso: Voigt[1111] = (1-f)·C_m[1111] + f·C_i[1111]
     expected = get_array(TensISO{3}(C_i_arr...))[1, 1, 1, 1] -
-               get_array(TensISO{3}(C_m_arr...))[1, 1, 1, 1]
+        get_array(TensISO{3}(C_m_arr...))[1, 1, 1, 1]
     @test df ≈ expected
 end
 
@@ -139,22 +143,26 @@ end
     # Im → 0 limit
     rve_re = RVE(:M)
     add_matrix!(rve_re, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve_re, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = f)
+    add_phase!(
+        rve_re, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = f
+    )
 
     rve_0 = RVE(:M)
     add_matrix!(rve_0, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0 + 0im, 10.0 + 0im)))
-    add_phase!(rve_0, :I, Ellipsoid(1.0),
-               Dict(:C => TensISO{3}(60.0 + 0im, 20.0 + 0im)); fraction = f)
+    add_phase!(
+        rve_0, :I, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(60.0 + 0im, 20.0 + 0im)); fraction = f
+    )
 
     Cv0 = homogenize(rve_0, Voigt())
     Cr0 = homogenize(rve_0, Reuss())
     Cv_re = homogenize(rve_re, Voigt())
     Cr_re = homogenize(rve_re, Reuss())
     @test maximum(abs.(real.(get_array(Cv0)) .- get_array(Cv_re))) < ATOL_VR
-    @test maximum(abs.(imag.(get_array(Cv0))))                     < ATOL_VR
+    @test maximum(abs.(imag.(get_array(Cv0)))) < ATOL_VR
     @test maximum(abs.(real.(get_array(Cr0)) .- get_array(Cr_re))) < ATOL_VR
-    @test maximum(abs.(imag.(get_array(Cr0))))                     < ATOL_VR
+    @test maximum(abs.(imag.(get_array(Cr0)))) < ATOL_VR
 end
 
 @testset "Voigt / Reuss — Symbol shortcuts" begin
@@ -165,9 +173,9 @@ end
     add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => C_i); fraction = 0.3)
 
     @test homogenize(rve, :Voigt) ≈ homogenize(rve, Voigt())
-    @test homogenize(rve, :V)     ≈ homogenize(rve, Voigt())
+    @test homogenize(rve, :V) ≈ homogenize(rve, Voigt())
     @test homogenize(rve, :VOIGT) ≈ homogenize(rve, Voigt())
     @test homogenize(rve, :Reuss) ≈ homogenize(rve, Reuss())
-    @test homogenize(rve, :R)     ≈ homogenize(rve, Reuss())
+    @test homogenize(rve, :R) ≈ homogenize(rve, Reuss())
     @test homogenize(rve, :REUSS) ≈ homogenize(rve, Reuss())
 end

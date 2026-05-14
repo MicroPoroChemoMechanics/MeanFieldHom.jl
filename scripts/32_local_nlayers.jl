@@ -33,7 +33,7 @@ using Plots
 # Internal helpers we reuse for the local-state evaluation.
 const LS = MeanFieldHom.LayeredSpheres
 import MeanFieldHom.LayeredSpheres: _iso_bulk_shear, _bulk_state_seq,
-       _bulk_layer_transfer, _bulk_extract_AB
+    _bulk_layer_transfer, _bulk_extract_AB
 
 # ─── Per-layer (A, B) coefficients under unit far-field A_∞ = 1 ─────────────
 
@@ -70,8 +70,10 @@ strain `ε∞ = ε_v · 𝟙`.  `r > 0` may be inside the composite sphere
 interfaces is automatic; explicit jumps for imperfect interfaces are
 not modelled here.
 """
-function bulk_stresses(sphere::LayeredSphere{T, N}, C₀::TensISO{4, 3}, r;
-                       ε_v::Real = 1.0) where {T, N}
+function bulk_stresses(
+        sphere::LayeredSphere{T, N}, C₀::TensISO{4, 3}, r;
+        ε_v::Real = 1.0
+    ) where {T, N}
     AB, B_inf = bulk_AB(sphere, C₀)
     radii = sphere.radii
     κ₀, μ₀ = _iso_bulk_shear(C₀)
@@ -136,7 +138,7 @@ end
 # ─── Tabular check : continuity of σ_rr, jump of σ_θθ at interfaces ──────────
 
 println("Two-layer composite sphere (core + ITZ shell) under unit hydrostatic strain")
-println("─" ^ 78)
+println("─"^78)
 @printf "  Matrix (E, ν)        : (%.2f, %.3f)  → K=%.4f, μ=%.4f\n" Eo νo Ko μo
 @printf "  Core   (E, ν)        : (%.2f, %.3f)  → K=%.4f, μ=%.4f\n" Ei νi Ki μi
 @printf "  ITZ    (E, ν)        : (%.2f, %.3f)  → K=%.4f, μ=%.4f\n" Eitz νitz Kitz μitz
@@ -154,32 +156,38 @@ println()
 # Verify that σ_rr is continuous across interfaces (perfect interfaces).
 for r_int in (R, R + ep)
     σ_minus, _ = bulk_stresses(sphere2, C₀, r_int - 1.0e-9; ε_v = ε_v)
-    σ_plus,  _ = bulk_stresses(sphere2, C₀, r_int + 1.0e-9; ε_v = ε_v)
+    σ_plus, _ = bulk_stresses(sphere2, C₀, r_int + 1.0e-9; ε_v = ε_v)
     @printf "  σ_rr continuity at r=%.2f : Δ = %.3e\n" r_int abs(σ_plus - σ_minus)
 end
 println()
 
 # ─── Plot ────────────────────────────────────────────────────────────────────
 
-p1 = plot(; xlabel = "r", ylabel = "σ_ij / (3 K₀ ε_v)",
-            title = "Two-layer sphere (core + ITZ) — hydrostatic far-field",
-            legend = :topright, grid = true)
-plot!(p1, lr, σ_rr_2 ./ σ_far; lw = 2, color = :red,    label = "σ_rr")
-plot!(p1, lr, σ_θθ_2 ./ σ_far; lw = 2, color = :blue,   label = "σ_θθ")
+p1 = plot(;
+    xlabel = "r", ylabel = "σ_ij / (3 K₀ ε_v)",
+    title = "Two-layer sphere (core + ITZ) — hydrostatic far-field",
+    legend = :topright, grid = true
+)
+plot!(p1, lr, σ_rr_2 ./ σ_far; lw = 2, color = :red, label = "σ_rr")
+plot!(p1, lr, σ_θθ_2 ./ σ_far; lw = 2, color = :blue, label = "σ_θθ")
 hline!(p1, [1.0]; lw = 1, color = :black, linestyle = :dot, label = "σ∞")
-vline!(p1, [R];      lw = 1, color = :black, linestyle = :dash, label = "r = R")
+vline!(p1, [R]; lw = 1, color = :black, linestyle = :dash, label = "r = R")
 vline!(p1, [R + ep]; lw = 1, color = :black, linestyle = :dash, label = "r = R+ep")
 
-p2 = plot(; xlabel = "r", ylabel = "σ_ij / (3 K₀ ε_v)",
-            title = "Single-layer (core only) — same matrix C₀",
-            legend = :topright, grid = true)
-plot!(p2, lr, σ_rr_1 ./ σ_far; lw = 2, color = :red,    label = "σ_rr")
-plot!(p2, lr, σ_θθ_1 ./ σ_far; lw = 2, color = :blue,   label = "σ_θθ")
+p2 = plot(;
+    xlabel = "r", ylabel = "σ_ij / (3 K₀ ε_v)",
+    title = "Single-layer (core only) — same matrix C₀",
+    legend = :topright, grid = true
+)
+plot!(p2, lr, σ_rr_1 ./ σ_far; lw = 2, color = :red, label = "σ_rr")
+plot!(p2, lr, σ_θθ_1 ./ σ_far; lw = 2, color = :blue, label = "σ_θθ")
 hline!(p2, [1.0]; lw = 1, color = :black, linestyle = :dot, label = "σ∞")
-vline!(p2, [R];   lw = 1, color = :black, linestyle = :dash, label = "r = R")
+vline!(p2, [R]; lw = 1, color = :black, linestyle = :dash, label = "r = R")
 
-p_full = plot(p1, p2; layout = (1, 2), size = (1400, 500),
-              plot_title = "Local bulk stress profile in n-layer sphere")
+p_full = plot(
+    p1, p2; layout = (1, 2), size = (1400, 500),
+    plot_title = "Local bulk stress profile in n-layer sphere"
+)
 
 const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)

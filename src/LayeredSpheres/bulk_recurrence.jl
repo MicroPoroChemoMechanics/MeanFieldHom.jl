@@ -69,11 +69,11 @@ elements are written in the factorised `α, β` form with `α + β = 1`).
     β = 3 * Tκ / S
 
     ro = T(r_out); ri = T(r_in)
-    ρ       = ri / ro               # ≤ 1 (inner over outer)
-    ρ²      = ρ * ρ
-    ρ³      = ρ² * ρ
-    ro_ri   = ro / ri               # ≥ 1 — reciprocal of ρ (stored, not divided)
-    ri_inv  = 1 / ri
+    ρ = ri / ro               # ≤ 1 (inner over outer)
+    ρ² = ρ * ρ
+    ρ³ = ρ² * ρ
+    ro_ri = ro / ri               # ≥ 1 — reciprocal of ρ (stored, not divided)
+    ri_inv = 1 / ri
     # M[2,1] coefficient:  4μ β (1/ri − ri²/ro³) = (4μ β / ri) · (1 − ρ³).
     fourμβ_over_ri = 4 * Tμ * β * ri_inv
     # M[1,2] coefficient:  (ro − ri³/ro²) / S = (ro / S) · (1 − ρ³).
@@ -132,11 +132,15 @@ pressure amplitude `P_1 = 1`.
     return ntuple(k -> _iso_bulk_shear(layer_modulus(sphere, k)), Val(N))
 end
 
-@inline function _bulk_promote(::LayeredSphere{T, N}, κμ::NTuple{N, <:Any},
-                               κ₀, μ₀) where {T, N}
-    return promote_type(T, typeof(κ₀), typeof(μ₀),
-                        ntuple(k -> typeof(κμ[k][1]), N)...,
-                        ntuple(k -> typeof(κμ[k][2]), N)...)
+@inline function _bulk_promote(
+        ::LayeredSphere{T, N}, κμ::NTuple{N, <:Any},
+        κ₀, μ₀
+    ) where {T, N}
+    return promote_type(
+        T, typeof(κ₀), typeof(μ₀),
+        ntuple(k -> typeof(κμ[k][1]), N)...,
+        ntuple(k -> typeof(κμ[k][2]), N)...
+    )
 end
 
 function _bulk_state_seq(sphere::LayeredSphere{T, N}, κ₀, μ₀) where {T, N}
@@ -156,8 +160,10 @@ function _bulk_state_seq(sphere::LayeredSphere{T, N}, κ₀, μ₀) where {T, N}
         s = Tint * s
         if k < N
             (κk1, μk1) = κμ[k + 1]
-            Tlay = _bulk_layer_transfer(TP(radii[k + 1]), TP(radii[k]),
-                                        TP(κk1), TP(μk1))
+            Tlay = _bulk_layer_transfer(
+                TP(radii[k + 1]), TP(radii[k]),
+                TP(κk1), TP(μk1)
+            )
             s = Tlay * s
         end
     end
@@ -177,14 +183,18 @@ function _bulk_localization(sphere::LayeredSphere{T, N}, κ₀, μ₀) where {T,
     inside_states, s_matrix = _bulk_state_seq(sphere, κ₀, μ₀)
     radii = sphere.radii
 
-    A_inf, _ = _bulk_extract_AB(TP(radii[N]), TP(κ₀), TP(μ₀),
-                                s_matrix[1], s_matrix[2])
+    A_inf, _ = _bulk_extract_AB(
+        TP(radii[N]), TP(κ₀), TP(μ₀),
+        s_matrix[1], s_matrix[2]
+    )
     inv_A_inf = one(TP) / A_inf
 
     return ntuple(N) do k
         (κk, μk) = κμ[k]
-        (A_k, _) = _bulk_extract_AB(TP(radii[k]), TP(κk), TP(μk),
-                                    inside_states[k][1], inside_states[k][2])
+        (A_k, _) = _bulk_extract_AB(
+            TP(radii[k]), TP(κk), TP(μk),
+            inside_states[k][1], inside_states[k][2]
+        )
         A_k * inv_A_inf
     end
 end

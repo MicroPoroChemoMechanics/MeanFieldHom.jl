@@ -92,15 +92,21 @@ function _resolve_degenerate_ellipsoid(axes_sorted::NTuple{3, T}, basis) where {
     n_inf = count(isinf, axes_sorted)
     n_zero = count(iszero, axes_sorted)
 
-    n_inf ≥ 2 && throw(ArgumentError(
-        "Ellipsoid with two or more infinite semi-axes (infinite slab / plane) is not supported."
-    ))
-    n_zero == 3 && throw(ArgumentError(
-        "Ellipsoid with all semi-axes zero is not a physical inclusion."
-    ))
-    n_zero == 2 && throw(ArgumentError(
-        "Ellipsoid with two zero semi-axes (needle / line) is not supported."
-    ))
+    n_inf ≥ 2 && throw(
+        ArgumentError(
+            "Ellipsoid with two or more infinite semi-axes (infinite slab / plane) is not supported."
+        )
+    )
+    n_zero == 3 && throw(
+        ArgumentError(
+            "Ellipsoid with all semi-axes zero is not a physical inclusion."
+        )
+    )
+    n_zero == 2 && throw(
+        ArgumentError(
+            "Ellipsoid with two zero semi-axes (needle / line) is not supported."
+        )
+    )
 
     # Regular case — no degeneracy
     (n_inf == 0 && n_zero == 0) && return nothing

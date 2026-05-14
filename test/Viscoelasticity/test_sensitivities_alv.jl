@@ -33,14 +33,16 @@ end
 function _build_rve_base(f::Real)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => _build_law_M(1.0, 1.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(_C_INC));
-                fraction = f)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(_C_INC));
+        fraction = f
+    )
     return rve
 end
 
 @testset "ALV sensitivities — d/df via set_param lens" begin
-    rve = _build_rve_base(0.20)
-    f₀ = 0.20
+    rve = _build_rve_base(0.2)
+    f₀ = 0.2
 
     function eff_mu_vs_f(f, scheme)
         rve_f = set_param(rve, AmountParameter(:I), f)
@@ -59,8 +61,10 @@ end
     function eff_mu_vs_μM(μ_M)
         rve = RVE(:M)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => _build_law_M(1.0, μ_M)))
-        add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(_C_INC));
-                    fraction = 0.20)
+        add_phase!(
+            rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(_C_INC));
+            fraction = 0.2
+        )
         return _eff_mu_final(rve, MoriTanaka())
     end
 
@@ -76,13 +80,15 @@ end
         f, k_M, μ_M = p
         rve = RVE(:M)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => _build_law_M(k_M, μ_M)))
-        add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(_C_INC));
-                    fraction = 0.20)
+        add_phase!(
+            rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(_C_INC));
+            fraction = 0.2
+        )
         rve_f = set_param(rve, AmountParameter(:I), f)
         return _eff_mu_final(rve_f, MoriTanaka())
     end
 
-    p₀ = [0.20, 1.0, 1.0]
+    p₀ = [0.2, 1.0, 1.0]
     ∇AD = ForwardDiff.gradient(eff_mu_vs_fkμ, p₀)
     h = 1.0e-5
     for i in 1:3
@@ -96,8 +102,10 @@ end
     function eff_mu_vs_τK(τ_K)
         rve = RVE(:M)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => _build_law_M(1.0, 1.0, τ_K, 0.5)))
-        add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(_C_INC));
-                    fraction = 0.20)
+        add_phase!(
+            rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(_C_INC));
+            fraction = 0.2
+        )
         return _eff_mu_final(rve, MoriTanaka())
     end
 

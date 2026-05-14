@@ -68,12 +68,14 @@ for ξ in (0.1, 0.3, 0.5, 1.0, 2.0, 3.0, 10.0)
     P = hill_tensor(ell, C_TI)                     # analytical via dispatcher
     S = P ⊡ C_TI                                   # Eshelby tensor
     Sa = get_array(S)
-    @printf("%6.2f  %12.5e  %12.5e  %12.5e  %12.5e\n",
-            ξ,
-            Sa[i_ax, i_ax, i_ax, i_ax],
-            Sa[i_tr, i_tr, i_tr, i_tr],
-            Sa[i_ax, i_ax, i_tr, i_tr],
-            i_ax == 3 ? Sa[1, 1, 2, 2] : Sa[2, 2, 3, 3])
+    @printf(
+        "%6.2f  %12.5e  %12.5e  %12.5e  %12.5e\n",
+        ξ,
+        Sa[i_ax, i_ax, i_ax, i_ax],
+        Sa[i_tr, i_tr, i_tr, i_tr],
+        Sa[i_ax, i_ax, i_tr, i_tr],
+        i_ax == 3 ? Sa[1, 1, 2, 2] : Sa[2, 2, 3, 3]
+    )
 end
 println()
 
@@ -98,7 +100,9 @@ println()
 function _bench(f, n)
     f()  # warm-up
     t0 = time()
-    for _ in 1:n; f(); end
+    for _ in 1:n
+        f()
+    end
     return (time() - t0) / n
 end
 
@@ -165,18 +169,18 @@ p = plot(
     xscale = :log10,
     xlabel = raw"$\xi = 1/\omega$",
     ylabel = raw"$S_{ijkl}$",
-    label  = raw"$S_{1111}$",
-    color  = :red, marker = :circle, markevery = 10, lw = 1.5,
+    label = raw"$S_{1111}$",
+    color = :red, marker = :circle, markevery = 10, lw = 1.5,
     legend = :topright,
     framestyle = :box,
-    title  = "Eshelby components — TI matrix coaxial spheroid (Barthélémy 2020, Fig. 1)",
+    title = "Eshelby components — TI matrix coaxial spheroid (Barthélémy 2020, Fig. 1)",
     titlefontsize = 9,
 )
 plot!(p, ξs, S3333; label = raw"$S_{3333}$", color = :magenta, marker = :diamond, markevery = 10, lw = 1.5)
-plot!(p, ξs, S1122; label = raw"$S_{1122}$", color = :blue,    marker = :+,       markevery = 10, lw = 1.5)
-plot!(p, ξs, S1133; label = raw"$S_{1133}$", color = :green,   marker = :x,       markevery = 10, lw = 1.5)
-plot!(p, ξs, S3311; label = raw"$S_{3311}$", color = :brown,   marker = :rect,    markevery = 10, lw = 1.5)
-plot!(p, ξs, S1313; label = raw"$S_{1313}$", color = :cyan,    marker = :hexagon, markevery = 10, lw = 1.5)
+plot!(p, ξs, S1122; label = raw"$S_{1122}$", color = :blue, marker = :+, markevery = 10, lw = 1.5)
+plot!(p, ξs, S1133; label = raw"$S_{1133}$", color = :green, marker = :x, markevery = 10, lw = 1.5)
+plot!(p, ξs, S3311; label = raw"$S_{3311}$", color = :brown, marker = :rect, markevery = 10, lw = 1.5)
+plot!(p, ξs, S1313; label = raw"$S_{1313}$", color = :cyan, marker = :hexagon, markevery = 10, lw = 1.5)
 
 # figdir = joinpath(@__DIR__, "figures")
 # isdir(figdir) || mkdir(figdir)

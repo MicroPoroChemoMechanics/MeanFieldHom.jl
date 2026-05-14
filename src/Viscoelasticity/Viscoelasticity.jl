@@ -42,26 +42,26 @@ import ..Elasticity
 import ..Elasticity: tens_UA, tens_VA, tens_IA, Ellipsoid, Spheroid
 import ..Cracks
 using ..Cracks: EllipticCrack, RibbonCrack, PennyCrack,
-                 crack_basis, crack_normal, aspect_ratio,
-                 semi_minor, semi_major
+    crack_basis, crack_normal, aspect_ratio,
+    semi_minor, semi_major
 import ..LayeredSpheres
 using ..LayeredSpheres: LayeredSphere, layer_radius, layer_modulus,
-                         layer_interface, AbstractInterface, PerfectInterface,
-                         SpringInterface, MembraneInterface,
-                         layer_count, layer_volume_fraction, outer_radius
+    layer_interface, AbstractInterface, PerfectInterface,
+    SpringInterface, MembraneInterface,
+    layer_count, layer_volume_fraction, outer_radius
 import ..Schemes
 using ..Schemes: RVE, HomogenizationScheme, Voigt, Reuss, Dilute, DiluteDual,
-                  MoriTanaka, Maxwell, SelfConsistent, AsymmetricSelfConsistent,
-                  PonteCastanedaWillis, DifferentialScheme,
-                  Proportional, Sequential, CustomPath, Path,
-                  UniformDistribution,
-                  AndersonDefault, NewtonDefault,
-                  matrix_phase,
-                  inclusion_phase_names, matrix_property, phase_property,
-                  volume_fraction, matrix_volume_fraction,
-                  AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize,
-                  phase_symmetrize,
-                  VolumeFraction, CrackDensity, amount_value
+    MoriTanaka, Maxwell, SelfConsistent, AsymmetricSelfConsistent,
+    PonteCastanedaWillis, DifferentialScheme,
+    Proportional, Sequential, CustomPath, Path,
+    UniformDistribution,
+    AndersonDefault, NewtonDefault,
+    matrix_phase,
+    inclusion_phase_names, matrix_property, phase_property,
+    volume_fraction, matrix_volume_fraction,
+    AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize,
+    phase_symmetrize,
+    VolumeFraction, CrackDensity, amount_value
 using ForwardDiff
 using OrdinaryDiffEq
 
@@ -107,14 +107,14 @@ export voigt_alv_ortho, reuss_alv_ortho, dilute_alv_ortho, dilute_dual_alv_ortho
 export mori_tanaka_alv_ortho, maxwell_alv_ortho
 export dilute_concentration_alv_ortho, dilute_contribution_alv_ortho
 export self_consistent_alv, asymmetric_self_consistent_alv,
-       pcw_alv, differential_alv
+    pcw_alv, differential_alv
 export bulk_localization_alv, bulk_state_seq_alv, shear_localization_alv
 export strain_strain_loc_alv, stiffness_contribution_alv
 export homogenize_alv, has_visco_property
 export iso_order2_params_from_blocks, iso_order2_blocks_from_params
 export hill_kernel_order2
 export voigt_alv_order2, reuss_alv_order2, dilute_alv_order2,
-       dilute_dual_alv_order2, mori_tanaka_alv_order2, maxwell_alv_order2
+    dilute_dual_alv_order2, mori_tanaka_alv_order2, maxwell_alv_order2
 export dilute_concentration_alv_order2, dilute_contribution_alv_order2
 export homogenize_alv_order2
 export cod_kernel_alv, compliance_contribution_alv, delta_compliance_alv

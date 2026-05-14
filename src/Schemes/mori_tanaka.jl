@@ -37,19 +37,19 @@ _mt_dispatch(rve, K₀::TensND.AbstractTens{2, 3}, ::Val{p}; kw...) where {p} =
 
 # ── 4th-order (elasticity) ──────────────────────────────────────────────────
 function _mt_4(rve, C₀::TensND.AbstractTens{4, 3}, ::Val{p}; kw...) where {p}
-    f_m  = matrix_volume_fraction(rve)
+    f_m = matrix_volume_fraction(rve)
     Iref = _identity_like(C₀)
     A_avg = f_m * Iref          # ⟨A_dil⟩, matrix carries A_dil = I
-    Nsum  = zero(C₀)
+    Nsum = zero(C₀)
     for name in inclusion_phase_names(rve)
-        a    = rve.amounts[name]
+        a = rve.amounts[name]
         if a isa VolumeFraction
             f = amount_value(a)
             P_i = phase_property(rve, name, p)
             # Apply per-phase orientation symmetrize via _phase_dilute_concentration.
             A_dil = _phase_dilute_concentration(rve, name, p, C₀; kw...)
             A_avg += f * A_dil
-            Nsum  += f * ((P_i - C₀) ⊡ A_dil)
+            Nsum += f * ((P_i - C₀) ⊡ A_dil)
         else  # CrackDensity — ECHOES `B · A^{-1}` form.
             # Strain-Stress contribution: A_crack = ε·sym(H_c)·C₀.
             # Stress-Stress contribution: 0 (traction-free).
@@ -59,7 +59,7 @@ function _mt_4(rve, C₀::TensND.AbstractTens{4, 3}, ::Val{p}; kw...) where {p}
             # additive form's spurious percolation at moderate density.
             H = _phase_compliance_contribution(rve, name, p, C₀; kw...)
             A_avg += H ⊡ C₀
-            Nsum  += _phase_stiffness_contribution(rve, name, p, C₀; kw...)
+            Nsum += _phase_stiffness_contribution(rve, name, p, C₀; kw...)
         end
     end
     return C₀ + Nsum ⊡ inv(A_avg)
@@ -67,22 +67,22 @@ end
 
 # ── 2nd-order (conductivity) ────────────────────────────────────────────────
 function _mt_2(rve, K₀::TensND.AbstractTens{2, 3}, ::Val{p}; kw...) where {p}
-    f_m  = matrix_volume_fraction(rve)
+    f_m = matrix_volume_fraction(rve)
     Iref = _identity_like(K₀)
     A_avg = f_m * Iref
-    Nsum  = zero(K₀)
+    Nsum = zero(K₀)
     for name in inclusion_phase_names(rve)
-        a    = rve.amounts[name]
+        a = rve.amounts[name]
         if a isa VolumeFraction
             f = amount_value(a)
             P_i = phase_property(rve, name, p)
             A_dil = _phase_dilute_concentration(rve, name, p, K₀; kw...)
             A_avg += f * A_dil
-            Nsum  += f * ((P_i - K₀) ⋅ A_dil)
+            Nsum += f * ((P_i - K₀) ⋅ A_dil)
         else  # CrackDensity — ECHOES `B · A^{-1}` form.
             R = _phase_compliance_contribution(rve, name, p, K₀; kw...)
             A_avg += R ⋅ K₀
-            Nsum  += _phase_stiffness_contribution(rve, name, p, K₀; kw...)
+            Nsum += _phase_stiffness_contribution(rve, name, p, K₀; kw...)
         end
     end
     return K₀ + Nsum ⋅ inv(A_avg)

@@ -58,9 +58,11 @@ function LayeredSphere(
             throw(ArgumentError("LayeredSphere radii must be strictly positive"))
         for k in 1:(N - 1)
             radii[k] ≥ radii[k + 1] &&
-                throw(ArgumentError(
+                throw(
+                ArgumentError(
                     "LayeredSphere radii must be strictly ascending; got $(radii)"
-                ))
+                )
+            )
         end
     end
     Tf = MFH_Core._floatlike(T)

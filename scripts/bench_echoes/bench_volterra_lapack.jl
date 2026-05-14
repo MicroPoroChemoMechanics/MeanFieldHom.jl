@@ -31,12 +31,12 @@ println("=== volterra_inverse vs inv(LowerTriangular(.)) ===")
 for n in (10, 50, 100, 200, 500, 1000)
     M = build_lower(n)
     invM_hand = volterra_inverse(M; block_size = 1)
-    invM_lap  = inv(LowerTriangular(M))
+    invM_lap = inv(LowerTriangular(M))
     rel = norm(invM_hand .- invM_lap) / norm(invM_hand)
 
     t_hand = @belapsed volterra_inverse($M; block_size = 1) samples = 5 evals = 1
-    t_lap  = @belapsed inv(LowerTriangular($M)) samples = 5 evals = 1
-    @printf "%6d | %12.3f μs | %12.3f μs | %14.2e | ×%6.2f\n" n (t_hand * 1e6) (t_lap * 1e6) rel (t_hand / t_lap)
+    t_lap = @belapsed inv(LowerTriangular($M)) samples = 5 evals = 1
+    @printf "%6d | %12.3f μs | %12.3f μs | %14.2e | ×%6.2f\n" n (t_hand * 1.0e6) (t_lap * 1.0e6) rel (t_hand / t_lap)
 end
 
 println()
@@ -46,12 +46,12 @@ for n in (10, 50, 100, 200, 500, 1000)
     S = build_lower(n; scale = 1.0)
     M = build_lower(n; scale = 0.7)
     T_hand = volterra_left_divide(S, M; block_size = 1)
-    T_lap  = LowerTriangular(S) \ M
+    T_lap = LowerTriangular(S) \ M
     rel = norm(T_hand .- T_lap) / norm(T_hand)
 
     t_hand = @belapsed volterra_left_divide($S, $M; block_size = 1) samples = 5 evals = 1
-    t_lap  = @belapsed LowerTriangular($S) \ $M samples = 5 evals = 1
-    @printf "%6d | %12.3f μs | %12.3f μs | %14.2e | ×%6.2f\n" n (t_hand * 1e6) (t_lap * 1e6) rel (t_hand / t_lap)
+    t_lap = @belapsed LowerTriangular($S) \ $M samples = 5 evals = 1
+    @printf "%6d | %12.3f μs | %12.3f μs | %14.2e | ×%6.2f\n" n (t_hand * 1.0e6) (t_lap * 1.0e6) rel (t_hand / t_lap)
 end
 
 println()
@@ -61,10 +61,10 @@ for n in (10, 50, 100, 200, 500, 1000)
     S = build_lower(n; scale = 1.0)
     M = build_lower(n; scale = 0.7)
     T_hand = volterra_divide(M, S; block_size = 1)
-    T_lap  = M / LowerTriangular(S)
+    T_lap = M / LowerTriangular(S)
     rel = norm(T_hand .- T_lap) / norm(T_hand)
 
     t_hand = @belapsed volterra_divide($M, $S; block_size = 1) samples = 5 evals = 1
-    t_lap  = @belapsed $M / LowerTriangular($S) samples = 5 evals = 1
-    @printf "%6d | %12.3f μs | %12.3f μs | %14.2e | ×%6.2f\n" n (t_hand * 1e6) (t_lap * 1e6) rel (t_hand / t_lap)
+    t_lap = @belapsed $M / LowerTriangular($S) samples = 5 evals = 1
+    @printf "%6d | %12.3f μs | %12.3f μs | %14.2e | ×%6.2f\n" n (t_hand * 1.0e6) (t_lap * 1.0e6) rel (t_hand / t_lap)
 end

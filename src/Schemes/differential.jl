@@ -25,27 +25,31 @@ Integrates the multi-phase incorporation-sequence ODE on `τ ∈ [0, 1]`
 with the SciML `OrdinaryDiffEq.solve` driver (default `Tsit5`).
 """
 function _evaluate(rve::RVE, scheme::DifferentialScheme, ::Val{p}; kw...) where {p}
-    nsteps  = get(scheme.options, :nsteps,  100)
-    abstol  = get(scheme.options, :abstol,  1.0e-8)
-    reltol  = get(scheme.options, :reltol,  1.0e-6)
-    alg     = get(scheme.options, :alg,     nothing)
-    paths   = _resolve_paths(scheme.trajectory, rve, nsteps)
-    P_init  = matrix_property(rve, p)
-    return _diff_integrate_ode(rve, paths, p, P_init;
-                               nsteps, abstol, reltol, alg, kw...)
+    nsteps = get(scheme.options, :nsteps, 100)
+    abstol = get(scheme.options, :abstol, 1.0e-8)
+    reltol = get(scheme.options, :reltol, 1.0e-6)
+    alg = get(scheme.options, :alg, nothing)
+    paths = _resolve_paths(scheme.trajectory, rve, nsteps)
+    P_init = matrix_property(rve, p)
+    return _diff_integrate_ode(
+        rve, paths, p, P_init;
+        nsteps, abstol, reltol, alg, kw...
+    )
 end
 
 # ── ODE integrator ──────────────────────────────────────────────────────────
 
-function _diff_integrate_ode(rve::RVE,
-                              paths::AbstractDict{Symbol},
-                              prop::Symbol,
-                              P_init::TensND.AbstractTens;
-                              nsteps::Int = 100,
-                              abstol::Real = 1.0e-8,
-                              reltol::Real = 1.0e-6,
-                              alg = nothing,
-                              kw...)
+function _diff_integrate_ode(
+        rve::RVE,
+        paths::AbstractDict{Symbol},
+        prop::Symbol,
+        P_init::TensND.AbstractTens;
+        nsteps::Int = 100,
+        abstol::Real = 1.0e-8,
+        reltol::Real = 1.0e-6,
+        alg = nothing,
+        kw...
+    )
     # Split inclusion phases between solids and cracks.  Targets are the
     # final values reached at `τ = 1` (volume fractions for solids,
     # densities for cracks).  The target eltype is preserved (it can be
@@ -80,22 +84,26 @@ function _diff_integrate_ode(rve::RVE,
     x0 = _get_state(sym_tag, P_init)
     T_state = promote_type(eltype(x0), T_target)
     x0 = T_state.(x0)
-    ode_kw = (rve = rve,
-              prop = prop,
-              paths = paths,
-              solid_names = solid_names,
-              crack_names = crack_names,
-              targets = targets,
-              sym_tag = sym_tag,
-              proto = P_init,
-              kw = kw)
+    ode_kw = (
+        rve = rve,
+        prop = prop,
+        paths = paths,
+        solid_names = solid_names,
+        crack_names = crack_names,
+        targets = targets,
+        sym_tag = sym_tag,
+        proto = P_init,
+        kw = kw,
+    )
     rhs! = (du, u, p, τ) -> _diff_ode_rhs!(du, u, p, τ)
     prob = ODEProblem(rhs!, x0, (0.0, 1.0), ode_kw)
-    sol = solve(prob,
-                alg === nothing ? Tsit5() : alg;
-                abstol, reltol,
-                saveat = range(0.0, 1.0; length = max(nsteps, 1) + 1),
-                dense  = false)
+    sol = solve(
+        prob,
+        alg === nothing ? Tsit5() : alg;
+        abstol, reltol,
+        saveat = range(0.0, 1.0; length = max(nsteps, 1) + 1),
+        dense = false
+    )
     return _reconstruct_tens(sym_tag, P_init, sol.u[end])
 end
 
@@ -105,11 +113,11 @@ function _diff_ode_rhs!(du, u, p, τ)
     Cτ = _reconstruct_tens(p.sym_tag, p.proto, u)
     # Sherman-Morrison inversion of dφ = (𝟙 − f ⊗ 𝐔)^{-1} · df.
     n_solid = length(p.solid_names)
-    f  = Vector{eltype(u)}(undef, n_solid)
+    f = Vector{eltype(u)}(undef, n_solid)
     df = Vector{eltype(u)}(undef, n_solid)
     @inbounds for (i, name) in enumerate(p.solid_names)
         nt = p.paths[name]
-        f[i]  = nt.f(τ)  * p.targets[name]
+        f[i] = nt.f(τ) * p.targets[name]
         df[i] = nt.df(τ) * p.targets[name]
     end
     f0 = one(eltype(u)) - sum(f; init = zero(eltype(u)))
@@ -174,7 +182,7 @@ _symmetry_tag(::TensND.AbstractTens{2, 3}) = Val(:full_2)
 # Initial state vector for the ODE solver.
 _get_state(::Val{:iso_4}, t) = collect(TensND.get_data(t))
 _get_state(::Val{:iso_2}, t) = collect(TensND.get_data(t))
-_get_state(::Val{:ti},    t) = collect(TensND.get_data(t))
+_get_state(::Val{:ti}, t) = collect(TensND.get_data(t))
 _get_state(::Val{:ortho}, t) = collect(TensND.get_data(t))
 _get_state(::Val{:full_4}, t) = vec(collect(TensND.KM(t)))
 _get_state(::Val{:full_2}, t) = vec(collect(TensND.KM(t)))
@@ -182,7 +190,7 @@ _get_state(::Val{:full_2}, t) = vec(collect(TensND.KM(t)))
 # Push a tensor into a flat vector for `du`.
 _set_state!(du, ::Val{:iso_4}, Δ) = (du .= TensND.get_data(Δ); nothing)
 _set_state!(du, ::Val{:iso_2}, Δ) = (du .= TensND.get_data(Δ); nothing)
-_set_state!(du, ::Val{:ti},    Δ) = (du .= TensND.get_data(Δ); nothing)
+_set_state!(du, ::Val{:ti}, Δ) = (du .= TensND.get_data(Δ); nothing)
 _set_state!(du, ::Val{:ortho}, Δ) = (du .= TensND.get_data(Δ); nothing)
 _set_state!(du, ::Val{:full_4}, Δ) = (du .= vec(TensND.KM(Δ)); nothing)
 _set_state!(du, ::Val{:full_2}, Δ) = (du .= vec(TensND.KM(Δ)); nothing)
@@ -206,41 +214,53 @@ _reconstruct_tens(::Val{:full_2}, ::TensND.AbstractTens, u) =
 
 # Dilute correction `(C_i − C) ⊡ A_dil(C)` for a solid inclusion phase
 # (symmetrize honoured through `_phase_dilute_concentration`).
-function _diff_dilute_correction(rve::RVE, name::Symbol, prop::Symbol,
-                                  P_curr::TensND.AbstractTens{4, 3}; kw...)
-    P_i  = phase_property(rve, name, prop)
-    A    = _phase_dilute_concentration(rve, name, prop, P_curr; kw...)
+function _diff_dilute_correction(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P_curr::TensND.AbstractTens{4, 3}; kw...
+    )
+    P_i = phase_property(rve, name, prop)
+    A = _phase_dilute_concentration(rve, name, prop, P_curr; kw...)
     return (P_i - P_curr) ⊡ A
 end
 
-function _diff_dilute_correction(rve::RVE, name::Symbol, prop::Symbol,
-                                  P_curr::TensND.AbstractTens{2, 3}; kw...)
-    P_i  = phase_property(rve, name, prop)
-    A    = _phase_dilute_concentration(rve, name, prop, P_curr; kw...)
+function _diff_dilute_correction(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P_curr::TensND.AbstractTens{2, 3}; kw...
+    )
+    P_i = phase_property(rve, name, prop)
+    A = _phase_dilute_concentration(rve, name, prop, P_curr; kw...)
     return (P_i - P_curr) ⋅ A
 end
 
 # Crack contribution kernel **per unit density** : returns
 # `delta_stiffness(geom, N, 1.0)` (or `delta_conductivity` for 2-tensor)
 # so the RHS multiplies by `dε/dτ` directly.
-function _diff_crack_density_kernel(rve::RVE, name::Symbol, prop::Symbol,
-                                     P_curr::TensND.AbstractTens{4, 3}; kw...)
+function _diff_crack_density_kernel(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P_curr::TensND.AbstractTens{4, 3}; kw...
+    )
     geom = rve.phases[name].geometry
-    sym  = phase_symmetrize(rve, name)
+    sym = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P_curr, sym)
     K_int = _crack_interface_K4(rve, name)
-    N = MFH_Core.stiffness_contribution(geom, P₀_proj;
-                                         K_interface = K_int, kw...)
+    N = MFH_Core.stiffness_contribution(
+        geom, P₀_proj;
+        K_interface = K_int, kw...
+    )
     return _apply_symmetrize(MFH_Core.delta_stiffness(geom, N, 1.0), sym)
 end
 
-function _diff_crack_density_kernel(rve::RVE, name::Symbol, prop::Symbol,
-                                     P_curr::TensND.AbstractTens{2, 3}; kw...)
+function _diff_crack_density_kernel(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P_curr::TensND.AbstractTens{2, 3}; kw...
+    )
     geom = rve.phases[name].geometry
-    sym  = phase_symmetrize(rve, name)
+    sym = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P_curr, sym)
     α_int = _crack_interface_α(rve, name)
-    N = MFH_Core.conductivity_contribution(geom, P₀_proj;
-                                            α_interface = α_int, kw...)
+    N = MFH_Core.conductivity_contribution(
+        geom, P₀_proj;
+        α_interface = α_int, kw...
+    )
     return _apply_symmetrize(MFH_Core.delta_conductivity(geom, N, 1.0), sym)
 end

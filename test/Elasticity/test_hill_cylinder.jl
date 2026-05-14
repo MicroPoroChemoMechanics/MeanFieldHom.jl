@@ -22,8 +22,10 @@ using ForwardDiff
         # Limit consistency with a very elongated prolate
         ell_prolate = Ellipsoid(1.0e8, 1.5, 1.5)
         Pref = hill_tensor(ell_prolate, C_iso)
-        for (i, j, k, l) in [(2, 2, 2, 2), (3, 3, 3, 3), (2, 2, 3, 3),
-                (1, 2, 1, 2), (2, 3, 2, 3)]
+        for (i, j, k, l) in [
+                (2, 2, 2, 2), (3, 3, 3, 3), (2, 2, 3, 3),
+                (1, 2, 1, 2), (2, 3, 2, 3),
+            ]
             @test P[i, j, k, l] ≈ Pref[i, j, k, l] rtol = 1.0e-6
         end
     end
@@ -38,8 +40,10 @@ using ForwardDiff
         # Limit consistency
         ell_big = Ellipsoid(1.0e8, 2.0, 1.0)
         Pref = hill_tensor(ell_big, C_iso)
-        for (i, j, k, l) in [(2, 2, 2, 2), (3, 3, 3, 3), (2, 2, 3, 3),
-                (1, 2, 1, 2), (1, 3, 1, 3), (2, 3, 2, 3)]
+        for (i, j, k, l) in [
+                (2, 2, 2, 2), (3, 3, 3, 3), (2, 2, 3, 3),
+                (1, 2, 1, 2), (1, 3, 1, 3), (2, 3, 2, 3),
+            ]
             @test P[i, j, k, l] ≈ Pref[i, j, k, l] rtol = 1.0e-10
         end
     end
@@ -70,8 +74,10 @@ using ForwardDiff
         # default reltol=1e-6 would not meet this bound.
         ell_big = Ellipsoid(1.0e6, 2.0, 1.0)
         Pref = hill_tensor(ell_big, C_ortho; method = :nestedquadgk)
-        for (i, j, k, l) in [(2, 2, 2, 2), (3, 3, 3, 3), (2, 3, 2, 3),
-                (1, 2, 1, 2), (1, 3, 1, 3)]
+        for (i, j, k, l) in [
+                (2, 2, 2, 2), (3, 3, 3, 3), (2, 3, 2, 3),
+                (1, 2, 1, 2), (1, 3, 1, 3),
+            ]
             @test P[i, j, k, l] ≈ Pref[i, j, k, l] rtol = 1.0e-8
         end
     end

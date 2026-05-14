@@ -9,7 +9,7 @@ const k0 = E0 / (3 * (1 - 2ν0)); const μ0_ = E0 / (2 * (1 + ν0))
 const η0 = 0.2; const γ0 = 0.133
 const k1 = 5.0 / (3 * 0.4); const μ1 = 5.0 / 2.6
 const η1 = 1.0; const γ1 = 1.67
-const kp = 1e-8 / (3 * 0.6); const μp = 1e-8 / (2 * 1.2)
+const kp = 1.0e-8 / (3 * 0.6); const μp = 1.0e-8 / (2 * 1.2)
 
 C0_law() = maxwell_iso(k0, μ0_, η0, γ0)
 C1_law() = maxwell_iso(k1, μ1, η1, γ1)
@@ -18,11 +18,15 @@ C_p = TensISO{3}(3 * kp, 2 * μp)
 function build_rve(N::Int)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C0_law()))
-    add_phase!(rve, :PORE, Ellipsoid(1.0, 1.0, 1.0),
-               Dict(:C => heaviside_law(C_p)); fraction = 0.1)
+    add_phase!(
+        rve, :PORE, Ellipsoid(1.0, 1.0, 1.0),
+        Dict(:C => heaviside_law(C_p)); fraction = 0.1
+    )
     for i in 1:N
-        add_phase!(rve, Symbol("INC_$i"), Ellipsoid(1.0, 1.0, 1.0),
-                   Dict(:C => C1_law()); fraction = 0.3 / N)
+        add_phase!(
+            rve, Symbol("INC_$i"), Ellipsoid(1.0, 1.0, 1.0),
+            Dict(:C => C1_law()); fraction = 0.3 / N
+        )
     end
     return rve
 end

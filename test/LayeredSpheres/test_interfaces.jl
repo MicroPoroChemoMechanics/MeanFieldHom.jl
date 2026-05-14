@@ -39,8 +39,10 @@ end
     ks = [1.0e-5, 1.0e-3, 1.0e-1, 1.0]
     αs = Float64[]
     for k in ks
-        s = LayeredSphere((0.5, 1.0), (C₁, C₀);
-                          interfaces = (SpringInterface(k), PerfectInterface{Float64}()))
+        s = LayeredSphere(
+            (0.5, 1.0), (C₁, C₀);
+            interfaces = (SpringInterface(k), PerfectInterface{Float64}())
+        )
         push!(αs, MeanFieldHom.LayeredSpheres._bulk_localization(s, κ₀, μ₀)[1])
     end
     for i in 1:(length(ks) - 1)
@@ -81,8 +83,10 @@ end
 end
 
 @testset "SpringInterface eltype inference" begin
-    s = LayeredSphere((0.5, 1.0), (TensISO{3}(1.0, 1.0), TensISO{3}(1.0, 1.0));
-                      interfaces = (SpringInterface(0.01), PerfectInterface{Float64}()))
+    s = LayeredSphere(
+        (0.5, 1.0), (TensISO{3}(1.0, 1.0), TensISO{3}(1.0, 1.0));
+        interfaces = (SpringInterface(0.01), PerfectInterface{Float64}())
+    )
     @test layer_interface(s, 1) isa SpringInterface
     @test layer_interface(s, 2) isa PerfectInterface
     @test eltype(layer_interface(s, 1)) === Float64

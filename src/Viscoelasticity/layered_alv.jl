@@ -34,9 +34,11 @@ The per-layer kernels must be `ViscoLaw`s returning iso 4-tensors
 (`TensISO{4,3}`) or stored as elastic `TensISO{4,3}` (auto-wrapped in a
 Heaviside law).
 """
-function _bulk_layer_moduli_alv(sphere::LayeredSphere{T, N},
-                                 C0_law::ViscoLaw,
-                                 times::AbstractVector{<:Real}) where {T, N}
+function _bulk_layer_moduli_alv(
+        sphere::LayeredSphere{T, N},
+        C0_law::ViscoLaw,
+        times::AbstractVector{<:Real}
+    ) where {T, N}
     n = length(times)
     # Matrix kernel : iso scalar matrices.
     R0 = trapezoidal_matrix(C0_law, times)
@@ -101,34 +103,40 @@ may also be a [`ViscoLaw`](@ref) — in that case the jump is itself
 ageing and the corresponding block is the parameter's trapezoidal
 matrix.
 """
-function _bulk_interface_T_alv(::PerfectInterface, M_κ, M_μ, r,
-                               times::AbstractVector, n::Int)
+function _bulk_interface_T_alv(
+        ::PerfectInterface, M_κ, M_μ, r,
+        times::AbstractVector, n::Int
+    )
     T = promote_type(eltype(M_κ), eltype(M_μ))
     return Matrix{T}(I, 2 * n, 2 * n)
 end
 
-function _bulk_interface_T_alv(intf::SpringInterface, M_κ, M_μ, r,
-                               times::AbstractVector, n::Int)
+function _bulk_interface_T_alv(
+        intf::SpringInterface, M_κ, M_μ, r,
+        times::AbstractVector, n::Int
+    )
     M_kn = _iface_param_volterra(intf.kn, times, n)
     T = promote_type(eltype(M_κ), eltype(M_μ), eltype(M_kn))
     Id = Matrix{T}(I, n, n)
     M = zeros(T, 2 * n, 2 * n)
-    M[1:n,           1:n]           = Id
-    M[1:n,           (n + 1):(2n)]  = T.(M_kn)
-    M[(n + 1):(2n),  (n + 1):(2n)]  = Id
+    M[1:n, 1:n] = Id
+    M[1:n, (n + 1):(2n)] = T.(M_kn)
+    M[(n + 1):(2n), (n + 1):(2n)] = Id
     return M
 end
 
-function _bulk_interface_T_alv(intf::MembraneInterface, M_κ, M_μ, r,
-                               times::AbstractVector, n::Int)
+function _bulk_interface_T_alv(
+        intf::MembraneInterface, M_κ, M_μ, r,
+        times::AbstractVector, n::Int
+    )
     M_κs = _iface_param_volterra(intf.κs, times, n)
     T = promote_type(eltype(M_κ), eltype(M_μ), eltype(M_κs))
     Id = Matrix{T}(I, n, n)
     fourκs_over_r² = T(4 / (r * r))
     M = zeros(T, 2 * n, 2 * n)
-    M[1:n,           1:n]           = Id
-    M[(n + 1):(2n),  1:n]           = fourκs_over_r² .* T.(M_κs)
-    M[(n + 1):(2n),  (n + 1):(2n)]  = Id
+    M[1:n, 1:n] = Id
+    M[(n + 1):(2n), 1:n] = fourκs_over_r² .* T.(M_κs)
+    M[(n + 1):(2n), (n + 1):(2n)] = Id
     return M
 end
 
@@ -170,9 +178,11 @@ layer `(M_κ_b, M_μ_b)`.  Returns the four `n × n` Volterra blocks
 Numerically stable for arbitrary modulus contrasts (soft pores in a
 solid matrix, step-activated `ViscoLaw`s, etc.).
 """
-function _bulk_transition_alv(::PerfectInterface,
-                               M_κ_a, M_μ_a, M_κ_b, M_μ_b,
-                               R::Real, times::AbstractVector, n::Int)
+function _bulk_transition_alv(
+        ::PerfectInterface,
+        M_κ_a, M_μ_a, M_κ_b, M_μ_b,
+        R::Real, times::AbstractVector, n::Int
+    )
     R³ = R^3
     Sb = 3 .* M_κ_b .+ 4 .* M_μ_b   # 3κ_b + 4μ_b (denominator)
     # Hervé–Zaoui closed-form: T = M_b^{-1} · M_a → inverse on the LEFT.
@@ -187,42 +197,50 @@ function _bulk_transition_alv(::PerfectInterface,
     return (T11, T12, T21, T22)
 end
 
-function _bulk_transition_alv(intf::SpringInterface,
-                               M_κ_a, M_μ_a, M_κ_b, M_μ_b,
-                               R::Real, times::AbstractVector, n::Int)
-    R²  = R^2
-    R³  = R^3
-    R⁴  = R^4
-    Sb  = 3 .* M_κ_b .+ 4 .* M_μ_b
+function _bulk_transition_alv(
+        intf::SpringInterface,
+        M_κ_a, M_μ_a, M_κ_b, M_μ_b,
+        R::Real, times::AbstractVector, n::Int
+    )
+    R² = R^2
+    R³ = R^3
+    R⁴ = R^4
+    Sb = 3 .* M_κ_b .+ 4 .* M_μ_b
     M_kn = _iface_param_volterra(intf.kn, times, n)
     # Numerators (`u_b = u_a + kn σ_a`, `σ_b = σ_a` → augmented bulk transition).
     num11 = 3 .* M_κ_a .+ 4 .* M_μ_b .+ (12 / R) .* (M_μ_b * (M_κ_a * M_kn))
     num12 = (4 / R³) .* (M_μ_b .- M_μ_a) .- (16 / R⁴) .* (M_μ_b * (M_μ_a * M_kn))
     num21 = (-3 * R³) .* (M_κ_a .- M_κ_b) .+ (9 * R²) .* (M_κ_a * (M_κ_b * M_kn))
     num22 = 3 .* M_κ_b .+ 4 .* M_μ_a .- (12 / R) .* (M_κ_b * (M_μ_a * M_kn))
-    return (volterra_left_divide(Sb, num11; block_size = 1),
-            volterra_left_divide(Sb, num12; block_size = 1),
-            volterra_left_divide(Sb, num21; block_size = 1),
-            volterra_left_divide(Sb, num22; block_size = 1))
+    return (
+        volterra_left_divide(Sb, num11; block_size = 1),
+        volterra_left_divide(Sb, num12; block_size = 1),
+        volterra_left_divide(Sb, num21; block_size = 1),
+        volterra_left_divide(Sb, num22; block_size = 1),
+    )
 end
 
-function _bulk_transition_alv(intf::MembraneInterface,
-                               M_κ_a, M_μ_a, M_κ_b, M_μ_b,
-                               R::Real, times::AbstractVector, n::Int)
-    R²  = R^2
-    R³  = R^3
-    R⁴  = R^4
-    Sb  = 3 .* M_κ_b .+ 4 .* M_μ_b
+function _bulk_transition_alv(
+        intf::MembraneInterface,
+        M_κ_a, M_μ_a, M_κ_b, M_μ_b,
+        R::Real, times::AbstractVector, n::Int
+    )
+    R² = R^2
+    R³ = R^3
+    R⁴ = R^4
+    Sb = 3 .* M_κ_b .+ 4 .* M_μ_b
     M_κs = _iface_param_volterra(intf.κs, times, n)
     # Numerators (`u_b = u_a`, `σ_b = σ_a + 4 κ_s/R² u_a`).
     num11 = 3 .* M_κ_a .+ 4 .* M_μ_b .+ (4 / R) .* M_κs
     num12 = (4 / R³) .* (M_μ_b .- M_μ_a) .+ (4 / R⁴) .* M_κs
     num21 = (-3 * R³) .* (M_κ_a .- M_κ_b) .- (4 * R²) .* M_κs
     num22 = 3 .* M_κ_b .+ 4 .* M_μ_a .- (4 / R) .* M_κs
-    return (volterra_left_divide(Sb, num11; block_size = 1),
-            volterra_left_divide(Sb, num12; block_size = 1),
-            volterra_left_divide(Sb, num21; block_size = 1),
-            volterra_left_divide(Sb, num22; block_size = 1))
+    return (
+        volterra_left_divide(Sb, num11; block_size = 1),
+        volterra_left_divide(Sb, num12; block_size = 1),
+        volterra_left_divide(Sb, num21; block_size = 1),
+        volterra_left_divide(Sb, num22; block_size = 1),
+    )
 end
 
 # ── Bulk recurrence in amplitude space ──────────────────────────────────────
@@ -243,17 +261,21 @@ but with no matrix inversion of a fundamental `M(r; κ, μ)`.  The
 only inversions performed are `volterra_divide(_, 3κ + 4μ)` which
 remain stable for any non-degenerate modulus.
 """
-function bulk_amplitude_seq_alv(sphere::LayeredSphere{T, N},
-                                 C0_law::ViscoLaw,
-                                 times::AbstractVector{<:Real}) where {T, N}
+function bulk_amplitude_seq_alv(
+        sphere::LayeredSphere{T, N},
+        C0_law::ViscoLaw,
+        times::AbstractVector{<:Real}
+    ) where {T, N}
     layers, M_κ_0, M_μ_0 = _bulk_layer_moduli_alv(sphere, C0_law, times)
     n = length(times)
     radii = sphere.radii
 
-    Telt = promote_type(eltype(layers[1][1]), eltype(layers[1][2]),
-                         eltype(M_κ_0), eltype(M_μ_0))
+    Telt = promote_type(
+        eltype(layers[1][1]), eltype(layers[1][2]),
+        eltype(M_κ_0), eltype(M_μ_0)
+    )
     Id = Matrix{Telt}(I, n, n)
-    Z  = zeros(Telt, n, n)
+    Z = zeros(Telt, n, n)
 
     A = Vector{Matrix{Telt}}(undef, N)
     B = Vector{Matrix{Telt}}(undef, N)
@@ -272,8 +294,10 @@ function bulk_amplitude_seq_alv(sphere::LayeredSphere{T, N},
         else
             (M_κ_b, M_μ_b) = (M_κ_0, M_μ_0)
         end
-        T11, T12, T21, T22 = _bulk_transition_alv(intf,
-            M_κ_a, M_μ_a, M_κ_b, M_μ_b, radii[k], times, n)
+        T11, T12, T21, T22 = _bulk_transition_alv(
+            intf,
+            M_κ_a, M_μ_a, M_κ_b, M_μ_b, radii[k], times, n
+        )
         A_new = T11 * A_curr + T12 * B_curr
         B_new = T21 * A_curr + T22 * B_curr
         A_curr = A_new
@@ -305,9 +329,11 @@ for arbitrary modulus contrasts (pores, step-activated layers …).
 Reference : Hervé-Zaoui 1993 (elastic) ; ECHOES manual ch07
 §"n-layer ALV bulk recurrence" ; Sanahuja IJSS 2013.
 """
-function bulk_localization_alv(sphere::LayeredSphere{T, N},
-                               C0_law::ViscoLaw,
-                               times::AbstractVector{<:Real}) where {T, N}
+function bulk_localization_alv(
+        sphere::LayeredSphere{T, N},
+        C0_law::ViscoLaw,
+        times::AbstractVector{<:Real}
+    ) where {T, N}
     inside_amps, A_M, _ = bulk_amplitude_seq_alv(sphere, C0_law, times)
     A_M_inv = volterra_inverse(A_M; block_size = 1)
     return ntuple(N) do k
@@ -330,9 +356,11 @@ This helper is retained for the existing test that asserts the
 matrix-side state matches the analytical Hervé-Zaoui boundary
 condition.
 """
-function bulk_state_seq_alv(sphere::LayeredSphere{T, N},
-                            C0_law::ViscoLaw,
-                            times::AbstractVector{<:Real}) where {T, N}
+function bulk_state_seq_alv(
+        sphere::LayeredSphere{T, N},
+        C0_law::ViscoLaw,
+        times::AbstractVector{<:Real}
+    ) where {T, N}
     layers, M_κ_0, M_μ_0 = _bulk_layer_moduli_alv(sphere, C0_law, times)
     inside_amps, A_M, B_M = bulk_amplitude_seq_alv(sphere, C0_law, times)
     n = length(times)
@@ -341,7 +369,7 @@ function bulk_state_seq_alv(sphere::LayeredSphere{T, N},
 
     function pack_state(r, M_κ, M_μ, A, B)
         s = zeros(Telt, 2 * n, n)
-        s[1:n,          1:n] = r * A + (1 / r^2) * B
+        s[1:n, 1:n] = r * A + (1 / r^2) * B
         s[(n + 1):(2n), 1:n] = 3 * (M_κ * A) - (4 / r^3) * (M_μ * B)
         return s
     end
@@ -395,12 +423,14 @@ Volterra matrix; entries are arranged in **time-major** layout
 entry of the `(i, j)` block), so the resulting `4n × 4n` matrix is
 block-lower-triangular with 4×4 diagonal blocks.
 """
-function _shear_M_matrix_alv(r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatrix,
-                              n::Int)
+function _shear_M_matrix_alv(
+        r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatrix,
+        n::Int
+    )
     T = promote_type(eltype(M_κ), eltype(M_μ))
     Tr = T(r)
-    r²     = Tr * Tr
-    r³     = r² * Tr
+    r² = Tr * Tr
+    r³ = r² * Tr
     inv_r² = one(T) / r²
     inv_r³ = inv_r² / Tr
     inv_r⁴ = inv_r² * inv_r²
@@ -428,25 +458,31 @@ function _shear_M_matrix_alv(r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatrix
     blocks[4, 1] = 2 * Mμ
 
     # Mode 2 — r³ profile.  α₂ = 6(3x − 2), γ₂ = 15x + 11 with x = κ/μ.
-    blocks[1, 2] = (6 * r³) * volterra_left_divide(Mμ, 3 .* Mκ .- 2 .* Mμ;
-                                                    block_size = 1)
-    blocks[2, 2] = r³ * volterra_left_divide(Mμ, 15 .* Mκ .+ 11 .* Mμ;
-                                              block_size = 1)
+    blocks[1, 2] = (6 * r³) * volterra_left_divide(
+        Mμ, 3 .* Mκ .- 2 .* Mμ;
+        block_size = 1
+    )
+    blocks[2, 2] = r³ * volterra_left_divide(
+        Mμ, 15 .* Mκ .+ 11 .* Mμ;
+        block_size = 1
+    )
     blocks[3, 2] = r² * (12 .* Mμ .- 18 .* Mκ)         # 6(2μ − 3κ) r²
     blocks[4, 2] = r² * (48 .* Mκ .+ 10 .* Mμ)         # 2(24κ + 5μ) r²
 
     # Mode 3 — 1/r⁴ profile. (U, V) = (3, -1).
-    blocks[1, 3] =  3 * inv_r⁴ * Id
-    blocks[2, 3] =     -inv_r⁴ * Id
+    blocks[1, 3] = 3 * inv_r⁴ * Id
+    blocks[2, 3] = -inv_r⁴ * Id
     blocks[3, 3] = -24 * inv_r⁵ * Mμ
-    blocks[4, 3] =   8 * inv_r⁵ * Mμ
+    blocks[4, 3] = 8 * inv_r⁵ * Mμ
 
     # Mode 4 — 1/r² profile. α₄ = 3(x + 1).
-    blocks[1, 4] = (3 * inv_r²) * volterra_left_divide(Mμ, Mκ .+ Mμ;
-                                                        block_size = 1)
-    blocks[2, 4] =      inv_r² * Id
+    blocks[1, 4] = (3 * inv_r²) * volterra_left_divide(
+        Mμ, Mκ .+ Mμ;
+        block_size = 1
+    )
+    blocks[2, 4] = inv_r² * Id
     blocks[3, 4] = -2 * inv_r³ * (9 .* Mκ .+ 4 .* Mμ)
-    blocks[4, 4] =  3 * inv_r³ * Mκ
+    blocks[4, 4] = 3 * inv_r³ * Mκ
 
     # Assemble into the 4n × 4n time-major matrix.
     M = zeros(T, 4 * n, 4 * n)
@@ -478,8 +514,10 @@ end
 # 4×4 blocks (between modes/state-components) sit on the **diagonal**
 # in time; the within-block n×n Volterra structure handles the time
 # coupling.
-function _assemble_4n_time_major(blocks::AbstractArray{<:AbstractMatrix, 2},
-                                  n::Int)
+function _assemble_4n_time_major(
+        blocks::AbstractArray{<:AbstractMatrix, 2},
+        n::Int
+    )
     T = mapreduce(eltype, promote_type, blocks)
     M = zeros(T, 4 * n, 4 * n)
     @inbounds for i in 1:4, j in 1:4
@@ -507,23 +545,29 @@ jump for every time step).  For an ageing interface (parameters
 `::ViscoLaw`) the corresponding entries also populate sub-diagonal
 4×4 blocks, encoding the convolution.
 """
-function _shear_interface_T_alv(::PerfectInterface,
-                                M_κ_a, M_μ_a, M_κ_b, M_μ_b,
-                                r, times::AbstractVector, n::Int)
+function _shear_interface_T_alv(
+        ::PerfectInterface,
+        M_κ_a, M_μ_a, M_κ_b, M_μ_b,
+        r, times::AbstractVector, n::Int
+    )
     # σ-state perfect interface: identity on (U, V, σ_rr, σ_rθ).
     T = promote_type(eltype(M_μ_a), eltype(M_μ_b))
     return Matrix{T}(I, 4 * n, 4 * n)
 end
 
-function _shear_interface_T_alv(intf::SpringInterface,
-                                M_κ_a, M_μ_a, M_κ_b, M_μ_b,
-                                r, times::AbstractVector, n::Int)
+function _shear_interface_T_alv(
+        intf::SpringInterface,
+        M_κ_a, M_μ_a, M_κ_b, M_μ_b,
+        r, times::AbstractVector, n::Int
+    )
     M_kn = _iface_param_volterra(intf.kn, times, n)
     M_kt = _iface_param_volterra(intf.kt, times, n)
-    T = promote_type(eltype(M_μ_a), eltype(M_μ_b),
-                     eltype(M_kn), eltype(M_kt))
+    T = promote_type(
+        eltype(M_μ_a), eltype(M_μ_b),
+        eltype(M_kn), eltype(M_kt)
+    )
     Id = Matrix{T}(I, n, n)
-    Z  = zeros(T, n, n)
+    Z = zeros(T, n, n)
     blocks = Matrix{Matrix{T}}(undef, 4, 4)
     @inbounds for i in 1:4, j in 1:4
         blocks[i, j] = Z
@@ -538,15 +582,19 @@ function _shear_interface_T_alv(intf::SpringInterface,
     return _assemble_4n_time_major(blocks, n)
 end
 
-function _shear_interface_T_alv(intf::MembraneInterface,
-                                M_κ_a, M_μ_a, M_κ_b, M_μ_b,
-                                r, times::AbstractVector, n::Int)
+function _shear_interface_T_alv(
+        intf::MembraneInterface,
+        M_κ_a, M_μ_a, M_κ_b, M_μ_b,
+        r, times::AbstractVector, n::Int
+    )
     M_κs = _iface_param_volterra(intf.κs, times, n)
     M_μs = _iface_param_volterra(intf.μs, times, n)
-    T = promote_type(eltype(M_μ_a), eltype(M_μ_b),
-                     eltype(M_κs), eltype(M_μs))
+    T = promote_type(
+        eltype(M_μ_a), eltype(M_μ_b),
+        eltype(M_κs), eltype(M_μs)
+    )
     Id = Matrix{T}(I, n, n)
-    Z  = zeros(T, n, n)
+    Z = zeros(T, n, n)
     inv_r² = one(T) / T(r * r)
     blocks = Matrix{Matrix{T}}(undef, 4, 4)
     @inbounds for i in 1:4, j in 1:4
@@ -574,9 +622,9 @@ function _shear_interface_T_alv(intf::MembraneInterface,
     # membrane interfaces, so the user-facing ageing-creep workflow is
     # unaffected.
     blocks[3, 1] = -6 * inv_r² .* T.(M_κs)
-    blocks[3, 2] =  6 * inv_r² .* T.(M_κs)
+    blocks[3, 2] = 6 * inv_r² .* T.(M_κs)
     blocks[4, 1] = -inv_r² .* (T.(M_κs) .+ 3 .* T.(M_μs))
-    blocks[4, 2] =  inv_r² .* (3 .* T.(M_μs) .- T.(M_κs))
+    blocks[4, 2] = inv_r² .* (3 .* T.(M_μs) .- T.(M_κs))
     return _assemble_4n_time_major(blocks, n)
 end
 
@@ -591,30 +639,32 @@ guaranteed regular for any non-vacuum modulus.  This avoids inverting
 the full `4 × 4` diagonal block of `M(r)`, whose `det` collapses with
 `μ → 0` (soft phases, step-activated layers).
 """
-function _shear_M_inverse_alv(r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatrix,
-                               n::Int)
+function _shear_M_inverse_alv(
+        r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatrix,
+        n::Int
+    )
     T = promote_type(eltype(M_κ), eltype(M_μ))
     Tr = T(r)
-    R²  = Tr * Tr
-    R³  = R² * Tr
-    R⁴  = R³ * Tr
-    R⁵  = R⁴ * Tr
+    R² = Tr * Tr
+    R³ = R² * Tr
+    R⁴ = R³ * Tr
+    R⁵ = R⁴ * Tr
     Mκ = Matrix{T}(M_κ); Mμ = Matrix{T}(M_μ)
     # n × n Volterra inverses (the only ones needed).
-    U     = volterra_inverse(3 .* Mκ .+ 4 .* Mμ; block_size = 1)
+    U = volterra_inverse(3 .* Mκ .+ 4 .* Mμ; block_size = 1)
     invMμ = volterra_inverse(Mμ; block_size = 1)
     # Composite combinations (all with the inverse on the LEFT, matching
     # the C++ `mult_array(U, ...)` convention).
-    k9mu4   = 9 .* Mκ .+ 4 .* Mμ
-    k3mmu2  = 3 .* Mκ .- 2 .* Mμ
+    k9mu4 = 9 .* Mκ .+ 4 .* Mμ
+    k3mmu2 = 3 .* Mκ .- 2 .* Mμ
     k15mu11 = 15 .* Mκ .+ 11 .* Mμ
-    k24mu5  = 24 .* Mκ .+ 5 .* Mμ
-    kmu     = Mκ .+ Mμ
+    k24mu5 = 24 .* Mκ .+ 5 .* Mμ
+    kmu = Mκ .+ Mμ
     Uk = U * Mκ
     Uk9mu4 = U * k9mu4
     Uk3mmu2 = U * k3mmu2
     Uk15mu11 = U * k15mu11
-    Uk24mu5  = U * k24mu5
+    Uk24mu5 = U * k24mu5
     Uμ = U * Mμ
     U_kmu_invμ = U * (kmu * invMμ)
     U_k3mmu2_invμ = U * (k3mmu2 * invMμ)
@@ -623,22 +673,22 @@ function _shear_M_inverse_alv(r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatri
     # ECHOES C++ closed-form M^{-1} (Christensen–Lo derivative).
     blocks_cpp = Array{Matrix{T}, 2}(undef, 4, 4)
     one70 = T(1 // 70)
-    blocks_cpp[1, 1] =  one70 * (28 / Tr) * Uk9mu4
-    blocks_cpp[1, 2] =  one70 * (-126 / Tr) * Uk
-    blocks_cpp[1, 3] =  one70 * 42 * U_kmu_invμ
-    blocks_cpp[1, 4] =  one70 * 42 * U
-    blocks_cpp[2, 1] =  one70 * (-16 / R³) * Uμ
-    blocks_cpp[2, 2] =  one70 * ( 16 / R³) * Uμ
-    blocks_cpp[2, 3] =  one70 * (-2 / R²) * U
-    blocks_cpp[2, 4] =  one70 * ( 2 / R²) * U
-    blocks_cpp[3, 1] =  one70 * (2 * R⁴) * Uk3mmu2
-    blocks_cpp[3, 2] =  one70 * (-2 * R⁴) * Uk24mu5
-    blocks_cpp[3, 3] =  one70 * (2 * R⁵) * U_k3mmu2_invμ
-    blocks_cpp[3, 4] =  one70 * R⁵ * U_k15mu11_invμ
-    blocks_cpp[4, 1] =  one70 * (28 * R²) * Uμ
-    blocks_cpp[4, 2] =  one70 * (42 * R²) * Uμ
-    blocks_cpp[4, 3] =  one70 * (-14 * R³) * U
-    blocks_cpp[4, 4] =  one70 * (-21 * R³) * U
+    blocks_cpp[1, 1] = one70 * (28 / Tr) * Uk9mu4
+    blocks_cpp[1, 2] = one70 * (-126 / Tr) * Uk
+    blocks_cpp[1, 3] = one70 * 42 * U_kmu_invμ
+    blocks_cpp[1, 4] = one70 * 42 * U
+    blocks_cpp[2, 1] = one70 * (-16 / R³) * Uμ
+    blocks_cpp[2, 2] = one70 * (16 / R³) * Uμ
+    blocks_cpp[2, 3] = one70 * (-2 / R²) * U
+    blocks_cpp[2, 4] = one70 * (2 / R²) * U
+    blocks_cpp[3, 1] = one70 * (2 * R⁴) * Uk3mmu2
+    blocks_cpp[3, 2] = one70 * (-2 * R⁴) * Uk24mu5
+    blocks_cpp[3, 3] = one70 * (2 * R⁵) * U_k3mmu2_invμ
+    blocks_cpp[3, 4] = one70 * R⁵ * U_k15mu11_invμ
+    blocks_cpp[4, 1] = one70 * (28 * R²) * Uμ
+    blocks_cpp[4, 2] = one70 * (42 * R²) * Uμ
+    blocks_cpp[4, 3] = one70 * (-14 * R³) * U
+    blocks_cpp[4, 4] = one70 * (-21 * R³) * U
 
     # Conjugate to the Christensen–Lo / SymPy convention used throughout
     # `_shear_M_matrix_alv` (and by the elastic state-space recurrence):
@@ -646,7 +696,7 @@ function _shear_M_inverse_alv(r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatri
     #     D_row = diag(1/2, 1, 1/2, 1),  D_col = diag(1, 1, 2, 2),
     # ⇒   M_CL^{-1} = D_col · M_C++^{-1} · D_row.
     # Per-(i,j) block scaling: factor[i, j] = D_col[i] · D_row[j].
-    D_row = (T(1//2), T(1), T(1//2), T(1))
+    D_row = (T(1 // 2), T(1), T(1 // 2), T(1))
     D_col = (T(1), T(1), T(2), T(2))
     blocks = Array{Matrix{T}, 2}(undef, 4, 4)
     @inbounds for i in 1:4, j in 1:4
@@ -665,9 +715,11 @@ layer with Volterra moduli `(M_κ, M_μ)`.  Uses the closed-form
 n × n `(3κ + 4μ)^{-vol}` and `μ^{-vol}` — the dense `M(r; κ, μ)^{-1}`
 is never formed (its `4 × 4` diagonal blocks collapse for soft phases).
 """
-function _shear_layer_transfer_alv(r_out::Real, r_in::Real,
-                                   M_κ::AbstractMatrix, M_μ::AbstractMatrix,
-                                   n::Int)
+function _shear_layer_transfer_alv(
+        r_out::Real, r_in::Real,
+        M_κ::AbstractMatrix, M_μ::AbstractMatrix,
+        n::Int
+    )
     M_out = _shear_M_matrix_alv(r_out, M_κ, M_μ, n)
     M_in_inv = _shear_M_inverse_alv(r_in, M_κ, M_μ, n)
     return M_out * M_in_inv
@@ -682,9 +734,11 @@ the singular amplitudes `c = d = 0` enforced by finiteness at the
 origin).  Each probe is the appropriate "block column" of
 `M(r_1; M_κ_1, M_μ_1)` extracted in time-major form.
 """
-function _shear_seed_states_alv(r_1::Real,
-                                 M_κ_1::AbstractMatrix, M_μ_1::AbstractMatrix,
-                                 n::Int)
+function _shear_seed_states_alv(
+        r_1::Real,
+        M_κ_1::AbstractMatrix, M_μ_1::AbstractMatrix,
+        n::Int
+    )
     M_1 = _shear_M_matrix_alv(r_1, M_κ_1, M_μ_1, n)
     # In time-major form, mode-j columns are at positions j, 4+j, 8+j, …
     probe_a = Matrix(M_1[:, 1:4:end])
@@ -703,8 +757,10 @@ are not needed for layered-sphere localisation since `c = d = 0` for the
 core probe construction and the matrix-side normalisation only fixes
 `a` and `b`).
 """
-function _shear_amp_blocks_alv(r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatrix,
-                                n::Int, state::AbstractMatrix)
+function _shear_amp_blocks_alv(
+        r::Real, M_κ::AbstractMatrix, M_μ::AbstractMatrix,
+        n::Int, state::AbstractMatrix
+    )
     # Closed-form M(r)^{-1} (the only n × n Volterra inverses are
     # `(3κ+4μ)^{-vol}` and `μ^{-vol}`, both stable for any non-vacuum
     # modulus — see `_shear_M_inverse_alv`).
@@ -738,9 +794,11 @@ probes so the matrix-side amplitudes match unit far-field
 `(a, b) = (I_n, 0)`.  Built as a single time-major
 `block_size = 2` Volterra inversion.
 """
-function _shear_solve_far_field_alv(a_a::AbstractMatrix, a_b::AbstractMatrix,
-                                     b_a::AbstractMatrix, b_b::AbstractMatrix,
-                                     n::Int)
+function _shear_solve_far_field_alv(
+        a_a::AbstractMatrix, a_b::AbstractMatrix,
+        b_a::AbstractMatrix, b_b::AbstractMatrix,
+        n::Int
+    )
     T = promote_type(eltype(a_a), eltype(a_b), eltype(b_a), eltype(b_b))
     M_sys = zeros(T, 2 * n, 2 * n)
     @inbounds for s in 1:n
@@ -789,10 +847,12 @@ interface) plus the matrix-side states `s_a`, `s_b` at `r_N⁺`.
 `layers` must be the same `(M_κ_k, M_μ_k)` tuple produced by
 `_bulk_layer_moduli_alv`.
 """
-function _shear_state_seq_alv(sphere::LayeredSphere{T, N},
-                               layers::NTuple{N, <:Tuple},
-                               M_κ_0, M_μ_0,
-                               times::AbstractVector{<:Real}) where {T, N}
+function _shear_state_seq_alv(
+        sphere::LayeredSphere{T, N},
+        layers::NTuple{N, <:Tuple},
+        M_κ_0, M_μ_0,
+        times::AbstractVector{<:Real}
+    ) where {T, N}
     n = length(times)
     radii = sphere.radii
 
@@ -811,13 +871,17 @@ function _shear_state_seq_alv(sphere::LayeredSphere{T, N},
         else
             (M_κ_b, M_μ_b) = (M_κ_0, M_μ_0)
         end
-        T_intf = _shear_interface_T_alv(intf,
-            M_κ_a, M_μ_a, M_κ_b, M_μ_b, radii[k], times, n)
+        T_intf = _shear_interface_T_alv(
+            intf,
+            M_κ_a, M_μ_a, M_κ_b, M_μ_b, radii[k], times, n
+        )
         sa = T_intf * sa
         sb = T_intf * sb
         if k < N
-            T_layer = _shear_layer_transfer_alv(radii[k + 1], radii[k],
-                                                 M_κ_b, M_μ_b, n)
+            T_layer = _shear_layer_transfer_alv(
+                radii[k + 1], radii[k],
+                M_κ_b, M_μ_b, n
+            )
             sa = T_layer * sa
             sb = T_layer * sb
         end
@@ -843,14 +907,17 @@ amplitude block extracted from the combined inside state.
 Reference : ECHOES manual ch07 §"n-layer ALV shear recurrence" ;
 Hervé-Zaoui 1993 generalised to ALV via [@sanahuja2013].
 """
-function shear_localization_alv(sphere::LayeredSphere{T, N},
-                                 C0_law::ViscoLaw,
-                                 times::AbstractVector{<:Real}) where {T, N}
+function shear_localization_alv(
+        sphere::LayeredSphere{T, N},
+        C0_law::ViscoLaw,
+        times::AbstractVector{<:Real}
+    ) where {T, N}
     n = length(times)
     layers, M_κ_0, M_μ_0 = _bulk_layer_moduli_alv(sphere, C0_law, times)
 
     inside_a, inside_b, s_mat_a, s_mat_b = _shear_state_seq_alv(
-        sphere, layers, M_κ_0, M_μ_0, times)
+        sphere, layers, M_κ_0, M_μ_0, times
+    )
     radii = sphere.radii
 
     # Matrix-side amplitudes of each probe at r_N⁺.
@@ -872,8 +939,10 @@ function shear_localization_alv(sphere::LayeredSphere{T, N},
         # (Christensen–Lo mode-2 angular integral with the C++ mode
         # normalisation in `_shear_M_matrix_alv`).
         geom = (r_b^5 - r_a^5) / (r_b^3 - r_a^3)
-        F_k = (21 / 5) * geom * volterra_left_divide(M_μ_k, 3 .* M_κ_k .+ M_μ_k;
-                                                     block_size = 1)
+        F_k = (21 / 5) * geom * volterra_left_divide(
+            M_μ_k, 3 .* M_κ_k .+ M_μ_k;
+            block_size = 1
+        )
         a_k .+ F_k * b_k
     end
 end
@@ -901,9 +970,11 @@ products).
 This is the analogue used by the ALV dilute / MT / Maxwell schemes
 when the inclusion phase is a `LayeredSphere`.
 """
-function strain_strain_loc_alv(sphere::LayeredSphere{T, N},
-                               C0_law::ViscoLaw,
-                               times::AbstractVector{<:Real}) where {T, N}
+function strain_strain_loc_alv(
+        sphere::LayeredSphere{T, N},
+        C0_law::ViscoLaw,
+        times::AbstractVector{<:Real}
+    ) where {T, N}
     α_k = bulk_localization_alv(sphere, C0_law, times)
     β_k = shear_localization_alv(sphere, C0_law, times)
     f = ntuple(k -> layer_volume_fraction(sphere, k), Val(N))
@@ -926,9 +997,11 @@ where `α_k`, `β_k` are the per-layer localisation matrices and `M_κ_k`,
 The dilute-scheme effective stiffness with this inclusion at volume
 fraction `f` is `C̃_eff = C̃_0 + f · stiffness_contribution_alv(sphere, …)`.
 """
-function stiffness_contribution_alv(sphere::LayeredSphere{T, N},
-                                    C0_law::ViscoLaw,
-                                    times::AbstractVector{<:Real}) where {T, N}
+function stiffness_contribution_alv(
+        sphere::LayeredSphere{T, N},
+        C0_law::ViscoLaw,
+        times::AbstractVector{<:Real}
+    ) where {T, N}
     layers, M_κ_0, M_μ_0 = _bulk_layer_moduli_alv(sphere, C0_law, times)
     α_k = bulk_localization_alv(sphere, C0_law, times)
     β_k = shear_localization_alv(sphere, C0_law, times)
@@ -937,11 +1010,11 @@ function stiffness_contribution_alv(sphere::LayeredSphere{T, N},
 
     Tα = promote_type(eltype(M_κ_0), eltype(α_k[1]), eltype(layers[1][1]))
     Tβ = promote_type(eltype(M_μ_0), eltype(β_k[1]), eltype(layers[1][2]))
-    N_bulk  = zeros(Tα, n, n)
+    N_bulk = zeros(Tα, n, n)
     N_shear = zeros(Tβ, n, n)
     @inbounds for k in 1:N
         (M_κ_k, M_μ_k) = layers[k]
-        N_bulk  .+= f[k] .* ((M_κ_k - M_κ_0) * α_k[k])
+        N_bulk .+= f[k] .* ((M_κ_k - M_κ_0) * α_k[k])
         N_shear .+= f[k] .* ((M_μ_k - M_μ_0) * β_k[k])
     end
     return iso_blocks_from_params(3 .* N_bulk, 2 .* N_shear)

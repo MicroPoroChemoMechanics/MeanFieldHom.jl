@@ -46,7 +46,7 @@ using Plots
 
 # Internal helpers reused for the local-bulk profile (mirrors script 32).
 import MeanFieldHom.LayeredSpheres: _iso_bulk_shear, _bulk_state_seq,
-       _bulk_extract_AB, _shear_M_matrix
+    _bulk_extract_AB, _shear_M_matrix
 
 # ─── Python-side wrappers ────────────────────────────────────────────────────
 
@@ -80,13 +80,13 @@ def py_loc_sS(spn, r, theta, phi):
     return np.asarray(spn.loc_sS(r, theta, phi))
 """
 
-const py_stiff_kmu     = py"py_stiff_kmu"
-const py_make_nlayers  = py"py_make_nlayers"
-const py_layer_eE      = py"py_layer_eE"
-const py_eE_total      = py"py_eE"
-const py_sE_total      = py"py_sE"
-const py_layer_frac    = py"py_layer_fraction"
-const py_loc_sS        = py"py_loc_sS"
+const py_stiff_kmu = py"py_stiff_kmu"
+const py_make_nlayers = py"py_make_nlayers"
+const py_layer_eE = py"py_layer_eE"
+const py_eE_total = py"py_eE"
+const py_sE_total = py"py_sE"
+const py_layer_frac = py"py_layer_fraction"
+const py_loc_sS = py"py_loc_sS"
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -120,9 +120,9 @@ relerr(a, b) = (abs(a) + abs(b) < 1.0e-14) ? 0.0 : abs(a - b) / max(abs(a), abs(
 
 # ─── §1 + §2  Random n-layer cross-check ────────────────────────────────────
 
-println("=" ^ 78)
+println("="^78)
 println("§1  Bulk α_k vs ECHOES layer_eE (random n-layer configs)")
-println("=" ^ 78)
+println("="^78)
 
 const rtol_match = 1.0e-8
 
@@ -176,9 +176,9 @@ println()
 
 # ─── §2  Internal consistency : Julia recurrence vs direct 8×8 solver ───────
 
-println("=" ^ 78)
+println("="^78)
 println("§2  β_k self-consistency : recurrence vs direct 8×8 linear-system")
-println("=" ^ 78)
+println("="^78)
 
 # Direct 8×8 solver for the 2-layer Y₂-harmonic shear problem.
 # Unknowns x = (a₁, b₁, a₂, b₂, c₂, d₂, c_∞, d_∞);  c₁ = d₁ = 0 enforced.
@@ -204,8 +204,10 @@ for cfg in 1:20
     Km = 1 + 99 * rand(); μm = 0.5 + 49.5 * rand()
     r1 = 0.1 + 0.8 * rand()
 
-    sphere = LayeredSphere((r1, 1.0),
-                           (TensISO{3}(3Kc, 2μc), TensISO{3}(3Ks, 2μs)))
+    sphere = LayeredSphere(
+        (r1, 1.0),
+        (TensISO{3}(3Kc, 2μc), TensISO{3}(3Ks, 2μs))
+    )
     C0 = TensISO{3}(3Km, 2μm)
     _, β_recurrence = TensND.get_data(strain_strain_loc(sphere, C0; layer = 1))
     β_direct = direct_2layer_β_layer1(r1, 1.0, Kc, μc, Ks, μs, Km, μm)
@@ -218,9 +220,9 @@ println()
 
 # ─── §3  Analytical-limit check : β in degenerate configurations ────────────
 
-println("=" ^ 78)
+println("="^78)
 println("§3  β_layer1 vs analytical Eshelby in degenerate limits")
-println("=" ^ 78)
+println("="^78)
 
 # Single-layer Eshelby strain localisation for a sphere of moduli (μ₁) in
 # matrix (κ₀, μ₀):  β_∞ = 1 / (1 + α_dev (μ₁/μ₀ − 1))  with
@@ -234,14 +236,14 @@ const Kc, μc = 80.0, 30.0
 const Ks, μs = 20.0, 8.0
 const Km, μm = 50.0, 20.0
 const C_ref_lim = TensISO{3}(3Km, 2μm)
-const C_core    = TensISO{3}(3Kc, 2μc)
-const C_shell   = TensISO{3}(3Ks, 2μs)
+const C_core = TensISO{3}(3Kc, 2μc)
+const C_shell = TensISO{3}(3Ks, 2μs)
 
 # Limit 1 : shell ≡ matrix → β_layer1 = single-layer Eshelby (core in matrix).
 let
     sphere = LayeredSphere((0.5, 1.0), (C_core, C_ref_lim))
     _, β_jl = TensND.get_data(strain_strain_loc(sphere, C_ref_lim; layer = 1))
-    β_an   = β_eshelby_sphere(μc, Km, μm)
+    β_an = β_eshelby_sphere(μc, Km, μm)
     @printf "  shell ≡ matrix      :  Julia β = %.10f   analytical = %.10f   relerr = %.2e\n" β_jl β_an relerr(β_jl, β_an)
 end
 
@@ -250,7 +252,7 @@ end
 let
     sphere = LayeredSphere((0.5, 1.0), (C_core, C_core))
     _, β_jl = TensND.get_data(strain_strain_loc(sphere, C_ref_lim; layer = 1))
-    β_an   = β_eshelby_sphere(μc, Km, μm)
+    β_an = β_eshelby_sphere(μc, Km, μm)
     @printf "  core ≡ shell        :  Julia β = %.10f   analytical = %.10f   relerr = %.2e\n" β_jl β_an relerr(β_jl, β_an)
 end
 
@@ -275,29 +277,33 @@ println()
 
 # ─── §4  Local bulk profile vs `loc_sS` under hydrostatic load ──────────────
 
-println("=" ^ 78)
+println("="^78)
 println("§4  Local stress profile (hydrostatic) vs ECHOES loc_sS")
-println("=" ^ 78)
+println("="^78)
 
 # Use the Christensen-style 2-layer setup of script 32_local_nlayers.jl.
-const Eo, νo  = 30.0, 0.3
-const Ei, νi  = 100.0, 0.3
+const Eo, νo = 30.0, 0.3
+const Ei, νi = 100.0, 0.3
 const Eitz, νitz = 0.1 * Ei, 0.2
 
 K_o, μ_o = _Kmu_Enu(Eo, νo)
 K_i, μ_i = _Kmu_Enu(Ei, νi)
 K_itz, μ_itz = _Kmu_Enu(Eitz, νitz)
 
-const C_ref_loc_jl    = TensISO{3}(3 * K_o, 2 * μ_o)
-const C_ref_loc_py    = py_stiff_kmu(K_o, μ_o)
+const C_ref_loc_jl = TensISO{3}(3 * K_o, 2 * μ_o)
+const C_ref_loc_py = py_stiff_kmu(K_o, μ_o)
 const C_layers_loc_py = [py_stiff_kmu(K_i, μ_i), py_stiff_kmu(K_itz, μ_itz)]
 
 const R_inner = 1.0
 const ep_layer = 2.0
 const radii_loc = [R_inner, R_inner + ep_layer]
-const sphere_loc_jl = LayeredSphere((R_inner, R_inner + ep_layer),
-                                    (TensISO{3}(3 * K_i, 2 * μ_i),
-                                     TensISO{3}(3 * K_itz, 2 * μ_itz)))
+const sphere_loc_jl = LayeredSphere(
+    (R_inner, R_inner + ep_layer),
+    (
+        TensISO{3}(3 * K_i, 2 * μ_i),
+        TensISO{3}(3 * K_itz, 2 * μ_itz),
+    )
+)
 const spn_loc_py = py_make_nlayers(radii_loc, C_layers_loc_py, C_ref_loc_py)
 
 # Bulk-profile evaluator — copy of script 32 helper for self-containment.
@@ -315,8 +321,10 @@ function bulk_AB(sphere::LayeredSphere{T, N}, C₀::TensISO{4, 3}) where {T, N}
     return AB, B_inf * inv_A_inf
 end
 
-function bulk_stresses(sphere::LayeredSphere{T, N}, C₀::TensISO{4, 3}, r;
-                       ε_v::Real = 1.0) where {T, N}
+function bulk_stresses(
+        sphere::LayeredSphere{T, N}, C₀::TensISO{4, 3}, r;
+        ε_v::Real = 1.0
+    ) where {T, N}
     AB, B_inf = bulk_AB(sphere, C₀)
     radii = sphere.radii
     κ₀, μ₀ = _iso_bulk_shear(C₀)
@@ -363,18 +371,24 @@ errs_θθ = [relerr(σ_θθ_jl[i], σ_θθ_py[i]) for i in eachindex(lr_check)]
 @printf "Local stress max relerr — σ_rr : %.3e, σ_θθ : %.3e (over %d points)\n\n" maximum(errs_rr) maximum(errs_θθ) length(lr_check)
 
 # Plot Julia vs ECHOES.
-p_loc = plot(; xlabel = "r", ylabel = "σ_ij / σ∞",
-              title = "Local stress profile — hydrostatic far-field",
-              legend = :topright, grid = true)
-plot!(p_loc, lr_check, σ_rr_jl ./ σ_far; lw = 2, color = :red,    label = "σ_rr (Julia)")
-plot!(p_loc, lr_check, σ_rr_py ./ σ_far; lw = 0, marker = :circle, ms = 4,
-        color = :red,  label = "σ_rr (ECHOES)")
-plot!(p_loc, lr_check, σ_θθ_jl ./ σ_far; lw = 2, color = :blue,   label = "σ_θθ (Julia)")
-plot!(p_loc, lr_check, σ_θθ_py ./ σ_far; lw = 0, marker = :diamond, ms = 4,
-        color = :blue,  label = "σ_θθ (ECHOES)")
+p_loc = plot(;
+    xlabel = "r", ylabel = "σ_ij / σ∞",
+    title = "Local stress profile — hydrostatic far-field",
+    legend = :topright, grid = true
+)
+plot!(p_loc, lr_check, σ_rr_jl ./ σ_far; lw = 2, color = :red, label = "σ_rr (Julia)")
+plot!(
+    p_loc, lr_check, σ_rr_py ./ σ_far; lw = 0, marker = :circle, ms = 4,
+    color = :red, label = "σ_rr (ECHOES)"
+)
+plot!(p_loc, lr_check, σ_θθ_jl ./ σ_far; lw = 2, color = :blue, label = "σ_θθ (Julia)")
+plot!(
+    p_loc, lr_check, σ_θθ_py ./ σ_far; lw = 0, marker = :diamond, ms = 4,
+    color = :blue, label = "σ_θθ (ECHOES)"
+)
 hline!(p_loc, [1.0]; lw = 1, color = :black, linestyle = :dot, label = "σ∞")
-vline!(p_loc, [R_inner];               lw = 1, color = :black, linestyle = :dash, label = "")
-vline!(p_loc, [R_inner + ep_layer];    lw = 1, color = :black, linestyle = :dash, label = "")
+vline!(p_loc, [R_inner]; lw = 1, color = :black, linestyle = :dash, label = "")
+vline!(p_loc, [R_inner + ep_layer]; lw = 1, color = :black, linestyle = :dash, label = "")
 
 const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)

@@ -78,9 +78,11 @@ In-place TI Volterra product : 8 `mul!` calls for the 2×2 normal
 block + 2 `mul!` for the shears.  No allocation if `out`'s entries
 have the right size.
 """
-@inline function _ti_prod!(out::NTuple{6, <:Matrix},
-                            a::NTuple{6, <:Matrix},
-                            b::NTuple{6, <:Matrix})
+@inline function _ti_prod!(
+        out::NTuple{6, <:Matrix},
+        a::NTuple{6, <:Matrix},
+        b::NTuple{6, <:Matrix}
+    )
     T = eltype(out[1])
     one_T = one(T)
     # c1 = a[1] * b[1] + a[3] * b[4]
@@ -116,9 +118,9 @@ end
     M = zeros(T, 2 * n, 2 * n)
     @inbounds for i in 1:n, j in 1:n
         M[2i - 1, 2j - 1] = a[1][i, j]   # ℓ₁
-        M[2i - 1, 2j    ] = a[3][i, j]   # ℓ₃
-        M[2i,     2j - 1] = a[4][i, j]   # ℓ₄
-        M[2i,     2j    ] = a[2][i, j]   # ℓ₂
+        M[2i - 1, 2j] = a[3][i, j]   # ℓ₃
+        M[2i, 2j - 1] = a[4][i, j]   # ℓ₄
+        M[2i, 2j] = a[2][i, j]   # ℓ₂
     end
     return M
 end
@@ -129,9 +131,9 @@ end
     ℓ₃ = zeros(T, n, n); ℓ₄ = zeros(T, n, n)
     @inbounds for i in 1:n, j in 1:n
         ℓ₁[i, j] = M[2i - 1, 2j - 1]
-        ℓ₃[i, j] = M[2i - 1, 2j    ]
-        ℓ₄[i, j] = M[2i,     2j - 1]
-        ℓ₂[i, j] = M[2i,     2j    ]
+        ℓ₃[i, j] = M[2i - 1, 2j]
+        ℓ₄[i, j] = M[2i, 2j - 1]
+        ℓ₂[i, j] = M[2i, 2j]
     end
     return ℓ₁, ℓ₂, ℓ₃, ℓ₄
 end
@@ -184,9 +186,11 @@ entries of each block on the fly and checks every entry against the TI
 Mandel pattern, without building intermediate parameter matrices nor a
 reconstructed `(6n × 6n)` matrix for comparison.
 """
-function _is_ti_block(M::AbstractMatrix;
-                       axis::NTuple{3} = (0.0, 0.0, 1.0),
-                       tol::Real = 1.0e-12)
+function _is_ti_block(
+        M::AbstractMatrix;
+        axis::NTuple{3} = (0.0, 0.0, 1.0),
+        tol::Real = 1.0e-12
+    )
     sz = size(M, 1)
     sz == size(M, 2) || return false
     sz % 6 == 0 || return false
@@ -207,7 +211,7 @@ function _is_ti_block(M::AbstractMatrix;
         ℓ₄ = s2 * M[r + 1, c + 3]
         ℓ₆ = M[r + 4, c + 4]
         block_diag_in = (ℓ₂ + ℓ₅) / 2
-        block_off_in  = (ℓ₂ - ℓ₅) / 2
+        block_off_in = (ℓ₂ - ℓ₅) / 2
         ℓ₃_o_s2 = ℓ₃ / s2
         ℓ₄_o_s2 = ℓ₄ / s2
         # Walk all 36 Mandel entries and compare.
@@ -248,8 +252,10 @@ matrix.  Wrapper around [`ti_params_from_blocks`](@ref).
 Reassemble a `(6n × 6n)` TI block matrix from a 6-tuple of Walpole
 Volterra matrices.  Wrapper around [`ti_blocks_from_params`](@ref).
 """
-@inline _ti_blocks(ℓ::NTuple{6, <:AbstractMatrix};
-                    axis::NTuple{3} = (0.0, 0.0, 1.0)) =
+@inline _ti_blocks(
+    ℓ::NTuple{6, <:AbstractMatrix};
+    axis::NTuple{3} = (0.0, 0.0, 1.0)
+) =
     ti_blocks_from_params(ℓ; axis = axis)
 
 """
@@ -265,8 +271,8 @@ Hence:
 function _iso_to_ti(αβ::Tuple)
     α, β = αβ
     s2 = sqrt(2)
-    ℓ₁ = α ./ 3 .+ (2//3) .* β
-    ℓ₂ = (2//3) .* α .+ β ./ 3
+    ℓ₁ = α ./ 3 .+ (2 // 3) .* β
+    ℓ₂ = (2 // 3) .* α .+ β ./ 3
     ℓ_off = ((α .- β) .* (s2 / 3))
     ℓ₃ = copy(ℓ_off)
     ℓ₄ = copy(ℓ_off)
@@ -315,9 +321,11 @@ end
 TI-form dilute concentration `Ã^dil = (𝟙 + P̃ ∘ ΔC̃)^{-vol}` reduced
 to a `(2n)×(2n)` block-Volterra inverse + two `n×n` scalar inverses.
 """
-function dilute_concentration_alv_ti(ℓ_E::NTuple{6, <:Matrix},
-                                      ℓ_0::NTuple{6, <:Matrix},
-                                      ℓ_P::NTuple{6, <:Matrix})
+function dilute_concentration_alv_ti(
+        ℓ_E::NTuple{6, <:Matrix},
+        ℓ_0::NTuple{6, <:Matrix},
+        ℓ_P::NTuple{6, <:Matrix}
+    )
     n = size(ℓ_E[1], 1)
     T = promote_type(eltype(ℓ_E[1]), eltype(ℓ_0[1]), eltype(ℓ_P[1]))
     Δ = ntuple(k -> ℓ_E[k] .- ℓ_0[k], 6)
@@ -332,9 +340,11 @@ end
 
 TI-form dilute contribution `Ñ = ΔC̃ ∘ Ã^dil`.
 """
-function dilute_contribution_alv_ti(ℓ_E::NTuple{6, <:Matrix},
-                                     ℓ_0::NTuple{6, <:Matrix},
-                                     ℓ_P::NTuple{6, <:Matrix})
+function dilute_contribution_alv_ti(
+        ℓ_E::NTuple{6, <:Matrix},
+        ℓ_0::NTuple{6, <:Matrix},
+        ℓ_P::NTuple{6, <:Matrix}
+    )
     A_dil = dilute_concentration_alv_ti(ℓ_E, ℓ_0, ℓ_P)
     Δ = ntuple(k -> ℓ_E[k] .- ℓ_0[k], 6)
     return _ti_prod(Δ, A_dil)
@@ -345,9 +355,11 @@ end
 
 TI-form Dilute scheme: `ℓ_eff = ℓ_0 + Σ_r f_r · Ñ_r` (component-wise).
 """
-function dilute_alv_ti(ℓ_0::NTuple{6, <:Matrix},
-                        contribs_ti::AbstractVector,
-                        fractions::AbstractVector)
+function dilute_alv_ti(
+        ℓ_0::NTuple{6, <:Matrix},
+        contribs_ti::AbstractVector,
+        fractions::AbstractVector
+    )
     length(contribs_ti) == length(fractions) ||
         throw(ArgumentError("dilute_alv_ti: phase counts mismatch"))
     out = ntuple(k -> copy(ℓ_0[k]), 6)
@@ -364,9 +376,11 @@ end
 TI-form DiluteDual: invert to compliance Walpole form, average, invert
 back.
 """
-function dilute_dual_alv_ti(ℓ_0::NTuple{6, <:Matrix},
-                             contribs_compliance_ti::AbstractVector,
-                             fractions::AbstractVector)
+function dilute_dual_alv_ti(
+        ℓ_0::NTuple{6, <:Matrix},
+        contribs_compliance_ti::AbstractVector,
+        fractions::AbstractVector
+    )
     ℓ_J_0 = _ti_inv(ℓ_0)
     ℓ_J_eff = dilute_alv_ti(ℓ_J_0, contribs_compliance_ti, fractions)
     return _ti_inv(ℓ_J_eff)
@@ -380,10 +394,12 @@ TI-form Mori-Tanaka:
    `C̃_eff = C̃_0 + (Σ_r f_r Ñ_r) ∘ (f_0 𝟙 + Σ_s f_s Ã_s)^{-vol}`,
 all in TI Walpole form.
 """
-function mori_tanaka_alv_ti(ℓ_0::NTuple{6, <:Matrix},
-                             A_duts_ti::AbstractVector,
-                             contribs_ti::AbstractVector,
-                             fractions::AbstractVector, f_M::Real)
+function mori_tanaka_alv_ti(
+        ℓ_0::NTuple{6, <:Matrix},
+        A_duts_ti::AbstractVector,
+        contribs_ti::AbstractVector,
+        fractions::AbstractVector, f_M::Real
+    )
     length(A_duts_ti) == length(contribs_ti) == length(fractions) ||
         throw(ArgumentError("mori_tanaka_alv_ti: phase counts mismatch"))
     n = size(ℓ_0[1], 1)
@@ -404,10 +420,12 @@ end
 
 TI-form Maxwell scheme.
 """
-function maxwell_alv_ti(ℓ_0::NTuple{6, <:Matrix},
-                         contribs_ti::AbstractVector,
-                         fractions::AbstractVector,
-                         ℓ_H_0::NTuple{6, <:Matrix})
+function maxwell_alv_ti(
+        ℓ_0::NTuple{6, <:Matrix},
+        contribs_ti::AbstractVector,
+        fractions::AbstractVector,
+        ℓ_H_0::NTuple{6, <:Matrix}
+    )
     length(contribs_ti) == length(fractions) ||
         throw(ArgumentError("maxwell_alv_ti: phase counts mismatch"))
     n = size(ℓ_0[1], 1)

@@ -18,7 +18,7 @@ using TensND
 using ForwardDiff
 
 const RTOL_CLOSED = 1.0e-6
-const RTOL_ITER   = 1.0e-4
+const RTOL_ITER = 1.0e-4
 
 # Référence FD centrée
 _fd_centered(f, x, h) = (f(x + h) - f(x - h)) / (2h)
@@ -27,8 +27,10 @@ _fd_centered(f, x, h) = (f(x + h) - f(x - h)) / (2h)
 function _ref_rve(; f = 0.25)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0),
-                Dict(:C => TensISO{3}(60.0, 20.0)); fraction = f)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(60.0, 20.0)); fraction = f
+    )
     return rve
 end
 
@@ -36,12 +38,16 @@ end
 const idxC = C -> get_array(C)[1, 1, 1, 1]
 
 # Schémas closed-form (rtol serré)
-const _CLOSED_SCHEMES = (Voigt(), Reuss(), Dilute(), DiluteDual(),
-                          MoriTanaka(), Maxwell(), PonteCastanedaWillis())
+const _CLOSED_SCHEMES = (
+    Voigt(), Reuss(), Dilute(), DiluteDual(),
+    MoriTanaka(), Maxwell(), PonteCastanedaWillis(),
+)
 # Schémas itératifs/différentiels (rtol large)
-const _ITER_SCHEMES = (SelfConsistent(; abstol = 1.0e-12, maxiters = 200),
-                        AsymmetricSelfConsistent(; abstol = 1.0e-12, maxiters = 200),
-                        DifferentialScheme(; nsteps = 50))
+const _ITER_SCHEMES = (
+    SelfConsistent(; abstol = 1.0e-12, maxiters = 200),
+    AsymmetricSelfConsistent(; abstol = 1.0e-12, maxiters = 200),
+    DifferentialScheme(; nsteps = 50),
+)
 
 @testset "derivative vs FD — AmountParameter (closed-form schemes)" begin
     for sch in _CLOSED_SCHEMES
@@ -97,15 +103,17 @@ end
     k_m, μ_m = 10.0, 5.0
     k_i, μ_i = 40.0, 20.0
     f = 0.25
-    ζm   = k_m + 4 * μ_m / 3
-    Δk   = k_i - k_m
-    D    = ζm + (1 - f) * Δk
+    ζm = k_m + 4 * μ_m / 3
+    Δk = k_i - k_m
+    D = ζm + (1 - f) * Δk
     ∂k_∂f_ref = Δk * ζm * (ζm + Δk) / D^2
 
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(3k_m, 2μ_m)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(3k_i, 2μ_i));
-               fraction = f)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(3k_i, 2μ_i));
+        fraction = f
+    )
 
     # Bulk modulus extracted from the trace of the spherical projection :
     # 3K = (1/3) Σ_i Σ_j C[i,i,j,j]  for any 4th-order isotropic stiffness
@@ -174,8 +182,10 @@ end
         # Inner RVE
         rve1 = RVE(:M)
         add_matrix!(rve1, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-        add_phase!(rve1, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(K_inner, 20.0));
-                   fraction = 0.3)
+        add_phase!(
+            rve1, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(K_inner, 20.0));
+            fraction = 0.3
+        )
         return idxC(homogenize(rve1, MoriTanaka()))
     end
     # Single-pass autodiff through the nested call
@@ -223,8 +233,10 @@ MeanFieldHom.eshelby_tensor(b::Blob, C₀; kw...) =
     rve = RVE(:M)
     basis = TensND.CanonicalBasis{3, Float64}()
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :B, Blob{Float64, typeof(basis)}(1.0, basis),
-                Dict(:C => TensISO{3}(60.0, 20.0)); fraction = 0.2)
+    add_phase!(
+        rve, :B, Blob{Float64, typeof(basis)}(1.0, basis),
+        Dict(:C => TensISO{3}(60.0, 20.0)); fraction = 0.2
+    )
 
     # GeometryParameter on user type: dispatch via @generated fallback
     p = geometry(:B, :radius)

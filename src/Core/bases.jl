@@ -72,9 +72,11 @@ A tuple of length > 3 raises `ArgumentError`.
 """
 function _normalize_euler(angles::Tuple{Vararg{Real}})
     n = length(angles)
-    n > 3 && throw(ArgumentError(
-        "euler_angles accepts at most 3 ZYZ angles; got $n values ($(angles))."
-    ))
+    n > 3 && throw(
+        ArgumentError(
+            "euler_angles accepts at most 3 ZYZ angles; got $n values ($(angles))."
+        )
+    )
     if n == 0
         return (0.0, 0.0, 0.0)
     end

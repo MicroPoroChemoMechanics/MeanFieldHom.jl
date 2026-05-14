@@ -44,12 +44,14 @@ search.
 Currently the iso path only.  For non-iso phases (TI, ortho), use
 [`self_consistent_alv`](@ref) (Anderson-Picard with optional damping).
 """
-function self_consistent_alv_newton(rve::RVE, prop::Symbol;
-                                     times::AbstractVector{<:Real},
-                                     abstol::Real = 1.0e-10,
-                                     reltol::Real = 1.0e-8,
-                                     maxiters_per_row::Int = 30,
-                                     verbose::Bool = false)
+function self_consistent_alv_newton(
+        rve::RVE, prop::Symbol;
+        times::AbstractVector{<:Real},
+        abstol::Real = 1.0e-10,
+        reltol::Real = 1.0e-8,
+        maxiters_per_row::Int = 30,
+        verbose::Bool = false
+    )
     C_M_law = matrix_property(rve, prop)
     C_M_law isa ViscoLaw ||
         throw(ArgumentError("self_consistent_alv_newton: matrix property is not a ViscoLaw"))
@@ -65,9 +67,11 @@ function self_consistent_alv_newton(rve::RVE, prop::Symbol;
     fractions = Float64[f_M]
     symmetrizes = AbstractSymmetrize[NoSymmetrize()]
 
-    crack_data_full = Tuple{Any, Float64, AbstractSymmetrize,
-                             Union{Nothing, Matrix{Float64}},
-                             Union{Nothing, Matrix{Float64}}}[]
+    crack_data_full = Tuple{
+        Any, Float64, AbstractSymmetrize,
+        Union{Nothing, Matrix{Float64}},
+        Union{Nothing, Matrix{Float64}},
+    }[]
 
     for name in incl_names
         ph = rve.phases[name]
@@ -79,8 +83,12 @@ function self_consistent_alv_newton(rve::RVE, prop::Symbol;
                 _trapezoidal_relaxation_scalar(ph.properties[:Rn], times) : nothing
             Rt_mat = haskey(ph.properties, :Rt) ?
                 _trapezoidal_relaxation_scalar(ph.properties[:Rt], times) : nothing
-            push!(crack_data_full, (ph.geometry, Float64(a.value),
-                                     phase_symmetrize(rve, name), Rn_mat, Rt_mat))
+            push!(
+                crack_data_full, (
+                    ph.geometry, Float64(a.value),
+                    phase_symmetrize(rve, name), Rn_mat, Rt_mat,
+                )
+            )
             continue
         end
         C_r_law = phase_property(rve, name, prop)
@@ -106,10 +114,14 @@ function self_consistent_alv_newton(rve::RVE, prop::Symbol;
     for i in 1:n
         # Slice phase data to the (1..i) sub-grid.
         C_phases_i = [view(C, 1:6i, 1:6i) for C in C_phases_full]
-        crack_data_i = [(g, ε, sym,
-                          Rn === nothing ? nothing : Rn[1:i, 1:i],
-                          Rt === nothing ? nothing : Rt[1:i, 1:i])
-                         for (g, ε, sym, Rn, Rt) in crack_data_full]
+        crack_data_i = [
+            (
+                    g, ε, sym,
+                    Rn === nothing ? nothing : Rn[1:i, 1:i],
+                    Rt === nothing ? nothing : Rt[1:i, 1:i],
+                )
+                for (g, ε, sym, Rn, Rt) in crack_data_full
+        ]
         Id_i = _identity_alv(i, Float64)
 
         residual_row_i = function (p)
@@ -131,13 +143,15 @@ function self_consistent_alv_newton(rve::RVE, prop::Symbol;
             # promote the identity to the input element type to keep
             # the pipeline `Dual`-friendly.
             Id_T = T === Float64 ? Id_i : T.(Id_i)
-            C_m_new_i = _sc_alv_step(C_m_i, C_phases_i, U_M_phases, V_M_phases,
-                                       fractions, i, Id_T, symmetrizes;
-                                       extra_A = extra_A_i)
+            C_m_new_i = _sc_alv_step(
+                C_m_i, C_phases_i, U_M_phases, V_M_phases,
+                fractions, i, Id_T, symmetrizes;
+                extra_A = extra_A_i
+            )
             α_new, β_new = iso_params_from_blocks(C_m_new_i)
             r = Vector{T}(undef, 2i)
             @inbounds for j in 1:i
-                r[j]     = α_new[i, j] - p[j]
+                r[j] = α_new[i, j] - p[j]
                 r[i + j] = β_new[i, j] - p[i + j]
             end
             return r
@@ -164,13 +178,13 @@ function self_consistent_alv_newton(rve::RVE, prop::Symbol;
             for _ in 1:30
                 p_new = p .+ α_step .* δ
                 r_new = residual_row_i(p_new)
-                if sqrt(sum(abs2, r_new)) ≤ (1 - 1e-4 * α_step) * norm_r
+                if sqrt(sum(abs2, r_new)) ≤ (1 - 1.0e-4 * α_step) * norm_r
                     p .= p_new
                     accepted = true
                     break
                 end
                 α_step /= 2
-                α_step < 1e-8 && break
+                α_step < 1.0e-8 && break
             end
             if !accepted
                 # Fallback : pure Picard step on row i.

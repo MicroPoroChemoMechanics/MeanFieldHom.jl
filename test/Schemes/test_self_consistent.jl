@@ -33,8 +33,10 @@ end
 @testset "SelfConsistent — bracketed by Voigt/Reuss" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
 
     Vv = get_array(homogenize(rve, Voigt()))[1, 1, 1, 1]
     Vr = get_array(homogenize(rve, Reuss()))[1, 1, 1, 1]
@@ -45,8 +47,10 @@ end
 @testset "SelfConsistent — fixed-point self-consistency" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     C_eff = homogenize(rve, SelfConsistent(; abstol = 1.0e-12, maxiters = 200))
     # Verify : one more SC step on C_eff itself should return ≈ C_eff
     step_once = MeanFieldHom.Schemes._sc_step(rve, C_eff, :C)
@@ -57,18 +61,22 @@ end
     # Inclusion stiffer than matrix → stiffness form preferred → ASC ≡ SC
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     @test homogenize(rve, AsymmetricSelfConsistent()) ≈
-          homogenize(rve, SelfConsistent())
+        homogenize(rve, SelfConsistent())
 end
 
 @testset "AsymmetricSelfConsistent — uses compliance form when matrix is stiff" begin
     # Soft inclusion in stiff matrix → ASC switches to compliance-form
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(3.0, 1.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(3.0, 1.0));
+        fraction = 0.3
+    )
     C_asc = homogenize(rve, AsymmetricSelfConsistent())
     # Bracketed by Voigt/Reuss
     Vv = get_array(homogenize(rve, Voigt()))[1, 1, 1, 1]
@@ -80,8 +88,10 @@ end
 @testset "SelfConsistent — conductivity" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:K => TensISO{3}(2.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:K => TensISO{3}(8.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:K => TensISO{3}(8.0));
+        fraction = 0.3
+    )
     Kv = get_array(homogenize(rve, Voigt(); property = :K))[1, 1]
     Kr = get_array(homogenize(rve, Reuss(); property = :K))[1, 1]
     Ksc = get_array(homogenize(rve, SelfConsistent(); property = :K))[1, 1]
@@ -93,8 +103,10 @@ end
         DT = typeof(f)
         rve = RVE(:M; T = DT)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-        add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-                   fraction = f)
+        add_phase!(
+            rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+            fraction = f
+        )
         get_array(homogenize(rve, SelfConsistent()))[1, 1, 1, 1]
     end
     df = ForwardDiff.derivative(f_sc, 0.3)
@@ -108,20 +120,24 @@ end
     # convergence on iso / TI / ortho canonical components.
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
     C_anderson = homogenize(rve, SelfConsistent(; algorithm = AndersonDefault()))
-    C_newton   = homogenize(rve, SelfConsistent(; algorithm = NewtonDefault()))
-    @test isapprox(C_anderson, C_newton; atol = 1e-6, rtol = 1e-6)
+    C_newton = homogenize(rve, SelfConsistent(; algorithm = NewtonDefault()))
+    @test isapprox(C_anderson, C_newton; atol = 1.0e-6, rtol = 1.0e-6)
 end
 
 @testset "SelfConsistent / ASC — Symbol shortcuts" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-               fraction = 0.3)
-    @test homogenize(rve, :sc)              ≈ homogenize(rve, SelfConsistent())
-    @test homogenize(rve, :SC)              ≈ homogenize(rve, SelfConsistent())
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
+    @test homogenize(rve, :sc) ≈ homogenize(rve, SelfConsistent())
+    @test homogenize(rve, :SC) ≈ homogenize(rve, SelfConsistent())
     @test homogenize(rve, :self_consistent) ≈ homogenize(rve, SelfConsistent())
-    @test homogenize(rve, :asc)             ≈ homogenize(rve, AsymmetricSelfConsistent())
+    @test homogenize(rve, :asc) ≈ homogenize(rve, AsymmetricSelfConsistent())
 end

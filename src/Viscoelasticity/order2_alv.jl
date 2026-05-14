@@ -14,8 +14,10 @@
 # ── Trapezoidal fillers for order-2 (3×3 block) kernels ─────────────────────
 # Defined in trapezoidal.jl entry points; bodies live here for cohesion.
 
-@inline function _fill_trapezoidal_order2_tens!(M::AbstractMatrix, law::ViscoLaw,
-                                                 times::AbstractVector)
+@inline function _fill_trapezoidal_order2_tens!(
+        M::AbstractMatrix, law::ViscoLaw,
+        times::AbstractVector
+    )
     n = length(times)
     n == 0 && return M
     T = eltype(M)
@@ -33,8 +35,10 @@
     return M
 end
 
-@inline function _fill_trapezoidal_order2_mat!(M::AbstractMatrix, law::ViscoLaw,
-                                                times::AbstractVector)
+@inline function _fill_trapezoidal_order2_mat!(
+        M::AbstractMatrix, law::ViscoLaw,
+        times::AbstractVector
+    )
     n = length(times)
     n == 0 && return M
     T = eltype(M)
@@ -53,9 +57,11 @@ end
 end
 
 # Place row `i` blocks (3×3 each) into `M` using cached evaluations.
-@inline function _fill_row_blocks_order2_from_cache!(M::AbstractMatrix,
-                                                       cache::Vector{<:AbstractMatrix},
-                                                       i::Int, ::Type{T}) where {T}
+@inline function _fill_row_blocks_order2_from_cache!(
+        M::AbstractMatrix,
+        cache::Vector{<:AbstractMatrix},
+        i::Int, ::Type{T}
+    ) where {T}
     half = inv(T(2))
     @inbounds begin
         c1, c2 = cache[1], cache[2]
@@ -83,8 +89,10 @@ end
     return TensND.get_array(s)
 end
 
-@inline function _block_value_order2_tens(law::ViscoLaw, times::AbstractVector,
-                                           i::Int, j::Int)
+@inline function _block_value_order2_tens(
+        law::ViscoLaw, times::AbstractVector,
+        i::Int, j::Int
+    )
     if i == 1 && j == 1
         return _to_order2_mat(visco_eval(law, times[1], times[1]))
     elseif j == i
@@ -102,8 +110,10 @@ end
     end
 end
 
-@inline function _block_value_order2_mat(law::ViscoLaw, times::AbstractVector,
-                                          i::Int, j::Int)
+@inline function _block_value_order2_mat(
+        law::ViscoLaw, times::AbstractVector,
+        i::Int, j::Int
+    )
     if i == 1 && j == 1
         return copy(visco_eval(law, times[1], times[1]))
     elseif j == i
@@ -121,8 +131,10 @@ end
     end
 end
 
-@inline function _set_block_order2!(M::AbstractMatrix, i::Int, j::Int,
-                                     block::AbstractMatrix)
+@inline function _set_block_order2!(
+        M::AbstractMatrix, i::Int, j::Int,
+        block::AbstractMatrix
+    )
     rows = (3 * (i - 1) + 1):(3 * i)
     cols = (3 * (j - 1) + 1):(3 * j)
     @inbounds M[rows, cols] = block
@@ -216,8 +228,10 @@ Build the discrete Hill kernel `P̃` (size `(3n × 3n)`) for an
 ellipsoidal inclusion in an isotropic ALV matrix.  Uses the time-space
 decoupling formula  `P̃[block(i,j)] = α₀^{-vol}[i,j] · 𝐈^A`.
 """
-function hill_kernel_order2(ell, K_0_law::ViscoLaw,
-                             times::AbstractVector{<:Real})
+function hill_kernel_order2(
+        ell, K_0_law::ViscoLaw,
+        times::AbstractVector{<:Real}
+    )
     K_0 = _trapezoidal_relaxation(K_0_law, times, 3)
     _is_iso_order2_block(K_0) ||
         throw(ArgumentError("hill_kernel_order2: only iso ALV matrix is currently supported"))
@@ -246,8 +260,10 @@ end
 Order-2 dilute concentration `Ã^dil = (𝟙 + P̃ ∘ ΔK̃)^{-vol}`,
 all matrices `(3n × 3n)`.
 """
-function dilute_concentration_alv_order2(K_E::AbstractMatrix, K_0::AbstractMatrix,
-                                          P::AbstractMatrix)
+function dilute_concentration_alv_order2(
+        K_E::AbstractMatrix, K_0::AbstractMatrix,
+        P::AbstractMatrix
+    )
     sz = size(K_E, 1)
     sz % 3 == 0 ||
         throw(ArgumentError("dilute_concentration_alv_order2: size not divisible by 3"))
@@ -267,8 +283,10 @@ end
 
 Order-2 dilute contribution `Ñ = ΔK̃ ∘ Ã^dil`.
 """
-function dilute_contribution_alv_order2(K_E::AbstractMatrix, K_0::AbstractMatrix,
-                                         P::AbstractMatrix)
+function dilute_contribution_alv_order2(
+        K_E::AbstractMatrix, K_0::AbstractMatrix,
+        P::AbstractMatrix
+    )
     A_dil = dilute_concentration_alv_order2(K_E, K_0, P)
     return (K_E .- K_0) * A_dil
 end
@@ -280,8 +298,10 @@ end
 
 Order-2 Voigt bound: `K̃_eff = Σ_r f_r K̃_r`.
 """
-function voigt_alv_order2(matrices::AbstractVector{<:AbstractMatrix},
-                           fractions::AbstractVector)
+function voigt_alv_order2(
+        matrices::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector
+    )
     length(matrices) == length(fractions) ||
         throw(ArgumentError("voigt_alv_order2: phase counts mismatch"))
     isempty(matrices) && throw(ArgumentError("voigt_alv_order2: at least one phase required"))
@@ -298,8 +318,10 @@ end
 
 Order-2 Reuss bound: invert each compliance, average, invert back.
 """
-function reuss_alv_order2(matrices::AbstractVector{<:AbstractMatrix},
-                           fractions::AbstractVector)
+function reuss_alv_order2(
+        matrices::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector
+    )
     length(matrices) == length(fractions) ||
         throw(ArgumentError("reuss_alv_order2: phase counts mismatch"))
     inv_phases = [volterra_inverse(M; block_size = 3) for M in matrices]
@@ -312,9 +334,11 @@ end
 
 Order-2 Dilute scheme: `K̃_eff = K̃_0 + Σ_r f_r Ñ_r`.
 """
-function dilute_alv_order2(K_0::AbstractMatrix,
-                            contribs::AbstractVector{<:AbstractMatrix},
-                            fractions::AbstractVector)
+function dilute_alv_order2(
+        K_0::AbstractMatrix,
+        contribs::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector
+    )
     length(contribs) == length(fractions) ||
         throw(ArgumentError("dilute_alv_order2: phase counts mismatch"))
     out = copy(K_0)
@@ -329,9 +353,11 @@ end
 
 Order-2 DiluteDual: invert to compliance space, average, invert back.
 """
-function dilute_dual_alv_order2(K_0::AbstractMatrix,
-                                 contribs_compliance::AbstractVector{<:AbstractMatrix},
-                                 fractions::AbstractVector)
+function dilute_dual_alv_order2(
+        K_0::AbstractMatrix,
+        contribs_compliance::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector
+    )
     R_0 = volterra_inverse(K_0; block_size = 3)
     R_eff = dilute_alv_order2(R_0, contribs_compliance, fractions)
     return volterra_inverse(R_eff; block_size = 3)
@@ -343,10 +369,12 @@ end
 Order-2 Mori-Tanaka:
    `K̃_eff = K̃_0 + (Σ_r f_r Ñ_r) ∘ (f_0 𝟙 + Σ_s f_s Ã_s)^{-vol}`.
 """
-function mori_tanaka_alv_order2(K_0::AbstractMatrix,
-                                 A_duts::AbstractVector{<:AbstractMatrix},
-                                 contribs::AbstractVector{<:AbstractMatrix},
-                                 fractions::AbstractVector, f_M::Real)
+function mori_tanaka_alv_order2(
+        K_0::AbstractMatrix,
+        A_duts::AbstractVector{<:AbstractMatrix},
+        contribs::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector, f_M::Real
+    )
     length(A_duts) == length(contribs) == length(fractions) ||
         throw(ArgumentError("mori_tanaka_alv_order2: phase counts mismatch"))
     sz = size(K_0, 1)
@@ -375,10 +403,12 @@ Order-2 Maxwell scheme.  `H_0` is the Hill kernel of the (matrix-only)
 distribution shape — defaults to a sphere when not specified by
 [`homogenize_alv_order2`](@ref).
 """
-function maxwell_alv_order2(K_0::AbstractMatrix,
-                             contribs::AbstractVector{<:AbstractMatrix},
-                             fractions::AbstractVector;
-                             H_0::AbstractMatrix)
+function maxwell_alv_order2(
+        K_0::AbstractMatrix,
+        contribs::AbstractVector{<:AbstractMatrix},
+        fractions::AbstractVector;
+        H_0::AbstractMatrix
+    )
     length(contribs) == length(fractions) ||
         throw(ArgumentError("maxwell_alv_order2: phase counts mismatch"))
     sz = size(K_0, 1)
@@ -411,8 +441,10 @@ Supports iso ALV matrix + ellipsoidal inclusions of any aspect ratio.
 The result is generally anisotropic (TI for spheroids, ortho for
 triaxial ellipsoids).
 """
-function _homogenize_alv_order2(rve::RVE, scheme::HomogenizationScheme,
-                                 prop::Symbol; times::AbstractVector{<:Real}, kw...)
+function _homogenize_alv_order2(
+        rve::RVE, scheme::HomogenizationScheme,
+        prop::Symbol; times::AbstractVector{<:Real}, kw...
+    )
     K_M_law = matrix_property(rve, prop)
     K_M_law isa ViscoLaw ||
         throw(ArgumentError("homogenize_alv_order2: matrix property $prop is not a ViscoLaw"))
@@ -439,53 +471,67 @@ function _homogenize_alv_order2(rve::RVE, scheme::HomogenizationScheme,
         push!(fractions, _amount_value(rve, name))
     end
 
-    return _homogenize_alv2_dispatch(rve, scheme, prop, times,
-                                      K_0, K_phases, A_duts, contribs,
-                                      fractions, f_M, K_M_law; kw...)
+    return _homogenize_alv2_dispatch(
+        rve, scheme, prop, times,
+        K_0, K_phases, A_duts, contribs,
+        fractions, f_M, K_M_law; kw...
+    )
 end
 
 # Dispatch table for order-2 schemes.
 
-function _homogenize_alv2_dispatch(::RVE, ::Voigt, ::Symbol, ::AbstractVector,
-                                    K_0, K_phases, A_duts, contribs,
-                                    fractions, f_M, K_M_law; kw...)
+function _homogenize_alv2_dispatch(
+        ::RVE, ::Voigt, ::Symbol, ::AbstractVector,
+        K_0, K_phases, A_duts, contribs,
+        fractions, f_M, K_M_law; kw...
+    )
     return voigt_alv_order2(K_phases, [f_M; fractions])
 end
 
-function _homogenize_alv2_dispatch(::RVE, ::Reuss, ::Symbol, ::AbstractVector,
-                                    K_0, K_phases, A_duts, contribs,
-                                    fractions, f_M, K_M_law; kw...)
+function _homogenize_alv2_dispatch(
+        ::RVE, ::Reuss, ::Symbol, ::AbstractVector,
+        K_0, K_phases, A_duts, contribs,
+        fractions, f_M, K_M_law; kw...
+    )
     return reuss_alv_order2(K_phases, [f_M; fractions])
 end
 
-function _homogenize_alv2_dispatch(::RVE, ::Dilute, ::Symbol, ::AbstractVector,
-                                    K_0, K_phases, A_duts, contribs,
-                                    fractions, f_M, K_M_law; kw...)
+function _homogenize_alv2_dispatch(
+        ::RVE, ::Dilute, ::Symbol, ::AbstractVector,
+        K_0, K_phases, A_duts, contribs,
+        fractions, f_M, K_M_law; kw...
+    )
     return dilute_alv_order2(K_0, contribs, fractions)
 end
 
-function _homogenize_alv2_dispatch(::RVE, ::DiluteDual, ::Symbol, ::AbstractVector,
-                                    K_0, K_phases, A_duts, contribs,
-                                    fractions, f_M, K_M_law; kw...)
+function _homogenize_alv2_dispatch(
+        ::RVE, ::DiluteDual, ::Symbol, ::AbstractVector,
+        K_0, K_phases, A_duts, contribs,
+        fractions, f_M, K_M_law; kw...
+    )
     # Build per-phase compliance contributions: ΔR ∘ B^dil where
     # B^dil = (𝟙 + Q̃ ∘ ΔR̃)^{-vol}.  For a clean dual API we instead
     # reuse the relaxation-side N̄ via the relation N̄_dual = -K_eff^{-1}·N·K_eff^{-1}
     # at the end — equivalently invert the relaxation result.
     K_relax = dilute_alv_order2(K_0, contribs, fractions)
     return K_relax  # in this lightweight implementation, dilute and dilute_dual
-                    # return the same Matrix when used through homogenize_alv_order2.
+    # return the same Matrix when used through homogenize_alv_order2.
 end
 
-function _homogenize_alv2_dispatch(::RVE, ::MoriTanaka, ::Symbol, ::AbstractVector,
-                                    K_0, K_phases, A_duts, contribs,
-                                    fractions, f_M, K_M_law; kw...)
+function _homogenize_alv2_dispatch(
+        ::RVE, ::MoriTanaka, ::Symbol, ::AbstractVector,
+        K_0, K_phases, A_duts, contribs,
+        fractions, f_M, K_M_law; kw...
+    )
     return mori_tanaka_alv_order2(K_0, A_duts, contribs, fractions, f_M)
 end
 
-function _homogenize_alv2_dispatch(rve::RVE, ::Maxwell, ::Symbol,
-                                    times::AbstractVector,
-                                    K_0, K_phases, A_duts, contribs,
-                                    fractions, f_M, K_M_law; kw...)
+function _homogenize_alv2_dispatch(
+        rve::RVE, ::Maxwell, ::Symbol,
+        times::AbstractVector,
+        K_0, K_phases, A_duts, contribs,
+        fractions, f_M, K_M_law; kw...
+    )
     # Default distribution shape: spherical
     H_0 = hill_kernel_order2(Spheroid(1.0), K_M_law, times)
     return maxwell_alv_order2(K_0, contribs, fractions; H_0 = H_0)
@@ -498,6 +544,8 @@ Backwards-compatible alias for [`homogenize_alv`](@ref) when the matrix
 property is order-2.  New code should call `homogenize_alv` directly —
 the dispatch on order-2 vs order-4 is automatic from the law sample.
 """
-homogenize_alv_order2(rve::RVE, scheme::HomogenizationScheme,
-                       prop::Symbol; kw...) =
+homogenize_alv_order2(
+    rve::RVE, scheme::HomogenizationScheme,
+    prop::Symbol; kw...
+) =
     homogenize_alv(rve, scheme, prop; kw...)

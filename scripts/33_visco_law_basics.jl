@@ -75,21 +75,35 @@ J_shear_response = J_shear * unit_step
 
 # ─── Plot ────────────────────────────────────────────────────────────────────
 
-p1 = plot(; xlabel = "t", ylabel = "modulus",
-            title = "Maxwell iso — relaxation & creep responses",
-            legend = :outerright, grid = true)
-plot!(p1, T_grid, R_long_response;  lw = 2, color = :red,
-      label = "M_long(t) = ⟨k+4μ/3⟩ · H(t)")
-plot!(p1, T_grid, R_shear_response; lw = 2, color = :blue,
-      label = "M_shear(t) = μ · H(t)")
-plot!(p1, T_grid, 1 ./ R_long_response;  lw = 1, color = :red,
-      linestyle = :dot, label = "1 / M_long  (instantaneous)")
-plot!(p1, T_grid, 1 ./ R_shear_response; lw = 1, color = :blue,
-      linestyle = :dot, label = "1 / M_shear (instantaneous)")
-plot!(p1, T_grid, J_long_response;  lw = 2, color = :darkred,
-      linestyle = :dash, label = "J_long(t) = ⟨k+4μ/3⟩^{-vol} · H(t)")
-plot!(p1, T_grid, J_shear_response; lw = 2, color = :darkblue,
-      linestyle = :dash, label = "J_shear(t) = ⟨μ⟩^{-vol} · H(t)")
+p1 = plot(;
+    xlabel = "t", ylabel = "modulus",
+    title = "Maxwell iso — relaxation & creep responses",
+    legend = :outerright, grid = true
+)
+plot!(
+    p1, T_grid, R_long_response; lw = 2, color = :red,
+    label = "M_long(t) = ⟨k+4μ/3⟩ · H(t)"
+)
+plot!(
+    p1, T_grid, R_shear_response; lw = 2, color = :blue,
+    label = "M_shear(t) = μ · H(t)"
+)
+plot!(
+    p1, T_grid, 1 ./ R_long_response; lw = 1, color = :red,
+    linestyle = :dot, label = "1 / M_long  (instantaneous)"
+)
+plot!(
+    p1, T_grid, 1 ./ R_shear_response; lw = 1, color = :blue,
+    linestyle = :dot, label = "1 / M_shear (instantaneous)"
+)
+plot!(
+    p1, T_grid, J_long_response; lw = 2, color = :darkred,
+    linestyle = :dash, label = "J_long(t) = ⟨k+4μ/3⟩^{-vol} · H(t)"
+)
+plot!(
+    p1, T_grid, J_shear_response; lw = 2, color = :darkblue,
+    linestyle = :dash, label = "J_shear(t) = ⟨μ⟩^{-vol} · H(t)"
+)
 
 const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)

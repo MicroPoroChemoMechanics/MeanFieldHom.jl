@@ -42,8 +42,10 @@ function build_rve(::Any, φ; ω_s = 1.0, ω_p = 1.0, sym_s = nothing, sym_p = n
     geom_s = Spheroid(ω_s)
     geom_p = Spheroid(ω_p)
     add_matrix!(rve, geom_s, Dict(:C => C_s); symmetrize = sym_s)
-    add_phase!(rve, :PORE, geom_p, Dict(:C => C_p);
-                fraction = φ, symmetrize = sym_p)
+    add_phase!(
+        rve, :PORE, geom_p, Dict(:C => C_p);
+        fraction = φ, symmetrize = sym_p
+    )
     return rve
 end
 
@@ -69,33 +71,45 @@ end
 
 # ── Schemes & display style ────────────────────────────────────────────────
 const SCHEMES = [
-    (Voigt(),                          "Voigt",                         :red,    :dash),
-    (Reuss(),                          "Reuss",                         :blue,   :dash),
-    (MoriTanaka(),                     "Mori-Tanaka",                   :black,  :solid),
-    (SelfConsistent(; abstol = 1.0e-10, maxiters = 300, select_best = true),
-                                       "Self-Consistent",               :red,    :solid),
-    (AsymmetricSelfConsistent(; abstol = 1.0e-10, maxiters = 300, select_best = true),
-                                       "Asym. SC",                      :purple, :solid),
-    (DifferentialScheme(; nsteps = 300),
-                                       "Differential",                  :gold,   :solid),
-    (Dilute(),                         "Dilute",                        :green,  :dash),
-    (DiluteDual(),                     "DiluteDual",                    :green,  :dot),
-    (Maxwell(),                        "Maxwell",                       :blue,   :solid),
-    (PonteCastanedaWillis(),           "PCW",                           :green,  :solid),
+    (Voigt(), "Voigt", :red, :dash),
+    (Reuss(), "Reuss", :blue, :dash),
+    (MoriTanaka(), "Mori-Tanaka", :black, :solid),
+    (
+        SelfConsistent(; abstol = 1.0e-10, maxiters = 300, select_best = true),
+        "Self-Consistent", :red, :solid,
+    ),
+    (
+        AsymmetricSelfConsistent(; abstol = 1.0e-10, maxiters = 300, select_best = true),
+        "Asym. SC", :purple, :solid,
+    ),
+    (
+        DifferentialScheme(; nsteps = 300),
+        "Differential", :gold, :solid,
+    ),
+    (Dilute(), "Dilute", :green, :dash),
+    (DiluteDual(), "DiluteDual", :green, :dot),
+    (Maxwell(), "Maxwell", :blue, :solid),
+    (PonteCastanedaWillis(), "PCW", :green, :solid),
 ]
 
 # ── Sweep φ ∈ [0, 1] for every scheme ─────────────────────────────────────
 const φs = collect(range(0.0, 1.0; length = 101))
 
-p_k = plot(; xlabel = "φ (porosity)", ylabel = "k_hom (GPa)",
-             xlims = (0, 1), ylims = (0, k_s + 5), legend = :topright,
-             title = "Effective bulk modulus vs porosity")
-p_μ = plot(; xlabel = "φ (porosity)", ylabel = "μ_hom (GPa)",
-             xlims = (0, 1), ylims = (0, μ_s + 5), legend = false,
-             title = "Effective shear modulus vs porosity")
+p_k = plot(;
+    xlabel = "φ (porosity)", ylabel = "k_hom (GPa)",
+    xlims = (0, 1), ylims = (0, k_s + 5), legend = :topright,
+    title = "Effective bulk modulus vs porosity"
+)
+p_μ = plot(;
+    xlabel = "φ (porosity)", ylabel = "μ_hom (GPa)",
+    xlims = (0, 1), ylims = (0, μ_s + 5), legend = false,
+    title = "Effective shear modulus vs porosity"
+)
 
-function sweep!(p_k, p_μ, scheme, label, color, ls, φs;
-                build_kw = (;))
+function sweep!(
+        p_k, p_μ, scheme, label, color, ls, φs;
+        build_kw = (;)
+    )
     ks_arr = Float64[]
     μs_arr = Float64[]
     for φ in φs
@@ -111,7 +125,7 @@ function sweep!(p_k, p_μ, scheme, label, color, ls, φs;
         end
     end
     plot!(p_k, φs, ks_arr, lw = 2, color = color, linestyle = ls, label = label)
-    plot!(p_μ, φs, μs_arr, lw = 2, color = color, linestyle = ls)
+    return plot!(p_μ, φs, μs_arr, lw = 2, color = color, linestyle = ls)
 end
 
 # Sphere case (default)
@@ -119,8 +133,10 @@ for (scheme, label, color, ls) in SCHEMES
     sweep!(p_k, p_μ, scheme, label, color, ls, φs)
 end
 
-p_full = plot(p_k, p_μ; layout = (1, 2), size = (1400, 600),
-               plot_title = "Porous benchmark (spheres) — MeanFieldHom v0.4")
+p_full = plot(
+    p_k, p_μ; layout = (1, 2), size = (1400, 600),
+    plot_title = "Porous benchmark (spheres) — MeanFieldHom v0.4"
+)
 
 figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
@@ -139,21 +155,31 @@ savefig(p_full, figpath)
 
 const ω_oblate = 0.2          # c/a aspect ratio (matches `spheroidal(omega)`)
 
-p_k2 = plot(; xlabel = "φ (porosity)", ylabel = "k_hom (GPa)",
-              xlims = (0, 1), ylims = (0, k_s + 5), legend = :topright,
-              title = "Oblate spheroidal phases (ω=$(ω_oblate)), iso-symmetrize")
-p_μ2 = plot(; xlabel = "φ (porosity)", ylabel = "μ_hom (GPa)",
-              xlims = (0, 1), ylims = (0, μ_s + 5), legend = false,
-              title = "Effective shear modulus")
+p_k2 = plot(;
+    xlabel = "φ (porosity)", ylabel = "k_hom (GPa)",
+    xlims = (0, 1), ylims = (0, k_s + 5), legend = :topright,
+    title = "Oblate spheroidal phases (ω=$(ω_oblate)), iso-symmetrize"
+)
+p_μ2 = plot(;
+    xlabel = "φ (porosity)", ylabel = "μ_hom (GPa)",
+    xlims = (0, 1), ylims = (0, μ_s + 5), legend = false,
+    title = "Effective shear modulus"
+)
 
 for (scheme, label, color, ls) in SCHEMES
-    sweep!(p_k2, p_μ2, scheme, label, color, ls, φs;
-           build_kw = (; ω_s = ω_oblate, ω_p = ω_oblate,
-                        sym_s = :iso, sym_p = :iso))
+    sweep!(
+        p_k2, p_μ2, scheme, label, color, ls, φs;
+        build_kw = (;
+            ω_s = ω_oblate, ω_p = ω_oblate,
+            sym_s = :iso, sym_p = :iso,
+        )
+    )
 end
 
-p_full2 = plot(p_k2, p_μ2; layout = (1, 2), size = (1400, 600),
-                plot_title = "Porous benchmark (oblate + iso-symmetrize) — MeanFieldHom v0.4")
+p_full2 = plot(
+    p_k2, p_μ2; layout = (1, 2), size = (1400, 600),
+    plot_title = "Porous benchmark (oblate + iso-symmetrize) — MeanFieldHom v0.4"
+)
 figpath2 = joinpath(figdir, "29_porous_schemes_oblate.png")
 savefig(p_full2, figpath2)
 @printf "Saved : %s\n" figpath2
@@ -165,7 +191,7 @@ for φ in (0.0, 0.1, 0.3, 0.5, 0.7, 0.9)
     @printf "   φ=%-4.2f      " φ
 end
 println()
-println("  " * "─" ^ 95)
+println("  " * "─"^95)
 for (scheme, label, _, _) in SCHEMES
     @printf "  %-12s" label
     for φ in (0.0, 0.1, 0.3, 0.5, 0.7, 0.9)

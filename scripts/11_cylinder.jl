@@ -22,11 +22,11 @@ using TensND
 using LinearAlgebra
 using Printf
 
-const E_ref  = 210.0e3
-const ν_ref  = 0.3
-const λ_ref  = E_ref * ν_ref / ((1 + ν_ref) * (1 - 2ν_ref))
-const μ_ref  = E_ref / (2 * (1 + ν_ref))
-const k_ref  = λ_ref + 2μ_ref / 3
+const E_ref = 210.0e3
+const ν_ref = 0.3
+const λ_ref = E_ref * ν_ref / ((1 + ν_ref) * (1 - 2ν_ref))
+const μ_ref = E_ref / (2 * (1 + ν_ref))
+const k_ref = λ_ref + 2μ_ref / 3
 const C_iso = TensISO{3}(3k_ref, 2μ_ref)
 
 const voigt_idx = ((1, 1), (2, 2), (3, 3), (2, 3), (1, 3), (1, 2))
@@ -34,12 +34,17 @@ const voigt_lab = ["11", "22", "33", "23", "13", "12"]
 
 function print_voigt(C; label = "P", scale = 1.0e6, unit = "×10⁻⁶ MPa⁻¹")
     println("  Voigt[$label] ($unit):")
-    print("      "); for l in voigt_lab; @printf "%10s" l; end; println()
+    print("      "); for l in voigt_lab
+        @printf "%10s" l
+    end; println()
     for (I, (i, j)) in enumerate(voigt_idx)
         @printf "  %2s | " voigt_lab[I]
-        for (k, l) in voigt_idx; @printf "%9.4f " scale * C[i, j, k, l]; end
+        for (k, l) in voigt_idx
+            @printf "%9.4f " scale * C[i, j, k, l]
+        end
         println()
     end
+    return
 end
 
 @printf "Reference matrix: isotropic steel, E = %.1f MPa, ν = %.2f\n\n" E_ref ν_ref

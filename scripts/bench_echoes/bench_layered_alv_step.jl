@@ -19,22 +19,22 @@ ref = JSON3.read(read(json_path, String))
 
 T_grid = collect(Float64.(ref.T))
 n = length(T_grid)
-const k0    = Float64(ref.k0)
-const mu0   = Float64(ref.mu0)
-const eta0  = Float64(ref.eta0)
+const k0 = Float64(ref.k0)
+const mu0 = Float64(ref.mu0)
+const eta0 = Float64(ref.eta0)
 const gamma0 = Float64(ref.gamma0)
-const k1    = Float64(ref.k1)
-const mu1   = Float64(ref.mu1)
-const eta1  = Float64(ref.eta1)
+const k1 = Float64(ref.k1)
+const mu1 = Float64(ref.mu1)
+const eta1 = Float64(ref.eta1)
 const gamma1 = Float64(ref.gamma1)
-const kp    = Float64(ref.kp)
-const mup   = Float64(ref.mup)
-const fp    = Float64(ref.fp)
-const finf  = Float64(ref.finf)
-const f0    = Float64(ref.f0)
-const N     = Int(ref.N)
-const t0    = Float64(ref.t0)
-const lT    = collect(Float64.(ref.lT))
+const kp = Float64(ref.kp)
+const mup = Float64(ref.mup)
+const fp = Float64(ref.fp)
+const finf = Float64(ref.finf)
+const f0 = Float64(ref.f0)
+const N = Int(ref.N)
+const t0 = Float64(ref.t0)
+const lT = collect(Float64.(ref.lT))
 
 const C_p_tens = TensISO{3}(3 * kp, 2 * mup)
 
@@ -44,15 +44,17 @@ make_R1() = maxwell_iso(k1, mu1, eta1, gamma1)
 # Layer modulus matching Python visco_prop with `tp >= lt` history-dep:
 function inclusion_law(t_set::Real)
     R1 = make_R1()
-    return ViscoLaw(function (t, tp)
-        if t < tp
-            return zero(C_p_tens)
-        elseif tp ≥ t_set
-            return R1.eval_fun(t, tp)
-        else
-            return C_p_tens
-        end
-    end, :relaxation)
+    return ViscoLaw(
+        function (t, tp)
+            if t < tp
+                return zero(C_p_tens)
+            elseif tp ≥ t_set
+                return R1.eval_fun(t, tp)
+            else
+                return C_p_tens
+            end
+        end, :relaxation
+    )
 end
 
 # Layers: pore + N solidifying shells.
@@ -86,7 +88,7 @@ to_matrix(v) = reduce(hcat, [collect(Float64.(row)) for row in v])'
 function compare(label, A_jl, A_py)
     @printf "\n── %s ──\n" label
     diff = A_jl .- A_py
-    rel = maximum(abs, diff) / max(maximum(abs, A_py), 1e-300)
+    rel = maximum(abs, diff) / max(maximum(abs, A_py), 1.0e-300)
     @printf "  max |Δ| = %.3e   max relative = %.3e\n" maximum(abs, diff) rel
     println("  jl:")
     for i in 1:size(A_jl, 1)
@@ -96,6 +98,7 @@ function compare(label, A_jl, A_py)
     for i in 1:size(A_py, 1)
         @printf "    [%d, :] = %s\n" i join([@sprintf("%+.5e", x) for x in A_py[i, :]], "  ")
     end
+    return
 end
 
 for k in 1:(N + 1)

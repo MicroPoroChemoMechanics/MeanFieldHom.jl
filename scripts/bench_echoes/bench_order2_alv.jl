@@ -23,17 +23,23 @@ const np = pyimport("numpy")
 function build_R(r0, r1, r2, τ1, τ2, fag, finst)
     return (t, tp) -> begin
         je = finst(tp) * r0 +
-             fag(tp) * (r1 * (1 - exp(-(t - tp) / τ1)) +
-                        r2 * (1 - exp(-(t - tp) / τ2)))
+            fag(tp) * (
+            r1 * (1 - exp(-(t - tp) / τ1)) +
+                r2 * (1 - exp(-(t - tp) / τ2))
+        )
         je * Matrix{Float64}(I, 3, 3)
     end
 end
 
-const Rs = build_R(1.0, 2.0, 3.0, 2.0, 10.0,
-                   t -> exp(-(t / 30.0)^2), _ -> 1.0)
-const Ri = build_R(0.2, 0.3, 1.2, 1.0, 15.0,
-                   t -> exp(-(t / 15.0)^2),
-                   t -> exp(-(t / 30.0)^2))
+const Rs = build_R(
+    1.0, 2.0, 3.0, 2.0, 10.0,
+    t -> exp(-(t / 30.0)^2), _ -> 1.0
+)
+const Ri = build_R(
+    0.2, 0.3, 1.2, 1.0, 15.0,
+    t -> exp(-(t / 15.0)^2),
+    t -> exp(-(t / 30.0)^2)
+)
 
 const law_M = ViscoLaw(Rs, :creep)
 const law_I = ViscoLaw(Ri, :creep)
@@ -61,9 +67,11 @@ const py_Ri = py"py_Ri"
 function julia_run(omega, T, sch, frac)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:Y => law_M))
-    add_phase!(rve, :I,
-               omega == 1.0 ? Ellipsoid(1.0, 1.0, 1.0) : Spheroid(omega),
-               Dict(:Y => law_I); fraction = frac)
+    add_phase!(
+        rve, :I,
+        omega == 1.0 ? Ellipsoid(1.0, 1.0, 1.0) : Spheroid(omega),
+        Dict(:Y => law_I); fraction = frac
+    )
     return homogenize_alv_order2(rve, sch, :Y; times = T)
 end
 
@@ -101,7 +109,7 @@ end
 function compare(omega, T, sch_julia, sch_str, frac)
     V_jl = julia_run(omega, T, sch_julia, frac)
     V_py = echoes_run(omega, T, sch_str, frac)
-    rel = norm(V_jl - V_py) / max(norm(V_py), 1e-30)
+    rel = norm(V_jl - V_py) / max(norm(V_py), 1.0e-30)
     @printf "  ω=%.2f  scheme=%-3s  size=%4d  rel err = %.3e\n" omega sch_str size(V_jl, 1) rel
     return V_jl, V_py
 end
@@ -113,8 +121,8 @@ for n in (5, 11, 21)
     @printf "n_times = %d\n" n
     for omega in (1.0, 0.1)
         compare(omega, T, MoriTanaka(), "MT", 0.2)
-        compare(omega, T, Dilute(),     "DIL", 0.2)
-        compare(omega, T, Maxwell(),    "MAX", 0.2)
+        compare(omega, T, Dilute(), "DIL", 0.2)
+        compare(omega, T, Maxwell(), "MAX", 0.2)
     end
     println()
 end

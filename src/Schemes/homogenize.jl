@@ -34,8 +34,10 @@ Extra `kw...` are forwarded to the scheme's `_evaluate` method
 (typically `abstol` / `reltol` / `maxiters` for iterative schemes,
 `method = :auto | :decuhr | …` for the underlying Hill-tensor backend).
 """
-function homogenize(rve::RVE, scheme::HomogenizationScheme,
-                    property::Symbol; kw...)
+function homogenize(
+        rve::RVE, scheme::HomogenizationScheme,
+        property::Symbol; kw...
+    )
     validate_rve(rve)
     return _evaluate(rve, scheme, Val(property); kw...)
 end
@@ -44,8 +46,10 @@ end
 # the old `homogenize(rve, scheme; property = …)` signature keep working.
 # New code is encouraged to pass the property name as a positional argument
 # (the user must always state explicitly which property is being homogenised).
-function homogenize(rve::RVE, scheme::HomogenizationScheme;
-                    property::Symbol = :C, kw...)
+function homogenize(
+        rve::RVE, scheme::HomogenizationScheme;
+        property::Symbol = :C, kw...
+    )
     return homogenize(rve, scheme, property; kw...)
 end
 

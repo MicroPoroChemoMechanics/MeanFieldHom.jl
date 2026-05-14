@@ -39,12 +39,16 @@ const φ_value = 0.15
 function _C_hom_iso_2vec(μs::Real, ks, φ, scheme)
     T = typeof(μs)
     rve = RVE(:SOLID; T = T)
-    add_matrix!(rve, Spheroid(ω_aspect),
-                Dict(:C => TensISO{3}(convert(T, 3 * ks), 2 * μs));
-                symmetrize = :iso)
-    add_phase!(rve, :PORE, Spheroid(ω_aspect),
-                Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY)));
-                fraction = convert(T, φ), symmetrize = :iso)
+    add_matrix!(
+        rve, Spheroid(ω_aspect),
+        Dict(:C => TensISO{3}(convert(T, 3 * ks), 2 * μs));
+        symmetrize = :iso
+    )
+    add_phase!(
+        rve, :PORE, Spheroid(ω_aspect),
+        Dict(:C => TensISO{3}(convert(T, 3 * TINY), convert(T, 2 * TINY)));
+        fraction = convert(T, φ), symmetrize = :iso
+    )
     C = homogenize(rve, scheme, :C)
     C_iso = MeanFieldHom.Schemes._apply_symmetrize(
         C, MeanFieldHom.Schemes.IsoSymmetrize()
@@ -82,22 +86,26 @@ end
 
 # ── Schemes covered (mirrors the Python script) ──────────────────────────────
 const SCHEMES = [
-    (MoriTanaka(),                                                      "MT"),
-    (DiluteDual(),                                                       "DILD"),
+    (MoriTanaka(), "MT"),
+    (DiluteDual(), "DILD"),
     (SelfConsistent(; abstol = 1.0e-8, maxiters = 300, select_best = true), "SC"),
-    (AsymmetricSelfConsistent(; abstol = 1.0e-8, maxiters = 300, select_best = true),
-                                                                        "ASC"),
-    (PonteCastanedaWillis(),                                             "PCW"),
-    (Maxwell(),                                                          "MAX"),
+    (
+        AsymmetricSelfConsistent(; abstol = 1.0e-8, maxiters = 300, select_best = true),
+        "ASC",
+    ),
+    (PonteCastanedaWillis(), "PCW"),
+    (Maxwell(), "MAX"),
 ]
 
 # ── Compute and plot ─────────────────────────────────────────────────────────
 println("Strength-ellipse criterion (criterion_porous.py port)")
 println("ks = $ks_value, μs = $μs_value, ω = $ω_aspect, φ = $φ_value")
-println("─" ^ 78)
+println("─"^78)
 
-p = plot(; xlabel = "Σ_m / σ_o", ylabel = "Σ_d / σ_o",
-            aspect_ratio = :equal, legend = :outerright, grid = true)
+p = plot(;
+    xlabel = "Σ_m / σ_o", ylabel = "Σ_d / σ_o",
+    aspect_ratio = :equal, legend = :outerright, grid = true
+)
 
 ltheta = range(0, π; length = 100)
 for (sch, name) in SCHEMES

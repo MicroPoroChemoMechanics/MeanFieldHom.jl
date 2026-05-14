@@ -42,7 +42,7 @@ function ell_RF(x::Tx, y::Ty, z::Tz) where {Tx <: Number, Ty <: Number, Tz <: Nu
         sx = sqrt(xk); sy = sqrt(yk); sz = sqrt(zk)
         # Carlson duplication step (Carlson 1995 eq. 2.3):
         #   (xₖ₊₁, yₖ₊₁, zₖ₊₁) = ((xₖ + λ)/4, (yₖ + λ)/4, (zₖ + λ)/4)
-        λ  = sx * (sy + sz) + sy * sz
+        λ = sx * (sy + sz) + sy * sz
         xk = (xk + λ) / 4
         yk = (yk + λ) / 4
         zk = (zk + λ) / 4
@@ -52,7 +52,7 @@ function ell_RF(x::Tx, y::Ty, z::Tz) where {Tx <: Number, Ty <: Number, Tz <: Nu
             spread < tol && break
         end
     end
-    μ  = (xk + yk + zk) / 3
+    μ = (xk + yk + zk) / 3
     ΔX = (μ - xk) / μ
     ΔY = (μ - yk) / μ
     ΔZ = (μ - zk) / μ
@@ -86,13 +86,13 @@ function ell_RD(x::Tx, y::Ty, z::Tz) where {Tx <: Number, Ty <: Number, Tz <: Nu
     # Running sum  Σₖ 4^{−k} / (√zₖ · (zₖ + λₖ))  that accumulates the
     # extra 1/(t + z) factor which distinguishes R_D from R_F
     # (Carlson 1995 eq. 2.28).
-    tail   = zero(T)
+    tail = zero(T)
     weight = one(T)
     for _ in 1:50
         sx = sqrt(xk); sy = sqrt(yk); sz = sqrt(zk)
-        λ        = sx * (sy + sz) + sy * sz
-        tail    += weight / (sz * (zk + λ))
-        weight  /= 4
+        λ = sx * (sy + sz) + sy * sz
+        tail += weight / (sz * (zk + λ))
+        weight /= 4
         xk = (xk + λ) / 4
         yk = (yk + λ) / 4
         zk = (zk + λ) / 4
@@ -102,7 +102,7 @@ function ell_RD(x::Tx, y::Ty, z::Tz) where {Tx <: Number, Ty <: Number, Tz <: Nu
             spread < tol && break
         end
     end
-    μ  = (xk + yk + 3 * zk) / 5
+    μ = (xk + yk + 3 * zk) / 5
     ΔX = (μ - xk) / μ
     ΔY = (μ - yk) / μ
     ΔZ = (μ - zk) / μ

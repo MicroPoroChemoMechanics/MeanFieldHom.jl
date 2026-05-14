@@ -33,7 +33,7 @@ sensitivity to either `radius` or `eccentricity` non-trivial (the aspect
 ratio depends explicitly on `e`).
 """
 struct MyBlob{T <: Number, B <: TensND.AbstractBasis} <:
-       MeanFieldHom.AbstractEllipsoidalInclusion{3, T}
+    MeanFieldHom.AbstractEllipsoidalInclusion{3, T}
     radius::T
     eccentricity::T
     basis::B
@@ -61,15 +61,17 @@ MeanFieldHom.inclusion_basis(b::MyBlob) = b.basis
 
 basis = TensND.CanonicalBasis{3, Float64}()
 
-println("=" ^ 78)
+println("="^78)
 println("MeanFieldHom — sensitivity on a user-defined inclusion type (MyBlob)")
-println("=" ^ 78)
+println("="^78)
 
 rve = RVE(:M)
 add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-add_phase!(rve, :B, MyBlob(1.0, 0.2, basis),
-                Dict(:C => TensISO{3}(60.0, 20.0));
-                fraction = 0.2)
+add_phase!(
+    rve, :B, MyBlob(1.0, 0.2, basis),
+    Dict(:C => TensISO{3}(60.0, 20.0));
+    fraction = 0.2
+)
 
 const idxC = C -> get_array(C)[1, 1, 1, 1]
 
@@ -85,19 +87,23 @@ const idxC = C -> get_array(C)[1, 1, 1, 1]
 function f_eval_e(de)
     r = RVE(:M)
     add_matrix!(r, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(r, :B, MyBlob(1.0, 0.2 + de, basis),
-                Dict(:C => TensISO{3}(60.0, 20.0));
-                fraction = 0.2)
+    add_phase!(
+        r, :B, MyBlob(1.0, 0.2 + de, basis),
+        Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.2
+    )
     return idxC(homogenize(r, Dilute()))
 end
 h = 1.0e-5
 ∂_e_fd = (f_eval_e(h) - f_eval_e(-h)) / (2h)
-@printf "[3] FD reference for ∂e             = %.6e   (rel. err = %.2e)\n" ∂_e_fd abs(∂_e - ∂_e_fd)/abs(∂_e_fd)
+@printf "[3] FD reference for ∂e             = %.6e   (rel. err = %.2e)\n" ∂_e_fd abs(∂_e - ∂_e_fd) / abs(∂_e_fd)
 
 # ── (4) Gradient w.r.t. three parameters: f, radius, eccentricity ──────────
-∇ = gradient(rve, Dilute(),
-             [amount(:B), geometry(:B, :radius), geometry(:B, :eccentricity)];
-             indexer = idxC)
+∇ = gradient(
+    rve, Dilute(),
+    [amount(:B), geometry(:B, :radius), geometry(:B, :eccentricity)];
+    indexer = idxC
+)
 println("\n[4] gradient on [f_B, radius, eccentricity] :")
 @printf "    [%.4f, %.6e, %.6e]\n" ∇[1] ∇[2] ∇[3]
 
@@ -106,9 +112,11 @@ println("\n[5] sensitivity(closure) on a composite parameter (radius and eccentr
 f_composed = α -> begin
     r2 = RVE(:M)
     add_matrix!(r2, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(r2, :B, MyBlob(α, α / 5, basis),
-                Dict(:C => TensISO{3}(60.0, 20.0));
-                fraction = 0.2)
+    add_phase!(
+        r2, :B, MyBlob(α, α / 5, basis),
+        Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.2
+    )
     return idxC(homogenize(r2, Dilute()))
 end
 ∂_α = sensitivity(f_composed, 1.0)

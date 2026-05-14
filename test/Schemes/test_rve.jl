@@ -73,8 +73,10 @@ end
     @test_throws ArgumentError add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => C₀); fraction = 0.1)
     # Must specify exactly one of fraction / density
     @test_throws ArgumentError add_phase!(rve, :J, Ellipsoid(1.0), Dict(:C => C₀))
-    @test_throws ArgumentError add_phase!(rve, :J, Ellipsoid(1.0), Dict(:C => C₀);
-                                          fraction = 0.1, density = 0.1)
+    @test_throws ArgumentError add_phase!(
+        rve, :J, Ellipsoid(1.0), Dict(:C => C₀);
+        fraction = 0.1, density = 0.1
+    )
     # Negative amount caught by validate_rve
     add_phase!(rve, :J, Ellipsoid(1.0), Dict(:C => C₀); fraction = -0.1)
     @test_throws ArgumentError validate_rve(rve)
@@ -105,8 +107,10 @@ end
     @test rve_dual isa RVE{DT}
     C₀ = TensISO{3}(30.0, 10.0)
     add_matrix!(rve_dual, Ellipsoid(1.0), Dict(:C => C₀))
-    add_phase!(rve_dual, :I, Ellipsoid(1.0), Dict(:C => C₀);
-               fraction = ForwardDiff.Dual{Nothing}(0.2, 1.0))
+    add_phase!(
+        rve_dual, :I, Ellipsoid(1.0), Dict(:C => C₀);
+        fraction = ForwardDiff.Dual{Nothing}(0.2, 1.0)
+    )
     @test rve_dual.amounts[:I] isa VolumeFraction{DT}
     @test ForwardDiff.value(matrix_volume_fraction(rve_dual)) ≈ 0.8
     @test ForwardDiff.partials(matrix_volume_fraction(rve_dual))[1] ≈ -1.0
@@ -115,8 +119,10 @@ end
     # rarely useful, but compatibility must hold).
     rve_c = RVE(:M; T = Complex{Float64})
     add_matrix!(rve_c, Ellipsoid(1.0), Dict(:C => C₀))
-    add_phase!(rve_c, :I, Ellipsoid(1.0), Dict(:C => C₀);
-               fraction = 0.2 + 0.0im)
+    add_phase!(
+        rve_c, :I, Ellipsoid(1.0), Dict(:C => C₀);
+        fraction = 0.2 + 0.0im
+    )
     @test rve_c.amounts[:I] isa VolumeFraction{Complex{Float64}}
     @test matrix_volume_fraction(rve_c) ≈ 0.8 + 0.0im
 end

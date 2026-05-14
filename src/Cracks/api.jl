@@ -117,13 +117,15 @@ Limits :
 
 Reference : [Sevostianov & Kachanov 2002](@cite sevostianov2002).
 """
-function _apply_interface_stiffness(B::TensND.AbstractTens{2, 3},
-                                     K::TensND.AbstractTens{2, 3}, b::Real)
+function _apply_interface_stiffness(
+        B::TensND.AbstractTens{2, 3},
+        K::TensND.AbstractTens{2, 3}, b::Real
+    )
     B_M = TensND.get_array(B)        # 3 × 3
     K_M = TensND.get_array(K)
     I3 = Matrix{eltype(B_M)}(LinearAlgebra.I, 3, 3)
     KB = Matrix(K_M) * Matrix(B_M)
-    M  = I3 + b .* KB
+    M = I3 + b .* KB
     B_eff_M = Matrix(B_M) / M
     # Symmetrise to remove rounding drift.
     B_eff_M = (B_eff_M + B_eff_M') ./ 2

@@ -63,7 +63,7 @@ import MeanFieldHom.Schemes: _apply_symmetrize
         @test Tp isa TensND.TensTI{4, Float64, 5}
         # Walpole 5-component decomposition is preserved up to numerical noise.
         for (a, b) in zip(TensND.get_data(Tp), data)
-            @test a ≈ b atol=1e-10
+            @test a ≈ b atol = 1.0e-10
         end
     end
 
@@ -86,8 +86,10 @@ import MeanFieldHom.Schemes: _apply_symmetrize
         C_p = TensISO{3}(3.0e-6, 2.0e-6)
         rve = RVE(:M)
         add_matrix!(rve, Spheroid(0.2), Dict(:C => C_s); symmetrize = :iso)
-        add_phase!(rve, :PORE, Spheroid(0.2), Dict(:C => C_p);
-                    fraction = 0.3, symmetrize = :iso)
+        add_phase!(
+            rve, :PORE, Spheroid(0.2), Dict(:C => C_p);
+            fraction = 0.3, symmetrize = :iso
+        )
         C_eff = homogenize(rve, MoriTanaka(), :C)
         @test C_eff isa TensND.TensISO{4, 3}
         α, β = TensND.get_data(C_eff)
@@ -102,8 +104,10 @@ import MeanFieldHom.Schemes: _apply_symmetrize
         C_i = TensISO{3}(3.0e-6, 2.0e-6)
         rve = RVE(:M)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_m))
-        add_phase!(rve, :I, Spheroid(0.2), Dict(:C => C_i);
-                    fraction = 0.2, symmetrize = TISymmetrize((0.0, 0.0, 1.0)))
+        add_phase!(
+            rve, :I, Spheroid(0.2), Dict(:C => C_i);
+            fraction = 0.2, symmetrize = TISymmetrize((0.0, 0.0, 1.0))
+        )
         C_eff = homogenize(rve, MoriTanaka(), :C)
         # MT keeps the homogenised tensor in a TI subspace ; verify the
         # canonical/walpole representation has the expected axisymmetry by

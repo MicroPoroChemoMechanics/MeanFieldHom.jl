@@ -117,7 +117,7 @@ function _apply_symmetrize(t::TensND.AbstractTens{4, 3}, sym::TISymmetrize)
     # then reassemble. We rely on direct index summation (no TensND ops) to
     # stay generic w.r.t. Dual eltypes.
     nₙ = ntuple(i -> ntuple(j -> n[i] * n[j], 3), 3)        # 3×3 nested tuple
-    δ  = ntuple(i -> ntuple(j -> i == j ? one(Tarr) : zero(Tarr), 3), 3)
+    δ = ntuple(i -> ntuple(j -> i == j ? one(Tarr) : zero(Tarr), 3), 3)
     nT = ntuple(i -> ntuple(j -> δ[i][j] - nₙ[i][j], 3), 3)
 
     # W as 4-arrays of the same shape as `arr`
@@ -141,9 +141,13 @@ function _apply_symmetrize(t::TensND.AbstractTens{4, 3}, sym::TISymmetrize)
     end
 
     # Inner products ℓ_k = W_k :: t (Frobenius double-dot)
-    ℓ = ntuple(k -> sum(W[k][i, j, p, q] * arr[i, j, p, q]
-                         for i in 1:3, j in 1:3, p in 1:3, q in 1:3),
-                6)
+    ℓ = ntuple(
+        k -> sum(
+            W[k][i, j, p, q] * arr[i, j, p, q]
+                for i in 1:3, j in 1:3, p in 1:3, q in 1:3
+        ),
+        6
+    )
 
     # Force major-symmetry by averaging ℓ₃ and ℓ₄ (matches the W₃, W₄
     # convention — for a major-sym input they're already equal up to noise).

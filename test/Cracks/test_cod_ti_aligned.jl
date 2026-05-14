@@ -34,12 +34,12 @@ const ATOL_COD_DEC = 1.0e-7
     E, ν = 210.0, 0.3
     k = E / (3 * (1 - 2ν)); μ = E / (2 * (1 + ν))
     C_iso = TensISO{3}(3k, 2μ)
-    C_ti  = fromISO(C_iso, n_axis)
+    C_ti = fromISO(C_iso, n_axis)
     @test C_ti isa TensND.TensTI{4, Float64, 5}
 
     for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5), RibbonCrack(1.0))
         B_iso = cod_tensor(c, C_iso)
-        B_ti  = cod_tensor(c, C_ti)
+        B_ti = cod_tensor(c, C_ti)
         @test maximum(abs.(get_array(B_ti) .- get_array(B_iso))) < ATOL_COD_ISO
     end
 end
@@ -119,8 +119,10 @@ end
 @testset "COD TI aligned — complex moduli (frequency-domain viscoelasticity)" begin
     n_axis = [0.0, 0.0, 1.0]
     δ = 0.05
-    C_c = tens_TI(2.179 + δ * im, 0.579 + 0.0im, 0.689 + 0.0im,
-                  10.345 + δ * im, 1.0 + 0.5δ * im, n_axis)
+    C_c = tens_TI(
+        2.179 + δ * im, 0.579 + 0.0im, 0.689 + 0.0im,
+        10.345 + δ * im, 1.0 + 0.5δ * im, n_axis
+    )
     @test eltype(C_c) <: Complex
 
     for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5), RibbonCrack(1.0))
@@ -131,12 +133,14 @@ end
 
     # Limit Im → 0 must reproduce the real result exactly.
     C_r = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
-    C_0 = tens_TI(2.179 + 0.0im, 0.579 + 0.0im, 0.689 + 0.0im,
-                  10.345 + 0.0im, 1.0 + 0.0im, n_axis)
+    C_0 = tens_TI(
+        2.179 + 0.0im, 0.579 + 0.0im, 0.689 + 0.0im,
+        10.345 + 0.0im, 1.0 + 0.0im, n_axis
+    )
     for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5), RibbonCrack(1.0))
         B_r = cod_tensor(c, C_r)
         B_0 = cod_tensor(c, C_0)
         @test maximum(abs.(real.(get_array(B_0)) .- get_array(B_r))) < 1.0e-14
-        @test maximum(abs.(imag.(get_array(B_0))))                   < 1.0e-14
+        @test maximum(abs.(imag.(get_array(B_0)))) < 1.0e-14
     end
 end

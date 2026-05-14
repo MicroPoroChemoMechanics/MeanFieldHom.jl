@@ -36,8 +36,8 @@ end
     M = Matrix(K)
     @test size(M) == (6n, 6n)
     K_back = ALVKernelISO(M)
-    @test isapprox(K_back.α, α; atol = 1e-14)
-    @test isapprox(K_back.β, β; atol = 1e-14)
+    @test isapprox(K_back.α, α; atol = 1.0e-14)
+    @test isapprox(K_back.β, β; atol = 1.0e-14)
 
     # `getindex` lazy view matches dense materialisation
     for i in 1:6n, j in 1:6n
@@ -54,19 +54,19 @@ end
 
     K_sum = K₁ + K₂
     @test K_sum isa ALVKernelISO
-    @test isapprox(Matrix(K_sum), Matrix(K₁) + Matrix(K₂); atol = 1e-12)
+    @test isapprox(Matrix(K_sum), Matrix(K₁) + Matrix(K₂); atol = 1.0e-12)
 
     K_diff = K₁ - K₂
     @test K_diff isa ALVKernelISO
-    @test isapprox(Matrix(K_diff), Matrix(K₁) - Matrix(K₂); atol = 1e-12)
+    @test isapprox(Matrix(K_diff), Matrix(K₁) - Matrix(K₂); atol = 1.0e-12)
 
     K_prod = K₁ * K₂
     @test K_prod isa ALVKernelISO
-    @test isapprox(Matrix(K_prod), Matrix(K₁) * Matrix(K₂); atol = 1e-12)
+    @test isapprox(Matrix(K_prod), Matrix(K₁) * Matrix(K₂); atol = 1.0e-12)
 
     K_scaled = 2.5 * K₁
     @test K_scaled isa ALVKernelISO
-    @test isapprox(Matrix(K_scaled), 2.5 * Matrix(K₁); atol = 1e-12)
+    @test isapprox(Matrix(K_scaled), 2.5 * Matrix(K₁); atol = 1.0e-12)
 
     K_inv = volterra_inverse(K₁)
     @test K_inv isa ALVKernelISO
@@ -76,11 +76,11 @@ end
         rows = (6 * (i - 1) + 1):(6 * i)
         H_id[rows, rows] = Matrix{Float64}(I, 6, 6)
     end
-    @test isapprox(M_id, H_id; atol = 1e-10)
+    @test isapprox(M_id, H_id; atol = 1.0e-10)
 
     K_div = volterra_left_divide(K₁, K₂)
     @test K_div isa ALVKernelISO
-    @test isapprox(Matrix(K_div), Matrix(K_inv) * Matrix(K₂); atol = 1e-9)
+    @test isapprox(Matrix(K_div), Matrix(K_inv) * Matrix(K₂); atol = 1.0e-9)
 end
 
 @testset "ALVKernelTI — round-trip and algebra" begin
@@ -95,11 +95,11 @@ end
     M = Matrix(K)
     K_back = ALVKernelTI(M)
     for k in 1:6
-        @test isapprox(K_back.ℓ[k], ℓ[k]; atol = 1e-14)
+        @test isapprox(K_back.ℓ[k], ℓ[k]; atol = 1.0e-14)
     end
 
     for i in 1:6n, j in 1:6n
-        @test K[i, j] ≈ M[i, j] atol = 1e-14
+        @test K[i, j] ≈ M[i, j] atol = 1.0e-14
     end
 
     # Algebra
@@ -107,7 +107,7 @@ end
     K₂ = ALVKernelTI(ℓ₂)
     K_prod = K * K₂
     @test K_prod isa ALVKernelTI
-    @test isapprox(Matrix(K_prod), M * Matrix(K₂); atol = 1e-12)
+    @test isapprox(Matrix(K_prod), M * Matrix(K₂); atol = 1.0e-12)
     K_inv = volterra_inverse(K)
     @test K_inv isa ALVKernelTI
 end
@@ -129,17 +129,17 @@ end
     M = Matrix(K)
     K_back = ALVKernelOrtho(M)
     for k in 1:12
-        @test isapprox(K_back.o[k], o[k]; atol = 1e-14)
+        @test isapprox(K_back.o[k], o[k]; atol = 1.0e-14)
     end
 
     for i in 1:6n, j in 1:6n
-        @test K[i, j] ≈ M[i, j] atol = 1e-14
+        @test K[i, j] ≈ M[i, j] atol = 1.0e-14
     end
 
     K₂ = K
     K_prod = K * K₂
     @test K_prod isa ALVKernelOrtho
-    @test isapprox(Matrix(K_prod), M * Matrix(K₂); atol = 1e-12)
+    @test isapprox(Matrix(K_prod), M * Matrix(K₂); atol = 1.0e-12)
     K_inv = volterra_inverse(K)
     @test K_inv isa ALVKernelOrtho
 end
@@ -148,28 +148,28 @@ end
     n = 4
     α = _alvk_rand_lt(n); β = _alvk_rand_lt(n)
     K_iso = ALVKernelISO(α, β)
-    K_TI  = ALVKernelTI(K_iso)
-    K_O   = ALVKernelOrtho(K_iso)
+    K_TI = ALVKernelTI(K_iso)
+    K_O = ALVKernelOrtho(K_iso)
 
     @test K_TI isa ALVKernelTI
-    @test K_O  isa ALVKernelOrtho
+    @test K_O isa ALVKernelOrtho
 
     # Conversions preserve the materialised matrix.
-    @test isapprox(Matrix(K_iso), Matrix(K_TI); atol = 1e-12)
-    @test isapprox(Matrix(K_iso), Matrix(K_O);  atol = 1e-12)
+    @test isapprox(Matrix(K_iso), Matrix(K_TI); atol = 1.0e-12)
+    @test isapprox(Matrix(K_iso), Matrix(K_O); atol = 1.0e-12)
 
     # TI → ortho promotion
     K_O2 = ALVKernelOrtho(K_TI)
-    @test isapprox(Matrix(K_O2), Matrix(K_TI); atol = 1e-12)
+    @test isapprox(Matrix(K_O2), Matrix(K_TI); atol = 1.0e-12)
 
     # Mixed arithmetic auto-promotes
     K_sum_iso_TI = K_iso + K_TI
     @test K_sum_iso_TI isa ALVKernelTI
-    @test isapprox(Matrix(K_sum_iso_TI), Matrix(K_iso) + Matrix(K_TI); atol = 1e-12)
+    @test isapprox(Matrix(K_sum_iso_TI), Matrix(K_iso) + Matrix(K_TI); atol = 1.0e-12)
 
     K_prod_iso_O = K_iso * K_O
     @test K_prod_iso_O isa ALVKernelOrtho
-    @test isapprox(Matrix(K_prod_iso_O), Matrix(K_iso) * Matrix(K_O); atol = 1e-12)
+    @test isapprox(Matrix(K_prod_iso_O), Matrix(K_iso) * Matrix(K_O); atol = 1.0e-12)
 
     K_div_TI_O = volterra_left_divide(K_TI, K_O)
     @test K_div_TI_O isa ALVKernelOrtho
@@ -189,10 +189,10 @@ end
     M = trapezoidal_matrix(law, times)
 
     K = ALVKernelISO(M)
-    @test isapprox(Matrix(K), M; atol = 1e-12)
+    @test isapprox(Matrix(K), M; atol = 1.0e-12)
 
     # Volterra inverse on K matches the dense block-LU.
     K_inv = volterra_inverse(K)
     M_inv = volterra_inverse(M; block_size = 6)
-    @test isapprox(Matrix(K_inv), M_inv; atol = 1e-9)
+    @test isapprox(Matrix(K_inv), M_inv; atol = 1.0e-9)
 end

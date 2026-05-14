@@ -127,8 +127,10 @@ Decompose a `6n×6n` block matrix whose every 6×6 block is a TI
 the six scalar Walpole parameter matrices `(ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆)`,
 each of size `n × n`.
 """
-function ti_params_from_blocks(M::AbstractMatrix;
-                                axis::NTuple{3} = (0.0, 0.0, 1.0))
+function ti_params_from_blocks(
+        M::AbstractMatrix;
+        axis::NTuple{3} = (0.0, 0.0, 1.0)
+    )
     axis == (0.0, 0.0, 1.0) ||
         throw(ArgumentError("ti_params_from_blocks: only axis = e₃ is supported"))
     sz = size(M, 1)
@@ -163,8 +165,10 @@ Inverse of [`ti_params_from_blocks`](@ref): rebuild a `6n×6n` block
 matrix whose every 6×6 block has the TI Mandel structure with axis
 `n = e₃` and Walpole coefficients `(ℓ₁[i,j], …, ℓ₆[i,j])`.
 """
-function ti_blocks_from_params(ℓ::NTuple{6, <:AbstractMatrix};
-                                axis::NTuple{3} = (0.0, 0.0, 1.0))
+function ti_blocks_from_params(
+        ℓ::NTuple{6, <:AbstractMatrix};
+        axis::NTuple{3} = (0.0, 0.0, 1.0)
+    )
     axis == (0.0, 0.0, 1.0) ||
         throw(ArgumentError("ti_blocks_from_params: only axis = e₃ is supported"))
     n = size(ℓ[1], 1)
@@ -182,7 +186,7 @@ function ti_blocks_from_params(ℓ::NTuple{6, <:AbstractMatrix};
         ℓ₃_ij = T(ℓ[3][i, j]); ℓ₄_ij = T(ℓ[4][i, j])
         ℓ₅_ij = T(ℓ[5][i, j]); ℓ₆_ij = T(ℓ[6][i, j])
         block_diag_in = (ℓ₂_ij + ℓ₅_ij) / 2
-        block_off_in  = (ℓ₂_ij - ℓ₅_ij) / 2
+        block_off_in = (ℓ₂_ij - ℓ₅_ij) / 2
         # In-plane block (1:2, 1:2)
         M[rows[1], cols[1]] = block_diag_in
         M[rows[1], cols[2]] = block_off_in
@@ -254,10 +258,14 @@ Note that closure under Volterra product does **not** preserve major
 symmetry (`o₁₂ ≠ o₂₁` in general), so the full 9-entry normal block is
 needed even for major-symmetric inputs.
 """
-function ortho_params_from_blocks(M::AbstractMatrix;
-                                   axes::NTuple{3, NTuple{3}} = ((1.0, 0.0, 0.0),
-                                                                  (0.0, 1.0, 0.0),
-                                                                  (0.0, 0.0, 1.0)))
+function ortho_params_from_blocks(
+        M::AbstractMatrix;
+        axes::NTuple{3, NTuple{3}} = (
+            (1.0, 0.0, 0.0),
+            (0.0, 1.0, 0.0),
+            (0.0, 0.0, 1.0),
+        )
+    )
     axes == ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)) ||
         throw(ArgumentError("ortho_params_from_blocks: only canonical axes are supported"))
     sz = size(M, 1)
@@ -271,15 +279,15 @@ function ortho_params_from_blocks(M::AbstractMatrix;
     @inbounds for i in 1:n, j in 1:n
         r = 6 * (i - 1)
         c = 6 * (j - 1)
-        o[1][i, j]  = M[r + 1, c + 1]
-        o[2][i, j]  = M[r + 1, c + 2]
-        o[3][i, j]  = M[r + 1, c + 3]
-        o[4][i, j]  = M[r + 2, c + 1]
-        o[5][i, j]  = M[r + 2, c + 2]
-        o[6][i, j]  = M[r + 2, c + 3]
-        o[7][i, j]  = M[r + 3, c + 1]
-        o[8][i, j]  = M[r + 3, c + 2]
-        o[9][i, j]  = M[r + 3, c + 3]
+        o[1][i, j] = M[r + 1, c + 1]
+        o[2][i, j] = M[r + 1, c + 2]
+        o[3][i, j] = M[r + 1, c + 3]
+        o[4][i, j] = M[r + 2, c + 1]
+        o[5][i, j] = M[r + 2, c + 2]
+        o[6][i, j] = M[r + 2, c + 3]
+        o[7][i, j] = M[r + 3, c + 1]
+        o[8][i, j] = M[r + 3, c + 2]
+        o[9][i, j] = M[r + 3, c + 3]
         o[10][i, j] = M[r + 4, c + 4]
         o[11][i, j] = M[r + 5, c + 5]
         o[12][i, j] = M[r + 6, c + 6]
@@ -297,10 +305,14 @@ matrix whose every 6×6 block has the ortho Mandel structure with axes
 `(e₁, e₂, e₃)`.  All off-block-diagonal entries are zero (block 1..3 ↔
 block 4..6 coupling is forbidden by orthotropic symmetry).
 """
-function ortho_blocks_from_params(o::NTuple{12, <:AbstractMatrix};
-                                   axes::NTuple{3, NTuple{3}} = ((1.0, 0.0, 0.0),
-                                                                  (0.0, 1.0, 0.0),
-                                                                  (0.0, 0.0, 1.0)))
+function ortho_blocks_from_params(
+        o::NTuple{12, <:AbstractMatrix};
+        axes::NTuple{3, NTuple{3}} = (
+            (1.0, 0.0, 0.0),
+            (0.0, 1.0, 0.0),
+            (0.0, 0.0, 1.0),
+        )
+    )
     axes == ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)) ||
         throw(ArgumentError("ortho_blocks_from_params: only canonical axes are supported"))
     n = size(o[1], 1)

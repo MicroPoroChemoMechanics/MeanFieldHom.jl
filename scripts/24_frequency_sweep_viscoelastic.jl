@@ -33,21 +33,25 @@ y_sc = Vector{ComplexF64}(undef, length(ωs))
 
 # Same Maxwell spectrum on both phases but different baseline moduli
 for (i, ω) in enumerate(ωs)
-    G_m = maxwell_G(ω; G_inf = 10.0, G_d = 5.0,  τ = 1.0)
+    G_m = maxwell_G(ω; G_inf = 10.0, G_d = 5.0, τ = 1.0)
     G_i = maxwell_G(ω; G_inf = 30.0, G_d = 15.0, τ = 1.0)
     K_m = ComplexF64(30.0)
     K_i = ComplexF64(80.0)
     rve = RVE(:M; T = ComplexF64)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => iso_C(K_m, G_m)))
-    add_phase!(rve, :I, Ellipsoid(1.0),
-               Dict(:C => iso_C(K_i, G_i)); fraction = ComplexF64(f_inc))
+    add_phase!(
+        rve, :I, Ellipsoid(1.0),
+        Dict(:C => iso_C(K_i, G_i)); fraction = ComplexF64(f_inc)
+    )
     y_mt[i] = get_array(homogenize(rve, MoriTanaka()))[1, 2, 1, 2]    # shear-like component
     y_sc[i] = get_array(homogenize(rve, SelfConsistent(; abstol = 1.0e-10, maxiters = 200)))[1, 2, 1, 2]
 end
 
-p1 = plot(ωs, real.(y_mt); xscale = :log10, label = "Re — MT", lw = 2, color = :blue,
-          xlabel = "ω", ylabel = "C[1212]",
-          title = "Frequency sweep — viscoelastic 2-phase, f=$(f_inc)")
+p1 = plot(
+    ωs, real.(y_mt); xscale = :log10, label = "Re — MT", lw = 2, color = :blue,
+    xlabel = "ω", ylabel = "C[1212]",
+    title = "Frequency sweep — viscoelastic 2-phase, f=$(f_inc)"
+)
 plot!(p1, ωs, imag.(y_mt); label = "Im — MT", lw = 2, color = :blue, ls = :dash)
 plot!(p1, ωs, real.(y_sc); label = "Re — SC", lw = 2, color = :red)
 plot!(p1, ωs, imag.(y_sc); label = "Im — SC", lw = 2, color = :red, ls = :dash)
@@ -61,7 +65,9 @@ println("Saved : ", figpath)
 @printf("\nω        Re(MT)    Im(MT)    Re(SC)    Im(SC)\n")
 for (i, ω) in enumerate(ωs)
     if i % 10 == 1
-        @printf("  %.2e   %.4f   %.4f   %.4f   %.4f\n",
-                ω, real(y_mt[i]), imag(y_mt[i]), real(y_sc[i]), imag(y_sc[i]))
+        @printf(
+            "  %.2e   %.4f   %.4f   %.4f   %.4f\n",
+            ω, real(y_mt[i]), imag(y_mt[i]), real(y_sc[i]), imag(y_sc[i])
+        )
     end
 end
