@@ -92,7 +92,7 @@ _sums_to_unit(::CrackDensity) = false
 
 Specifies how a phase's *localization tensor* (and the derived stiffness /
 compliance / conductivity / resistivity contributions) is averaged over an
-orientation distribution before being used in the homogenisation formula.
+orientation distribution before being used in the homogenization formula.
 
 Three concrete subtypes are shipped :
 

@@ -1,5 +1,5 @@
 # =============================================================================
-#  maxwell.jl — Maxwell homogenisation.
+#  maxwell.jl — Maxwell homogenization.
 #
 #       C_eff = C₀ + Σ ⊡ (I − P_d ⊡ Σ)⁻¹,
 #       Σ     = Σ_i fᵢ Nᵢ  (+ density-weighted crack contributions)
@@ -12,7 +12,7 @@
 """
     _evaluate(rve, ::Maxwell, ::Val{p}; kw...) -> AbstractTens
 
-Maxwell homogenisation for property `:p`. Uses the RVE's
+Maxwell homogenization for property `:p`. Uses the RVE's
 [`distribution_shape`](@ref) (`UniformDistribution` wrapper) as the
 reference for the outer Hill polarisation tensor `P_d`. Conductivity
 (`:K`) is supported through the same recipe with 2nd-order tensors.

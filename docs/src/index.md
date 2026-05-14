@@ -1,10 +1,10 @@
 # MeanFieldHom.jl
 
-Julia framework for mean-field homogenisation of heterogeneous
+Julia framework for mean-field homogenization of heterogeneous
 materials. Provides Hill polarisation tensors for ellipsoidal
 inclusions, crack-opening-displacement tensors and intensity factors
 for flat cracks, and second-order Hill tensors for transport problems.
-Paves the way for a full homogenisation stack (schemes, RVEs,
+Paves the way for a full homogenization stack (schemes, RVEs,
 viscoelastic laws, user-defined inclusions).
 
 ## Sub-modules
@@ -19,7 +19,7 @@ viscoelastic laws, user-defined inclusions).
   (Voigt, Reuss, Dilute, Mori-Tanaka, Maxwell, PCW, SC, ASC,
   Differential), parameter sensitivities (autodiff).
 - [`MeanFieldHom.Viscoelasticity`](@ref) — ageing linear viscoelastic
-  homogenisation (`ViscoLaw`, trapezoidal Stieltjes discretisation,
+  homogenization (`ViscoLaw`, trapezoidal Stieltjes discretisation,
   Volterra algebra, ALV Hill kernel, iso / TI / ortho fast paths,
   cracks, layered spheres, order-2 conductivity / diffusion).
 

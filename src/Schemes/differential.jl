@@ -1,5 +1,5 @@
 # =============================================================================
-#  differential.jl — Differential homogenisation scheme as a SciML ODE.
+#  differential.jl — Differential homogenization scheme as a SciML ODE.
 #
 #  Integrates the multi-phase Norris ODE on the fictitious incorporation
 #  time `τ ∈ [0, 1]` (cf. user's hand-written DEM note ; @norris1985) :

@@ -1,4 +1,4 @@
-# Adding a homogenisation scheme
+# Adding a homogenization scheme
 
 `MeanFieldHom.Schemes` is currently a placeholder.  When a scheme is
 ready:

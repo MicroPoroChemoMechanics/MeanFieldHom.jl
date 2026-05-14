@@ -1,5 +1,5 @@
 # =============================================================================
-#  homogenize.jl — central public entry point for homogenisation schemes.
+#  homogenize.jl — central public entry point for homogenization schemes.
 #
 #  Each concrete scheme implements a method
 #       _evaluate(rve::RVE, ::ConcreteScheme, ::Val{property}; kw...)

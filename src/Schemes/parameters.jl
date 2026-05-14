@@ -2,7 +2,7 @@
 #  parameters.jl — Parameter lenses for autodiff sensitivities.
 #
 #  An `AbstractParameter` *lens* designates a single scalar input of a
-#  homogenisation computation : a phase volume fraction, a coefficient of a
+#  homogenization computation : a phase volume fraction, a coefficient of a
 #  property tensor, a scalar geometry field of an inclusion, or a field of
 #  the (Maxwell / PCW) distribution shape. The `get_param` / `set_param`
 #  functions read and immutably replace the designated scalar in a `RVE` ;
@@ -27,7 +27,7 @@
     AbstractParameter
 
 Supertype of parameter lenses. Concrete subtypes designate a single scalar
-input of a homogenisation computation :
+input of a homogenization computation :
 
 - [`AmountParameter`](@ref) — volume fraction or crack density of a
   phase.

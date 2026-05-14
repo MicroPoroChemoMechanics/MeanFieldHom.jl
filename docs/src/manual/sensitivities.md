@@ -167,7 +167,7 @@ Inclusions are often modelled as oriented distributions rather than a
 single oriented inclusion: a thin oblate spheroid with a *uniform spatial
 distribution of orientations* is, on average, isotropic. The
 `symmetrize` keyword on `add_matrix!` / `add_phase!` declares such a
-distribution at the RVE level so the homogenisation kernel projects the
+distribution at the RVE level so the homogenization kernel projects the
 phase localisation tensor onto the corresponding symmetry class:
 
 | Symmetrize value           | Meaning                                                     | Result class |

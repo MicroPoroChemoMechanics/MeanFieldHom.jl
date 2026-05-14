@@ -1,6 +1,6 @@
 # =============================================================================
 #  homogenize_alv.jl — public dispatcher routing ViscoLaw properties
-#  through the ALV homogenisation pipeline.
+#  through the ALV homogenization pipeline.
 #
 #  Usage : `homogenize(rve, scheme, :C; times = T)` where `T` is a
 #  `Vector{<:Real}` of monotonically increasing time points.  The

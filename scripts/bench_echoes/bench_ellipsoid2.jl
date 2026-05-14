@@ -136,7 +136,7 @@ R̃_M_jl = volterra_inverse(J̃_M_jl; block_size = 6)
 R̃_M_py = py_trapz_relax(T_grid)
 diff_summary("R̃_M (relaxation = inv J̃)", R̃_M_jl, R̃_M_py)
 
-# ─── Step 2: full homogenisation across schemes ────────────────────────────
+# ─── Step 2: full homogenization across schemes ────────────────────────────
 println()
 
 const _SCH_MAP = Dict(

@@ -125,7 +125,7 @@ threshold.
 
 ## v0.6.0 — TI ALV fast path, order-2 ALV, BLAS Volterra, ALV cracks roadmap
 
-**TI Walpole-basis fast path** for ALV homogenisation : when every
+**TI Walpole-basis fast path** for ALV homogenization : when every
 phase 4-tensor and the matrix kernel are TI 4-tensors with the
 **common canonical axis n = e₃** (every 6×6 Mandel block matches the
 Walpole structure), `homogenize_alv` now routes through new
@@ -390,7 +390,7 @@ precision (1e-16 on the diagonal, 1e-6 on the off-diagonal blocks).
 ## v0.5.0 — Ageing linear viscoelasticity (ALV) module
 
 A new `MeanFieldHom.Viscoelasticity` sub-module brings time-domain
-viscoelastic homogenisation to the package, mirroring the capabilities
+viscoelastic homogenization to the package, mirroring the capabilities
 of the C++ ECHOES `viscoelasticity/visco_law.h` and
 `homogenization_maxwell.h`.  Reference: Sanahuja IJSS 2013 ;
 Barthélémy-Giraud-Lavergne-Sanahuja IJSS 2016 ;
@@ -423,7 +423,7 @@ chapter 7 and appendix `viscoelastic_hill_kernel.qmd`.
   ALV Hill kernel, and dispatches to the appropriate scheme function.
   Implemented schemes : `Voigt`, `Reuss`, `Dilute`, `DiluteDual`,
   `MoriTanaka`, `Maxwell`.  Each one's output coincides with the
-  corresponding elastic homogenisation in the Heaviside limit (verified
+  corresponding elastic homogenization in the Heaviside limit (verified
   to machine precision in the test suite).
 - **`Phase.properties` relaxed to `Dict{Symbol, Any}`** : a phase can now
   carry either an elastic `AbstractTens` or a `ViscoLaw` under the
@@ -513,7 +513,7 @@ chapter 7 and appendix `viscoelastic_hill_kernel.qmd`.
 ## v0.4.0 — Friendly autodiff sensitivities, RVE-level symmetrize, Hill-symmetric SC
 
 A small but expressive API exposing `ForwardDiff`-based derivatives of any
-homogenisation result with respect to any scalar input parameter — physical
+homogenization result with respect to any scalar input parameter — physical
 (stiffness coefficient, conductivity), geometric (radii, semi-axes, crack
 opening, distribution-shape envelope) or volume-fraction / crack-density —
 *and* for arbitrary scalar fields of inclusion types defined later by the
@@ -667,10 +667,10 @@ Total: 3421 tests pass.
   porous oblate systems away from percolation; this is documented in
   `scripts/bench_echoes/benchmark_porous.jl`.
 
-## v0.3.0 — RVE container + 10 homogenisation schemes
+## v0.3.0 — RVE container + 10 homogenization schemes
 
 New `MeanFieldHom.Schemes` sub-module: a Representative Volume Element
-container plus the ten classical mean-field homogenisation schemes ported
+container plus the ten classical mean-field homogenization schemes ported
 from C++ ECHOES, with a few Julia-idiomatic improvements.
 
 ### Additions
@@ -688,7 +688,7 @@ from C++ ECHOES, with a few Julia-idiomatic improvements.
   (single outer envelope, current behaviour); leaves an extension hook
   for a future `PairwiseDistribution` (Willis 1982) without breaking
   the public API.
-- **Ten homogenisation schemes**: `Voigt`, `Reuss`, `Dilute`,
+- **Ten homogenization schemes**: `Voigt`, `Reuss`, `Dilute`,
   `DiluteDual`, `MoriTanaka`, `Maxwell`, `PonteCastanedaWillis`,
   `SelfConsistent`, `AsymmetricSelfConsistent`, `DifferentialScheme`.
 - **`homogenize(rve, scheme; property=:C)`** central entry point.  The

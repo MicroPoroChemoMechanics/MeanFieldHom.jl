@@ -1,7 +1,7 @@
 # =============================================================================
 #  36_rabotnov_mittag_leffler.jl
 #
-#  Closed-form validation of the ALV homogenisation pipeline against the
+#  Closed-form validation of the ALV homogenization pipeline against the
 #  Rabotnov / Mittag-Leffler benchmark of @barthelemyIJES2019 §5.
 #
 #  The matrix is a non-ageing fractional Maxwell with shear relaxation
@@ -175,7 +175,7 @@ end
 
 # ─── Run scheme combinations and collect (times, μ, L^μ) tuples ────────────
 
-println("Running ALV homogenisation for the Rabotnov benchmark…")
+println("Running ALV homogenization for the Rabotnov benchmark…")
 
 results_rigid = Dict{Tuple{Symbol, Float64}, NamedTuple}()
 for f in (0.05, 0.1, 0.2)

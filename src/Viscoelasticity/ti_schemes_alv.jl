@@ -1,7 +1,7 @@
 # =============================================================================
 #  ti_schemes_alv.jl — TI-symmetry fast paths for ALV schemes.
 #
-#  When **every** ALV block matrix in a homogenisation pipeline is a
+#  When **every** ALV block matrix in a homogenization pipeline is a
 #  TI 4-tensor with the **same canonical axis** `n = e₃` (each `(6×6)`
 #  Mandel block is parametrised by the six Walpole coefficients
 #  `(ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆)`), the algebra collapses to:

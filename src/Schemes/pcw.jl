@@ -14,7 +14,7 @@
 """
     _evaluate(rve, ::PonteCastanedaWillis, ::Val{p}; kw...) -> AbstractTens
 
-PCW homogenisation for property `:p`. In the single-shape case
+PCW homogenization for property `:p`. In the single-shape case
 (`UniformDistribution`), the result coincides with
 [`Maxwell`](@ref) but the docstring and reference differ —
 [Ponte-Castañeda & Willis 1995](@cite ponte1995) frames the formula in

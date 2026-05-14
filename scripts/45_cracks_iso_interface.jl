@@ -1,7 +1,7 @@
 # =============================================================================
 #  45_cracks_iso_interface.jl
 #
-#  Cross-check **elastic + conductivity homogenisation with cracks** vs
+#  Cross-check **elastic + conductivity homogenization with cracks** vs
 #  the ECHOES Python reference `tests/python/echoes_tests/cracksiso.py`.
 #
 #  Setup (mirrors cracksiso.py) :

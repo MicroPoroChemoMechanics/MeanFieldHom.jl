@@ -4,7 +4,7 @@ using TensND
 using LinearAlgebra
 
 # =============================================================================
-#  test_crack_schemes_alv.jl — crack-aware ALV homogenisation schemes:
+#  test_crack_schemes_alv.jl — crack-aware ALV homogenization schemes:
 #  Voigt / Reuss (cracks ignored), Dilute / DiluteDual / MT / Maxwell / PCW
 #  (cracks add ΔC̃ = (4π/3) ε · stiffness_contribution_alv to the
 #  numerator), SC / ASC (cracks iterated against the running estimate).

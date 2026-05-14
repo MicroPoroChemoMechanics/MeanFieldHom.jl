@@ -10,7 +10,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/LICENSE)
 [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-pink)](https://github.com/fredrikekre/Runic.jl)
 
-`MeanFieldHom.jl` is a Julia framework for **mean-field homogenisation**
+`MeanFieldHom.jl` is a Julia framework for **mean-field homogenization**
 of heterogeneous materials. It provides Hill polarisation tensors for
 ellipsoidal inclusions, crack-opening-displacement tensors, stress and
 displacement intensity factors for flat cracks, and second-order Hill
@@ -103,7 +103,7 @@ See [CITATION.cff](CITATION.cff) for citation details.
 ```bibtex
 @software{meanfieldhom_jl,
   author = {Barthélémy, Jean-François},
-  title  = {MeanFieldHom.jl: Mean-field homogenisation of heterogeneous materials},
+  title  = {MeanFieldHom.jl: Mean-field homogenization of heterogeneous materials},
   url    = {https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl},
   year   = {2026}
 }

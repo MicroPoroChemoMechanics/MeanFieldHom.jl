@@ -1,9 +1,9 @@
 """
     MeanFieldHom.Schemes
 
-Mean-field homogenisation schemes.  Provides the [`RVE`](@ref) container
+Mean-field homogenization schemes.  Provides the [`RVE`](@ref) container
 (matrix + named phases with their volume fractions or crack densities, plus
-an optional distribution shape) and the suite of homogenisation
+an optional distribution shape) and the suite of homogenization
 [`HomogenizationScheme`](@ref) types: bounds (`Voigt`, `Reuss`), one-shot
 schemes with a matrix (`Dilute`, `DiluteDual`, `MoriTanaka`, `Maxwell`,
 `PonteCastanedaWillis`), iterative self-consistent schemes

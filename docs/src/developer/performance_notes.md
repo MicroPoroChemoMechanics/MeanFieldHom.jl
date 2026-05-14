@@ -5,6 +5,6 @@
   matrices.
 - `TensISO` / `TensTI{4}` / `TensOrtho` specialisations return the
   *most specific* TensND type — this propagates to downstream
-  homogenisation schemes and avoids redundant symmetry checks.
+  homogenization schemes and avoids redundant symmetry checks.
 - `ForwardDiff.Dual` propagation is honoured through nested `QuadGK`
   (no `PolynomialRoots` in the AD path).

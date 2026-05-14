@@ -1,5 +1,5 @@
 # =============================================================================
-#  schemes_alv_sc.jl — time-domain self-consistent (SC) homogenisation.
+#  schemes_alv_sc.jl — time-domain self-consistent (SC) homogenization.
 #
 #  Iterates the symmetric SC fixed point on the discrete `(6n × 6n)`
 #  effective relaxation matrix:
@@ -21,7 +21,7 @@
                         damping = 0.0, verbose = false,
                         select_best = false) -> Matrix
 
-Self-consistent ALV homogenisation.  Iterates the symmetric Picard
+Self-consistent ALV homogenization.  Iterates the symmetric Picard
 fixed point on the `(6n × 6n)` block matrix until convergence.
 
 The initial estimate is the discretised matrix kernel `C̃^0`. Each

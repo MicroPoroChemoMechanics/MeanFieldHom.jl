@@ -4,7 +4,7 @@ using TensND
 using LinearAlgebra
 
 # =============================================================================
-#  test_schemes_alv.jl — homogenisation schemes in the elastic limit
+#  test_schemes_alv.jl — homogenization schemes in the elastic limit
 #  (Heaviside laws) and consistency checks (Volterra round-trips, bound
 #  ordering Reuss ≤ MT ≤ Voigt).
 # =============================================================================
@@ -31,7 +31,7 @@ function _setup_2phase_elastic(;
     return (; C_M_t, C_I_t, times, C_M, C_I, P, A_dil_I, N_dil_I, f_I, f_M)
 end
 
-# Reference (elastic) homogenisation via the existing `homogenize`.
+# Reference (elastic) homogenization via the existing `homogenize`.
 function _reference_elastic(scheme, ctx)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => ctx.C_M_t))
@@ -42,7 +42,7 @@ function _reference_elastic(scheme, ctx)
     return _to_mandel(homogenize(rve, scheme, :C))
 end
 
-# Generic checker: ALV scheme diag block equals elastic homogenisation.
+# Generic checker: ALV scheme diag block equals elastic homogenization.
 function _check_alv_elastic(
         C_alv::AbstractMatrix, M_ref::AbstractMatrix,
         n::Int; rtol = 1.0e-12, atol = 1.0e-12

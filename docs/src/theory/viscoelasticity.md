@@ -1,6 +1,6 @@
 # Ageing linear viscoelasticity (ALV)
 
-`MeanFieldHom.Viscoelasticity` extends the elastic homogenisation
+`MeanFieldHom.Viscoelasticity` extends the elastic homogenization
 framework to **ageing** linear viscoelastic media [@sanahuja2013;
 @barthelemyIJSS2016; @barthelemyIJES2019]. The constitutive law is a
 two-time kernel — relaxation `R(t,t')` or compliance / creep `J(t,t')`
@@ -124,7 +124,7 @@ add_matrix!(rve, Ellipsoid(1.0), Dict(:C => law_M))
 add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => heaviside_law(TensISO{3}(60.0, 20.0)));
             fraction = 0.20)
 
-# Time grid + Mori-Tanaka homogenisation
+# Time grid + Mori-Tanaka homogenization
 times = collect(range(0.0, 5.0; length = 50))
 C_eff = homogenize_alv(rve, MoriTanaka(), :C; times = times)
 

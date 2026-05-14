@@ -82,7 +82,7 @@ make_iso_law(Jk, Jg) = ViscoLaw(
 const law_M = make_iso_law(Jk_mat, Jg_mat)
 const law_I = make_iso_law(Jk_inc, Jg_inc)
 
-# ─── Homogenisation helper ─────────────────────────────────────────────────
+# ─── homogenization helper ─────────────────────────────────────────────────
 
 function build_rve(omega, frac)
     rve = RVE(:M)

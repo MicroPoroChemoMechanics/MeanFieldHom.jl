@@ -4,7 +4,7 @@ using TensND
 using LinearAlgebra
 
 # =============================================================================
-#  test_order2_alv.jl — order-2 (vector-tensor) ALV homogenisation:
+#  test_order2_alv.jl — order-2 (vector-tensor) ALV homogenization:
 #  Heaviside elastic limit must match `homogenize` on the conductivity API.
 # =============================================================================
 

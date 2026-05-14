@@ -148,7 +148,7 @@ savefig(p_full, figpath)
 #
 # Both solid and pore phases are oblate spheroids with aspect ratio
 # `ω_oblate` (= c/a, < 1 for oblate). The `symmetrize = :iso` declaration
-# on each phase tells the homogenisation kernel to project the
+# on each phase tells the homogenization kernel to project the
 # localization tensor onto its isotropic part, which mirrors a uniform
 # spatial distribution of orientations. The macroscopic effective tensor
 # is therefore isotropic.

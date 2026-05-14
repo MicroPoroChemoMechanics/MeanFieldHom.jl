@@ -1,4 +1,4 @@
-# Viscoelastic homogenisation — user manual
+# Viscoelastic homogenization — user manual
 
 The ALV (ageing linear viscoelastic) pipeline reuses the [`RVE`](@ref)
 machinery of the elastic side. Switching to viscoelasticity is

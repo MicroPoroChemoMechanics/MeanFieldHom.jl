@@ -1,7 +1,7 @@
 # =============================================================================
 #  46_differential_loading_paths.jl
 #
-#  Demonstrates the **path-dependence of the differential homogenisation
+#  Demonstrates the **path-dependence of the differential homogenization
 #  scheme** (DEM) by computing the effective stiffness of a 3-phase
 #  composite (matrix + 2 solid inclusions) along several incorporation
 #  trajectories `τ -> f_α(τ)` :

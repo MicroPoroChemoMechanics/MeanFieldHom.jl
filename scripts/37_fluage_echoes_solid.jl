@@ -22,7 +22,7 @@
 #
 #  At every loading age t_0 the script computes the effective uniaxial
 #  creep compliance `J^E_eff(t, t_0)` via Mori-Tanaka time-domain
-#  homogenisation, comparing the **history-dependent** (a layer becomes
+#  homogenization, comparing the **history-dependent** (a layer becomes
 #  active when its setting time is reached during the experiment) and
 #  the **frozen** approach (microstructure is fixed at t_0).
 #

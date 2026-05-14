@@ -1,7 +1,7 @@
 """
     MeanFieldHom.Viscoelasticity
 
-Ageing linear viscoelastic (ALV) homogenisation.  Provides:
+Ageing linear viscoelastic (ALV) homogenization.  Provides:
 
   * [`ViscoLaw`](@ref) — relaxation `R(t,t')` or creep `J(t,t')` kernel,
     scalar- or 4-tensor-valued, with built-in Maxwell / Kelvin
@@ -19,7 +19,7 @@ Ageing linear viscoelastic (ALV) homogenisation.  Provides:
     ellipsoidal inclusion, isotropic-matrix branch using the
     time-space decoupling formula
     [@barthelemyIJSS2016, App. *ALV Hill kernel*].
-  * Time-domain viscoelastic homogenisation schemes (Voigt, Reuss,
+  * Time-domain viscoelastic homogenization schemes (Voigt, Reuss,
     Dilute, DiluteDual, Mori-Tanaka, Maxwell, Self-Consistent),
     plugged into the existing [`MeanFieldHom.homogenize`](@ref)
     dispatcher whenever a phase carries a `ViscoLaw` property.

@@ -1,5 +1,5 @@
 # =============================================================================
-#  scheme_types.jl — concrete homogenisation-scheme types and the
+#  scheme_types.jl — concrete homogenization-scheme types and the
 #  differential-trajectory hierarchy.
 #
 #  Each scheme is a subtype of `HomogenizationScheme`; bounds and one-shot
@@ -13,7 +13,7 @@
 """
     HomogenizationScheme
 
-Supertype for every mean-field homogenisation scheme. Concrete subtypes:
+Supertype for every mean-field homogenization scheme. Concrete subtypes:
 
 - bounds — [`Voigt`](@ref), [`Reuss`](@ref) ;
 - one-shot with matrix — [`Dilute`](@ref), [`DiluteDual`](@ref),
@@ -72,7 +72,7 @@ struct MoriTanaka <: HomogenizationScheme end
 """
     Maxwell() <: HomogenizationScheme
 
-Maxwell homogenisation, using the RVE's distribution shape as the
+Maxwell homogenization, using the RVE's distribution shape as the
 reference for the Hill polarisation tensor.
 """
 struct Maxwell <: HomogenizationScheme end

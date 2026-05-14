@@ -1,5 +1,5 @@
 # =============================================================================
-#  schemes_alv.jl — time-domain viscoelastic homogenisation schemes.
+#  schemes_alv.jl — time-domain viscoelastic homogenization schemes.
 #
 #  All schemes work on the discrete `(6n × 6n)` block matrices produced
 #  by `trapezoidal_matrix`.  The Volterra product is the regular matrix

@@ -1,6 +1,6 @@
-# Homogenisation schemes
+# homogenization schemes
 
-`MeanFieldHom.Schemes` provides ten classical mean-field homogenisation
+`MeanFieldHom.Schemes` provides ten classical mean-field homogenization
 schemes for computing the *effective* property tensor of a multi-phase
 heterogeneous medium given (i) the phase geometries, (ii) the phase
 properties, and (iii) the phase volume fractions or crack densities.

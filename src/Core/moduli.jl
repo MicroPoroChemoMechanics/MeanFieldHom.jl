@@ -4,7 +4,7 @@
 #  Extractors for the engineering moduli used by the analytical formulas in
 #  the sub-modules `Elasticity`, `Cracks` and `Conductivity`.  The
 #  routines only *read* components of the TensND tensor — they do not
-#  perform any homogenisation step.
+#  perform any homogenization step.
 # =============================================================================
 
 """

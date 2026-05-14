@@ -64,7 +64,7 @@ const Cᵢ_inv = (1.0 / 1.0e6) * Matrix{Float64}(I, 6, 6)
 const Ji_const = (t, tp) -> Cᵢ_inv
 const law_I = ViscoLaw(Ji_const, :creep)
 
-# ─── Homogenisation helpers ────────────────────────────────────────────────
+# ─── homogenization helpers ────────────────────────────────────────────────
 
 function build_rve(omega, f)
     rve = RVE(:M)

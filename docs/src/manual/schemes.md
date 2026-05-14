@@ -1,7 +1,7 @@
-# Homogenisation schemes — user manual
+# homogenization schemes — user manual
 
 The `MeanFieldHom.Schemes` module provides ten classical mean-field
-homogenisation schemes plus a [`RVE`](@ref) container holding the
+homogenization schemes plus a [`RVE`](@ref) container holding the
 matrix and inclusion phases with their geometries, properties and
 volume fractions or crack densities.
 
@@ -113,7 +113,7 @@ The `Im → 0` limit consistently recovers the real-modulus result.
 
 ## Time-domain ageing viscoelasticity
 
-For full time-domain ALV homogenisation (relaxation / creep kernels
+For full time-domain ALV homogenization (relaxation / creep kernels
 `R(t,t')` / `J(t,t')`, possibly ageing), pass a [`ViscoLaw`](@ref)
 property and a `times` grid to [`homogenize_alv`](@ref):
 

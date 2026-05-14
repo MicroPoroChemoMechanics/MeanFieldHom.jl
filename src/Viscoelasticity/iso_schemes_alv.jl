@@ -1,7 +1,7 @@
 # =============================================================================
 #  iso_schemes_alv.jl — iso-symmetry fast paths for ALV schemes.
 #
-#  When **every** ALV block matrix in a homogenisation pipeline is in
+#  When **every** ALV block matrix in a homogenization pipeline is in
 #  **iso** form (each `(6 × 6)` Mandel block of the
 #  `(6n × 6n)` matrix is `α[i,j] · 𝕁_M + β[i,j] · 𝕂_M`), the entire
 #  algebra collapses to two `n × n` scalar Volterra matrices `α` and

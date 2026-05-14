@@ -25,7 +25,7 @@
 """
     pcw_alv(C_0, contribs, fractions; H_dist) -> Matrix
 
-Ponte-Castañeda & Willis (1995) viscoelastic homogenisation in
+Ponte-Castañeda & Willis (1995) viscoelastic homogenization in
 single-distribution-shape form.  The formula is algebraically
 identical to [`maxwell_alv`](@ref) ; the only difference is that the
 Hill kernel `H_dist` is computed against the **distribution shape**
@@ -52,7 +52,7 @@ end
                                     verbose = false, select_best = false)
         -> Matrix{T}
 
-Asymmetric self-consistent viscoelastic homogenisation.  The
+Asymmetric self-consistent viscoelastic homogenization.  The
 iteration update reads
 
     `C^{n+1} = C_M + Σ_i f_i (C_i − C_M) ∘ A^{dil,i}(C^n)`,
@@ -220,7 +220,7 @@ end
                       nsteps = 100, trajectory = nothing,
                       abstol = 1e-8, reltol = 1e-6, alg = nothing) -> Matrix{T}
 
-Differential homogenisation in ageing linear viscoelasticity, solved
+Differential homogenization in ageing linear viscoelasticity, solved
 as a SciML ODE on the fictitious incorporation time `τ ∈ [0, 1]`
 ([Norris 1985](@cite norris1985); user's hand-written DEM note) :
 

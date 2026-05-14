@@ -1,12 +1,12 @@
 """
     MeanFieldHom
 
-Julia package for mean-field homogenisation of heterogeneous materials.
+Julia package for mean-field homogenization of heterogeneous materials.
 
 `MeanFieldHom` unifies the computation of Hill polarisation tensors for
 ellipsoidal inhomogeneities, crack opening displacement (COD) tensors, stress
 and displacement intensity factors, and — in the near future — full
-homogenisation schemes, representative volume elements (RVEs), and
+homogenization schemes, representative volume elements (RVEs), and
 viscoelastic constitutive laws, sharing a common abstraction for
 inclusions, algorithms, and material symmetry classes.
 
@@ -23,7 +23,7 @@ inclusions, algorithms, and material symmetry classes.
 - `MeanFieldHom.Conductivity` — 2nd-order Hill tensor for conductivity /
   diffusion problems.
 - `MeanFieldHom.Schemes`      — placeholder for future mean-field
-  homogenisation schemes (dilute, Mori–Tanaka, self-consistent, PCW, …).
+  homogenization schemes (dilute, Mori–Tanaka, self-consistent, PCW, …).
 
 # Shared generic interface
 
