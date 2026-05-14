@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.8.1 — Codeberg migration + spelling fix
+
+### Fixes
+
+- Documentation: unified American English spelling throughout
+  (`homogenization` consistently, replacing `homogenisation`)
+
+### Infrastructure
+
+- Migrated to Codeberg (`MicroPoroChemoMechanics/MeanFieldHom.jl`)
+- Forgejo workflows: CI, Documentation, Release, Runic, Zenodo
+- Registered in MPCM-Registry; DECUHR.jl resolved via registry
+  (no more `[sources]` local path in `Project.toml`)
+- Runic.yml: switch to `workflow_dispatch` only
+- Multi-version documentation deployment (`docs/deploy_docs.jl`)
+
+---
+
 ## v0.8.0 — Differential scheme as a SciML ODE on the fictitious incorporation time
 
 **`DifferentialScheme` is now solved by an adaptive SciML ODE
