@@ -18,6 +18,6 @@ keywords:
   - "automatic differentiation"
 version: "0.8.1"
 date-released: "2026-05-14"
-url: "https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl"
-repository-code: "https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl"
+url: "https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl"
+repository-code: "https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl"
 license: "MIT"

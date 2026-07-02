@@ -143,7 +143,7 @@ the parametric inner constructor of `MyBlob{T,B}` resolves cleanly.
 
 Composing several `homogenize` calls in a single closure means the chain
 rule is taken care of automatically. The script
-[`scripts/28_multiscale_strength.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/scripts/28_multiscale_strength.jl)
+[`scripts/28_multiscale_strength.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/28_multiscale_strength.jl)
 is a complete worked example following Pichler & Hellmich (CCR 2011): a
 three-scale upscaling of cement-paste / mortar elasticity and quasi-brittle
 strength built from a self-consistent hydrate foam plus two Mori-Tanaka
@@ -208,12 +208,12 @@ projection automatically.
   the localisation-tensor computation through an isotropic projection —
   the result still satisfies the outer `TI(axis)` projection, and is
   exact at the iso fixed-point of the SC iteration. This is documented
-  in [`src/Schemes/symmetrize.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Schemes/symmetrize.jl).
+  in [`src/Schemes/symmetrize.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Schemes/symmetrize.jl).
 
 ## Validation
 
 The package ships a cross-cutting test in
-[`test/Schemes/test_sensitivities.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/test/Schemes/test_sensitivities.jl)
+[`test/Schemes/test_sensitivities.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/test/Schemes/test_sensitivities.jl)
 that compares every sensitivity against centred finite differences on every
 scheme, plus an exact match against the Christensen 1990 closed form for
 `∂k_MT/∂f`. Expect agreement to `rtol ≈ 1e-6` for closed-form schemes and

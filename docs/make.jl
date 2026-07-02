@@ -29,8 +29,8 @@ makedocs(;
     authors  = "Jean-François Barthélémy",
     sitename = "MeanFieldHom.jl",
     format   = Documenter.HTML(;
-        canonical        = "https://MicroPoroChemoMechanics.codeberg.page/MeanFieldHom.jl",
-        repolink         = "https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl",
+        canonical        = "https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl",
+        repolink         = "https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl",
         edit_link        = "main",
         assets           = ["assets/favicon.ico", "assets/custom.css"],
         prettyurls       = (get(ENV, "CI", nothing) == "true"),
@@ -90,7 +90,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo         = "git@codeberg-docs:MicroPoroChemoMechanics/MeanFieldHom.jl.git",
+    repo         = "github.com/MicroPoroChemoMechanics/MeanFieldHom.jl.git",
     devbranch    = "main",
     push_preview = false,
 )

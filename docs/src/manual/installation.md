@@ -1,7 +1,7 @@
 # Installation
 
 `MeanFieldHom` is released through the dedicated
-[MPCM-Registry](https://codeberg.org/MicroPoroChemoMechanics/MPCM-Registry)
+[MPCM-Registry](https://github.com/MicroPoroChemoMechanics/MPCM-Registry)
 on Codeberg. Its sister package `DECUHR.jl` (adaptive cubature backend)
 lives in the same registry; `TensND.jl` (structured tensors) is also
 in MPCM-Registry, and a handful of registered scientific-computing
@@ -15,7 +15,7 @@ Add the MPCM-Registry once, then install the package:
 
 ```julia
 julia> using Pkg
-pkg> registry add https://codeberg.org/MicroPoroChemoMechanics/MPCM-Registry
+pkg> registry add https://github.com/MicroPoroChemoMechanics/MPCM-Registry
 pkg> add MeanFieldHom
 ```
 

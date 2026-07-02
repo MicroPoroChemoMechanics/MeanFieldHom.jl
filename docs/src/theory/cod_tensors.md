@@ -117,7 +117,7 @@ the orientation of the crack plane). It is the quantity MFH computes
 directly via [`cod_tensor`](@ref) (alias [`B_tensor`](@ref));
 the bridge ``\mathbf B\leftrightarrow\mathbb H`` is handled by
 [`compliance_from_cod`](@ref) / [`cod_from_compliance`](@ref)
-([`src/Cracks/cod_H_bridge.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Cracks/cod_H_bridge.jl)),
+([`src/Cracks/cod_H_bridge.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/cod_H_bridge.jl)),
 which dispatches on the crack type (elliptic or ribbon) to apply the
 correct geometric factor.
 
@@ -164,7 +164,7 @@ B_{mm} = B_{\ell\ell} = \frac{B_{nn}}{1-\nu/2}.
 ```
 
 Implementation:
-[`src/Cracks/cod_analytical.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Cracks/cod_analytical.jl),
+[`src/Cracks/cod_analytical.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/cod_analytical.jl),
 selected by `method = :auto` when `C₀::TensISO{4,3}`.
 
 ## Transversely-isotropic matrix
@@ -179,7 +179,7 @@ they reduce to the isotropic case for
 ``\nu_{1}=\nu_{2}=\nu``, ``H=\Gamma=1``.
 
 MFH exposes the TI closed form in
-[`src/Cracks/cod_analytical.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Cracks/cod_analytical.jl);
+[`src/Cracks/cod_analytical.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/cod_analytical.jl);
 the detailed algebraic expressions (auxiliary coefficients
 ``R_{ijkl}``, ``\sigma_\gamma``) are documented inline in that file to
 keep the present theory page close to the Echoes manual.
@@ -201,11 +201,11 @@ algorithm traits:
 
 - `DECUHR` — adaptive 2-D cubature of [espelid1994](@cite);
   ForwardDiff-safe. Entry point
-  [`src/Cracks/green_decuhr.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Cracks/green_decuhr.jl).
+  [`src/Cracks/green_decuhr.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/green_decuhr.jl).
 - `Residue` — Cauchy-residue reduction to a 1-D quadrature, as in
   [masson2008](@cite) adapted to the crack kernel; Float64 only
   (PolynomialRoots). Entry point
-  [`src/Cracks/green_residue.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Cracks/green_residue.jl).
+  [`src/Cracks/green_residue.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/green_residue.jl).
 
 `method = :auto` picks `Residue` on anisotropic Float64 inputs and
 falls back to `DECUHR` for symbolic or `ForwardDiff.Dual` scalars.
@@ -238,7 +238,7 @@ Implementation: [`compliance_contribution`](@ref) returns ``\mathbb H``
 directly (convention shared with Echoes); [`delta_compliance`](@ref)
 assembles ``\Delta\mathbb S`` from ``\mathbb H`` and ``\varepsilon``
 with dispatch on the crack shape
-([`src/Cracks/compliance.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Cracks/compliance.jl)).
+([`src/Cracks/compliance.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/compliance.jl)).
 
 ## Conductivity crack resistivity
 
@@ -364,7 +364,7 @@ K_{III} = |\hat{\mathbf K}\cdot\hat{\boldsymbol\tau}|.
 ```
 
 Evaluation is handled by [`sif`](@ref) and [`dif`](@ref); see
-[`src/Cracks/sif.jl`](https://codeberg.org/MicroPoroChemoMechanics/MeanFieldHom.jl/src/branch/main/src/Cracks/sif.jl).
+[`src/Cracks/sif.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/sif.jl).
 
 ## Dispatch and implementation notes
 
