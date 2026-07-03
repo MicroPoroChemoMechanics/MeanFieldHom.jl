@@ -9,4 +9,3 @@ TensND = "474b5345-2588-4284-8a58-2430a1a40cb0"
 
 [sources]
 MeanFieldHom = {path = ".."}
-TensND = {path = "../../TensND.jl"}
