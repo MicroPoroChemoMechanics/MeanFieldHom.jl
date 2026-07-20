@@ -11,7 +11,7 @@
 #   julia --project=docs/ docs/deploy_docs.jl           # use DEPLOY_TARGET (or auto)
 #   julia --project=docs/ docs/deploy_docs.jl dev       # force dev/
 #   julia --project=docs/ docs/deploy_docs.jl project   # stable/ + vX.Y.Z/ from Project.toml
-#   julia --project=docs/ docs/deploy_docs.jl v0.8.1    # specific tag → stable/ + vX.Y.Z/
+#   julia --project=docs/ docs/deploy_docs.jl v0.1.0    # specific tag → stable/ + vX.Y.Z/
 #
 # In-file (set DEPLOY_TARGET below, takes effect when no argument is passed):
 #   nothing     — auto-detect from git: branch → dev/,  tag → stable/ + vX.Y.Z/

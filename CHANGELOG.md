@@ -1,13 +1,73 @@
 # Changelog
 
-## v0.8.1 — Packaging & spelling fix
+## v0.1.0 — Initial release
 
-### Fixes
+First public release of MeanFieldHom.jl — a mean-field homogenization toolkit
+for elasticity, conductivity and ageing linear viscoelasticity, ported from and
+cross-validated against the C++ ECHOES code.
+
+### Core
+
+- **`RVE` container** — representative volume element (`add_matrix!` /
+  `add_phase!`); volume fractions and crack densities stored at RVE level;
+  solid inclusions (`VolumeFraction`) and flat cracks (`CrackDensity`).
+- **Ten homogenization schemes** — Voigt, Reuss, Dilute, DiluteDual,
+  MoriTanaka, Maxwell, PonteCastanedaWillis, SelfConsistent,
+  AsymmetricSelfConsistent, DifferentialScheme — via a single
+  `homogenize(rve, scheme, property)` entry point.
+- **Elasticity (`:C`) and conductivity (`:K`)** — order-4 and order-2 tensor
+  algebra, crack contributions, and Sevostianov-style interface stiffness
+  (spring / Kapitza / membrane) in every pipeline.
+- **Self-consistent solvers** — symmetric Hill/Budiansky SC with a built-in
+  Newton-Raphson solver (quadratic convergence, backtracking line search) or
+  Anderson/Picard, positive-definite guard near percolation; NonlinearSolve.jl
+  algorithms available via weak extension.
+
+### Ageing linear viscoelasticity (ALV)
+
+- **`Viscoelasticity` sub-module** — time-domain ALV homogenization after
+  Sanahuja (2013) and Barthélémy et al. (2016, 2019): `ViscoLaw` relaxation /
+  creep kernels, Sanahuja trapezoidal discretisation, block-Volterra inverse,
+  discrete ALV Hill kernel.
+- **`homogenize_alv(rve, scheme, prop; times)`** for all schemes, order-4 and
+  order-2; iso and TI Walpole-basis fast paths; BLAS/LAPACK Volterra fast path.
+- **Differential scheme as an adaptive SciML ODE** on the fictitious
+  incorporation time `τ ∈ [0,1]` (`Tsit5` default), with functional
+  `Path` / `Sequential` / `Proportional` incorporation trajectories.
+- **N-layer composite spheres** — full bulk + shear Hervé–Zaoui recurrence in
+  elastic and ALV form, with perfect / spring / membrane interfaces.
+
+### Differentiability
+
+- **ForwardDiff throughout** — `derivative`, `gradient`, `jacobian`,
+  `sensitivity` of any homogenization result w.r.t. physical, geometric,
+  volume-fraction or crack-density parameters (lens API); multi-scale chain
+  rule by closure composition.
+- RVE-level orientation projection (`symmetrize`: iso / TI Reynolds averaging).
+
+### Compatibility & validation
+
+- Aligned with TensND 0.2 (snake_case + UPPERCASE-acronym API).
+- Cross-validated against C++ ECHOES to ≤ ~1e-3 (moduli) and machine precision
+  (elastic limits) across schemes, porous, layered and ALV benchmarks.
+- ~3900 tests.
+
+---
+
+## Pre-1.0 development history
+
+The entries below predate the first public release and use the internal
+version numbers under which each feature was developed (never published outside
+MPCM-Registry). Kept for reference.
+
+### v0.8.1 — Packaging & spelling fix
+
+#### Fixes
 
 - Documentation: unified American English spelling throughout
   (`homogenization` consistently, replacing `homogenisation`)
 
-### Infrastructure
+#### Infrastructure
 
 - Registered in MPCM-Registry; DECUHR.jl resolved via registry
   (no more `[sources]` local path in `Project.toml`)
@@ -16,7 +76,7 @@
 
 ---
 
-## v0.8.0 — Differential scheme as a SciML ODE on the fictitious incorporation time
+### v0.8.0 — Differential scheme as a SciML ODE on the fictitious incorporation time
 
 **`DifferentialScheme` is now solved by an adaptive SciML ODE
 integrator** (`Tsit5` default) on the fictitious incorporation time
@@ -79,7 +139,7 @@ moduli at `τ = 1` — the DEM iteration sees a different effective
 medium at each infinitesimal phase increment depending on the
 incorporation history.
 
-## v0.7.0 — Sevostianov interface stiffness, ECHOES SC body, Newton-Raphson SC
+### v0.7.0 — Sevostianov interface stiffness, ECHOES SC body, Newton-Raphson SC
 
 **Sevostianov-style crack interface stiffness** is now supported in
 all three pipelines (elasticity, conductivity, ALV).  The COD
@@ -139,7 +199,7 @@ positive baseline before each step.  Prevents Picard / Newton from
 collapsing to the trivial `C = 0` fixed point near the percolation
 threshold.
 
-## v0.6.0 — TI ALV fast path, order-2 ALV, BLAS Volterra, ALV cracks roadmap
+### v0.6.0 — TI ALV fast path, order-2 ALV, BLAS Volterra, ALV cracks roadmap
 
 **TI Walpole-basis fast path** for ALV homogenization : when every
 phase 4-tensor and the matrix kernel are TI 4-tensors with the
@@ -210,7 +270,7 @@ iso ALV matrices, and the integration points with the existing
 `CrackDensity` amount in `Schemes`.  Implementation is scheduled for
 v0.6.1.
 
-## v0.5.3 — Non-uniform time grid + multi-layer ALV stability + iso fast path
+### v0.5.3 — Non-uniform time grid + multi-layer ALV stability + iso fast path
 
 **Bug fix (membrane interface convention)** : when v0.5.2 introduced
 the C++-convention σ-form shear M-matrix, the elastic-limit unit test
@@ -308,7 +368,7 @@ the previous unbounded / oscillating output.  Bench results :
 - `bench_step_n2.jl` (N=2 step layers, no pore) : 1e-14.
 - `bench_layered_alv_nopore.jl` (N=4 elastic, varied moduli) : 1e-15.
 
-## v0.5.1 — Multi-layer sphere shear localisation bug fix
+### v0.5.1 — Multi-layer sphere shear localisation bug fix
 
 **Bug fix** : on a non-uniform time grid (e.g. `logspace`) with a
 matrix relaxation kernel that has multiple time constants and/or
@@ -367,7 +427,7 @@ the previous unbounded / oscillating output.  Bench results :
 - `bench_step_n2.jl` (N=2 step layers, no pore) : 1e-14.
 - `bench_layered_alv_nopore.jl` (N=4 elastic, varied moduli) : 1e-15.
 
-## v0.5.1 — Multi-layer sphere shear localisation bug fix
+### v0.5.1 — Multi-layer sphere shear localisation bug fix
 
 **Bug fix** : `LayeredSpheres._shear_localization` and the
 companion ALV `shear_localization_alv` previously returned only the
@@ -403,7 +463,7 @@ test `shear_localization_alv — N=2 cross-check vs ECHOES Python` in
 α(t,t') and β(t,t') Volterra blocks to ECHOES Python at machine
 precision (1e-16 on the diagonal, 1e-6 on the off-diagonal blocks).
 
-## v0.5.0 — Ageing linear viscoelasticity (ALV) module
+### v0.5.0 — Ageing linear viscoelasticity (ALV) module
 
 A new `MeanFieldHom.Viscoelasticity` sub-module brings time-domain
 viscoelastic homogenization to the package, mirroring the capabilities
@@ -413,7 +473,7 @@ Barthélémy-Giraud-Lavergne-Sanahuja IJSS 2016 ;
 Barthélémy-Giraud-Sanahuja-Sevostianov IJES 2019 ; ECHOES manual
 chapter 7 and appendix `viscoelastic_hill_kernel.qmd`.
 
-### Highlights
+#### Highlights
 
 - **`ViscoLaw`** : abstract relaxation `R(t,t')` or creep `J(t,t')`
   kernel, scalar- or 4-tensor-valued, with built-in convenience
@@ -454,7 +514,7 @@ chapter 7 and appendix `viscoelastic_hill_kernel.qmd`.
   `test_hill_alv_iso.jl`, `test_schemes_alv.jl`.  Total package test
   count : 3946/3946 PASS.
 
-### Self-Consistent ALV (added in 0.5.0)
+#### Self-Consistent ALV (added in 0.5.0)
 
 - **`self_consistent_alv(rve, prop; times, abstol, reltol, maxiters,
   damping, verbose, select_best)`** — symmetric SC fixed-point iteration
@@ -466,7 +526,7 @@ chapter 7 and appendix `viscoelastic_hill_kernel.qmd`.
   :C; times = T)`.
 - Tests against the elastic SC limit pass at machine precision.
 
-### N-layer sphere ALV — full bulk + shear recurrence (added in 0.5.0)
+#### N-layer sphere ALV — full bulk + shear recurrence (added in 0.5.0)
 
 - **`bulk_localization_alv(sphere::LayeredSphere, C0_law, times)`** —
   per-layer bulk localisation matrices `α_k(t,t')` of size `n × n`
@@ -517,7 +577,7 @@ chapter 7 and appendix `viscoelastic_hill_kernel.qmd`.
   the `:layers` branch reproduces the Python `sphere_nlayers(...)`
   setup of `tests/python/creep/fluage_echoes_solid.py` exactly.
 
-### Deferred to follow-up
+#### Deferred to follow-up
 
 - Cracks in ALV (extrapolating from the elastic `cod_tensor` /
   `compliance_contribution` infrastructure).
@@ -526,7 +586,7 @@ chapter 7 and appendix `viscoelastic_hill_kernel.qmd`.
 - Anisotropic ALV Hill kernel (numerical surface integral with Volterra
   inverse of the 3×3 acoustic tensor at each integration point).
 
-## v0.4.0 — Friendly autodiff sensitivities, RVE-level symmetrize, Hill-symmetric SC
+### v0.4.0 — Friendly autodiff sensitivities, RVE-level symmetrize, Hill-symmetric SC
 
 A small but expressive API exposing `ForwardDiff`-based derivatives of any
 homogenization result with respect to any scalar input parameter — physical
@@ -544,7 +604,7 @@ percolates exactly at φ=0.5 for spherical pores, a `Spheroid` convenience
 constructor, Dual-stable SC convergence, and a `select_best` mode that
 mirrors the C++ reference's behaviour at percolation thresholds.
 
-### Additions
+#### Additions
 
 - **Lens hierarchy** `AbstractParameter` with four concrete kinds
   (`AmountParameter`, `PropertyParameter`, `GeometryParameter`,
@@ -592,7 +652,7 @@ mirrors the C++ reference's behaviour at percolation thresholds.
   point near percolation thresholds; matches the C++ reference's
   `select_best=True` mode.
 
-### Fixes
+#### Fixes
 
 - **Hill-symmetric self-consistent**: every phase now contributes a
   non-trivial dilute concentration `A_α = inv(I + P(C_α − C_eff))`
@@ -612,14 +672,14 @@ mirrors the C++ reference's behaviour at percolation thresholds.
   `TensND.TensTI{4}`. Round-trip on a coaxial TI(ez) tensor is now
   exact.
 
-### Documentation
+#### Documentation
 
 New manual page `manual/sensitivities.md` (motivation, lens API, closure
 fallback, user-inclusion tutorial, multi-scale chain-rule example, and a
 section on the `symmetrize` keyword) and auto-API page
 `api/sensitivities.md`. Both wired into `docs/make.jl`.
 
-### Scripts
+#### Scripts
 
 - `scripts/26_sensitivities.jl` — tour of the API (lenses + gradient +
   jacobian + cross-check vs the Christensen 1990 closed form for
@@ -642,7 +702,7 @@ section on the `symmetrize` keyword) and auto-API page
   points for Pichler. The moduli match the reference to rtol_mod ≈ 1e-3
   across both benchmarks.
 
-### Tests
+#### Tests
 
 Three new cross-cutting test files:
 
@@ -657,7 +717,7 @@ Three new cross-cutting test files:
 
 Total: 3421 tests pass.
 
-### Breaking changes
+#### Breaking changes
 
 - **SC results differ for systems near percolation** because of the
   Hill-symmetric SC fix. The pre-v0.4 SC step treated the matrix as
@@ -671,7 +731,7 @@ Total: 3421 tests pass.
   is now `homogenize(rve, scheme, property::Symbol)` with `property`
   required and positional.
 
-### Notes
+#### Notes
 
 - `Complex{T}` autodiff is not supported (ForwardDiff does not mix Dual
   and Complex cleanly). Symbolic differentiation goes through SymPy on
@@ -683,13 +743,13 @@ Total: 3421 tests pass.
   porous oblate systems away from percolation; this is documented in
   `scripts/bench_echoes/benchmark_porous.jl`.
 
-## v0.3.0 — RVE container + 10 homogenization schemes
+### v0.3.0 — RVE container + 10 homogenization schemes
 
 New `MeanFieldHom.Schemes` sub-module: a Representative Volume Element
 container plus the ten classical mean-field homogenization schemes ported
 from C++ ECHOES, with a few Julia-idiomatic improvements.
 
-### Additions
+#### Additions
 
 - **`RVE`** container with `add_matrix!`, `add_phase!`, helpers
   (`matrix_phase`, `inclusion_phase_names`, `phase_property`,
@@ -726,7 +786,7 @@ from C++ ECHOES, with a few Julia-idiomatic improvements.
   through 2nd-order tensor algebra (gradient-gradient localisation,
   resistivity contributions for cracks).
 
-### Number-type compatibility
+#### Number-type compatibility
 
 Every new scheme is fully `ForwardDiff.Dual` and `Complex{Float64}`
 compatible (frequency-domain viscoelasticity); symbolic `Sym` / `Num`
@@ -735,7 +795,7 @@ Mori-Tanaka, Maxwell, PCW). The asymmetric SC heuristic uses the
 Inf-norm rather than the SVD-based 2-norm so it works seamlessly under
 `Dual`.
 
-### Documentation
+#### Documentation
 
 New theory page `theory/homogenization.md`, manual page
 `manual/schemes.md`, API page `api/schemes.md`. Bibliography augmented
@@ -745,19 +805,19 @@ through `scripts/25_echoes_crosscheck.jl`. The latter cross-validates
 Mori-Tanaka against the [Christensen 1990](@cite christensen1990) closed
 form (exact match to 6 sig. figs. on bulk and shear at five fractions).
 
-### Tests
+#### Tests
 
 Around 270 new tests covering construction, numerical bounds, closed
 forms, Dual sensitivity (every scheme), Complex moduli sweep, Symbol
 shortcuts, and CustomPath validation. Total 3312 tests passing.
 
-## v0.2.0 — alignment with TensND 0.2 (breaking)
+### v0.2.0 — alignment with TensND 0.2 (breaking)
 
 Follow-up to TensND 0.2's API unification. MeanFieldHom is iso-functional —
 all outputs are unchanged — but every mention of a TensND symbol now uses
 the new snake_case + UPPERCASE-acronym convention.
 
-### Breaking changes
+#### Breaking changes
 
 - `TensND.TensWalpole` references (type annotations, dispatch rules,
   constructor calls) now use `TensND.TensTI{4}`.  The struct layout is
@@ -771,11 +831,11 @@ the new snake_case + UPPERCASE-acronym convention.
 - Tensor factory renames in scripts and docs: `tensId2` → `tens_Id2`,
   `tensJ4` → `tens_J4`, `tensTI` → `tens_TI`, etc.
 
-### Additions
+#### Additions
 
 None — functional surface unchanged.
 
-### Migration guide
+#### Migration guide
 
 If you have your own code depending on MeanFieldHom dispatch, apply the
 same renames as listed in TensND's v0.2 changelog. All MeanFieldHom tests
