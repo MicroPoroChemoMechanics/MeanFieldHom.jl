@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.8.1 — Codeberg migration + spelling fix
+## v0.8.1 — Packaging & spelling fix
 
 ### Fixes
 
@@ -9,11 +9,9 @@
 
 ### Infrastructure
 
-- Migrated to Codeberg (`MicroPoroChemoMechanics/MeanFieldHom.jl`)
-- Forgejo workflows: CI, Documentation, Release, Runic, Zenodo
 - Registered in MPCM-Registry; DECUHR.jl resolved via registry
   (no more `[sources]` local path in `Project.toml`)
-- Runic.yml: switch to `workflow_dispatch` only
+- GitHub Actions workflows: CI, Documentation, Register, CompatHelper, Format, TagBot
 - Multi-version documentation deployment (`docs/deploy_docs.jl`)
 
 ---
