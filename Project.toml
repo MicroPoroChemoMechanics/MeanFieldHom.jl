@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Jean-François Barthélémy <jean-francois.barthelemy@cerema.fr>"]
 
 [deps]
-DECUHR = "d5c0ea0e-a2e6-4e56-a5f3-17f3ec7c9d22"
+Decuhr = "d5c0ea0e-a2e6-4e56-a5f3-17f3ec7c9d22"
 Elliptic = "b305315f-e792-5b7a-8f41-49f472929428"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"

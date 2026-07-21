@@ -45,7 +45,7 @@ pkg> registry add https://github.com/MicroPoroChemoMechanics/MPCM-Registry
 pkg> add MeanFieldHom
 ```
 
-The dependency [`DECUHR.jl`](https://github.com/MicroPoroChemoMechanics/DECUHR.jl)
+The dependency [`Decuhr.jl`](https://github.com/MicroPoroChemoMechanics/Decuhr.jl)
 (adaptive cubature backend) is resolved automatically through the same
 registry. `TensND.jl`, `Elliptic.jl`, `Polynomials.jl`,
 `PolynomialRoots.jl`, `QuadGK.jl` and `Tensors.jl` are pulled from the

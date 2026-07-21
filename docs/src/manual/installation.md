@@ -2,7 +2,7 @@
 
 `MeanFieldHom` is released through the dedicated
 [MPCM-Registry](https://github.com/MicroPoroChemoMechanics/MPCM-Registry)
-on Codeberg. Its sister package `DECUHR.jl` (adaptive cubature backend)
+on Codeberg. Its sister package `Decuhr.jl` (adaptive cubature backend)
 lives in the same registry; `TensND.jl` (structured tensors) is also
 in MPCM-Registry, and a handful of registered scientific-computing
 dependencies (`Elliptic.jl`, `QuadGK.jl`, `Polynomials.jl`,

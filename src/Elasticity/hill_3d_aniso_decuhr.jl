@@ -3,7 +3,7 @@
 #
 #  2D adaptive cubature for the 3D anisotropic Hill tensor using the
 #  DECUHR algorithm of Espelid & Genz 1994, called through the
-#  `Integrals.jl` / `DECUHR.jl` stack.  Same 2D parametrisation as the
+#  `Integrals.jl` / `Decuhr.jl` stack.  Same 2D parametrisation as the
 #  nested-QuadGK variant in `hill_3d_aniso_nestedquadgk.jl`:
 #
 #     ζ(z, φ) = (√(1 - z²) cos φ, √(1 - z²) sin φ / η, z / ω)
