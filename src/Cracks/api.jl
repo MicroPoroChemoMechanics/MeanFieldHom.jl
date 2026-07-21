@@ -160,7 +160,7 @@ Closed-form derivation via the square-root change-of-variable of
 [Giraud & Gruescu 2019](@cite giraudMOM2019), in the framework of
 [Sevostianov & Kachanov 2002](@cite sevostianov2002) for the rank-1
 factorisation ``\\mathbf R \\propto \\hat{\\mathbf w}\\otimes\\hat{\\mathbf w}``.
-See [`docs/src/theory/thermal_cracks.md`](docs/src/theory/thermal_cracks.md)
+See the theory page `docs/src/theory/thermal_cracks.md`
 for the mathematical details and the elasticity ↔ conductivity
 correspondence table.
 """

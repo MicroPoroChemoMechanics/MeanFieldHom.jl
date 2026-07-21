@@ -39,14 +39,6 @@ jobs:
           sudo apt-get install -y -q python3 python3-pip python3-dev git ssh
           pip3 install sympy --break-system-packages || pip3 install sympy
 
-      - name: Add MPCM-Registry
-        run: |
-          julia -e '
-            using Pkg
-            Pkg.Registry.add(RegistrySpec(url="https://codeberg.org/MicroPoroChemoMechanics/MPCM-Registry.git"))
-            Pkg.Registry.add("General")
-          '
-
       - name: Install doc dependencies
         run: |
           julia -e '

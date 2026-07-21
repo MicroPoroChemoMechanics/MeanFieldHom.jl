@@ -12,6 +12,11 @@ VolumeFraction
 CrackDensity
 AbstractDistributionShape
 UniformDistribution
+AbstractSymmetrize
+NoSymmetrize
+IsoSymmetrize
+TISymmetrize
+phase_symmetrize
 add_matrix!
 add_phase!
 matrix_phase
@@ -42,6 +47,7 @@ DifferentialTrajectory
 Proportional
 Sequential
 CustomPath
+Path
 AndersonDefault
 NewtonDefault
 ```

@@ -152,10 +152,10 @@ an `AbstractTens{4, 3}` (elasticity) triggers the double contraction
 ``\\mathbf P \\cdot \\mathbf K_0``.
 
 All keyword arguments (`method`, `abstol`, `reltol`, `maxiters`) are
-forwarded verbatim to [`hill_tensor`](@ref); see its docstring for the
+forwarded verbatim to [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor); see its docstring for the
 set of admissible algorithm traits.
 
-See also [`hill_tensor`](@ref).
+See also [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor).
 """
 function eshelby_tensor end
 
@@ -235,7 +235,7 @@ function conductivity_contribution end
     resistivity_contribution(incl, K₁, K₀; kw...) -> Tens{2,3}
 
 Size-independent resistivity contribution tensor of an inclusion
-(2nd-order analogue of [`compliance_contribution`](@ref) for solid
+(2nd-order analogue of [`compliance_contribution`](@ref MeanFieldHom.Cracks.compliance_contribution) for solid
 ellipsoids).
 """
 function resistivity_contribution end

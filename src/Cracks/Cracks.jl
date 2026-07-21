@@ -11,7 +11,7 @@ module Cracks
 using LinearAlgebra
 using TensND
 using Tensors
-using Decuhr
+using DECUHR
 import Integrals
 using QuadGK
 using ..Elliptic

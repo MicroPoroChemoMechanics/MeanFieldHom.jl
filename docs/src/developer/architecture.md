@@ -3,7 +3,7 @@
 `MeanFieldHom` is organised around a single principle:
 
 > every high-level entry point dispatches via
-> [`MeanFieldHom.Core._resolve_algo`](@ref) on
+> `MeanFieldHom.Core._resolve_algo` on
 > `(Val(method), inclusion, C₀)`.
 
 The resolved [`AbstractAlgorithm`](@ref) instance is then passed to an

@@ -254,7 +254,7 @@ elementary integrals (closed-form combinations of `acosh` and complex
 square roots).
 
 **Selection** — the dispatcher
-[`MeanFieldHom.Core._resolve_algo`](@ref) routes a `TensTI{4}` matrix
+`MeanFieldHom.Core._resolve_algo` routes a `TensTI{4}` matrix
 combined with a coaxial `Ellipsoid{3, Spherical|Prolate|Oblate}` to the
 `Analytical` algorithm trait by default. Coaxiality is detected via
 the helper `_ti_coaxial(C₀, ell)`. Non-coaxial spheroids and triaxial

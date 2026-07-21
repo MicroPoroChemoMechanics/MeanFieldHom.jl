@@ -22,6 +22,7 @@ heaviside_law
 
 ```@docs
 trapezoidal_matrix
+_trapezoidal_relaxation
 ```
 
 ## Volterra algebra
@@ -122,6 +123,7 @@ delta_stiffness_alv
 ```@docs
 bulk_localization_alv
 bulk_state_seq_alv
+bulk_amplitude_seq_alv
 shear_localization_alv
 strain_strain_loc_alv
 ```

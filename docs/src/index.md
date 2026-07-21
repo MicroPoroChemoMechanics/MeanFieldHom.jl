@@ -13,12 +13,12 @@ viscoelastic laws, user-defined inclusions).
 - [`MeanFieldHom.Elasticity`](@ref) — Hill polarisation (2D / 3D).
 - [`MeanFieldHom.Cracks`](@ref) — COD, SIF, DIF for flat cracks.
 - [`MeanFieldHom.Conductivity`](@ref) — 2nd-order Hill tensor.
-- [`MeanFieldHom.LayeredSpheres`](@ref) — n-coated-sphere assemblages
+- `MeanFieldHom.LayeredSpheres` — n-coated-sphere assemblages
   (Hervé–Zaoui, Christensen–Lo) with imperfect interfaces.
-- [`MeanFieldHom.Schemes`](@ref) — RVE container, mean-field schemes
+- `MeanFieldHom.Schemes` — RVE container, mean-field schemes
   (Voigt, Reuss, Dilute, Mori-Tanaka, Maxwell, PCW, SC, ASC,
   Differential), parameter sensitivities (autodiff).
-- [`MeanFieldHom.Viscoelasticity`](@ref) — ageing linear viscoelastic
+- `MeanFieldHom.Viscoelasticity` — ageing linear viscoelastic
   homogenization (`ViscoLaw`, trapezoidal Stieltjes discretisation,
   Volterra algebra, ALV Hill kernel, iso / TI / ortho fast paths,
   cracks, layered spheres, order-2 conductivity / diffusion).

@@ -2,6 +2,13 @@
 
 ```@docs
 MeanFieldHom.Elasticity
+MeanFieldHom.EllipsoidShape
+MeanFieldHom.Spherical
+MeanFieldHom.Prolate
+MeanFieldHom.Oblate
+MeanFieldHom.Triaxial
+MeanFieldHom.Circular
+MeanFieldHom.Elasticity.Elliptic
 MeanFieldHom.Ellipsoid
 MeanFieldHom.Cylinder
 MeanFieldHom.CylindricalShape

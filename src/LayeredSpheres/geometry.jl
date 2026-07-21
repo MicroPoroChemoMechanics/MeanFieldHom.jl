@@ -32,7 +32,7 @@ shells) embedded in an infinite matrix.  Type parameters:
 - `Is` — concrete type of the `interfaces` NTuple.
 
 Use the keyword-argument constructor
-[`LayeredSphere`](@ref MeanFieldHom.LayeredSphere)`(radii, moduli;
+[`LayeredSphere`](@ref MeanFieldHom.LayeredSpheres.LayeredSphere)`(radii, moduli;
 interfaces)` for most cases.
 
 ## Convention

@@ -186,7 +186,7 @@ normal axis.  When `n̂ = e_3` the result is in TI form and routes
 through the existing TI ALV fast path; arbitrary orientation requires
 a 6×6 Mandel rotation per `(i, j)` block (not yet implemented).
 
-Convention: same as the elastic [`compliance_contribution`](@ref) — the
+Convention: same as the elastic [`compliance_contribution`](@ref MeanFieldHom.Cracks.compliance_contribution) — the
 Budiansky-O'Connell density factor is applied separately via
 [`delta_compliance_alv`](@ref).
 """

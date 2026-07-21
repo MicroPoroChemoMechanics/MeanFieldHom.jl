@@ -21,7 +21,7 @@ module Core
 
 using LinearAlgebra
 using TensND
-using Decuhr
+using DECUHR
 import Integrals
 using QuadGK
 using ..Elliptic

@@ -69,7 +69,7 @@ MPCM-Registry). Kept for reference.
 
 #### Infrastructure
 
-- Registered in MPCM-Registry; Decuhr.jl resolved via registry
+- Registered in MPCM-Registry; DECUHR.jl resolved via registry
   (no more `[sources]` local path in `Project.toml`)
 - GitHub Actions workflows: CI, Documentation, Register, CompatHelper, Format, TagBot
 - Multi-version documentation deployment (`docs/deploy_docs.jl`)
