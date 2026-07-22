@@ -111,11 +111,6 @@ See [CITATION.cff](CITATION.cff) for citation details.
 }
 ```
 
-The package accompanies:
-
-> Barthélémy, J.-F. (2026). *Stress Intensity Factors in Anisotropic
-> Media.*
-
 ## Credits and Acknowledgements
 
 Developed by [Jean-François Barthélémy](https://github.com/jfbarthelemy),
