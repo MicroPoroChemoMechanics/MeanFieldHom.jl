@@ -31,6 +31,7 @@ import ..Cracks: compliance_contribution, delta_compliance, delta_resistivity
 
 include("rve.jl")
 include("symmetrize.jl")
+include("orientation.jl")
 include("scheme_types.jl")
 include("homogenize.jl")
 include("contribution_helpers.jl")
@@ -59,6 +60,8 @@ export phase_property, matrix_property
 export volume_fraction, crack_density, matrix_volume_fraction
 export phase_symmetrize
 export validate_rve
+export best_fit_ti, best_fit_iso
+export polar_orientation_bins
 
 # Schemes
 export HomogenizationScheme

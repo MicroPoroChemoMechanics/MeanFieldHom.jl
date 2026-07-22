@@ -1,5 +1,5 @@
 # =============================================================================
-#  37_fluage_echoes_solid.jl
+#  53_fluage_echoes_solid.jl
 #
 #  Reproduction of `tests/python/creep/fluage_echoes_solid.py`
 #  (both the **whole-pores** and the **layers** topologies) and the
@@ -26,8 +26,8 @@
 #  active when its setting time is reached during the experiment) and
 #  the **frozen** approach (microstructure is fixed at t_0).
 #
-#  Usage : julia --project scripts/37_fluage_echoes_solid.jl
-#  Output : scripts/figures/37_fluage_echoes_solid_<model>.png
+#  Usage : julia --project scripts/53_fluage_echoes_solid.jl
+#  Output : scripts/figures/53_fluage_echoes_solid_<model>.png
 # =============================================================================
 
 import Pkg
@@ -294,6 +294,6 @@ plot!(
 
 const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
-figpath = joinpath(figdir, "37_fluage_echoes_solid_$(MODEL).png")
+figpath = joinpath(figdir, "53_fluage_echoes_solid_$(MODEL).png")
 savefig(p, figpath)
 @printf "\nSaved : %s\n" figpath

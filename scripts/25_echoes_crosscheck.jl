@@ -9,7 +9,7 @@
 #     reference implementation this Julia port is benchmarked against).
 #
 #  Closes the loop on the same kind of cross-validation we did for the
-#  Hill TI coaxial analytical kernel (script 12).
+#  Hill TI coaxial analytical kernel (script 07).
 # =============================================================================
 
 import Pkg

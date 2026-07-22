@@ -2,12 +2,18 @@
 #  MeanFieldHomNonlinearSolveExt.jl
 #
 #  Weak extension activated when `NonlinearSolve.jl` is loaded together
-#  with `MeanFieldHom`.  The built-in Newton-Raphson SC solver
-#  (`MeanFieldHom.Schemes._solve_sc(::NewtonDefault, …)`) ships
-#  with the package — no extension needed for the default Newton path.
-#  Loading this extension is a no-op at the moment ; it is kept as a
-#  hook for future SciML `NonlinearSolve` algorithm dispatch (e.g.
-#  trust-region, Anderson with memory > 1).
+#  with `MeanFieldHom`.
+#
+#  STATUS — intentional placeholder (no-op).  The supported
+#  self-consistent solvers are the two package built-ins,
+#  `MeanFieldHom.Schemes._solve_sc(::AndersonDefault, …)` (Picard +
+#  relaxation, Dual-safe) and `_solve_sc(::NewtonDefault, …)`
+#  (ForwardDiff-Jacobian Newton with line search) — neither needs this
+#  extension.  It is kept as a load hook for a future SciML
+#  `NonlinearSolve` algorithm dispatch (trust-region, Anderson with
+#  memory > 1); until that lands, loading it changes nothing and
+#  `SelfConsistent(algorithm = <SciML alg>)` has no effect beyond the
+#  built-ins.  See `docs/src/developer/roadmap.md` (§Open).
 # =============================================================================
 
 module MeanFieldHomNonlinearSolveExt

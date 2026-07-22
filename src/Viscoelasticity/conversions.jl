@@ -114,6 +114,17 @@ end
 #  major-symmetric (because the synthetic Walpole 2×2 matrices may not
 #  commute when the time grid is non-uniform), so the 6-parameter form
 #  is used internally even when inputs are major-symmetric.
+#
+#  REPRESENTABILITY LIMIT — this 6-parameter TI block form captures the
+#  ℓ₃ ≠ ℓ₄ major-asymmetry but NOT the two antisymmetric azimuthal
+#  couplings (ℓ₇, ℓ₈ of the full 8-dim axially-invariant space; the t13 /
+#  t16 patterns of `Core.transverse_isotropify`).  Those appear when a
+#  concentration tensor is azimuthally averaged block-by-block on the ALV
+#  side (`homogenize_alv._ti_project_blocks`): such a result is kept as a
+#  FULL 6n×6n matrix, not routed through this 6-parameter closure.  The
+#  6-parameter form here is the fast path for the dedicated structured
+#  TI ALV pipeline (`ti_schemes_alv.jl`), where all operands are genuine
+#  TI(ez) stiffnesses/compliances (ℓ₇ = ℓ₈ = 0).
 # =============================================================================
 
 const _SQRT2_ALV = sqrt(2)

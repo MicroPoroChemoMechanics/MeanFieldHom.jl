@@ -1,5 +1,5 @@
 # =============================================================================
-#  45_cracks_iso_interface.jl
+#  15_cracks_iso_interface.jl
 #
 #  Cross-check **elastic + conductivity homogenization with cracks** vs
 #  the ECHOES Python reference `tests/python/echoes_tests/cracksiso.py`.
@@ -25,8 +25,8 @@
 #
 #  Output : two-panel plot with Julia × markers / ECHOES — solid lines.
 #
-#  Usage  : julia --project scripts/45_cracks_iso_interface.jl
-#  Output : scripts/figures/45_cracks_iso_interface.png
+#  Usage  : julia --project scripts/15_cracks_iso_interface.jl
+#  Output : scripts/figures/15_cracks_iso_interface.png
 # =============================================================================
 
 import Pkg
@@ -236,7 +236,7 @@ end
 fig = plot(p_elastic, p_perm; layout = (1, 2), size = (1500, 700))
 
 mkpath(joinpath(@__DIR__, "figures"))
-out = joinpath(@__DIR__, "figures", "45_cracks_iso_interface.png")
+out = joinpath(@__DIR__, "figures", "15_cracks_iso_interface.png")
 savefig(fig, out)
 println("Saved : $out")
 

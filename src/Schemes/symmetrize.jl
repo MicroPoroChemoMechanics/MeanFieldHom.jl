@@ -1,101 +1,108 @@
 # =============================================================================
-#  symmetrize.jl — orientation-distribution projection of a phase's tensors.
+#  symmetrize.jl — orientation-distribution treatment of a phase's tensors.
 #
-#  `_apply_symmetrize(t, sym)` applies the projection `sym` to a tensor `t`,
-#  returning a tensor of the appropriate symmetry class :
+#  TWO distinct mechanisms, mirroring echoes (tensor_symmetry.h vs tensor_ti.h);
+#  they must never be conflated :
 #
-#  * `NoSymmetrize`           — passthrough.
-#  * `IsoSymmetrize`          — Reynolds average over the rotation group :
-#      4th-order : (J::N) J + ((K_proj::N) / 5) K_proj          → TensISO{4}
-#      2nd-order : (1/3) tr(N) δ                                → TensISO{2}
-#  * `TISymmetrize(axis)`     — Reynolds average over rotations about `axis` :
-#      4th-order : projection onto the 6-dim Walpole basis (axis-aligned)
-#                   ; major-symmetric tensors collapse to 5-dim → TensTI{4}
-#      2nd-order : a·(δ - n⊗n) + b·(n⊗n)                        → TensTI{2}
+#  1. EXACT rotation-group averaging (runtime, inside scheme kernels) —
+#     `_apply_symmetrize(t, sym)` delegates to `Core.isotropify` /
+#     `Core.transverse_isotropify`.  Valid for minor-symmetric tensors with
+#     or without major symmetry ; the TI average returns the full 8-parameter
+#     axially-invariant tensor (`TensND.TensTI{4,T,8}`), preserving ℓ₃ ≠ ℓ₄
+#     and the antisymmetric azimuthal couplings (ℓ₇, ℓ₈) that concentration
+#     tensors generally carry.  At 2nd order the antisymmetric in-plane part
+#     is preserved (`TensTI{2,T,3}`).
 #
-#  Mathematical references : the iso-projection coefficients follow from the
-#  invariants of the rotation group ; the TI projection follows from the
-#  Walpole basis ((1933, refined in Hill 1965 and Walpole 1981)).
+#  2. BEST-FIT projection (reporting / parameter extraction ONLY) —
+#     `best_fit_ti(t, axis)` (→ major-symmetric `TensTI{4,T,5}`) and
+#     `best_fit_iso(t)`.  This is the orthogonal projection onto the
+#     symmetric Walpole span, the analogue of echoes' `.paramsym(sym=TI)`.
+#     Do NOT use it inside scheme kernels : it silently drops the
+#     non-major-symmetric content of concentration tensors.
+#
+#  References : Walpole (1981) for the TI basis ; echoes
+#  `tensor_symmetry.h` for the exact azimuthal-average closed form.
 # =============================================================================
 
 """
     _apply_symmetrize(t::AbstractTens, sym::AbstractSymmetrize) -> AbstractTens
 
-Project `t` onto the symmetry class declared by `sym`. See
-[`AbstractSymmetrize`](@ref) for the projection semantics.
+Apply the **exact** orientation average declared by `sym` to `t`.
 
-`NoSymmetrize` is a passthrough ; `IsoSymmetrize` returns `TensISO` ;
-`TISymmetrize(axis)` returns `TensTI` for 4th-order tensors and 2nd-order
-tensors. Implemented for tensor orders 4 (elasticity) and 2 (conductivity).
+`NoSymmetrize` is a passthrough ; `IsoSymmetrize` returns the SO(3) average
+(`TensISO`) ; `TISymmetrize(axis)` returns the azimuthal average about
+`axis` (`TensTI{4,T,8}` / `TensTI{2,T,3}`, non-major-symmetric content
+preserved). Implemented for tensor orders 4 (elasticity) and 2
+(conductivity).
 """
 _apply_symmetrize(t::TensND.AbstractTens, ::NoSymmetrize) = t
 
+_apply_symmetrize(t::TensND.AbstractTens{4, 3}, ::IsoSymmetrize) =
+    MFH_Core.isotropify(t)
+_apply_symmetrize(t::TensND.AbstractTens{2, 3}, ::IsoSymmetrize) =
+    MFH_Core.isotropify(t)
+
+_apply_symmetrize(t::TensND.AbstractTens{4, 3}, sym::TISymmetrize) =
+    MFH_Core.transverse_isotropify(t, sym.axis)
+_apply_symmetrize(t::TensND.AbstractTens{2, 3}, sym::TISymmetrize) =
+    MFH_Core.transverse_isotropify(t, sym.axis)
+
 # =============================================================================
 #  Reference-medium projection for the localization-tensor computation.
-#
-#  When a phase declares an orientation-distribution projection `sym`, the
-#  reference medium passed to `hill_tensor` / `strain_strain_loc` can be
-#  pre-projected onto the same symmetry class. This keeps the localization
-#  tensor in an analytical-friendly symmetry class (iso → iso analytical,
-#  TI → TI-coaxial analytical) and avoids triggering the general-anisotropic
-#  residue / DECUHR path which currently does not support `ForwardDiff.Dual`
-#  coefficients.
-#
-#  Mathematically, this is consistent with the orientation-averaging
-#  semantics of `sym` : the inclusion family sees an effectively
-#  symmetry-projected matrix. For matrices that are already in the target
-#  symmetry class, `_project_matrix` is the identity.
 # =============================================================================
 
 """
     _project_matrix(P₀::AbstractTens, sym::AbstractSymmetrize) -> AbstractTens
 
-Project `P₀` onto a symmetry class compatible with the analytical
-localization-tensor branches, before computing the localization tensor
-of a phase with the given symmetrize.
+Project the reference medium `P₀` before computing the localization tensor
+of a phase declaring the orientation distribution `sym`.
 
 - `NoSymmetrize` : passthrough.
-- `IsoSymmetrize` : project to the iso (J, K_proj) basis. The inclusion's
-  hill tensor in an iso matrix is always TI (with the inclusion's axis),
-  for which an analytical branch exists.
-- `TISymmetrize` : also project the matrix to **iso** rather than to its
-  TI form. Reason : the inclusion family at polar angle θ ≠ 0 from the
-  symmetrize axis is *not* coaxial with the matrix's TI axis, and the
-  analytical TI-coaxial localization branch does not apply ; routing
-  through the general anisotropic branch is not currently
-  ForwardDiff-compatible. The iso projection gives an analytical branch
-  for every inclusion orientation, and the result is exact at the iso
-  fixed-point of the SC iteration (where C₀ converges to iso anyway).
-  The phase contribution is still projected onto TI(axis) by the
-  outgoing `_apply_symmetrize`, so the outer symmetry semantics are
-  preserved.
+- `IsoSymmetrize` : isotropic average of `P₀` (the inclusion's Hill tensor
+  in an isotropic matrix always has an analytical branch).
+- `TISymmetrize` : controlled by `sym.matrix_projection` :
+    * `:iso` (default) — isotropic average of `P₀`.  Approximation whenever
+      `P₀` is not isotropic ; exact at the isotropic fixed point of the SC
+      iteration (where the reference converges to its isotropic average).
+      Rationale : an inclusion family at polar angle θ ≠ 0 from the
+      symmetrize axis is *not* coaxial with a TI reference, so the
+      TI-coaxial analytical Hill branch does not apply ; the isotropic
+      projection guarantees an analytical, ForwardDiff-compatible branch
+      for every orientation.
+    * `:none` — no projection ; non-coaxial anisotropic references route
+      through the general-anisotropy `NestedQuadGK` Hill branch
+      (ForwardDiff-compatible, quadrature-priced).
+    * `:ti` — best-fit TI projection of `P₀` about `sym.axis`
+      (`TensTI{4,T,5}`) ; only meaningful when the phase's inclusions are
+      coaxial with the axis.
+
+The phase contribution is in all cases still exactly averaged by the
+outgoing `_apply_symmetrize`, so the outer symmetry semantics are
+preserved.
 """
 _project_matrix(P₀::TensND.AbstractTens, ::NoSymmetrize) = P₀
-_project_matrix(P₀::TensND.AbstractTens, ::IsoSymmetrize) =
-    _apply_symmetrize(P₀, IsoSymmetrize())
-_project_matrix(P₀::TensND.AbstractTens, ::TISymmetrize) =
-    _apply_symmetrize(P₀, IsoSymmetrize())
-
-# ── 4th-order tensors : iso projection ───────────────────────────────────────
-
-function _apply_symmetrize(t::TensND.AbstractTens{4, 3}, ::IsoSymmetrize)
-    arr = TensND.get_array(t)
-    α = sum(arr[i, i, j, j] for i in 1:3, j in 1:3) / 3
-    full_trace = sum(arr[i, j, i, j] for i in 1:3, j in 1:3)
-    β = (full_trace - α) / 5
-    return TensND.TensISO{3}(α, β)
+_project_matrix(P₀::TensND.AbstractTens, ::IsoSymmetrize) = MFH_Core.isotropify(P₀)
+function _project_matrix(P₀::TensND.AbstractTens, sym::TISymmetrize)
+    mp = sym.matrix_projection
+    mp === :none && return P₀
+    mp === :ti && return best_fit_ti(P₀, sym.axis)
+    return MFH_Core.isotropify(P₀)
 end
 
-# ── 2nd-order tensors : iso projection (spherical part) ──────────────────────
+# =============================================================================
+#  Best-fit projections (reporting / parameter extraction only)
+# =============================================================================
 
-function _apply_symmetrize(t::TensND.AbstractTens{2, 3}, ::IsoSymmetrize)
-    arr = TensND.get_array(t)
-    λ = (arr[1, 1] + arr[2, 2] + arr[3, 3]) / 3
-    return TensND.TensISO{3}(λ)
-end
+"""
+    best_fit_iso(t::AbstractTens{4,3}) -> TensND.TensISO{4}
+    best_fit_iso(t::AbstractTens{2,3}) -> TensND.TensISO{2}
 
-# ── 4th-order tensors : TI projection around axis n ──────────────────────────
-#
+Orthogonal projection of `t` onto the isotropic basis.  For minor-symmetric
+tensors this coincides with the exact SO(3) average [`Core.isotropify`](@ref)
+(the isotropic subspace is `{𝕁, 𝕂}` either way).
+"""
+best_fit_iso(t::TensND.AbstractTens) = MFH_Core.isotropify(t)
+
 # Walpole basis with axis n (n unit vector) :
 #   nₙ = n⊗n,  nT = δ - n⊗n
 #   W₁ = nₙ ⊗ nₙ
@@ -105,75 +112,33 @@ end
 #   W₅ = nT ⊠ˢ nT − (nT ⊗ nT)/2
 #   W₆ = nT ⊠ˢ nₙ + nₙ ⊠ˢ nT
 #
-# These six tensors are orthonormal in the Frobenius inner product. The TI
-# projection is the orthogonal projection onto their span. For a major-
-# symmetric input (W₃::N = W₄::N), we collapse to 5 components.
+# These six tensors are orthogonal in the Frobenius inner product (W₅, W₆
+# have norm² = 2, the others 1). `best_fit_ti` is the orthogonal projection
+# onto the major-symmetric span : ℓ₃ and ℓ₄ are averaged, ℓ₇/ℓ₈ discarded.
 
-function _apply_symmetrize(t::TensND.AbstractTens{4, 3}, sym::TISymmetrize)
-    arr = TensND.get_array(t)
-    Tarr = eltype(arr)
-    n = ntuple(i -> convert(Tarr, sym.axis[i]), 3)
-    # Build W_k arrays for k=1..6 in cartesian indices, double-dot with `t`,
-    # then reassemble. We rely on direct index summation (no TensND ops) to
-    # stay generic w.r.t. Dual eltypes.
-    nₙ = ntuple(i -> ntuple(j -> n[i] * n[j], 3), 3)        # 3×3 nested tuple
-    δ = ntuple(i -> ntuple(j -> i == j ? one(Tarr) : zero(Tarr), 3), 3)
-    nT = ntuple(i -> ntuple(j -> δ[i][j] - nₙ[i][j], 3), 3)
+"""
+    best_fit_ti(t::AbstractTens{4,3}, axis) -> TensND.TensTI{4,T,5}
+    best_fit_ti(t::AbstractTens{2,3}, axis) -> TensND.TensTI{2,T,2}
 
-    # W as 4-arrays of the same shape as `arr`
-    W = Array{Tarr, 4}[zeros(Tarr, 3, 3, 3, 3) for _ in 1:6]
-    @inbounds for i in 1:3, j in 1:3, k in 1:3, l in 1:3
-        # symmetric helper : (a⊠ˢb)_ijkl = (a_ik b_jl + a_il b_jk) / 2
-        nn_nn = nₙ[i][j] * nₙ[k][l]
-        nT_nT = nT[i][j] * nT[k][l]
-        nn_nT = nₙ[i][j] * nT[k][l]
-        nT_nn = nT[i][j] * nₙ[k][l]
-        nT_box_nT = (nT[i][k] * nT[j][l] + nT[i][l] * nT[j][k]) / 2
-        nT_box_nn = (nT[i][k] * nₙ[j][l] + nT[i][l] * nₙ[j][k]) / 2
-        nn_box_nT = (nₙ[i][k] * nT[j][l] + nₙ[i][l] * nT[j][k]) / 2
+Orthogonal projection of `t` onto the **major-symmetric** TI (Walpole) span
+about `axis` — the analogue of echoes' `.paramsym(sym=TI)` parameter
+extraction.
 
-        W[1][i, j, k, l] = nn_nn
-        W[2][i, j, k, l] = nT_nT / 2
-        W[3][i, j, k, l] = nn_nT / sqrt(Tarr(2))
-        W[4][i, j, k, l] = nT_nn / sqrt(Tarr(2))
-        W[5][i, j, k, l] = nT_box_nT - nT_nT / 2
-        W[6][i, j, k, l] = nT_box_nn + nn_box_nT
-    end
-
-    # Inner products ℓ_k = W_k :: t (Frobenius double-dot)
-    ℓ = ntuple(
-        k -> sum(
-            W[k][i, j, p, q] * arr[i, j, p, q]
-                for i in 1:3, j in 1:3, p in 1:3, q in 1:3
-        ),
-        6
-    )
-
-    # Force major-symmetry by averaging ℓ₃ and ℓ₄ (matches the W₃, W₄
-    # convention — for a major-sym input they're already equal up to noise).
+!!! warning
+    This is a reporting utility, NOT the orientation average : it forces
+    major symmetry (ℓ₃+ℓ₄)/2 and drops the antisymmetric azimuthal
+    couplings.  Inside scheme kernels use `_apply_symmetrize` /
+    [`Core.transverse_isotropify`](@ref) instead.
+"""
+function best_fit_ti(t::TensND.AbstractTens{4, 3}, axis)
+    avg = MFH_Core.transverse_isotropify(t, axis)
+    ℓ = TensND.get_ℓ8(avg)
     ℓ34 = (ℓ[3] + ℓ[4]) / 2
-    # Normalisation: W₁..W₄ are orthonormal in the Frobenius inner product
-    # (each has ‖W‖² = 1) so the projection coefficient is the inner
-    # product itself. W₅ and W₆ have ‖W‖² = 2 in 3D, so the basis
-    # decomposition coefficient is the inner product divided by 2.
-    data = (ℓ[1], ℓ[2], ℓ34, ℓ[5] / 2, ℓ[6] / 2)
-    return TensND.TensTI{4, Tarr, 5}(data, n)
+    return TensND.TensTI{4, eltype(ℓ), 5}((ℓ[1], ℓ[2], ℓ34, ℓ[5], ℓ[6]), TensND.axis(avg))
 end
 
-# ── 2nd-order tensors : TI projection around axis n ──────────────────────────
-# A · (δ - n⊗n) + B · (n⊗n)  with  A = (tr T - n·T·n) / 2,  B = n·T·n.
-
-function _apply_symmetrize(t::TensND.AbstractTens{2, 3}, sym::TISymmetrize)
-    arr = TensND.get_array(t)
-    Tarr = eltype(arr)
-    n = ntuple(i -> convert(Tarr, sym.axis[i]), 3)
-    # B = n · T · n
-    B = zero(Tarr)
-    @inbounds for i in 1:3, j in 1:3
-        B += n[i] * arr[i, j] * n[j]
-    end
-    trT = arr[1, 1] + arr[2, 2] + arr[3, 3]
-    A = (trT - B) / 2
-    # TensTI{2, T, 2}(data = (a, b), n)  —  a transverse, b axial
-    return TensND.TensTI{2, Tarr, 2}((A, B), n)
+function best_fit_ti(t::TensND.AbstractTens{2, 3}, axis)
+    avg = MFH_Core.transverse_isotropify(t, axis)
+    a, b, _ = TensND.get_data(avg)
+    return TensND.TensTI{2, typeof(a), 2}((a, b), TensND.axis(avg))
 end

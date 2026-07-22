@@ -13,6 +13,7 @@ import DECUHR, Integrals
 
     @testset "Core" begin
         include("Core/test_traits.jl")
+        include("Core/test_rotational_average.jl")
         include("Core/test_newton.jl")
         include("Core/test_newton_cylinder.jl")
     end
@@ -68,6 +69,7 @@ import DECUHR, Integrals
     end
 
     @testset "Viscoelasticity" begin
+        include("Viscoelasticity/test_symmetrize_alv.jl")
         include("Viscoelasticity/test_visco_law.jl")
         include("Viscoelasticity/test_trapezoidal.jl")
         include("Viscoelasticity/test_volterra_inverse.jl")

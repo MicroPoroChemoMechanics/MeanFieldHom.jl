@@ -115,3 +115,50 @@ end
     FD = (eff_mu_vs_τK(τK₀ + h) - eff_mu_vs_τK(τK₀ - h)) / (2h)
     @test isapprox(AD, FD; rtol = 1.0e-6)
 end
+
+# =============================================================================
+#  Phase-2 extension : AD through the iterative / extra ALV schemes
+#  (SelfConsistent, AsymmetricSelfConsistent, PonteCastanedaWillis,
+#  DifferentialScheme) and through a GEOMETRY parameter (aspect ratio) —
+#  previously blocked by hard-coded `Matrix{Float64}` containers.
+# =============================================================================
+
+@testset "ALV sensitivities — d/df through SC / ASC / PCW / DIFF" begin
+    rve = _build_rve_base(0.2)
+    f₀ = 0.2
+
+    function eff_mu_vs_f(f, scheme)
+        rve_f = set_param(rve, AmountParameter(:I), f)
+        return _eff_mu_final(rve_f, scheme)
+    end
+
+    for sch in (
+            SelfConsistent(), AsymmetricSelfConsistent(),
+            PonteCastanedaWillis(), DifferentialScheme(),
+        )
+        dμ_AD = ForwardDiff.derivative(f -> eff_mu_vs_f(f, sch), f₀)
+        h = 1.0e-5
+        dμ_FD = (eff_mu_vs_f(f₀ + h, sch) - eff_mu_vs_f(f₀ - h, sch)) / (2h)
+        @test isapprox(dμ_AD, dμ_FD; rtol = 1.0e-5)
+    end
+end
+
+@testset "ALV sensitivities — d/dω geometry (aspect ratio) MT + SC" begin
+    function eff_mu_vs_ω(ω, scheme)
+        rve = RVE(:M)
+        add_matrix!(rve, Ellipsoid(1.0), Dict(:C => _build_law_M(1.0, 1.0)))
+        add_phase!(
+            rve, :I, Spheroid(ω), Dict(:C => heaviside_law(_C_INC));
+            fraction = 0.2
+        )
+        return _eff_mu_final(rve, scheme)
+    end
+
+    ω₀ = 3.0
+    for sch in (MoriTanaka(), SelfConsistent())
+        AD = ForwardDiff.derivative(ω -> eff_mu_vs_ω(ω, sch), ω₀)
+        h = 1.0e-5
+        FD = (eff_mu_vs_ω(ω₀ + h, sch) - eff_mu_vs_ω(ω₀ - h, sch)) / (2h)
+        @test isapprox(AD, FD; rtol = 1.0e-5)
+    end
+end

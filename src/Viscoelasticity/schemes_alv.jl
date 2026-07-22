@@ -9,6 +9,27 @@
 #  IJES 2019 §3 ; ECHOES manual ch07_viscoelasticity (`viscoelasticity_time.qmd`).
 # =============================================================================
 
+# Promoted scalar type of every input an iterative ALV scheme's running
+# estimate must carry (phase kernels, volume fractions / densities,
+# geometry-derived Mandel tensors, crack interface matrices) — so that
+# `ForwardDiff.Dual` parameters propagate through the fixed point instead
+# of hitting a `Float64` container.
+function _alv_promoted_eltype(C_list, fractions, U_list, crack_data)
+    Tp = isempty(fractions) ? Float64 : eltype(fractions)
+    for C in C_list
+        Tp = promote_type(Tp, eltype(C))
+    end
+    for U in U_list
+        Tp = promote_type(Tp, eltype(U))
+    end
+    for (_, ε, _, Rn, Rt) in crack_data
+        Tp = promote_type(Tp, typeof(ε))
+        Rn === nothing || (Tp = promote_type(Tp, eltype(Rn)))
+        Rt === nothing || (Tp = promote_type(Tp, eltype(Rt)))
+    end
+    return Tp
+end
+
 # A discrete identity 6n×6n matrix in Mandel form: block-diagonal with
 # 6×6 identity blocks.
 function _identity_alv(n::Int, T::Type)

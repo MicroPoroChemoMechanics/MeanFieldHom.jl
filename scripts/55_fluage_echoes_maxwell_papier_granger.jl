@@ -1,5 +1,5 @@
 # =============================================================================
-#  39_fluage_echoes_maxwell_papier_granger.jl
+#  55_fluage_echoes_maxwell_papier_granger.jl
 #
 #  Julia reproduction of
 #  `tests/python/creep/fluage_echoes_maxwell_papier_granger.py`
@@ -20,8 +20,8 @@
 #    (1) `ω = 0.1`, several fractions.
 #    (2) `φ = 0.2`, several aspect ratios.
 #
-#  Usage  : julia --project scripts/39_fluage_echoes_maxwell_papier_granger.jl
-#  Output : scripts/figures/39_fluage_echoes_maxwell_papier_granger_{frac,omega}.png
+#  Usage  : julia --project scripts/55_fluage_echoes_maxwell_papier_granger.jl
+#  Output : scripts/figures/55_fluage_echoes_maxwell_papier_granger_{frac,omega}.png
 # =============================================================================
 
 import Pkg
@@ -165,7 +165,7 @@ mkpath(joinpath(@__DIR__, "figures"))
 savefig(
     plt1, joinpath(
         @__DIR__, "figures",
-        "39_fluage_echoes_maxwell_papier_granger_frac.png"
+        "55_fluage_echoes_maxwell_papier_granger_frac.png"
     )
 )
 
@@ -211,8 +211,8 @@ end
 savefig(
     plt2, joinpath(
         @__DIR__, "figures",
-        "39_fluage_echoes_maxwell_papier_granger_omega.png"
+        "55_fluage_echoes_maxwell_papier_granger_omega.png"
     )
 )
 
-println("Saved : 39_fluage_echoes_maxwell_papier_granger_{frac,omega}.png")
+println("Saved : 55_fluage_echoes_maxwell_papier_granger_{frac,omega}.png")

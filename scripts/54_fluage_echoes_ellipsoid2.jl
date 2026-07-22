@@ -1,5 +1,5 @@
 # =============================================================================
-#  38_fluage_echoes_ellipsoid2.jl
+#  54_fluage_echoes_ellipsoid2.jl
 #
 #  Julia reproduction of
 #  `tests/python/creep/fluage_echoes_ellipsoid2.py`.
@@ -21,8 +21,8 @@
 #  Output : effective uniaxial creep response `J^E_eff(t, t')` from a
 #  unit longitudinal stress step.
 #
-#  Usage  : julia --project scripts/38_fluage_echoes_ellipsoid2.jl
-#  Output : scripts/figures/38_fluage_echoes_ellipsoid2.png
+#  Usage  : julia --project scripts/54_fluage_echoes_ellipsoid2.jl
+#  Output : scripts/figures/54_fluage_echoes_ellipsoid2.png
 # =============================================================================
 
 import Pkg
@@ -196,7 +196,7 @@ for (i_sch, sch) in enumerate(scheme_v)
 end
 
 mkpath(joinpath(@__DIR__, "figures"))
-out = joinpath(@__DIR__, "figures", "38_fluage_echoes_ellipsoid2.png")
+out = joinpath(@__DIR__, "figures", "54_fluage_echoes_ellipsoid2.png")
 savefig(plt, out)
 println("Saved : $out")
 
@@ -255,7 +255,7 @@ for (i_sch, sch) in enumerate(scheme_v)
     end
 end
 
-out2 = joinpath(@__DIR__, "figures", "38_fluage_echoes_ellipsoid2_sc_omega.png")
+out2 = joinpath(@__DIR__, "figures", "54_fluage_echoes_ellipsoid2_sc_omega.png")
 savefig(plt2, out2)
 println("Saved : $out2")
 

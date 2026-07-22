@@ -63,8 +63,16 @@ _resolve_algo(::Val, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{2, 2}
 
 # ─── 3D anisotropic elasticity ───────────────────────────────────────────────
 
-# Ellipsoidal inclusions — 3D anisotropic default is the residue algorithm
-_resolve_algo(::Val{:auto}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
+# The residue algorithm is Float64-only by design (polynomial root finding);
+# for any other coefficient type (`ForwardDiff.Dual`, `Complex`, symbolic)
+# `:auto` falls back to the type-generic NestedQuadGK cubature.  This is what
+# makes AD through a self-consistent iteration with a generically-anisotropic
+# running estimate possible.
+_aniso_default_algo(C₀::TensND.AbstractTens) =
+    eltype(TensND.get_array(C₀)) === Float64 ? Residue() : NestedQuadGK()
+
+# Ellipsoidal inclusions — 3D anisotropic default (see `_aniso_default_algo`)
+_resolve_algo(::Val{:auto}, ::AbstractEllipsoidalInclusion, C₀::TensND.AbstractTens{4, 3}) = _aniso_default_algo(C₀)
 _resolve_algo(::Val{:residues}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
 _resolve_algo(::Val{:decuhr}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = DECUHR()
 _resolve_algo(::Val{:nestedquadgk}, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{4, 3}) = NestedQuadGK()
@@ -78,7 +86,7 @@ _resolve_algo(::Val{:nestedquadgk}, ::AbstractEllipsoidalInclusion, ::TensND.Abs
 
 # Generic inclusion fallback (also used by `AbstractCrack` before the
 # TI-aligned refinement injected from the `Cracks` sub-module).
-_resolve_algo(::Val{:auto}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
+_resolve_algo(::Val{:auto}, ::AbstractInclusion, C₀::TensND.AbstractTens{4, 3}) = _aniso_default_algo(C₀)
 _resolve_algo(::Val{:residues}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = Residue()
 _resolve_algo(::Val{:decuhr}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = DECUHR()
 _resolve_algo(::Val{:nestedquadgk}, ::AbstractInclusion, ::TensND.AbstractTens{4, 3}) = NestedQuadGK()

@@ -127,6 +127,10 @@ export ell_K, ell_E, ell_F, ell_RF, ell_RD
 export AbstractAmount, VolumeFraction, CrackDensity
 export AbstractDistributionShape, UniformDistribution
 export AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize
+export isotropify, transverse_isotropify
+export ti_average_mandel66, iso_average_mandel66
+export best_fit_ti, best_fit_iso
+export polar_orientation_bins
 export Phase, RVE
 export add_matrix!, add_phase!
 export matrix_phase, inclusion_phase_names

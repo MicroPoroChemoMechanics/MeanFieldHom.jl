@@ -49,7 +49,12 @@ if isdefined(TensND, :TensTI)
         end
         method === :decuhr && return MFH_Core.DECUHR()
         method === :nestedquadgk && return MFH_Core.NestedQuadGK()
-        return MFH_Core.Residue()
+        method === :residues && return MFH_Core.Residue()
+        # `:auto`, non-coaxial : the residue path is Float64-only, so route
+        # non-`Float64` (e.g. ForwardDiff.Dual) references through the
+        # type-generic NestedQuadGK cubature — keeps AD through a non-coaxial
+        # TI reference working (see Core/dispatch.jl `_aniso_default_algo`).
+        return MFH_Core._aniso_default_algo(C₀)
     end
     @eval MFH_Core._resolve_algo(::Val{:auto}, ell::Ellipsoid{3}, C₀::TensND.TensTI{4}) =
         _ti_dispatch(:auto, ell, C₀)

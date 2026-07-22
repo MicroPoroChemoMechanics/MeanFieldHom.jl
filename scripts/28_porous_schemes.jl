@@ -1,5 +1,5 @@
 # =============================================================================
-#  29_porous_schemes.jl
+#  28_porous_schemes.jl
 #
 #  Cross-validation of MeanFieldHom against the canonical isotropic porous
 #  benchmark : a single solid phase (k_s, μ_s) with spherical pores (k≈0,
@@ -140,7 +140,7 @@ p_full = plot(
 
 figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
-figpath = joinpath(figdir, "29_porous_schemes.png")
+figpath = joinpath(figdir, "28_porous_schemes.png")
 savefig(p_full, figpath)
 @printf "\nSaved : %s\n" figpath
 
@@ -180,7 +180,7 @@ p_full2 = plot(
     p_k2, p_μ2; layout = (1, 2), size = (1400, 600),
     plot_title = "Porous benchmark (oblate + iso-symmetrize) — MeanFieldHom v0.4"
 )
-figpath2 = joinpath(figdir, "29_porous_schemes_oblate.png")
+figpath2 = joinpath(figdir, "28_porous_schemes_oblate.png")
 savefig(p_full2, figpath2)
 @printf "Saved : %s\n" figpath2
 

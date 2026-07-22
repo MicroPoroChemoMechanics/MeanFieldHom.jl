@@ -12,9 +12,11 @@
 #  Reference : Hervé & Zaoui 1993 (elastic) ; ECHOES manual ch07
 #  §"n-layer ALV" ; Sanahuja IJSS 2013.
 #
-#  This file delivers the **bulk (Y₀ harmonic)** ALV recurrence and
-#  the corresponding per-layer bulk localisation matrices.  The full
-#  shear (Y₂) recurrence is left as a stub for a follow-up PR.
+#  This file delivers BOTH the **bulk (Y₀ harmonic)** and the
+#  **shear (Y₂ harmonic)** ALV recurrences, plus the corresponding
+#  per-layer localisation matrices and the ALV interface transfers.
+#  Both are exercised (incl. an N=2 cross-check against ECHOES Python)
+#  in `test/Viscoelasticity/test_layered_alv.jl`.
 # =============================================================================
 
 # Imports for `LayeredSphere`, `layer_modulus`, `layer_interface`,

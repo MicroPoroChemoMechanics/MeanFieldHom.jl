@@ -1,5 +1,5 @@
 # =============================================================================
-#  31_average_nlayers.jl
+#  30_average_nlayers.jl
 #
 #  Volume-averaged strain and stress localisation tensors of an isotropic
 #  n-layer composite sphere.  Mirrors the verification idea of
@@ -189,6 +189,6 @@ p_full = plot(
     plot_title = "n-layer sphere ($n layers, R=$R) — average localisations"
 )
 
-figpath = joinpath(figdir, "31_average_nlayers.png")
+figpath = joinpath(figdir, "30_average_nlayers.png")
 savefig(p_full, figpath)
 @printf "\nSaved : %s\n" figpath

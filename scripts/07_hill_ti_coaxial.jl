@@ -1,5 +1,5 @@
 # =============================================================================
-#  12_hill_ti_coaxial.jl
+#  07_hill_ti_coaxial.jl
 #
 #  Demonstration of the closed-form analytical Hill polarisation tensor for
 #  a spheroidal inclusion coaxial with a transversely isotropic matrix
@@ -12,7 +12,7 @@
 #  It also benchmarks the analytical builder against the residue and
 #  DECUHR algorithms.
 #
-#  Usage:  julia --project scripts/12_hill_ti_coaxial.jl
+#  Usage:  julia --project scripts/07_hill_ti_coaxial.jl
 #
 #  Generates:
 #   * scripts/figures/hill_ti_coaxial.png — S_{ijkl} vs ξ

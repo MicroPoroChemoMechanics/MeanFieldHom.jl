@@ -47,13 +47,10 @@ end
 
 @inline function _iso_project_mandel66(M::AbstractMatrix)
     @assert size(M) == (6, 6)
-    α = (
-        M[1, 1] + M[2, 2] + M[3, 3] +
-            2 * (M[1, 2] + M[1, 3] + M[2, 3])
-    ) / 3
-    tr = M[1, 1] + M[2, 2] + M[3, 3] + M[4, 4] + M[5, 5] + M[6, 6]
-    β = (tr - α) / 5
-    return α, β
+    # Full top-left 3×3 sum (echoes `isotropify`) — Volterra blocks are
+    # generally NOT major-symmetric, so M[1,2] and M[2,1] must be summed
+    # separately (a `2·M[1,2]` shortcut is only valid for symmetric blocks).
+    return MFH_Core.iso_average_mandel66(M)
 end
 
 """
@@ -86,16 +83,46 @@ function _iso_project_blocks(M::AbstractMatrix)
 end
 
 """
+    _ti_project_blocks(M::AbstractMatrix, axis) -> Matrix
+
+Exact azimuthal average about `axis` of every 6×6 Mandel block of a
+`(6n × 6n)` ALV matrix (echoes `visco_transverse_isotropify` counterpart).
+Each block is averaged independently with
+[`Core.ti_average_mandel66`](@ref); the non-major-symmetric content of the
+blocks (ℓ₃ ≠ ℓ₄, antisymmetric couplings) is preserved, which the
+6-parameter TI closure of `conversions.jl` cannot represent — hence the
+full-matrix return.
+"""
+function _ti_project_blocks(M::AbstractMatrix, axis)
+    sz = size(M, 1)
+    sz == size(M, 2) ||
+        throw(ArgumentError("_ti_project_blocks: matrix must be square"))
+    sz % 6 == 0 ||
+        throw(ArgumentError("_ti_project_blocks: size $(sz) not divisible by 6"))
+    n = sz ÷ 6
+    out = similar(M, float(eltype(M)))
+    @inbounds for i in 1:n, j in 1:n
+        rows = (6 * (i - 1) + 1):(6 * i)
+        cols = (6 * (j - 1) + 1):(6 * j)
+        out[rows, cols] = MFH_Core.ti_average_mandel66(view(M, rows, cols), axis)
+    end
+    return out
+end
+
+"""
     _maybe_symmetrize_alv(M, sym) -> Matrix
 
 Apply the orientation-averaging projection corresponding to `sym` to a
-`(6n × 6n)` ALV block matrix.  Currently supports `NoSymmetrize`
-(passthrough) and `IsoSymmetrize` (block-by-block iso projection).
-TI projection on the ALV side is reserved for a follow-up.
+`(6n × 6n)` ALV block matrix : `NoSymmetrize` (passthrough),
+`IsoSymmetrize` (block-by-block exact SO(3) average) and
+`TISymmetrize(axis)` (block-by-block exact azimuthal average about the
+axis).
 """
 @inline _maybe_symmetrize_alv(M::AbstractMatrix, ::NoSymmetrize) = M
 @inline _maybe_symmetrize_alv(M::AbstractMatrix, ::IsoSymmetrize) =
     _iso_project_blocks(M)
+@inline _maybe_symmetrize_alv(M::AbstractMatrix, sym::TISymmetrize) =
+    _ti_project_blocks(M, sym.axis)
 
 """
     _trapezoidal_relaxation(law::ViscoLaw, times, B) -> Matrix
@@ -204,10 +231,13 @@ function homogenize_alv(
     T_amount = isempty(incl_names) ? Float64 :
         promote_type((typeof(amount_value(rve.amounts[n])) for n in incl_names)...)
     fractions = T_amount[]
-    contribs = Matrix{eltype(C_0)}[]
-    A_duts = Matrix{eltype(C_0)}[]
-    C_phases = Matrix{eltype(C_0)}[C_0]
-    H_phases = Matrix{eltype(C_0)}[]   # per-phase Hill kernels (for Maxwell distribution)
+    # Eltype-generic containers : per-phase matrices may carry a wider
+    # element type than the matrix kernel (e.g. `ForwardDiff.Dual` geometry
+    # parameters flowing through `tens_UA`/`tens_VA`).
+    contribs = Matrix[]
+    A_duts = Matrix[]
+    C_phases = Matrix[C_0]
+    H_phases = Matrix[]   # per-phase Hill kernels (for Maxwell distribution)
     # crack_data tuple: (geom, density, sym, H_iso_full).  `H_iso_full` is
     # the iso-projected size-independent compliance contribution H̃ scaled
     # by the Budiansky concentration factor (`4π/3` for 3D penny / elliptic,
@@ -391,8 +421,9 @@ Used by the scheme fast paths to opt into the iso pipeline only when
 all phases really are iso 4-tensors.
 """
 function _try_iso_pairs(matrices::AbstractVector{<:AbstractMatrix})
-    isempty(matrices) && return Tuple{Matrix{Float64}, Matrix{Float64}}[]
-    out = Vector{Tuple{Matrix{eltype(matrices[1])}, Matrix{eltype(matrices[1])}}}()
+    T = isempty(matrices) ? Float64 : eltype(matrices[1])
+    isempty(matrices) && return Tuple{Matrix{T}, Matrix{T}}[]
+    out = Vector{Tuple{Matrix{T}, Matrix{T}}}()
     for M in matrices
         _is_iso_block(M) || return nothing
         push!(out, _iso_pair(M))

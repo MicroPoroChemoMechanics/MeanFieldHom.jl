@@ -1,5 +1,5 @@
 # =============================================================================
-#  33_visco_law_basics.jl
+#  50_visco_law_basics.jl
 #
 #  Basic walkthrough of the ALV pipeline:
 #    * build a Maxwell relaxation `ViscoLaw` for an iso 4-tensor matrix,
@@ -10,8 +10,8 @@
 #      from the iso block matrix,
 #    * plot the four kernels on a log-scaled axis.
 #
-#  Usage : julia --project scripts/33_visco_law_basics.jl
-#  Output : scripts/figures/33_visco_law_basics.png
+#  Usage : julia --project scripts/50_visco_law_basics.jl
+#  Output : scripts/figures/50_visco_law_basics.png
 # =============================================================================
 
 import Pkg
@@ -107,6 +107,6 @@ plot!(
 
 const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
-figpath = joinpath(figdir, "33_visco_law_basics.png")
+figpath = joinpath(figdir, "50_visco_law_basics.png")
 savefig(p1, figpath)
 @printf "\nSaved : %s\n" figpath

@@ -1,5 +1,5 @@
 # =============================================================================
-#  36_rabotnov_mittag_leffler.jl
+#  52_rabotnov_mittag_leffler.jl
 #
 #  Closed-form validation of the ALV homogenization pipeline against the
 #  Rabotnov / Mittag-Leffler benchmark of @barthelemyIJES2019 §5.
@@ -27,8 +27,8 @@
 #  test suite via PyCall (no Julia-native ML library is currently a
 #  dependency of `MeanFieldHom`).
 #
-#  Usage  : julia --project scripts/36_rabotnov_mittag_leffler.jl
-#  Output : scripts/figures/36_rabotnov_mittag_leffler.png
+#  Usage  : julia --project scripts/52_rabotnov_mittag_leffler.jl
+#  Output : scripts/figures/52_rabotnov_mittag_leffler.png
 # =============================================================================
 
 import Pkg
@@ -253,7 +253,7 @@ fig = plot(
 )
 
 mkpath(joinpath(@__DIR__, "figures"))
-out = joinpath(@__DIR__, "figures", "36_rabotnov_mittag_leffler.png")
+out = joinpath(@__DIR__, "figures", "52_rabotnov_mittag_leffler.png")
 savefig(fig, out)
 println("Saved : $out")
 

@@ -219,8 +219,8 @@ function _promote_iso_eltype(
         αβ_0::Tuple...
     )
     T = eltype(fractions)
-    if !isempty(αβ_list)
-        T = promote_type(T, eltype(αβ_list[1][1]), eltype(αβ_list[1][2]))
+    for ab in αβ_list          # loop over ALL phases — eltypes may differ
+        T = promote_type(T, eltype(ab[1]), eltype(ab[2]))
     end
     for ab in αβ_0
         T = promote_type(T, eltype(ab[1]), eltype(ab[2]))

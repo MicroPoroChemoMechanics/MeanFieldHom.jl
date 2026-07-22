@@ -58,9 +58,13 @@ abstract type AbstractCrack{T} <: AbstractInclusion{T} end
 """
     AbstractLayeredInclusion{dim,T} <: AbstractInclusion{T}
 
-Scaffold supertype for multi-layer inclusions (spheres with concentric
-shells, cylinders with coatings, …).  No concrete subtype is shipped
-yet; see `docs/src/developer/roadmap.md`.
+Supertype for multi-layer inclusions.  The concrete `LayeredSphere`
+(concentric isotropic shells, Hervé-Zaoui recurrences for bulk, shear and
+conductivity, with five interface types) is shipped in the `LayeredSpheres`
+sub-module and extended to the ageing-viscoelastic setting in
+`Viscoelasticity/layered_alv.jl`.  Open extensions (coated cylinders,
+anisotropic layers, excentered spheres) are tracked in
+`docs/src/developer/roadmap.md`.
 """
 abstract type AbstractLayeredInclusion{dim, T} <: AbstractInclusion{T} end
 

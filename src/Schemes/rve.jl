@@ -132,17 +132,46 @@ the inclusion's actual shape.
 struct IsoSymmetrize <: AbstractSymmetrize end
 
 """
-    TISymmetrize(axis = (0, 0, 1)) <: AbstractSymmetrize
+    TISymmetrize(axis = (0, 0, 1); matrix_projection = :iso) <: AbstractSymmetrize
 
-The localization tensor is averaged over rotations about `axis` (uniaxial
-uniform distribution). Produces a transversely-isotropic phase
-contribution with that symmetry axis.
+The localization tensor is averaged **exactly** over rotations about `axis`
+(uniaxial uniform distribution).  The average preserves the full
+axially-invariant structure — including the non-major-symmetric components
+of concentration tensors — and returns a `TensND.TensTI{4,T,8}`
+(resp. `TensTI{2,T,3}` at 2nd order).
+
+`matrix_projection` controls how the *reference medium* is pre-projected
+before the localization tensor of this phase is computed :
+
+- `:iso` (default) — project the reference to its isotropic average.  Every
+  inclusion orientation then has an analytical, ForwardDiff-compatible Hill
+  branch.  This is an approximation whenever the reference is not isotropic;
+  it is exact at the isotropic fixed point of a self-consistent iteration.
+- `:none` — use the reference as is.  Non-coaxial anisotropic references
+  route through the general-anisotropy Hill branch (`NestedQuadGK`,
+  ForwardDiff-compatible but quadrature-priced).
+- `:ti` — project the reference to its best-fit TI form about `axis`.
+  Only valid when the phase's inclusions are coaxial with `axis`
+  (the TI-coaxial analytical Hill branch applies).
 """
 struct TISymmetrize{T <: Number} <: AbstractSymmetrize
     axis::NTuple{3, T}
+    matrix_projection::Symbol
+    function TISymmetrize(axis::NTuple{3, T}, matrix_projection::Symbol) where {T <: Number}
+        matrix_projection in (:iso, :none, :ti) || throw(
+            ArgumentError(
+                "matrix_projection must be :iso, :none or :ti; got :$(matrix_projection)"
+            )
+        )
+        return new{T}(axis, matrix_projection)
+    end
 end
-TISymmetrize() = TISymmetrize((0.0, 0.0, 1.0))
-TISymmetrize(axis::AbstractVector) = TISymmetrize(NTuple{3}(Tuple(axis)))
+TISymmetrize(axis::NTuple{3, <:Number}; matrix_projection::Symbol = :iso) =
+    TISymmetrize(axis, matrix_projection)
+TISymmetrize(; matrix_projection::Symbol = :iso) =
+    TISymmetrize((0.0, 0.0, 1.0), matrix_projection)
+TISymmetrize(axis::AbstractVector; matrix_projection::Symbol = :iso) =
+    TISymmetrize(NTuple{3}(Tuple(axis)), matrix_projection)
 
 # Coercer for kwargs : accept a Symbol shortcut, an `AbstractSymmetrize`, or
 # nothing (no projection).

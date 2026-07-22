@@ -351,7 +351,10 @@ function voigt_alv_ortho(o_phases::AbstractVector, fractions::AbstractVector)
         throw(ArgumentError("voigt_alv_ortho: phase counts mismatch"))
     isempty(o_phases) && throw(ArgumentError("voigt_alv_ortho: at least one phase required"))
     n = size(o_phases[1][1], 1)
-    T = promote_type(eltype(o_phases[1][1]), eltype(fractions))
+    T = eltype(fractions)
+    for o in o_phases
+        T = promote_type(T, eltype(o[1]))
+    end
     eff = ntuple(_ -> zeros(T, n, n), 12)
     @inbounds for r in eachindex(o_phases)
         _ortho_add!(eff, fractions[r], o_phases[r])
@@ -461,6 +464,12 @@ function mori_tanaka_alv_ortho(
         throw(ArgumentError("mori_tanaka_alv_ortho: phase counts mismatch"))
     n = size(o_0[1], 1)
     T = promote_type(eltype(o_0[1]), eltype(fractions), typeof(f_M))
+    for o in A_duts_ortho
+        T = promote_type(T, eltype(o[1]))
+    end
+    for o in contribs_ortho
+        T = promote_type(T, eltype(o[1]))
+    end
     Id = _ortho_identity(n, T)
     num = ntuple(_ -> zeros(T, n, n), 12)
     den = ntuple(k -> T(f_M) .* Id[k], 12)
@@ -487,6 +496,9 @@ function maxwell_alv_ortho(
         throw(ArgumentError("maxwell_alv_ortho: phase counts mismatch"))
     n = size(o_0[1], 1)
     T = promote_type(eltype(o_0[1]), eltype(fractions), eltype(o_H_0[1]))
+    for o in contribs_ortho
+        T = promote_type(T, eltype(o[1]))
+    end
     Id = _ortho_identity(n, T)
     Σ = ntuple(_ -> zeros(T, n, n), 12)
     @inbounds for r in eachindex(contribs_ortho)

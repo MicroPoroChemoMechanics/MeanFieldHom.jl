@@ -1,10 +1,10 @@
 # =============================================================================
-#  11_cylinder.jl
+#  06_cylinder.jl
 #
 #  Hill polarization tensor for infinite cylindrical inclusions.
 #
 #  Run from the MeanFieldHom.jl root:
-#    julia --project=. scripts/11_cylinder.jl
+#    julia --project=. scripts/06_cylinder.jl
 #
 #  Sections:
 #   § 1  Circular cylinder (b = c) in isotropic matrix — TensTI{4} output

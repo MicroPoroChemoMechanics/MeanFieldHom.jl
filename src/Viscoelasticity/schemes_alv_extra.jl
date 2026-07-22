@@ -77,14 +77,15 @@ function asymmetric_self_consistent_alv(
         throw(ArgumentError("asymmetric_self_consistent_alv: matrix property is not a ViscoLaw"))
     C_M = _trapezoidal_relaxation(C_M_law, times, 6)
     incl_names = inclusion_phase_names(rve)
-    C_phases = Matrix{eltype(C_M)}[]
+    # Eltype-generic containers (Dual-safe — see schemes_alv_sc.jl).
+    C_phases = Matrix[]
     geometries = Any[]
-    fractions = Float64[]
+    fractions = typeof(matrix_volume_fraction(rve))[]   # eltype of the RVE amounts
     symmetrizes = AbstractSymmetrize[]
     crack_data = Tuple{
-        Any, Float64, AbstractSymmetrize,
-        Union{Nothing, Matrix{Float64}},
-        Union{Nothing, Matrix{Float64}},
+        Any, Any, AbstractSymmetrize,
+        Union{Nothing, AbstractMatrix},
+        Union{Nothing, AbstractMatrix},
     }[]
     for name in incl_names
         ph = rve.phases[name]
@@ -96,7 +97,7 @@ function asymmetric_self_consistent_alv(
                 _trapezoidal_relaxation_scalar(ph.properties[:Rt], times) : nothing
             push!(
                 crack_data, (
-                    ph.geometry, Float64(a.value),
+                    ph.geometry, a.value,
                     phase_symmetrize(rve, name), Rn_mat, Rt_mat,
                 )
             )
@@ -111,12 +112,15 @@ function asymmetric_self_consistent_alv(
         push!(symmetrizes, phase_symmetrize(rve, name))
     end
 
-    U_M_phases = Matrix{Float64}[_tens_to_mandel66(tens_UA(g)) for g in geometries]
-    V_M_phases = Matrix{Float64}[_tens_to_mandel66(tens_VA(g)) for g in geometries]
+    U_M_phases = Matrix[_tens_to_mandel66(tens_UA(g)) for g in geometries]
+    V_M_phases = Matrix[_tens_to_mandel66(tens_VA(g)) for g in geometries]
 
+    Tp = _alv_promoted_eltype(
+        vcat(Matrix[C_M], C_phases), fractions, U_M_phases, crack_data
+    )
     n = length(times)
-    Id = _identity_alv(n, eltype(C_M))
-    C_n = copy(C_M)
+    Id = _identity_alv(n, Tp)
+    C_n = Tp.(C_M)
     best_resid = Inf
     C_best = C_n
 
@@ -268,7 +272,7 @@ function differential_alv(
                     name = name,
                     C_r = _trapezoidal_relaxation(C_r_law, times, 6),
                     geom = ph.geometry,
-                    target = Float64(amt.value),
+                    target = amt.value,
                     sym = phase_symmetrize(rve, name),
                     U_M = _tens_to_mandel66(tens_UA(ph.geometry)),
                     V_M = _tens_to_mandel66(tens_VA(ph.geometry)),
@@ -285,7 +289,7 @@ function differential_alv(
                 crack_data, (
                     name = name,
                     geom = ph.geometry,
-                    target = Float64(amt.value),
+                    target = amt.value,
                     sym = phase_symmetrize(rve, name),
                     Rn_mat = Rn_mat,
                     Rt_mat = Rt_mat,
@@ -299,9 +303,19 @@ function differential_alv(
         _resolve_paths_alv(Schemes.Proportional(), rve, nsteps) :
         _resolve_paths_alv(trajectory, rve, nsteps)
 
-    # ODE state and parameters.
+    # ODE state and parameters — the state carries the promoted eltype of
+    # every input (Dual-safe, cf. `_alv_promoted_eltype`).
+    Tp = eltype(C_M_full)
+    for sd in solid_data
+        Tp = promote_type(Tp, eltype(sd.C_r), typeof(sd.target), eltype(sd.U_M))
+    end
+    for cd in crack_data
+        Tp = promote_type(Tp, typeof(cd.target))
+        cd.Rn_mat === nothing || (Tp = promote_type(Tp, eltype(cd.Rn_mat)))
+        cd.Rt_mat === nothing || (Tp = promote_type(Tp, eltype(cd.Rt_mat)))
+    end
     sz = 6 * n
-    x0 = vec(copy(C_M_full))
+    x0 = vec(Tp.(C_M_full))
     ode_p = (
         n = n, sz = sz,
         solid_data = solid_data,

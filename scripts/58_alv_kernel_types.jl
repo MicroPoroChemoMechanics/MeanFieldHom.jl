@@ -1,5 +1,5 @@
 # =============================================================================
-#  42_alv_kernel_types.jl
+#  58_alv_kernel_types.jl
 #
 #  Demonstration of the structured ALV kernel types
 #  `ALVKernelISO / ALVKernelTI / ALVKernelOrtho` (`<: AbstractMatrix{T}`)
@@ -12,7 +12,7 @@
 #  remain in the structured class without ever materialising the full
 #  block matrix.
 #
-#  Usage  : julia --project scripts/42_alv_kernel_types.jl
+#  Usage  : julia --project scripts/58_alv_kernel_types.jl
 # =============================================================================
 
 import Pkg

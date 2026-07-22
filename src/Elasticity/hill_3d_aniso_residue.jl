@@ -20,7 +20,16 @@ anisotropic matrix, evaluated by reducing the 2-D surface integral of
 Cauchy residue theorem of [Masson 2008](@cite masson2008). The inner
 ``\\varphi`` integral is collapsed into a finite sum over the roots of
 the determinant of the acoustic tensor lying inside the unit circle.
-Float64 only (PolynomialRoots).
+
+!!! note "Float64 only, by design"
+    The residue algorithm finds polynomial roots (`PolynomialRoots`) and
+    therefore only accepts `Float64` coefficients — it does NOT propagate
+    `ForwardDiff.Dual`, `Complex`, or symbolic element types.  For those,
+    use the `NestedQuadGK` backend (`method = :nestedquadgk`), which is
+    type-generic and AD-compatible.  The `:auto` dispatch already picks
+    `NestedQuadGK` automatically whenever `eltype(C₀) !== Float64`
+    (see `Core/dispatch.jl`); only an explicit `method = :residues` under a
+    non-`Float64` matrix will error.
 """
 function _hill_3d_aniso_residue(
         ell::Ellipsoid{3}, C₀;

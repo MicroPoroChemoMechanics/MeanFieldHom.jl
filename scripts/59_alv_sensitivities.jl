@@ -1,5 +1,5 @@
 # =============================================================================
-#  43_alv_sensitivities.jl
+#  59_alv_sensitivities.jl
 #
 #  Autodiff sensitivities (`ForwardDiff.derivative`, `gradient`) of an ALV
 #  effective property w.r.t. RVE parameters.  Mirrors the elastic
@@ -24,7 +24,7 @@
 #  Reference : @sanahuja2013 §4 ; @barthelemyIJES2019 §3 ; analogous to
 #  the elastic-side @bessoIJSS2024 sensitivity pipeline.
 #
-#  Usage : julia --project scripts/43_alv_sensitivities.jl
+#  Usage : julia --project scripts/59_alv_sensitivities.jl
 # =============================================================================
 
 import Pkg

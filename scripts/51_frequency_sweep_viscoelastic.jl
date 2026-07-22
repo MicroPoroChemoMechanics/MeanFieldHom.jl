@@ -1,5 +1,5 @@
 # =============================================================================
-#  24_frequency_sweep_viscoelastic.jl
+#  51_frequency_sweep_viscoelastic.jl
 #
 #  Frequency sweep on a 2-phase viscoelastic RVE using the Mori-Tanaka and
 #  self-consistent schemes. Each phase has a Maxwell-model relaxation

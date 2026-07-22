@@ -62,15 +62,17 @@ function self_consistent_alv_newton(
 
     C_M_full = _trapezoidal_relaxation(C_M_law, times, 6)
 
-    C_phases_full = Matrix{Float64}[C_M_full]
+    # Eltype-generic containers (`ForwardDiff.Dual` moduli, fractions or
+    # geometry parameters must flow through — no `Float64` hard-coding).
+    C_phases_full = Matrix[C_M_full]
     geometries = Any[rve.phases[rve.matrix_name].geometry]
-    fractions = Float64[f_M]
+    fractions = [f_M]
     symmetrizes = AbstractSymmetrize[NoSymmetrize()]
 
     crack_data_full = Tuple{
-        Any, Float64, AbstractSymmetrize,
-        Union{Nothing, Matrix{Float64}},
-        Union{Nothing, Matrix{Float64}},
+        Any, Any, AbstractSymmetrize,
+        Union{Nothing, AbstractMatrix},
+        Union{Nothing, AbstractMatrix},
     }[]
 
     for name in incl_names
@@ -85,7 +87,7 @@ function self_consistent_alv_newton(
                 _trapezoidal_relaxation_scalar(ph.properties[:Rt], times) : nothing
             push!(
                 crack_data_full, (
-                    ph.geometry, Float64(a.value),
+                    ph.geometry, a.value,
                     phase_symmetrize(rve, name), Rn_mat, Rt_mat,
                 )
             )
@@ -100,16 +102,30 @@ function self_consistent_alv_newton(
         push!(symmetrizes, phase_symmetrize(rve, name))
     end
 
-    U_M_phases = Matrix{Float64}[_tens_to_mandel66(tens_UA(g)) for g in geometries]
-    V_M_phases = Matrix{Float64}[_tens_to_mandel66(tens_VA(g)) for g in geometries]
+    U_M_phases = Matrix[_tens_to_mandel66(tens_UA(g)) for g in geometries]
+    V_M_phases = Matrix[_tens_to_mandel66(tens_VA(g)) for g in geometries]
+
+    # Promoted scalar type of every input the Newton state must carry
+    # (matrix/phase kernels, fractions, geometry tensors, crack data) so
+    # outer `ForwardDiff.Dual` parameters propagate through the root-find.
+    Tp = promote_type(
+        eltype(C_M_full), eltype(fractions),
+        (eltype(C) for C in C_phases_full)...,
+        (eltype(U) for U in U_M_phases)...,
+    )
+    for (_, ε, _, Rn, Rt) in crack_data_full
+        Tp = promote_type(Tp, typeof(ε))
+        Rn === nothing || (Tp = promote_type(Tp, eltype(Rn)))
+        Rt === nothing || (Tp = promote_type(Tp, eltype(Rt)))
+    end
 
     # State : lower-triangular (α[k,l], β[k,l]) for l ≤ k ≤ n.
     # Initial guess from the matrix kernel — the SC root is the SC
     # extension of `C_M` driven by the inclusions, so `C_M` is the
     # natural starting point at every time row.
     α_M, β_M = iso_params_from_blocks(C_M_full)
-    α_full = copy(α_M)
-    β_full = copy(β_M)
+    α_full = Tp.(α_M)
+    β_full = Tp.(β_M)
 
     for i in 1:n
         # Slice phase data to the (1..i) sub-grid.
@@ -122,7 +138,7 @@ function self_consistent_alv_newton(
                 )
                 for (g, ε, sym, Rn, Rt) in crack_data_full
         ]
-        Id_i = _identity_alv(i, Float64)
+        Id_i = _identity_alv(i, Tp)
 
         residual_row_i = function (p)
             T = eltype(p)
@@ -142,7 +158,7 @@ function self_consistent_alv_newton(
             # `_sc_alv_step` is dispatched on `Id` element type, so we
             # promote the identity to the input element type to keep
             # the pipeline `Dual`-friendly.
-            Id_T = T === Float64 ? Id_i : T.(Id_i)
+            Id_T = T === Tp ? Id_i : T.(Id_i)
             C_m_new_i = _sc_alv_step(
                 C_m_i, C_phases_i, U_M_phases, V_M_phases,
                 fractions, i, Id_T, symmetrizes;
@@ -159,8 +175,8 @@ function self_consistent_alv_newton(
 
         # Initial guess at row i : reuse the matrix-driven values
         # (or the previously-extrapolated row if i > 1).
-        p = Float64[α_full[i, j] for j in 1:i]
-        append!(p, Float64[β_full[i, j] for j in 1:i])
+        p = Tp[α_full[i, j] for j in 1:i]
+        append!(p, Tp[β_full[i, j] for j in 1:i])
 
         for iter in 1:maxiters_per_row
             r = residual_row_i(p)

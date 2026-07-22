@@ -1,5 +1,5 @@
 # =============================================================================
-#  46_differential_loading_paths.jl
+#  24_differential_loading_paths.jl
 #
 #  Demonstrates the **path-dependence of the differential homogenization
 #  scheme** (DEM) by computing the effective stiffness of a 3-phase
@@ -21,10 +21,10 @@
 #  as a dilute inclusion in the *current* effective medium, which
 #  itself depends on the prior incorporation history.
 #
-#  Output : `scripts/figures/46_differential_loading_paths.png` plotting
+#  Output : `scripts/figures/24_differential_loading_paths.png` plotting
 #  the bulk and shear moduli of `C^hom(τ)` along each path.
 #
-#  Usage  : julia --project scripts/46_differential_loading_paths.jl
+#  Usage  : julia --project scripts/24_differential_loading_paths.jl
 # =============================================================================
 
 import Pkg
@@ -136,7 +136,7 @@ end
 
 fig = plot(p_k, p_μ; layout = (1, 2), size = (1400, 600))
 mkpath(joinpath(@__DIR__, "figures"))
-out = joinpath(@__DIR__, "figures", "46_differential_loading_paths.png")
+out = joinpath(@__DIR__, "figures", "24_differential_loading_paths.png")
 savefig(fig, out)
 println("\nSaved : $out")
 

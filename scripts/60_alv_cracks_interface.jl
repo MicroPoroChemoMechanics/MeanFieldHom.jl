@@ -1,5 +1,5 @@
 # =============================================================================
-#  44_alv_cracks_interface.jl
+#  60_alv_cracks_interface.jl
 #
 #  Cross-check **ALV penny cracks with finite interface stiffness
 #  `(Rn(t,t'), Rt(t,t'))`** between MeanFieldHom.jl and ECHOES C++.
@@ -25,8 +25,8 @@
 #  Output : a plot overlaying the Julia and ECHOES C++ creep responses
 #  ε_xx(t), plus a numeric report of the maximum relative discrepancy.
 #
-#  Usage  : julia --project scripts/44_alv_cracks_interface.jl
-#  Output : scripts/figures/44_alv_cracks_interface.png
+#  Usage  : julia --project scripts/60_alv_cracks_interface.jl
+#  Output : scripts/figures/60_alv_cracks_interface.png
 # =============================================================================
 
 import Pkg
@@ -207,6 +207,6 @@ for name in SCHEME_NAMES
 end
 
 mkpath(joinpath(@__DIR__, "figures"))
-out = joinpath(@__DIR__, "figures", "44_alv_cracks_interface.png")
+out = joinpath(@__DIR__, "figures", "60_alv_cracks_interface.png")
 savefig(plt, out)
 println("Saved : $out")

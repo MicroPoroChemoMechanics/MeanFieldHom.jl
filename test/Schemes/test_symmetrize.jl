@@ -8,7 +8,8 @@ using Test
 using MeanFieldHom
 using TensND
 using LinearAlgebra
-import MeanFieldHom.Schemes: _apply_symmetrize
+import MeanFieldHom.Schemes: _apply_symmetrize, _project_matrix
+import ForwardDiff as FD
 
 @testset "symmetrize" begin
 
@@ -54,28 +55,60 @@ import MeanFieldHom.Schemes: _apply_symmetrize
         @test TensND.get_data(Kp)[1] ≈ (1.5 + 2.0 + 2.5) / 3.0
     end
 
-    @testset "TI projection — identity on coaxial TI(ez) tensor" begin
+    @testset "TI average — identity on coaxial TI(ez) tensor" begin
         n = (0.0, 0.0, 1.0)
         # Build a TI(ez) tensor manually via TensND constructor.
         data = (1.0, 2.0, 0.5, 3.0, 4.0)   # (ℓ₁, ℓ₂, ℓ₃, ℓ₅, ℓ₆)
         T = TensND.TensTI{4, Float64, 5}(data, n)
         Tp = _apply_symmetrize(T, TISymmetrize(n))
-        @test Tp isa TensND.TensTI{4, Float64, 5}
-        # Walpole 5-component decomposition is preserved up to numerical noise.
-        for (a, b) in zip(TensND.get_data(Tp), data)
+        # The exact azimuthal average now lives in the full 8-dim space,
+        # with the extra components exactly zero for a TI(ez) input.
+        @test Tp isa TensND.TensTI{4, Float64, 8}
+        ℓ = TensND.get_ℓ8(Tp)
+        ref = (1.0, 2.0, 0.5, 0.5, 3.0, 4.0, 0.0, 0.0)
+        for (a, b) in zip(ℓ, ref)
+            @test a ≈ b atol = 1.0e-10
+        end
+        # best-fit projection recovers the 5-component form
+        bf = best_fit_ti(T, n)
+        @test bf isa TensND.TensTI{4, Float64, 5}
+        for (a, b) in zip(TensND.get_data(bf), data)
             @test a ≈ b atol = 1.0e-10
         end
     end
 
-    @testset "TI projection — 2nd-order axial / transverse split" begin
+    @testset "TI average — 2nd-order axial / transverse split" begin
         n = (0.0, 0.0, 1.0)
         K = TensND.Tens(Diagonal([1.5, 2.0, 4.0]))
         Kp = _apply_symmetrize(K, TISymmetrize(n))
-        @test Kp isa TensND.TensTI{2, Float64, 2}
-        a, b = TensND.get_data(Kp)
-        # axial b = K[3,3] = 4.0 ; transverse a = (K[1,1] + K[2,2]) / 2 = 1.75
+        @test Kp isa TensND.TensTI{2, Float64, 3}
+        a, b, c = TensND.get_data(Kp)
+        # axial b = K[3,3] = 4.0 ; transverse a = (K[1,1] + K[2,2]) / 2 = 1.75 ;
+        # antisymmetric part c = 0 for a symmetric input
         @test b ≈ 4.0
         @test a ≈ 1.75
+        @test abs(c) < 1.0e-14
+        # non-symmetric input: the antisymmetric in-plane part is PRESERVED
+        m = [1.5 0.6 0.0; -0.6 2.0 0.0; 0.0 0.0 4.0]
+        Kp2 = _apply_symmetrize(TensND.Tens(m), TISymmetrize(n))
+        a2, b2, c2 = TensND.get_data(Kp2)
+        @test c2 ≈ (m[2, 1] - m[1, 2]) / 2
+        @test TensND.get_array(Kp2)[1, 2] ≈ 0.6
+        @test TensND.get_array(Kp2)[2, 1] ≈ -0.6
+    end
+
+    @testset "TISymmetrize — matrix_projection option" begin
+        sym_def = TISymmetrize((0.0, 0.0, 1.0))
+        @test sym_def.matrix_projection === :iso
+        sym_none = TISymmetrize((0.0, 0.0, 1.0); matrix_projection = :none)
+        @test sym_none.matrix_projection === :none
+        @test_throws ArgumentError TISymmetrize((0.0, 0.0, 1.0); matrix_projection = :foo)
+        # _project_matrix behaviour
+        C_ti = TensND.TensTI{4, Float64, 5}((10.0, 6.0, 2.0, 3.0, 4.0), (0.0, 0.0, 1.0))
+        @test _project_matrix(C_ti, sym_none) === C_ti
+        @test _project_matrix(C_ti, sym_def) isa TensND.TensISO{4, 3}
+        sym_ti = TISymmetrize((0.0, 0.0, 1.0); matrix_projection = :ti)
+        @test _project_matrix(C_ti, sym_ti) isa TensND.TensTI{4, Float64, 5}
     end
 
     @testset "RVE-level symmetrize integration — porous oblate ⇒ iso C_eff" begin
@@ -115,5 +148,93 @@ import MeanFieldHom.Schemes: _apply_symmetrize
         a = TensND.get_array(C_eff)
         @test a[1, 1, 1, 1] ≈ a[2, 2, 2, 2] atol = 1.0e-8
         @test a[1, 1, 2, 2] ≈ a[2, 2, 1, 1] atol = 1.0e-8
+    end
+
+    @testset "TI(ez) average of a coaxial spheroid == NoSymmetrize (exactness)" begin
+        # A spheroid whose revolution axis coincides with the TI axis is
+        # already axially invariant : the exact azimuthal average must leave
+        # its contribution strictly unchanged.
+        C_m = TensISO{3}(3 * 20.0, 2 * 12.0)
+        C_i = TensISO{3}(3 * 80.0, 2 * 50.0)
+        rve1 = RVE(:M)
+        add_matrix!(rve1, Ellipsoid(1.0), Dict(:C => C_m))
+        add_phase!(rve1, :I, Spheroid(5.0), Dict(:C => C_i); fraction = 0.2)
+        C_ref = homogenize(rve1, MoriTanaka(), :C)
+        rve2 = RVE(:M)
+        add_matrix!(rve2, Ellipsoid(1.0), Dict(:C => C_m))
+        add_phase!(
+            rve2, :I, Spheroid(5.0), Dict(:C => C_i);
+            fraction = 0.2, symmetrize = TISymmetrize((0.0, 0.0, 1.0))
+        )
+        C_ti = homogenize(rve2, MoriTanaka(), :C)
+        @test maximum(abs, TensND.get_array(C_ref) .- TensND.get_array(C_ti)) < 1.0e-10
+    end
+
+    @testset "θ-binned TI(ez) families converge to the ISO average (MT)" begin
+        # Pichler-Hellmich-style discretization : tilted spheroids at polar
+        # angles θ_k with solid-angle weights, each phase exactly averaged
+        # about the GLOBAL axis ez (the azimuthal orbit of the orientation
+        # family — echoes' `symmetrize=[TI]` semantics).  As nθ grows this
+        # must converge (in O(Δθ²)) to the single ISO-symmetrized phase.
+        C_m = TensISO{3}(3 * 20.0, 2 * 12.0)
+        C_i = TensISO{3}(3 * 80.0, 2 * 50.0)
+        rve_iso = RVE(:M)
+        add_matrix!(rve_iso, Ellipsoid(1.0), Dict(:C => C_m))
+        add_phase!(rve_iso, :I, Spheroid(5.0), Dict(:C => C_i); fraction = 0.15, symmetrize = :iso)
+        Aiso = TensND.get_array(homogenize(rve_iso, MoriTanaka(), :C))
+        ez = (0.0, 0.0, 1.0)
+        errs = Float64[]
+        for nθ in (10, 20)
+            rve_bins = RVE(:M)
+            add_matrix!(rve_bins, Ellipsoid(1.0), Dict(:C => C_m))
+            edges = range(0, π / 2; length = nθ + 1)
+            for k in 1:nθ
+                θm, θp = edges[k], edges[k + 1]
+                θ = (θm + θp) / 2
+                w = cos(θm) - cos(θp)
+                add_phase!(
+                    rve_bins, Symbol(:B, k),
+                    Spheroid(5.0; euler_angles = (θ, 0.0, 0.0)), Dict(:C => C_i);
+                    fraction = 0.15 * w, symmetrize = TISymmetrize(ez)
+                )
+            end
+            A = TensND.get_array(homogenize(rve_bins, MoriTanaka(), :C))
+            push!(errs, maximum(abs, A .- Aiso) / maximum(abs, Aiso))
+        end
+        @test errs[1] < 2.0e-4
+        @test errs[2] < 5.0e-5          # ~4× reduction: O(Δθ²) convergence
+    end
+
+    @testset "multi-axis TI phases : SC runs, ForwardDiff-compatible" begin
+        # The formerly impossible configuration : several simultaneously
+        # declared TI(axis_i) phases with non-coaxial axes inside the
+        # generic SC iteration (used to hit a TensND axis assertion, then a
+        # rank-deficient 9×9 inversion).
+        C_i = TensISO{3}(3 * 80.0, 2 * 50.0)
+        θs = (0.0, π / 4, π / 2)
+        build = x -> begin
+            rv = RVE(:M)
+            add_matrix!(rv, Ellipsoid(1.0), Dict(:C => TensISO{3}(3 * 20.0 * x, 2 * 12.0 * x)))
+            for (k, θ) in enumerate(θs)
+                add_phase!(
+                    rv, Symbol(:I, k),
+                    Spheroid(5.0; euler_angles = (θ, 0.0, 0.0)), Dict(:C => C_i);
+                    fraction = 0.05,
+                    symmetrize = TISymmetrize((sin(θ), 0.0, cos(θ)))
+                )
+            end
+            rv
+        end
+        C_sc = homogenize(build(1.0), SelfConsistent(), :C)
+        a = TensND.get_array(C_sc)
+        @test all(isfinite, a)
+        # stiffer than the matrix : C₃₃₃₃(matrix) = (α + 2β)/3 = (60 + 48)/3 = 36
+        @test a[3, 3, 3, 3] > 36.0
+        # ForwardDiff through the multi-axis SC (generic anisotropic running
+        # estimate → NestedQuadGK Hill branch under Dual)
+        f = x -> TensND.get_array(homogenize(build(x), SelfConsistent(), :C))[3, 3, 3, 3]
+        g = FD.derivative(f, 1.0)
+        h = 1.0e-5
+        @test g ≈ (f(1.0 + h) - f(1.0 - h)) / 2h rtol = 1.0e-4
     end
 end

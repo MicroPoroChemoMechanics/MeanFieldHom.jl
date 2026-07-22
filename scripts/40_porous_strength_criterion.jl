@@ -1,5 +1,5 @@
 # =============================================================================
-#  30_porous_strength_criterion.jl
+#  40_porous_strength_criterion.jl
 #
 #  Strength criterion ellipses for an isotropic porous medium under macroscopic
 #  hydrostatic + deviatoric loading. Reproduces the simple verification script
@@ -121,6 +121,6 @@ vline!(p, [0.0]; color = :black, lw = 0.5, label = "")
 
 figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
-figpath = joinpath(figdir, "30_porous_strength_criterion.png")
+figpath = joinpath(figdir, "40_porous_strength_criterion.png")
 savefig(p, figpath)
 @printf "\nSaved : %s\n" figpath

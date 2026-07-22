@@ -1,5 +1,5 @@
 # =============================================================================
-#  32_local_nlayers.jl
+#  31_local_nlayers.jl
 #
 #  Radial stress profile σ_rr(r), σ_θθ(r) inside a 2-layer composite
 #  sphere (matrix–core–shell) under a remote hydrostatic far-field
@@ -17,8 +17,8 @@
 #  `scripts/bench_echoes/benchmark_nlayers.jl` for a cross-check of
 #  effective and per-layer averages against the C++ reference.
 #
-#  Usage:  julia --project scripts/32_local_nlayers.jl
-#  Saves : scripts/figures/32_local_nlayers.png
+#  Usage:  julia --project scripts/31_local_nlayers.jl
+#  Saves : scripts/figures/31_local_nlayers.png
 # =============================================================================
 
 import Pkg
@@ -191,6 +191,6 @@ p_full = plot(
 
 const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
-figpath = joinpath(figdir, "32_local_nlayers.png")
+figpath = joinpath(figdir, "31_local_nlayers.png")
 savefig(p_full, figpath)
 @printf "Saved : %s\n" figpath

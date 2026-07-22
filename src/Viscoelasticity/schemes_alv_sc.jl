@@ -58,9 +58,12 @@ function self_consistent_alv(
     C_0 = _trapezoidal_relaxation(C_M_law, times, 6)
     f_M = matrix_volume_fraction(rve)
     incl_names = inclusion_phase_names(rve)
-    C_phases = Matrix{eltype(C_0)}[C_0]
+    # Containers are eltype-generic : volume fractions, crack densities and
+    # geometry-derived tensors may carry `ForwardDiff.Dual` (or any Number)
+    # coefficients — no `Float64` hard-coding on any AD-reachable path.
+    C_phases = Matrix[C_0]
     geometries = Any[rve.phases[rve.matrix_name].geometry]
-    fractions = Float64[f_M]
+    fractions = [f_M]
     symmetrizes = AbstractSymmetrize[NoSymmetrize()]
     # crack_data tuple: (geom, density, sym, Rn_mat::Union{Nothing, Matrix},
     #                    Rt_mat::Union{Nothing, Matrix}).  The interface
@@ -68,9 +71,9 @@ function self_consistent_alv(
     # every SC iteration when computing the crack stiffness contribution
     # against the running estimate C_m.
     crack_data = Tuple{
-        Any, Float64, AbstractSymmetrize,
-        Union{Nothing, Matrix{Float64}},
-        Union{Nothing, Matrix{Float64}},
+        Any, Any, AbstractSymmetrize,
+        Union{Nothing, AbstractMatrix},
+        Union{Nothing, AbstractMatrix},
     }[]
     for name in incl_names
         ph = rve.phases[name]
@@ -84,7 +87,7 @@ function self_consistent_alv(
                 _trapezoidal_relaxation_scalar(ph.properties[:Rt], times) : nothing
             push!(
                 crack_data, (
-                    ph.geometry, Float64(a.value),
+                    ph.geometry, a.value,
                     phase_symmetrize(rve, name), Rn_mat, Rt_mat,
                 )
             )
@@ -99,15 +102,19 @@ function self_consistent_alv(
         push!(symmetrizes, phase_symmetrize(rve, name))
     end
 
-    # 2. Pre-compute the Mandel forms of U^A, V^A for each phase.
-    U_M_phases = Matrix{Float64}[_tens_to_mandel66(tens_UA(g)) for g in geometries]
-    V_M_phases = Matrix{Float64}[_tens_to_mandel66(tens_VA(g)) for g in geometries]
+    # 2. Pre-compute the Mandel forms of U^A, V^A for each phase
+    #    (eltype follows the geometry parameters — Dual-safe).
+    U_M_phases = Matrix[_tens_to_mandel66(tens_UA(g)) for g in geometries]
+    V_M_phases = Matrix[_tens_to_mandel66(tens_VA(g)) for g in geometries]
 
-    # 3. Iterate.
+    # 3. Iterate — the running estimate carries the promoted eltype of every
+    #    input (kernels, fractions, geometry tensors, crack data) so Dual
+    #    parameters propagate through the fixed point.
+    Tp = _alv_promoted_eltype(C_phases, fractions, U_M_phases, crack_data)
     n = length(times)
     sz = 6 * n
-    Id = _identity_alv(n, eltype(C_0))
-    C_m = copy(C_0)
+    Id = _identity_alv(n, Tp)
+    C_m = Tp.(C_0)
     best_resid = Inf
     C_best = C_m
 

@@ -9,6 +9,8 @@ Contents
 - `traits.jl`             : algorithm and material-symmetry traits
 - `bases.jl`              : helpers around `TensND` bases
 - `tensor_helpers.jl`     : low-level utilities (`_δ`, `_C_array`, Voigt)
+- `rotational_average.jl` : exact SO(3) / azimuthal averages (ISO, TI) of
+                             minor-symmetric tensors, incl. Mandel-block forms
 - `moduli.jl`             : modulus extractors for the common symmetry classes
 - `newton_potential.jl`   : Newton potentials (2D / 3D)
 - `green_kernel.jl`       : acoustic tensor and its adjugate / determinant
@@ -30,6 +32,7 @@ include("abstractions.jl")
 include("traits.jl")
 include("bases.jl")
 include("tensor_helpers.jl")
+include("rotational_average.jl")
 include("moduli.jl")
 include("newton_potential.jl")
 include("green_kernel.jl")
@@ -54,6 +57,11 @@ export MaterialSymmetry, IsotropicSym, TransverselyIsotropicSym,
 
 # Modulus extractors (public — consumed by sub-modules and users)
 export extract_iso_moduli, extract_ti_moduli, extract_iso_conductivity
+
+# Exact rotation-group averages (public — used by Schemes, ALV and users)
+export isotropify, transverse_isotropify
+export ti_average_mandel66, iso_average_mandel66
+export mandel66_minor, array_from_mandel66
 
 # Newton potentials (public — used downstream and in tests)
 export newton_potential_3d, newton_potential_2d, newton_potential_3d_cylinder
