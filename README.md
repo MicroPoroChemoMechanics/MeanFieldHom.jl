@@ -35,22 +35,23 @@ The package is geared toward prototyping, symbolic simplification
 
 ## Installation
 
-`MeanFieldHom.jl` is a **private** package (public release planned). Clone it
-and instantiate its environment:
+`MeanFieldHom.jl` is not (yet) in the General registry; install it directly
+from GitHub:
 
-```shell
-git clone https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl
-julia --project=MeanFieldHom.jl -e 'using Pkg; Pkg.instantiate()'
+```julia
+using Pkg
+Pkg.add(url = "https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl")
 ```
 
-Its MPCM dependencies
-[`DECUHR.jl`](https://github.com/MicroPoroChemoMechanics/DECUHR.jl) (adaptive
-cubature backend) and `TensND.jl` (structured tensors) are pinned to their
-GitHub repositories via `[sources]`; all other dependencies (`Integrals.jl`,
-`OrdinaryDiffEq.jl`, `Elliptic.jl`, `Polynomials.jl`, `PolynomialRoots.jl`,
-`QuadGK.jl`, `Tensors.jl`, …) come from the Julia General registry.
+All dependencies (`TensND.jl`, `OrdinaryDiffEq.jl`, `Elliptic.jl`,
+`Polynomials.jl`, `PolynomialRoots.jl`, `QuadGK.jl`, `Tensors.jl`, …) are
+resolved from the Julia General registry.
 
-Type-generic elliptic integrals are bundled as the
+The [`DECUHR.jl`](https://github.com/MicroPoroChemoMechanics/DECUHR.jl) adaptive
+cubature backend is **optional** (a package extension): run
+`import DECUHR, Integrals` to enable `method = :decuhr`; otherwise the built-in
+`method = :nestedquadgk` (QuadGK-based, ForwardDiff-compatible) covers the same
+cases. Type-generic elliptic integrals are bundled as the
 `MeanFieldHom.Elliptic` submodule.
 
 ## Quick start

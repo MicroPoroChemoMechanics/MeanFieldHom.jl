@@ -114,10 +114,12 @@ function _hill_3d_aniso_residue(
     # Detect residue-path failure (NaN propagated from an unsupported
     # multiplicity, typically TI/ORTHO matrix aligned with the ellipsoid axes
     # producing mult ≥ 4 in log_I or mult ≥ 3 in log_z) and silently fall
-    # back to the DECUHR backend, which handles those cases via its internal
-    # singularity treatment rather than via complex-plane residues.
+    # back to the nested-QuadGK backend, which handles those cases via
+    # ordinary adaptive quadrature (ForwardDiff-compatible, no extra
+    # dependency). Previously this fell back to the DECUHR backend, which is
+    # now an optional extension; NestedQuadGK targets the same integral.
     if any(isnan, P_vals)
-        return _hill_3d_aniso_decuhr(
+        return _hill_3d_aniso_nestedquadgk(
             ell, C₀;
             abstol = abstol, reltol = reltol,
             maxiters = maxiters

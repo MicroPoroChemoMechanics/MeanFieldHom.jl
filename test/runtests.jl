@@ -1,6 +1,11 @@
 using Test
 using MeanFieldHom
 
+# Load DECUHR + Integrals so the `MeanFieldHomDECUHRExt` extension activates:
+# several tests cross-validate the `method = :decuhr` path against the residue
+# and nested-QuadGK backends. (DECUHR is a weak dependency of MeanFieldHom.)
+import DECUHR, Integrals
+
 @testset "MeanFieldHom" begin
     @testset "Elliptic" begin
         include("Elliptic/test_elliptic.jl")

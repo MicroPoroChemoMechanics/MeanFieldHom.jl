@@ -51,15 +51,11 @@ function _Qnn_star_decuhr(
         return T[buf[1, 1], buf[2, 2], buf[3, 3], buf[1, 2], buf[1, 3], buf[2, 3]]
     end
 
-    prob = Integrals.IntegralProblem(integrand, ([0.0], [π / 2]))
-    sol = Integrals.solve(
-        prob,
-        DecuhrAlgorithm(singul = 1, alpha = 0.0, wrksub = max(5000, maxiters ÷ 32));
+    Tvec = MFH_Core._decuhr_cubature(
+        integrand, [0.0], [π / 2];
+        wrksub = max(5000, maxiters ÷ 32),
         abstol = abstol, reltol = reltol, maxiters = maxiters
     )
-    sol.retcode == Integrals.ReturnCode.Success || sol.retcode == Integrals.ReturnCode.MaxIters ||
-        error("DECUHR failed: retcode = $(sol.retcode)")
-    Tvec = sol.u
 
     fac = ρ / (2 * T(π))
     result = Matrix{T}(undef, 3, 3)
@@ -123,15 +119,11 @@ function _cod_elliptic_decuhr_direct(
         ]
     end
 
-    prob = Integrals.IntegralProblem(integrand, ([0.0, 0.0], [2π, π / 2]))
-    sol = Integrals.solve(
-        prob,
-        DecuhrAlgorithm(singul = 1, alpha = 0.0, wrksub = max(5000, maxiters ÷ 32));
+    Tvec = MFH_Core._decuhr_cubature(
+        integrand, [0.0, 0.0], [2π, π / 2];
+        wrksub = max(5000, maxiters ÷ 32),
         abstol = abstol, reltol = reltol, maxiters = maxiters
     )
-    sol.retcode == Integrals.ReturnCode.Success || sol.retcode == Integrals.ReturnCode.MaxIters ||
-        error("DECUHR failed: retcode = $(sol.retcode)")
-    Tvec = sol.u
 
     fac = inv(2 * Tp(π))
     Tmat = Matrix{Tp}(undef, 3, 3)

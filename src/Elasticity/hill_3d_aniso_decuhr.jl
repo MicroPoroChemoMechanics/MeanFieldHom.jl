@@ -81,18 +81,16 @@ function _hill_3d_aniso_decuhr(
         return vals
     end
 
-    prob = Integrals.IntegralProblem(integrand, ([0.0, 0.0], [1.0, 2π]))
     # `wrksub` must be large enough to hold all adaptive subregions;
-    # approximate upper bound `maxiters / 65` matches the 2D deg-13 rule
-    # (65 evaluation points per subregion).
-    sol = Integrals.solve(
-        prob,
-        DecuhrAlgorithm(singul = 1, alpha = 0.0, wrksub = max(5000, maxiters ÷ 32));
+    # approximate upper bound `maxiters / 32` matches the 2D deg-13 rule
+    # (65 evaluation points per subregion). The actual DECUHR call lives in
+    # the `MeanFieldHomDECUHRExt` extension (see `MFH_Core._decuhr_cubature`).
+    u = MFH_Core._decuhr_cubature(
+        integrand, [0.0, 0.0], [1.0, 2π];
+        wrksub = max(5000, maxiters ÷ 32),
         abstol = abstol, reltol = reltol, maxiters = maxiters
     )
-    sol.retcode == Integrals.ReturnCode.Success || sol.retcode == Integrals.ReturnCode.MaxIters ||
-        error("DECUHR failed: retcode = $(sol.retcode)")
-    P_vals = sol.u ./ T(2π)
+    P_vals = u ./ T(2π)
 
     P_arr = zeros(T, 3, 3, 3, 3)
     idx = 0

@@ -1,0 +1,24 @@
+{
+    "title": "MeanFieldHom.jl: Mean-field homogenization of heterogeneous materials",
+    "description": "Julia framework for mean-field homogenization of heterogeneous materials. Provides Hill polarization tensors for ellipsoidal inclusions (2D/3D, isotropic and anisotropic matrices), crack-opening-displacement tensors, stress and displacement intensity factors for flat cracks, and second-order Hill tensors for transport problems, under a common abstraction hierarchy and dispatch mechanism. ForwardDiff-compatible across every analytical and numerical path.",
+    "creators": [
+        {
+            "name": "Barthélémy, Jean-François",
+            "affiliation": "Cerema, UMR MCD",
+            "orcid": "0000-0002-1968-8939"
+        }
+    ],
+    "upload_type": "software",
+    "access_right": "open",
+    "license": "MIT",
+    "keywords": [
+        "Julia",
+        "homogenization",
+        "micromechanics",
+        "Hill polarization tensor",
+        "Eshelby problem",
+        "crack mechanics",
+        "stress intensity factors",
+        "automatic differentiation"
+    ]
+}
