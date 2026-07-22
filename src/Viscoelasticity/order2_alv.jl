@@ -452,7 +452,15 @@ function _homogenize_alv_order2(
     f_M = matrix_volume_fraction(rve)
 
     incl_names = inclusion_phase_names(rve)
-    fractions = Float64[]
+    # `fractions` must carry whatever element type the RVE amounts store —
+    # typically `Float64` but also `ForwardDiff.Dual` for autodiff
+    # sensitivities via `set_param(rve, AmountParameter(...), Dual(...))`.
+    # A hard-coded `Float64[]` here silently breaks AD through volume
+    # fractions in this order-2 (conductivity/diffusion) path, unlike the
+    # order-4 path which already promotes correctly (`homogenize_alv.jl`).
+    T_amount = isempty(incl_names) ? Float64 :
+        promote_type((typeof(_amount_value(rve, n)) for n in incl_names)...)
+    fractions = T_amount[]
     contribs = Matrix{eltype(K_0)}[]
     A_duts = Matrix{eltype(K_0)}[]
     K_phases = Matrix{eltype(K_0)}[K_0]

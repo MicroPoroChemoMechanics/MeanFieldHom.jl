@@ -32,6 +32,43 @@
 # =============================================================================
 
 """
+    _sym3_inv_acoustic(C₀_arr, ζ) -> NTuple{9}
+
+Inverse of the acoustic tensor `K[i,j] = ζₖ C₀[k,i,j,l] ζₗ` (symmetric, since
+`C₀` has minor symmetry), in closed form: only the 6 upper-triangle scalars of
+`K` are computed, and its inverse is the scalar adjugate/determinant of a
+symmetric 3×3 matrix — no `Matrix` allocation, no LU factorization, Dual-safe.
+Returned flattened in column-major order, so `iK[i + (j-1)*3]` mirrors `iK[i,j]`.
+
+A standalone top-level function (not a nested closure): closures capturing many
+local scalars showed measurably *worse* allocation behaviour than hoisting this
+computation out, so it is kept separate deliberately.
+"""
+@inline function _sym3_inv_acoustic(C₀_arr::AbstractArray{T, 4}, ζ) where {T}
+    K11 = zero(T); K22 = zero(T); K33 = zero(T)
+    K12 = zero(T); K13 = zero(T); K23 = zero(T)
+    for k in 1:3, l in 1:3
+        ζζ = ζ[k] * ζ[l]
+        K11 += ζζ * C₀_arr[k, 1, 1, l]
+        K22 += ζζ * C₀_arr[k, 2, 2, l]
+        K33 += ζζ * C₀_arr[k, 3, 3, l]
+        K12 += ζζ * C₀_arr[k, 1, 2, l]
+        K13 += ζζ * C₀_arr[k, 1, 3, l]
+        K23 += ζζ * C₀_arr[k, 2, 3, l]
+    end
+    det = K11 * K22 * K33 + 2 * K12 * K13 * K23 -
+        K11 * K23 * K23 - K22 * K13 * K13 - K33 * K12 * K12
+    inv_det = one(T) / det
+    iK11 = (K22 * K33 - K23 * K23) * inv_det
+    iK22 = (K11 * K33 - K13 * K13) * inv_det
+    iK33 = (K11 * K22 - K12 * K12) * inv_det
+    iK12 = (K13 * K23 - K33 * K12) * inv_det
+    iK13 = (K12 * K23 - K22 * K13) * inv_det
+    iK23 = (K12 * K13 - K11 * K23) * inv_det
+    return (iK11, iK12, iK13, iK12, iK22, iK23, iK13, iK23, iK33)
+end
+
+"""
     _hill_3d_aniso_nestedquadgk(ell, C₀; abstol, reltol, maxiters) -> AbstractTens{4,3}
 
 Hill polarisation tensor of a 3-D ellipsoid in an arbitrarily
@@ -83,16 +120,7 @@ function _hill_3d_aniso_nestedquadgk(
     function integrand_at(z, φ)
         uz = sqrt(one(T) - T(z) * T(z))
         ζ = (uz * cos(T(φ)), uz * sin(T(φ)) / η, T(z) / ω)
-
-        K = Matrix{T}(undef, 3, 3)
-        for i in 1:3, j in 1:3
-            s = zero(T)
-            for k in 1:3, l in 1:3
-                s += ζ[k] * C₀_arr[k, i, j, l] * ζ[l]
-            end
-            K[i, j] = s
-        end
-        iK = inv(K)
+        iK = _sym3_inv_acoustic(C₀_arr, ζ)
 
         vals = Vector{T}(undef, 21)
         idx = 0
@@ -101,8 +129,8 @@ function _hill_3d_aniso_nestedquadgk(
             for J in I:6
                 k, l = voigt_ij[J]
                 γ = T(0.25) * (
-                    ζ[i] * (iK[j, k] * ζ[l] + iK[j, l] * ζ[k]) +
-                        ζ[j] * (iK[i, k] * ζ[l] + iK[i, l] * ζ[k])
+                    ζ[i] * (iK[j + (k - 1) * 3] * ζ[l] + iK[j + (l - 1) * 3] * ζ[k]) +
+                        ζ[j] * (iK[i + (k - 1) * 3] * ζ[l] + iK[i + (l - 1) * 3] * ζ[k])
                 )
                 idx += 1
                 vals[idx] = γ

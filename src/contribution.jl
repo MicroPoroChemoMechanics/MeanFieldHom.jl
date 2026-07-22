@@ -56,8 +56,13 @@ function compliance_contribution(
         C₀::TensND.AbstractTens{4, 3};
         kw...
     )
-    A_σσ = stress_stress_loc(incl, C₁, C₀; kw...)
-    return (inv(C₁) - inv(C₀)) ⊡ A_σσ
+    # `stress_strain_loc` (unlike `stress_stress_loc`) needs no `inv(C₀)`, so
+    # `S₀` is computed here exactly once and reused for both `A_σσ = A_σε ⊡ S₀`
+    # and the `(S₁ - S₀)` factor, instead of once inside `stress_stress_loc`
+    # and once again here.
+    S₀ = inv(C₀)
+    A_σε = stress_strain_loc(incl, C₁, C₀; kw...)
+    return (inv(C₁) - S₀) ⊡ (A_σε ⊡ S₀)
 end
 
 """
@@ -115,8 +120,12 @@ function resistivity_contribution(
         K₀::TensND.AbstractTens{2, 3};
         kw...
     )
-    A_qq = flux_flux_loc(incl, K₁, K₀; kw...)
-    return (inv(K₁) - inv(K₀)) ⋅ A_qq
+    # `flux_gradient_loc` (unlike `flux_flux_loc`) needs no `inv(K₀)`, so `R₀`
+    # is computed here exactly once and reused for both `A_qq = A_q∇ ⋅ R₀`
+    # and the `(R₁ - R₀)` factor.
+    R₀ = inv(K₀)
+    A_q∇ = flux_gradient_loc(incl, K₁, K₀; kw...)
+    return (inv(K₁) - R₀) ⋅ (A_q∇ ⋅ R₀)
 end
 
 """
