@@ -1,5 +1,5 @@
-<p>
-  <img src="./docs/src/assets/logo.svg" width="100">
+<p align="center">
+  <img src="./docs/src/assets/logo.svg" alt="MeanFieldHom.jl" width="100">
 </p>
 
 # MeanFieldHom
