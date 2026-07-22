@@ -8,6 +8,8 @@ LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
 MeanFieldHom = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 TensND = "474b5345-2588-4284-8a58-2430a1a40cb0"
 
+# TEMPORARY: DECUHR registration on General is pending (submitted, awaiting
+# AutoMerge). Remove the DECUHR line once it appears in the General registry.
 [sources]
 MeanFieldHom = {path = ".."}
-TensND = {url = "https://github.com/MicroPoroChemoMechanics/TensND.jl"}
+DECUHR = {url = "https://github.com/MicroPoroChemoMechanics/DECUHR.jl", rev = "53baddc24890f89b7c9c168cb5bc9047015567ff"}

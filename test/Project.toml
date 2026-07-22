@@ -9,3 +9,9 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
 TensND = "474b5345-2588-4284-8a58-2430a1a40cb0"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+# TEMPORARY: DECUHR registration on General is pending (submitted, awaiting
+# AutoMerge). Remove this [sources] block once DECUHR v0.2.0 appears in the
+# General registry so it resolves normally like TensND.
+[sources]
+DECUHR = {url = "https://github.com/MicroPoroChemoMechanics/DECUHR.jl", rev = "53baddc24890f89b7c9c168cb5bc9047015567ff"}

@@ -26,9 +26,6 @@ MeanFieldHomDECUHRExt = ["DECUHR", "Integrals"]
 MeanFieldHomNonlinearSolveExt = "NonlinearSolve"
 MeanFieldHomSymPyExt = "SymPy"
 
-[sources]
-TensND = {url = "https://github.com/MicroPoroChemoMechanics/TensND.jl"}
-
 [compat]
 DECUHR = "0.2"
 Elliptic = "1"
