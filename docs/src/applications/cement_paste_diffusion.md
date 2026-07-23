@@ -137,17 +137,23 @@ function engineering_model(wc, α = -1.0)
     )
     C_foam = homogenize(foam, SelfConsistent(), :C)
     D_foam = homogenize(foam, SelfConsistent(), :D)
-    k_mu(C_foam)[1] < 1.0e-6 && return (0.0, avg_D(D_foam))  # foam not percolated
 
-    # Level II — cement paste (MT): clinker spheres in the foam matrix.
+    # Level II — cement paste (MT): clinker spheres in the foam matrix.  The
+    # diffusion step stays meaningful even before the solid skeleton percolates
+    # (the impervious clinker still dilutes the foam diffusivity), so it is
+    # computed unconditionally; only the stiffness is gated on percolation — as
+    # in the Echoes reference, whose `C_foam.k` returns NaN below the threshold
+    # and thus falls through to the same clinker-diluted diffusion.
     paste = RVE(:FOAM)
     add_matrix!(paste, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_foam, :D => D_foam))
     add_phase!(
         paste, :CLINKER, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_anhyd, :D => Z2);
         fraction = _fa
     )
-    C_cp = homogenize(paste, MoriTanaka(), :C)
     D_cp = homogenize(paste, MoriTanaka(), :D)
+    k_mu(C_foam)[1] < 1.0e-6 && return (0.0, avg_D(D_cp))  # foam not percolated ⇒ E=0
+
+    C_cp = homogenize(paste, MoriTanaka(), :C)
     return (E_nu(C_cp)[1], avg_D(D_cp))
 end
 
@@ -160,10 +166,9 @@ whole hydration range, for a set of water-to-cement ratios:
 ```@example diffusion
 const WC_LIST = (0.30, 0.40, 0.50, 0.60)
 
-function model_curves(model, wc; n = 120)
-    # Log-spaced in α: the diffusivity rises and drops most steeply at early
-    # hydration, so a uniform grid under-resolves the start of the curve.
-    αs = exp.(range(log(0.02), log(αmax(wc)); length = n))
+function model_curves(model, wc; n = 60)
+    # Linear α grid, as in the Echoes reference (from α = 0.02 to α_max).
+    αs = range(0.02, αmax(wc); length = n)
     E = Float64[]
     D = Float64[]
     a = Float64[]
@@ -509,20 +514,29 @@ The same two threshold maps as **interactive 3D surfaces** over
 values, exactly as the Echoes book renders them with Plotly:
 
 ```@example diffusion
-# Emit a self-contained Plotly surface (plotly.js is loaded globally as a page
-# asset, see docs/make.jl), so the figure is fully interactive: rotate/zoom/hover.
+# Emit an interactive Plotly surface.  Documenter pages load require.js (AMD),
+# so plotly.js must be pulled in *through* require.js — a plain global
+# `<script>`/`Plotly` would be swallowed by the AMD loader and never define the
+# global, leaving the figure blank.  The plot data are embedded inline.
 function plotly_surface(x, y, Z; title, zlabel, uid)
     jsvec(v) = "[" * join(v, ",") * "]"
     jsmat(M) = "[" * join((jsvec(M[i, :]) for i in axes(M, 1)), ",") * "]"
     return Base.HTML("""
     <div id="$uid" style="width:100%;height:520px;"></div>
     <script>
-    Plotly.newPlot("$uid",
-      [{type:"surface", x:$(jsvec(x)), y:$(jsvec(y)), z:$(jsmat(Z)),
-        colorscale:"RdBu", reversescale:true, colorbar:{title:"φ (%)"}}],
-      {title:{text:"$title"}, height:520, margin:{l:0,r:0,t:40,b:0},
-       scene:{xaxis:{title:"log₁₀ ωs"}, yaxis:{title:"log₁₀ ωp"},
-              zaxis:{title:"$zlabel"}}});
+    (function () {
+      var data = [{type:"surface", x:$(jsvec(x)), y:$(jsvec(y)), z:$(jsmat(Z)),
+        colorscale:"RdBu", reversescale:true, colorbar:{title:"φ (%)"}}];
+      var layout = {title:{text:"$title"}, height:520, margin:{l:0,r:0,t:40,b:0},
+        scene:{xaxis:{title:"log₁₀ ωs"}, yaxis:{title:"log₁₀ ωp"},
+               zaxis:{title:"$zlabel"}}};
+      function draw(Plotly) { Plotly.newPlot("$uid", data, layout); }
+      if (window.Plotly) { draw(window.Plotly); }
+      else if (window.require) {
+        require.config({paths: {plotly_mfh: "https://cdn.plot.ly/plotly-2.35.2.min"}});
+        require(["plotly_mfh"], draw);
+      }
+    })();
     </script>
     """)
 end
