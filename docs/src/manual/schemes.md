@@ -1,4 +1,4 @@
-# homogenization schemes — user manual
+# Homogenization schemes — user manual
 
 The `MeanFieldHom.Schemes` module provides ten classical mean-field
 homogenization schemes plus a [`RVE`](@ref) container holding the

@@ -1,4 +1,4 @@
-# homogenization schemes
+# Homogenization schemes
 
 `MeanFieldHom.Schemes` provides ten classical mean-field homogenization
 schemes for computing the *effective* property tensor of a multi-phase

@@ -4,9 +4,12 @@
 [`LayeredSphere`](@ref) — an `n`-layer isotropic spherical composite
 inclusion embedded in an infinite isotropic matrix — together with the
 per-layer localization, global contribution tensors, and
-layer / sphere / cumulative average utilities.  Four physically-motivated
-interface types are supported: `PerfectInterface`, and two primal/dual
-pairs per physics:
+layer / sphere / cumulative average utilities.  The bulk and shear
+recurrences follow [herve1993](@cite) (which generalizes the three-phase
+model of [christensenLo1979](@cite)); the imperfect-interface extension
+follows [herveLuanco2014](@cite).  Four physically-motivated interface
+types are supported: `PerfectInterface`, and two primal/dual pairs per
+physics:
 
 | Elasticity (primal / dual)                   | Conductivity (primal / dual)                    |
 | -------------------------------------------- | ----------------------------------------------- |
@@ -30,7 +33,7 @@ Moduli ``(\mathbb C_1, \ldots, \mathbb C_N)`` are `TensISO{4,3}`
 at each radius ``r_k`` are specified in an `NTuple{N, AbstractInterface}`
 (default all `PerfectInterface`).
 
-## Bulk (spherical) recurrence — Hervé-Zaoui 1988
+## Bulk (spherical) recurrence — Hervé-Zaoui 1993
 
 Under a purely hydrostatic remote strain, the displacement in layer
 ``k`` is `u_r^{(k)}(r) = A_k r + B_k / r^2`.  To stay regular in the
@@ -165,8 +168,8 @@ solving a 2×2 linear system for the matrix-side far-field ``(a_∞, b_∞)
 = (1, 0)`` yields the per-layer localization ``β_k = a_k``.
 
 For ``N = 1`` the recurrence reduces to the classical Eshelby single-
-sphere result; for ``N ≥ 2`` it reproduces Christensen-Lo 1979 core-shell
-effective shear modulus and passes the Eshelby consistency tests
+sphere result; for ``N ≥ 2`` it reproduces the [christensenLo1979](@cite)
+core-shell effective shear modulus and passes the Eshelby consistency tests
 (``N = 2`` with core ≡ shell ↔ single-layer of radius ``r_N``, etc.).
 
 ## Averages (Echoes-style)
