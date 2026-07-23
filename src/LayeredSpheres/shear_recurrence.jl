@@ -284,6 +284,12 @@ far-field.  Dispatches to the single-layer Eshelby delegation for
 function _shear_localization(
         sphere::LayeredSphere{T, N}, C₀::TensND.TensISO{4, 3}
     ) where {T, N}
-    N == 1 && return (_shear_localization_single_layer(sphere, C₀),)
+    # The single-layer Eshelby delegation is only valid for a *perfect*
+    # interface: `Ellipsoid` carries no interface data.  With an imperfect
+    # (spring / membrane) interface the state-vector recurrence — which
+    # applies the interface jump — must be used even for N = 1.
+    if N == 1 && layer_interface(sphere, 1) isa PerfectInterface
+        return (_shear_localization_single_layer(sphere, C₀),)
+    end
     return _shear_localization_multi(sphere, C₀)
 end

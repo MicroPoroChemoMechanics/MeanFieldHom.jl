@@ -238,14 +238,51 @@ bounds; near ``D_{\rm itz}/D_{cp} \approx 50`` the two effects nearly cancel and
 into a connected fast-transport network that lifts ``D^{\rm hom}`` above the neat
 paste value.
 
-!!! note "Zero-thickness interface (DUALDISC)"
-    The Echoes book also replaces the thin ITZ shell by a *zero-thickness*
-    interface of transmissivity ``\alpha = D_s\,e`` (its `DUALDISC` model). This is
-    a distinct interface physics from the surface-elastic / Kapitza interfaces
-    that a `MeanFieldHom` [`LayeredSphere`](@ref) currently exposes
-    (`SurfaceConductiveInterface`, `KapitzaInterface`), so the explicit two-layer
-    composite sphere above — which reproduces the Echoes layer-model curve to the
-    digit — is used here instead.
+### Zero-thickness interface (DUALDISC)
+
+In the limit ``e_{\rm ITZ}\to 0`` the thin, highly-conductive ITZ shell can be
+collapsed onto a **zero-thickness surface-conductive interface** carrying a
+tangential surface current ``\mathbf q_s = k_s\,\nabla_{\!s}T`` with
+transmissivity ``k_s = \alpha = D_s\,e_{\rm ITZ}`` — the Echoes book's `DUALDISC`
+model. This is exactly a [`SurfaceConductiveInterface`](@ref) on a *bare*
+aggregate (a one-layer [`LayeredSphere`](@ref)); it avoids the explicit shell and
+its volume-fraction correction ``f\,(1+e_{\rm ITZ}/R_{\rm agg})^3``:
+
+```@example transport
+function D_dualdisc(f, d_itz)
+    α = d_itz * eITZ                                   # transmissivity D_s·e
+    agg = LayeredSphere((Ragg,), (TensISO{3}(0.0),);
+        interfaces = (SurfaceConductiveInterface(α),))
+    r = RVE(:CEMENT)
+    add_matrix!(r, Ellipsoid(1.0), Dict(:K => TensISO{3}(1.0)))
+    add_phase!(r, :AGG, agg, Dict(:K => TensISO{3}(1.0)); fraction = f)
+    return tr(Array(homogenize(r, MoriTanaka(), :K))) / 3
+end
+
+# D_itz/D_cp = 50 makes the surface current exactly offset the impermeable core
+[round(D_dualdisc(f, 50.0), digits = 6) for f in (0.1, 0.5, 0.9)]
+```
+
+The surface-conductive interface reproduces the Echoes `DUALDISC` diffusivity to
+machine precision, and agrees with the explicit two-layer model up to the small
+``\approx 3\%`` ITZ volume that the interface idealization neglects:
+
+```@example transport
+plt4 = plot(; xlabel = "aggregate fraction f", ylabel = "D_eff / D_cp",
+    legend = :topleft, framestyle = :box, ylims = (0, 2), size = (760, 480))
+for (d, c) in ((100.0, 1), (50.0, 2), (20.0, 3))
+    plot!(plt4, fs, [D_itz(f, d) for f in fs]; lw = 2, c = c,
+        label = "layer model — D_itz/D_cp = $(Int(d))")
+    plot!(plt4, fs, [D_dualdisc(f, d) for f in fs]; lw = 2, c = c, ls = :dash,
+        label = "DUALDISC — D_itz/D_cp = $(Int(d))")
+end
+plt4
+```
+
+At ``D_{\rm itz}/D_{cp} = 50`` the transmissivity ``k_s = 2500`` gives an
+effective sphere conductivity ``2k_s/R_{\rm agg} = 1 = D_{cp}``, so the aggregate
+becomes transparent and ``D^{\rm hom} = D_{cp}`` at every fraction — the flat
+curve above.
 
 ## Cross-property coupling
 

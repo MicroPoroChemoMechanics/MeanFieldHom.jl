@@ -82,6 +82,41 @@ end
     @test α_m[1] != α_perfect[1]
 end
 
+@testset "MembraneInterface (DUALDISC) — Echoes concentration & moduli" begin
+    # Whole-sphere strain concentration A_Ω = (Σ f_k α_k) 𝕁 + (Σ f_k β_k) 𝕂 of a
+    # 2-layer sphere (core E=100 ν=0.49, shell E=10 ν=0.2) in matrix E=30 ν=0.3,
+    # R = (1, 1.5), with a Gurtin–Murdoch membrane at the outer interface.
+    # Reference values from the compiled Echoes `DUALDISC` (κs = λs + μs).
+    C₀ = iso_stiffness_E_nu(30.0, 0.3)
+    C₁ = iso_stiffness_E_nu(100.0, 0.49)
+    C₂ = iso_stiffness_E_nu(10.0, 0.2)
+    for ((κs, μs), (bulk, shear)) in (
+            ((5.0, 3.0), (1.3453050880, 1.0706066045)),
+            ((50.0, 30.0), (0.5767671264, 0.6087140669)),
+        )
+        s = LayeredSphere(
+            (1.0, 1.5), (C₁, C₂);
+            interfaces = (PerfectInterface(), MembraneInterface(κs, μs)),
+        )
+        A = strain_strain_loc(s, C₁, C₀)
+        a, b = TensND.get_data(A)                  # (Σf α, Σf β)
+        @test a ≈ bulk rtol = 1.0e-8
+        @test b ≈ shear rtol = 1.0e-8
+    end
+
+    # Effective Young's modulus (Mori–Tanaka), single-layer aggregate
+    # (E=70 ν=0.2) + membrane (κs=5, μs=3) in matrix E=30 ν=0.3 — the N=1
+    # composite-sphere path that must NOT ignore the interface.
+    Cagg = iso_stiffness_E_nu(70.0, 0.2)
+    agg = LayeredSphere((1.0,), (Cagg,); interfaces = (MembraneInterface(5.0, 3.0),))
+    for (f, E_echoes) in ((0.1, 32.92649594), (0.5, 47.94244729))
+        r = RVE(:CEMENT)
+        add_matrix!(r, Ellipsoid(1.0), Dict(:C => C₀))
+        add_phase!(r, :AGG, agg, Dict(:C => Cagg); fraction = f)
+        @test E_nu(homogenize(r, MoriTanaka(), :C))[1] ≈ E_echoes rtol = 1.0e-7
+    end
+end
+
 @testset "SpringInterface eltype inference" begin
     s = LayeredSphere(
         (0.5, 1.0), (TensISO{3}(1.0, 1.0), TensISO{3}(1.0, 1.0));

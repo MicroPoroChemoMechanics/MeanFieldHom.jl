@@ -606,27 +606,17 @@ function _shear_interface_T_alv(
     blocks[2, 2] = Id
     blocks[3, 3] = Id
     blocks[4, 4] = Id
-    # σ-state membrane jump (Christensen–Lo state convention — cf.
-    # elastic `_shear_interface_T(::MembraneInterface, ...)`):
-    #   σ_rr⁺ = σ_rr⁻ + f1 · U + f2 · V
-    #   σ_rθ⁺ = σ_rθ⁻ + f3 · U + f4 · V
-    #
-    # NOTE — there is a residual convention mismatch with the
-    # ECHOES C++ shear-state convention (used by our `_shear_M_matrix_alv`
-    # / `_shear_M_inverse_alv` since v0.5.3): the C++ variant of the
-    # membrane jump is
-    #   σ_rr⁺ = σ_rr⁻ + (4κs/R²) U − (6κs/R²) V
-    #   σ_rθ⁺ = σ_rθ⁻ − (4κs/R²) U + (6κs + 4μs)/R² · V.
-    # The two forms agree at PerfectInterface (= 0) but disagree under
-    # MembraneInterface in the elastic limit by a few %.  The current
-    # ALV/elastic limit test uses the Christensen–Lo form, which is why
-    # we keep these expressions.  Script 37 (`:layers`) does not use
-    # membrane interfaces, so the user-facing ageing-creep workflow is
-    # unaffected.
-    blocks[3, 1] = -6 * inv_r² .* T.(M_κs)
-    blocks[3, 2] = 6 * inv_r² .* T.(M_κs)
-    blocks[4, 1] = -inv_r² .* (T.(M_κs) .+ 3 .* T.(M_μs))
-    blocks[4, 2] = inv_r² .* (3 .* T.(M_μs) .- T.(M_κs))
+    # Gurtin–Murdoch surface-elasticity Y₂ traction jump — identical to the
+    # elastic `_shear_interface_T(::MembraneInterface, ...)` (same
+    # Christensen–Lo state convention, so the coefficients carry over
+    # verbatim).  Derived symbolically from `[σ·n] = −divₛσˢ` and validated
+    # to machine precision against Echoes' `DUALDISC` (`κs = λs + μs`):
+    #   σ_rr⁺ = σ_rr⁻ + ( 4κs U − 12κs W) / r²
+    #   σ_rθ⁺ = σ_rθ⁻ + (−2κs U + (6κs + 4μs) W) / r²
+    blocks[3, 1] = 4 * inv_r² .* T.(M_κs)
+    blocks[3, 2] = -12 * inv_r² .* T.(M_κs)
+    blocks[4, 1] = -2 * inv_r² .* T.(M_κs)
+    blocks[4, 2] = inv_r² .* (6 .* T.(M_κs) .+ 4 .* T.(M_μs))
     return _assemble_4n_time_major(blocks, n)
 end
 
@@ -1030,5 +1020,71 @@ function stiffness_contribution_alv(
         N_bulk .+= f[k] .* ((M_κ_k - M_κ_0) * α_k[k])
         N_shear .+= f[k] .* ((M_μ_k - M_μ_0) * β_k[k])
     end
-    return iso_blocks_from_params(3 .* N_bulk, 2 .* N_shear)
+    a_surf, b_surf = _membrane_surface_stress_alv(sphere, C0_law, times)
+    return iso_blocks_from_params(3 .* N_bulk .+ a_surf, 2 .* N_shear .+ b_surf)
+end
+
+"""
+    _membrane_surface_stress_alv(sphere, C0_law, times) -> (a_surf, b_surf)
+
+ALV analog of `_membrane_surface_stress`: the Gurtin–Murdoch surface-stress
+contribution of the dual ([`MembraneInterface`](@ref)) interfaces to the
+volume-averaged stress of the layered sphere, as `(n × n)` Volterra blocks in
+the bulk (`𝕁`) and shear (`𝕂`) parts.  The surface moduli `(κs, μs)` are
+elastic (constant in time); they multiply the time-dependent interface
+displacement amplitudes `u_r(r)` (bulk) and `U(r), W(r)` (shear).  See the
+elastic derivation for the coefficients
+
+```
+bulk :  4 κs · u_r(r)·r / R³ ,   shear:  (2/5)(−κs U + 3κs W + 6μs W)·r / R³ .
+```
+"""
+function _membrane_surface_stress_alv(
+        sphere::LayeredSphere{T, N},
+        C0_law::ViscoLaw,
+        times::AbstractVector{<:Real}
+    ) where {T, N}
+    n = length(times)
+    radii = sphere.radii
+    R³ = radii[N]^3
+
+    if !any(k -> layer_interface(sphere, k) isa MembraneInterface, 1:N)
+        Z = zeros(T, n, n)
+        return Z, Z
+    end
+    layers, M_κ_0, M_μ_0 = _bulk_layer_moduli_alv(sphere, C0_law, times)
+
+    # Bulk displacement amplitudes u_r(r_k), normalised by the far-field A∞.
+    inside_amps, A_M, _ = bulk_amplitude_seq_alv(sphere, C0_law, times)
+    A_M_inv = volterra_inverse(A_M; block_size = 1)
+    Tb = eltype(A_M)
+    a_surf = zeros(Tb, n, n)
+    b_surf = zeros(Tb, n, n)
+
+    # Deviatoric interface displacement amplitudes (U, W)(r_k), normalised to a
+    # unit remote deviatoric far field (same λ combination as the localization).
+    inside_a, inside_b, s_a, s_b = _shear_state_seq_alv(sphere, layers, M_κ_0, M_μ_0, times)
+    a_ab, b_ab = _shear_amp_blocks_alv(radii[N], M_κ_0, M_μ_0, n, hcat(s_a, s_b))
+    λ_a, λ_b = _shear_solve_far_field_alv(
+        a_ab[:, 1:n], a_ab[:, (n + 1):(2n)],
+        b_ab[:, 1:n], b_ab[:, (n + 1):(2n)], n
+    )
+
+    for k in 1:N
+        intf = layer_interface(sphere, k)
+        intf isa MembraneInterface || continue
+        κs = intf.κs; μs = intf.μs
+        r = radii[k]
+        A_k, B_k = inside_amps[k]
+        u_r = (r .* A_k .+ (1 / r^2) .* B_k) * A_M_inv     # normalised u_r(r_k)
+        a_surf .+= (4 * κs * r / R³) .* u_r
+        combo = inside_a[k] * λ_a + inside_b[k] * λ_b       # (4n × n) state
+        U = zeros(Tb, n, n); W = zeros(Tb, n, n)
+        @inbounds for t in 1:n, s in 1:n
+            U[t, s] = combo[(t - 1) * 4 + 1, s]
+            W[t, s] = combo[(t - 1) * 4 + 2, s]
+        end
+        b_surf .+= (r / R³) .* ((2 / 5) .* (-κs .* U .+ 3κs .* W .+ 6μs .* W))
+    end
+    return a_surf, b_surf
 end

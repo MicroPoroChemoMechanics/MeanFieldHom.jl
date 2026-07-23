@@ -160,7 +160,7 @@ whole hydration range, for a set of water-to-cement ratios:
 ```@example diffusion
 const WC_LIST = (0.30, 0.40, 0.50, 0.60)
 
-function model_curves(model, wc; n = 40)
+function model_curves(model, wc; n = 80)
     αs = range(0.02, αmax(wc); length = n)
     E = Float64[]
     D = Float64[]
@@ -479,7 +479,7 @@ the calibration points of the engineering model (``\star``) and of the C-S-H gel
 (``\triangle``):
 
 ```@example diffusion
-n = 41
+n = 51   # same grid as Echoes (51×51 over log₁₀ω ∈ [−3, 2])
 logω = range(-3.0, 2.0; length = n)
 ω = 10.0 .^ logω
 Ze = [100 * φ_elas(ω[i], ω[j]) for j in 1:n, i in 1:n]   # rows = ωp, cols = ωs
@@ -502,18 +502,23 @@ plot(threshold_panel(Ze, "Elastic φ_elas (%)"),
     layout = (1, 2), size = (980, 420))
 ```
 
-The same two threshold maps as 3D surfaces over ``(\log_{10}\omega_s,
-\log_{10}\omega_p)`` — the Echoes book renders these interactively (Plotly); here
-they are static GR surfaces of the *same* `Ze`, `Zd` arrays:
+The same two threshold maps as **interactive 3D surfaces** over
+``(\log_{10}\omega_s, \log_{10}\omega_p)`` — rotate, zoom and hover to read
+values, exactly as the Echoes book renders them with Plotly. Switching the Plots
+backend to `plotly()` produces self-contained interactive figures embedded
+directly in this page (the earlier static figures used the `gr()` backend):
 
 ```@example diffusion
-sE = surface(logω, logω, Ze; xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp",
-    zlabel = "φ_elas (%)", title = "Elastic threshold", c = :viridis,
-    camera = (40, 30), colorbar = false)
-sD = surface(logω, logω, Zd; xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp",
-    zlabel = "φ_diff (%)", title = "Diffusion threshold", c = :viridis,
-    camera = (40, 30), colorbar = false)
-plot(sE, sD; layout = (1, 2), size = (980, 420))
+plotly()  # interactive backend for the 3D percolation surfaces (as in Echoes)
+surface(logω, logω, Ze; xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp",
+    zlabel = "φ_elas (%)", title = "Elastic percolation threshold φ_elas (%)",
+    c = cgrad(:RdBu, rev = true), size = (760, 520))
+```
+
+```@example diffusion
+surface(logω, logω, Zd; xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp",
+    zlabel = "φ_diff (%)", title = "Diffusion percolation threshold φ_diff (%)",
+    c = cgrad(:RdBu, rev = true), size = (760, 520))
 ```
 
 At the engineering calibration point the solid is a very thin oblate platelet

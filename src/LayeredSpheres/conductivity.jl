@@ -199,14 +199,54 @@ function _cond_localization(sphere::LayeredSphere{T, N}, k₀) where {T, N}
 end
 
 """
+    _cond_surface_flux(sphere, k₀) -> flux amplitude
+
+Extra macroscopic flux carried **tangentially along the surface-conductive
+interfaces** of the composite sphere, per unit remote gradient.  A
+`SurfaceConductiveInterface(kₛ)` at radius `r` supports a surface current
+`kₛ ∇ₛT`; its contribution to the volume-averaged flux of the whole sphere
+(radius `R_N`) is
+
+```
+(1/V) ∮ kₛ ∇ₛT dS = 2 kₛ · T̂(r) · r / R_N³   (per unit A∞),
+```
+
+with `T̂(r)` the (continuous) temperature amplitude at the interface.  For a
+single impermeable core coated by a surface-conductive shell this reduces to
+`2kₛ/R · α`, i.e. the surface conductance is equivalent to adding `2kₛ/R` to
+the enclosed conductivity — reproducing Echoes' `DUALDISC` transmissivity.
+The average **gradient** (concentration `α_k`) is unaffected: only the flux
+picks up the surface term.
+"""
+function _cond_surface_flux(sphere::LayeredSphere{T, N}, k₀) where {T, N}
+    k_layers = _cond_layer_moduli(sphere)
+    TP = promote_type(T, typeof(k₀), ntuple(k -> typeof(k_layers[k]), N)...)
+    inside_states, s_matrix = _cond_state_seq(sphere, k₀)
+    radii = sphere.radii
+    A_inf, _ = _cond_extract_AB(TP(radii[N]), TP(k₀), s_matrix[1], s_matrix[2])
+    RN³ = TP(radii[N])^3
+    total = zero(TP)
+    for k in 1:N
+        intf = layer_interface(sphere, k)
+        if intf isa SurfaceConductiveInterface
+            ks = TP(intf.conductance)
+            T̂ = inside_states[k][1]
+            total += 2 * ks * T̂ * TP(radii[k]) / (RN³ * A_inf)
+        end
+    end
+    return total
+end
+
+"""
     _effective_conductivity(sphere, k₀) -> k_eff
 
 Effective conductivity of the composite sphere:
-`k_eff = Σ_k f_k k_k α_k`.
+`k_eff = Σ_k f_k k_k α_k` plus the surface-conduction flux
+[`_cond_surface_flux`](@ref) of any dual (surface-conductive) interface.
 """
 function _effective_conductivity(sphere::LayeredSphere{T, N}, k₀) where {T, N}
     α = _cond_localization(sphere, k₀)
     k_layers = _cond_layer_moduli(sphere)
     f = ntuple(k -> layer_volume_fraction(sphere, k), Val(N))
-    return sum(f[k] * k_layers[k] * α[k] for k in 1:N)
+    return sum(f[k] * k_layers[k] * α[k] for k in 1:N) + _cond_surface_flux(sphere, k₀)
 end

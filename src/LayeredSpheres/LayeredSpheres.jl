@@ -87,7 +87,9 @@ function Core.stiffness_contribution(
     f = ntuple(k -> layer_volume_fraction(sphere, k), Val(N))
     N_bulk = sum(f[k] * (κμ[k][1] - κ₀) * α[k] for k in 1:N)
     N_shear = sum(f[k] * (κμ[k][2] - μ₀) * β[k] for k in 1:N)
-    return TensISO{3}(3 * N_bulk, 2 * N_shear)
+    # Gurtin–Murdoch surface stress of any dual (membrane) interface.
+    a_surf, b_surf = _membrane_surface_stress(sphere, C₀)
+    return TensISO{3}(3 * N_bulk + a_surf, 2 * N_shear + b_surf)
 end
 
 # =============================================================================
@@ -118,7 +120,9 @@ end
     conductivity_contribution(sphere::LayeredSphere, K₀) -> Tens{2,3}
 
 Size-independent conductivity contribution tensor of the composite
-sphere:  `N_K = Σ_k f_k (k_k - k_0) α_k`.
+sphere:  `N_K = Σ_k f_k (k_k - k_0) α_k`, plus the surface-conduction
+flux [`_cond_surface_flux`](@ref) of any dual (surface-conductive)
+interface (Echoes' `DUALDISC`).
 """
 function Core.conductivity_contribution(
         sphere::LayeredSphere{T, N},
@@ -129,7 +133,8 @@ function Core.conductivity_contribution(
     α = _cond_localization(sphere, k₀)
     k_layers = _cond_layer_moduli(sphere)
     f = ntuple(k -> layer_volume_fraction(sphere, k), Val(N))
-    N_K = sum(f[k] * (k_layers[k] - k₀) * α[k] for k in 1:N)
+    N_K = sum(f[k] * (k_layers[k] - k₀) * α[k] for k in 1:N) +
+          _cond_surface_flux(sphere, k₀)
     return TensISO{3}(N_K)
 end
 

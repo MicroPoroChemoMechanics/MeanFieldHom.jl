@@ -61,6 +61,41 @@ end
     @test D_eff ≈ 0.9979 rtol = 1.0e-3
 end
 
+@testset "SurfaceConductiveInterface (DUALDISC) — Echoes ITZ diffusivity" begin
+    # Highly-conductive ITZ around an impermeable aggregate, modeled as a
+    # zero-thickness surface-conductive interface of transmissivity α = D_itz·e.
+    # Effective diffusivity (Mori–Tanaka), matrix D_cp = 1, reproduces the
+    # compiled Echoes `DUALDISC` transport curve to machine precision — including
+    # D_eff > 1 for a strongly-conductive ITZ (D_itz/D_cp = 100).
+    Ragg, eITZ = 5.0e3, 50.0
+    Diso(d) = TensISO{3}(d)
+    function Dhom_dd(f, α)
+        agg = LayeredSphere((Ragg,), (Diso(0.0),);
+            interfaces = (SurfaceConductiveInterface(α),))
+        r = RVE(:CEMENT)
+        add_matrix!(r, Ellipsoid(1.0), Dict(:D => Diso(1.0)))
+        add_phase!(r, :AGG, agg, Dict(:D => Diso(1.0)); fraction = f)
+        return tr(Array(homogenize(r, MoriTanaka(), :D))) / 3
+    end
+    # (d = D_itz/D_cp, f) → Echoes D_eff/D_cp
+    refs = [
+        (100.0, 0.5, 1.428571), (100.0, 0.9, 1.870968),
+        (50.0, 0.5, 1.0), (50.0, 0.9, 1.0),      # d=50 exactly cancels for all f
+        (20.0, 0.5, 0.666667), (0.001, 0.5, 0.400014),
+    ]
+    for (d, f, D_echoes) in refs
+        @test Dhom_dd(f, d * eITZ) ≈ D_echoes rtol = 1.0e-5
+    end
+
+    # An interior surface-conductive interface (2-layer sphere) also matches.
+    s = LayeredSphere((1.0, 1.5), (Diso(0.0), Diso(3.0));
+        interfaces = (SurfaceConductiveInterface(2.0), PerfectInterface()))
+    r = RVE(:M)
+    add_matrix!(r, Ellipsoid(1.0), Dict(:D => Diso(1.0)))
+    add_phase!(r, :AGG, s, Dict(:D => Diso(1.0)); fraction = 0.3)
+    @test tr(Array(homogenize(r, MoriTanaka(), :D))) / 3 ≈ 1.4458111702 rtol = 1.0e-8
+end
+
 @testset "KapitzaInterface — limits" begin
     K₀ = TensISO{3}(2.0)
     K₁ = TensISO{3}(5.0)

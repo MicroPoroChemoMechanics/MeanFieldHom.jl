@@ -40,6 +40,11 @@ makedocs(;
         prettyurls       = (get(ENV, "CI", nothing) == "true"),
         collapselevel    = 1,
         mathengine       = Documenter.MathJax3(),
+        # The interactive Plotly 3D percolation surfaces in the cement-paste
+        # diffusion chapter embed their data inline, exceeding the 200 KiB
+        # default; raise the ceiling for those pages.
+        size_threshold      = 3_000_000,
+        size_threshold_warn = 1_500_000,
     ),
     plugins = [bib],
     pages = [

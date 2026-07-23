@@ -251,6 +251,34 @@ end
     end
 end
 
+@testset "stiffness_contribution_alv — Membrane (DUALDISC) surface stress" begin
+    # The ALV stiffness contribution must include the Gurtin–Murdoch surface
+    # stress of a dual interface; in the elastic (Heaviside) limit it must
+    # equal the elastic `stiffness_contribution`, which is validated against
+    # Echoes' `DUALDISC`.  Single-layer aggregate (the N=1 composite-sphere
+    # path) + membrane, and a 2-layer sphere with an interior membrane.
+    C_M = iso_stiffness_E_nu(30.0, 0.3)
+    Cagg = iso_stiffness_E_nu(70.0, 0.2)
+    C_2 = iso_stiffness_E_nu(40.0, 0.25)
+    times = collect(0.0:0.5:1.0)
+    n = length(times)
+    spheres = (
+        LayeredSphere((1.0,), (Cagg,); interfaces = (MembraneInterface(5.0, 3.0),)),
+        LayeredSphere((1.0, 1.5), (Cagg, C_2);
+            interfaces = (MembraneInterface(4.0, 2.0), PerfectInterface())),
+    )
+    for sphere in spheres
+        N_alv = stiffness_contribution_alv(sphere, heaviside_law(C_M), times)
+        N_elas_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(
+            stiffness_contribution(sphere, C_M)
+        )
+        for i in 1:n
+            rows = (6 * (i - 1) + 1):(6 * i)
+            @test isapprox(N_alv[rows, rows], N_elas_M; rtol = 1.0e-9, atol = 1.0e-9)
+        end
+    end
+end
+
 # ── homogenize_alv with a LayeredSphere phase (Dilute / MT) ────────────────
 
 @testset "homogenize_alv — LayeredSphere phase, Dilute, elastic limit" begin

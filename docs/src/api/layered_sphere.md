@@ -5,6 +5,9 @@ MeanFieldHom.LayeredSpheres.LayeredSphere
 MeanFieldHom.LayeredSpheres.AbstractInterface
 MeanFieldHom.LayeredSpheres.PerfectInterface
 MeanFieldHom.LayeredSpheres.SpringInterface
+MeanFieldHom.LayeredSpheres.MembraneInterface
+MeanFieldHom.LayeredSpheres.KapitzaInterface
+MeanFieldHom.LayeredSpheres.SurfaceConductiveInterface
 MeanFieldHom.LayeredSpheres.layer_count
 MeanFieldHom.LayeredSpheres.layer_radius
 MeanFieldHom.LayeredSpheres.layer_modulus

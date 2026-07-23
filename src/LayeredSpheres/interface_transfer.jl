@@ -102,10 +102,16 @@ function _shear_interface_T(intf::MembraneInterface, κ, μ, r)
     κs = T(intf.κs); μs = T(intf.μs)
     Tr = T(r)
     inv_r² = one(T) / (Tr * Tr)
-    six_κs_over_r² = 6 * κs * inv_r²
-    M[3, 1] = -six_κs_over_r²
-    M[3, 2] = six_κs_over_r²
-    M[4, 1] = -(κs + 3 * μs) * inv_r²
-    M[4, 2] = (3 * μs - κs) * inv_r²
+    # Gurtin-Murdoch surface elasticity, Y₂-harmonic traction jump on a
+    # sphere of radius r.  From the generalized Young-Laplace balance
+    # [σ·n] = −divₛ σˢ with σˢ = λₛ(trₛ ε)𝟏 + 2μₛεˢ and the surface strains
+    # of u_r = U P₂, u_θ = W dP₂/dθ (derived symbolically, see the theory
+    # page).  In MFH's `κs = λₛ + μₛ` convention (matching Echoes' `ks`):
+    #   [σ_rr] = ( 4κs U − 12κs W) / r²
+    #   [σ_rθ] = (−2κs U + (6κs + 4μs) W) / r²
+    M[3, 1] = 4 * κs * inv_r²
+    M[3, 2] = -12 * κs * inv_r²
+    M[4, 1] = -2 * κs * inv_r²
+    M[4, 2] = (6 * κs + 4 * μs) * inv_r²
     return M
 end

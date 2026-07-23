@@ -61,6 +61,60 @@ function _layer_localizations(
 end
 
 """
+    _membrane_surface_stress(sphere, C₀) -> (a_surf, b_surf)
+
+Contribution of Gurtin–Murdoch surface stress on the dual
+([`MembraneInterface`](@ref)) interfaces to the volume-averaged stress of
+the composite sphere, per unit remote strain, split into bulk (`𝕁`) and
+shear (`𝕂`) scalars.  From the average-stress theorem with a coherent
+surface, `⟨σ⟩_Ω = Σ_k f_k C_k:A_k + (1/V) Σ_Γ ∮_Γ σˢ dS`; the surface
+integrals are (with `κs = λs + μs`, `r` the interface radius, `R` the
+outer radius):
+
+```
+bulk :  4 κs · u_r(r) · r / R³
+shear:  (−6κs U + 18κs W + 36μs W) · r / (5 R³)         (× 3/2, 𝕂-projection)
+```
+
+`u_r(r)` is the bulk radial amplitude (normalised by the far-field `A∞`);
+`U(r), W(r)` are the deviatoric displacement amplitudes at the interface
+(already normalised to a unit remote deviatoric far field).
+"""
+function _membrane_surface_stress(
+        sphere::LayeredSphere{T, N}, C₀::TensND.TensISO{4, 3}
+    ) where {T, N}
+    κ₀, μ₀ = _iso_bulk_shear(C₀)
+    radii = sphere.radii
+    R³ = radii[N]^3
+
+    # Any membrane interface present?  (cheap short-circuit)
+    has_membrane = any(k -> layer_interface(sphere, k) isa MembraneInterface, 1:N)
+    has_membrane || return (zero(T), zero(T))
+
+    # Bulk amplitudes u_r(r_k), normalised by the far-field A∞.
+    inside_b, s_b = _bulk_state_seq(sphere, κ₀, μ₀)
+    A_inf, _ = _bulk_extract_AB(radii[N], κ₀, μ₀, s_b[1], s_b[2])
+    # Deviatoric state amplitudes (U, W)(r_k), already at unit remote far field.
+    states_s, _ = _shear_state_seq(sphere, C₀)
+
+    a_surf = zero(promote_type(T, typeof(κ₀), typeof(A_inf)))
+    b_surf = zero(a_surf)
+    for k in 1:N
+        intf = layer_interface(sphere, k)
+        intf isa MembraneInterface || continue
+        κs = intf.κs; μs = intf.μs
+        r = radii[k]
+        u_r = inside_b[k][1] / A_inf
+        a_surf += 4 * κs * u_r * r / R³
+        U = states_s[k][1]; W = states_s[k][2]
+        # (σzz−σxx)/V = C·r/R³;  𝕂-amplitude b = (σzz−σxx)/3.
+        C = (-6 * κs * U + 18 * κs * W + 36 * μs * W) / 5
+        b_surf += (C * r / R³) / 3
+    end
+    return a_surf, b_surf
+end
+
+"""
     strain_strain_loc(sphere::LayeredSphere, C₁, C₀; kw...) -> TensISO{4,3}
 
 Whole-inclusion **strain concentration tensor** of a composite sphere embedded
@@ -111,7 +165,8 @@ function stiffness_contribution(
     α₀, β₀ = TensND.get_data(C₀)
     a = sum(f[k] * (C_k[k][1] - α₀) * α[k] for k in 1:N)
     b = sum(f[k] * (C_k[k][2] - β₀) * β[k] for k in 1:N)
-    return TensISO{3}(a, b)
+    a_surf, b_surf = _membrane_surface_stress(sphere, C₀)
+    return TensISO{3}(a + a_surf, b + b_surf)
 end
 
 """
@@ -139,14 +194,17 @@ function stress_strain_loc(
     C_k = _layer_iso_pairs(sphere)
     a = sum(f[k] * C_k[k][1] * α[k] for k in 1:N)
     b = sum(f[k] * C_k[k][2] * β[k] for k in 1:N)
-    return TensISO{3}(a, b)
+    a_surf, b_surf = _membrane_surface_stress(sphere, C₀)
+    return TensISO{3}(a + a_surf, b + b_surf)
 end
 
 """
     flux_gradient_loc(sphere::LayeredSphere, K₁, K₀; kw...) -> TensISO{2,3}
 
 Conductivity counterpart of [`stress_strain_loc`](@ref):
-`⟨k∇T⟩_Ω = (Σ_k f_k k_k α_k) · ∇T∞`. `K₁` is ignored.
+`⟨k∇T⟩_Ω = (Σ_k f_k k_k α_k) · ∇T∞`, plus the surface-conduction flux
+[`_cond_surface_flux`](@ref) of any dual (surface-conductive) interface.
+`K₁` is ignored.
 """
 function flux_gradient_loc(
         sphere::LayeredSphere{T, N},
@@ -154,10 +212,13 @@ function flux_gradient_loc(
         K₀::TensND.TensISO{2, 3};
         kw...,
     ) where {T, N}
-    α = _cond_localization(sphere, _iso_scalar(K₀))
+    k₀ = _iso_scalar(K₀)
+    α = _cond_localization(sphere, k₀)
     k_layers = _cond_layer_moduli(sphere)
     f = _layer_fractions(sphere)
-    return TensISO{3}(sum(f[k] * k_layers[k] * α[k] for k in 1:N))
+    return TensISO{3}(
+        sum(f[k] * k_layers[k] * α[k] for k in 1:N) + _cond_surface_flux(sphere, k₀)
+    )
 end
 
 """
