@@ -206,6 +206,94 @@ r = compute_point(0.5, αmax(0.5) * (1 - 1e-12))
     E = round(r.E_mo, digits = 2), fc = round(r.fc, digits = 4))
 ```
 
+The rest of the chapter uses this single-pass sensitivity throughout. The
+following section is a **pedagogical aside** — it opens the black box to show
+what that one autodiff pass computes internally, and how it relates to the
+explicit chain rule of the original Echoes implementation. It is not needed to
+run the model.
+
+## Under the hood: the multi-scale chain rule made explicit
+
+!!! note "Two routes to the same derivative"
+    The sensitivity ``\partial\mathbb C_{MO}/\partial\mu_{\rm hyd}`` spans three
+    homogenization scales. There are two ways to obtain it, and they are
+    mathematically identical:
+
+    - **Direct (used above)** — seed ``\mu_{\rm hyd}`` as a `ForwardDiff.Dual`
+      and let it propagate through the *entire nested chain* `build_hf → build_cp
+      → build_mo` in one evaluation. The chain rule happens automatically inside
+      the dual-number arithmetic; you write no derivatives by hand.
+    - **Explicit chain rule (this section, the Echoes approach)** — differentiate
+      *each scale separately* with respect to its input tensor, then multiply the
+      per-scale Jacobians. Echoes assembles exactly this product with one
+      `homogenize_derivative` call per transversely-isotropic (TI) parameter, per
+      scale.
+
+    The explicit route is more work, but it makes the structure visible — and it
+    reveals a key fact: because every intermediate stiffness is **transversely
+    isotropic** (aligned needles in an isotropic matrix, then spherical clinker
+    and sand), only **five numbers** — the TI parameters — flow between scales.
+
+The bridge between the two views is the TI parameterization: extract the five
+parameters of a tensor with [`best_fit_ti`](@ref), and rebuild a `TensTI` from
+five numbers.
+
+```@example strength
+const ez = (0.0, 0.0, 1.0)
+ti5(C) = collect(TensND.get_data(best_fit_ti(C, ez)))     # tensor → 5 TI params
+function rebuildTI(p)                                     # 5 params → TensTI
+    T = eltype(p)
+    return TensTI{4, T, 5}((p[1], p[2], p[3], p[4], p[5]),
+        (T(ez[1]), T(ez[2]), T(ez[3])))
+end
+nothing # hide
+```
+
+Now the three per-scale Jacobians, each a small `ForwardDiff` problem in the
+5-parameter space rather than a pass through the whole model:
+
+```@example strength
+wc, α, sc = 0.5, αmax(0.5) * (1 - 1e-9), 0.0
+
+# Scale 1 — how the five HF parameters respond to μ_hyd  (5-vector)
+p_hf0 = ti5(build_hf(wc, α, μ_hyd_ref))
+dHF_dμ = ForwardDiff.derivative(μ -> ti5(build_hf(wc, α, μ)), float(μ_hyd_ref))
+
+# Scale 2 — how the CP parameters respond to the HF parameters  (5×5)
+p_cp0 = ti5(build_cp(wc, α, rebuildTI(p_hf0)))
+J_cp = ForwardDiff.jacobian(p -> ti5(build_cp(wc, α, rebuildTI(p))), p_hf0)
+
+# Scale 3 — how the full mortar stiffness responds to the CP parameters  (81×5)
+J_mo = ForwardDiff.jacobian(p -> vec(get_array(build_mo(wc, sc, rebuildTI(p)))), p_cp0)
+
+(size_dHF_dμ = size(dHF_dμ), size_J_cp = size(J_cp), size_J_mo = size(J_mo))
+```
+
+The chain rule is now literally a product of these Jacobians — ``\partial\mathbb
+C_{MO}/\partial\mu = J_{MO}\,J_{CP}\,\partial\mathbb C_{HF}/\partial\mu`` — and it
+reproduces the single-pass result to machine precision:
+
+```@example strength
+dCmo_chain = reshape(J_mo * (J_cp * dHF_dμ), 3, 3, 3, 3)
+
+# same quantity, straight from one Dual pass through the whole chain
+TagT = typeof(ForwardDiff.Tag(multiscale_C_mo, Float64))
+μ_dual = ForwardDiff.Dual{TagT}(float(μ_hyd_ref), 1.0)
+dCmo_direct = ForwardDiff.partials.(multiscale_C_mo(wc, α, sc, μ_dual), 1)
+
+maxdiff = maximum(abs, dCmo_chain .- dCmo_direct)
+println("max |chain rule − direct pass| = ", round(maxdiff, sigdigits = 3))
+```
+
+!!! tip "Why prefer the direct pass in practice"
+    Both routes give the same numbers, but the explicit chain rule requires you
+    to (i) know the intermediate symmetry to parameterize it, (ii) choose a
+    consistent parameter ordering, and (iii) assemble the Jacobian product by
+    hand — three opportunities for error that grow with the number of scales. The
+    single `ForwardDiff` pass needs none of that: it differentiates whatever the
+    model actually computes. The chain rule is invaluable for *understanding*;
+    the direct pass is what you *ship*.
+
 ## Results — strength and stiffness vs hydration degree
 
 For pure cement paste (``s/c = 0``), the effective bulk and shear moduli and the
