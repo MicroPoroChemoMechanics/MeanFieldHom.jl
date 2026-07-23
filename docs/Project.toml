@@ -9,8 +9,6 @@ MeanFieldHom = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 TensND = "474b5345-2588-4284-8a58-2430a1a40cb0"
 
-# TEMPORARY: DECUHR registration on General is pending (submitted, awaiting
-# AutoMerge). Remove the DECUHR line once it appears in the General registry.
 [sources]
+DECUHR = {rev = "53baddc24890f89b7c9c168cb5bc9047015567ff", url = "https://github.com/MicroPoroChemoMechanics/DECUHR.jl"}
 MeanFieldHom = {path = ".."}
-DECUHR = {url = "https://github.com/MicroPoroChemoMechanics/DECUHR.jl", rev = "53baddc24890f89b7c9c168cb5bc9047015567ff"}

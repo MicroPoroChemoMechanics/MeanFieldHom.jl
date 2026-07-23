@@ -160,8 +160,10 @@ whole hydration range, for a set of water-to-cement ratios:
 ```@example diffusion
 const WC_LIST = (0.30, 0.40, 0.50, 0.60)
 
-function model_curves(model, wc; n = 80)
-    αs = range(0.02, αmax(wc); length = n)
+function model_curves(model, wc; n = 120)
+    # Log-spaced in α: the diffusivity rises and drops most steeply at early
+    # hydration, so a uniform grid under-resolves the start of the curve.
+    αs = exp.(range(log(0.02), log(αmax(wc)); length = n))
     E = Float64[]
     D = Float64[]
     a = Float64[]
@@ -504,21 +506,34 @@ plot(threshold_panel(Ze, "Elastic φ_elas (%)"),
 
 The same two threshold maps as **interactive 3D surfaces** over
 ``(\log_{10}\omega_s, \log_{10}\omega_p)`` — rotate, zoom and hover to read
-values, exactly as the Echoes book renders them with Plotly. Switching the Plots
-backend to `plotly()` produces self-contained interactive figures embedded
-directly in this page (the earlier static figures used the `gr()` backend):
+values, exactly as the Echoes book renders them with Plotly:
 
 ```@example diffusion
-plotly()  # interactive backend for the 3D percolation surfaces (as in Echoes)
-surface(logω, logω, Ze; xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp",
-    zlabel = "φ_elas (%)", title = "Elastic percolation threshold φ_elas (%)",
-    c = cgrad(:RdBu, rev = true), size = (760, 520))
+# Emit a self-contained Plotly surface (plotly.js is loaded globally as a page
+# asset, see docs/make.jl), so the figure is fully interactive: rotate/zoom/hover.
+function plotly_surface(x, y, Z; title, zlabel, uid)
+    jsvec(v) = "[" * join(v, ",") * "]"
+    jsmat(M) = "[" * join((jsvec(M[i, :]) for i in axes(M, 1)), ",") * "]"
+    return Base.HTML("""
+    <div id="$uid" style="width:100%;height:520px;"></div>
+    <script>
+    Plotly.newPlot("$uid",
+      [{type:"surface", x:$(jsvec(x)), y:$(jsvec(y)), z:$(jsmat(Z)),
+        colorscale:"RdBu", reversescale:true, colorbar:{title:"φ (%)"}}],
+      {title:{text:"$title"}, height:520, margin:{l:0,r:0,t:40,b:0},
+       scene:{xaxis:{title:"log₁₀ ωs"}, yaxis:{title:"log₁₀ ωp"},
+              zaxis:{title:"$zlabel"}}});
+    </script>
+    """)
+end
+
+plotly_surface(logω, logω, Ze; title = "Elastic percolation threshold φ_elas (%)",
+    zlabel = "φ_elas (%)", uid = "surf-phi-elas")
 ```
 
 ```@example diffusion
-surface(logω, logω, Zd; xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp",
-    zlabel = "φ_diff (%)", title = "Diffusion percolation threshold φ_diff (%)",
-    c = cgrad(:RdBu, rev = true), size = (760, 520))
+plotly_surface(logω, logω, Zd; title = "Diffusion percolation threshold φ_diff (%)",
+    zlabel = "φ_diff (%)", uid = "surf-phi-diff")
 ```
 
 At the engineering calibration point the solid is a very thin oblate platelet

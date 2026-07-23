@@ -36,15 +36,24 @@ makedocs(;
         canonical        = "https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl",
         repolink         = "https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl",
         edit_link        = "main",
-        assets           = ["assets/favicon.ico", "assets/custom.css"],
+        assets           = [
+            "assets/favicon.ico",
+            "assets/custom.css",
+            # plotly.js for the interactive 3D percolation surfaces in the
+            # cement-paste diffusion chapter (loaded globally so the inline
+            # `Plotly.newPlot` divs render without requirejs/WebIO).
+            Documenter.asset("https://cdn.plot.ly/plotly-2.35.2.min.js"; class = :js, islocal = false),
+        ],
         prettyurls       = (get(ENV, "CI", nothing) == "true"),
         collapselevel    = 1,
         mathengine       = Documenter.MathJax3(),
         # The interactive Plotly 3D percolation surfaces in the cement-paste
         # diffusion chapter embed their data inline, exceeding the 200 KiB
         # default; raise the ceiling for those pages.
-        size_threshold      = 3_000_000,
-        size_threshold_warn = 1_500_000,
+        size_threshold        = 3_000_000,
+        size_threshold_warn   = 1_500_000,
+        # The interactive 3D surfaces embed their data as inline HTML; allow it.
+        example_size_threshold = 2_000_000,
     ),
     plugins = [bib],
     pages = [
