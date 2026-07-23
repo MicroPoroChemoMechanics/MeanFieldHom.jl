@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Cement paste: chloride diffusivity and elasticity · MeanFieldHom.jl</title><meta name="title" content="Cement paste: chloride diffusivity and elasticity · MeanFieldHom.jl"/><meta property="og:title" content="Cement paste: chloride diffusivity and elasticity · MeanFieldHom.jl"/><meta property="twitter:title" content="Cement paste: chloride diffusivity and elasticity · MeanFieldHom.jl"/><meta name="description" content="Documentation for MeanFieldHom.jl."/><meta property="og:description" content="Documentation for MeanFieldHom.jl."/><meta property="twitter:description" content="Documentation for MeanFieldHom.jl."/><meta property="og:url" content="https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/applications/cement_paste_diffusion/"/><meta property="twitter:url" content="https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/applications/cement_paste_diffusion/"/><link rel="canonical" href="https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/applications/cement_paste_diffusion/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/favicon.ico" rel="icon" type="image/x-icon"/><link href="../../assets/custom.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="MeanFieldHom.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">MeanFieldHom.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox"/><label class="tocitem" for="menuitem-2"><span class="docs-label">Theory</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../theory/overview/">Theoretical overview</a></li><li><a class="tocitem" href="../../theory/hill_tensors/">Hill polarisation tensors</a></li><li><a class="tocitem" href="../../theory/cod_tensors/">Crack opening displacement and compliance tensors</a></li><li><a class="tocitem" href="../../theory/thermal_cracks/">Thermal cracks — COD scalar and resistivity contribution</a></li><li><a class="tocitem" href="../../theory/localization/">Localization and contribution tensors</a></li><li><a class="tocitem" href="../../theory/homogenization/">homogenization schemes</a></li><li><a class="tocitem" href="../../theory/layered_sphere/">Layered sphere — bulk + shear recurrences and imperfect interfaces</a></li><li><a class="tocitem" href="../../theory/viscoelasticity/">Ageing linear viscoelasticity (ALV)</a></li><li><a class="tocitem" href="../../theory/elliptic_integrals/">Elliptic integrals</a></li><li><a class="tocitem" href="../../theory/cylindrical_limits/">Cylindrical limits of the Hill tensor</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-3" type="checkbox"/><label class="tocitem" for="menuitem-3"><span class="docs-label">Manual</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../manual/installation/">Installation</a></li><li><a class="tocitem" href="../../manual/ellipsoidal_inclusions/">Ellipsoidal inclusions</a></li><li><a class="tocitem" href="../../manual/cylindrical_inclusions/">Cylindrical inclusions</a></li><li><a class="tocitem" href="../../manual/cracks/">Cracks</a></li><li><a class="tocitem" href="../../manual/conductivity/">Conductivity</a></li><li><a class="tocitem" href="../../manual/schemes/">homogenization schemes — user manual</a></li><li><a class="tocitem" href="../../manual/viscoelasticity/">Viscoelastic homogenization — user manual</a></li><li><a class="tocitem" href="../../manual/sensitivities/">Sensitivities — autodiff via ForwardDiff</a></li><li><a class="tocitem" href="../../manual/elliptic_examples/">Elliptic integrals — examples</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-4" type="checkbox" checked/><label class="tocitem" for="menuitem-4"><span class="docs-label">Applications</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../transport/">Transport properties</a></li><li><a class="tocitem" href="../cement_paste/">Multiscale elasticity of a hydrating cement paste</a></li><li class="is-active"><a class="tocitem" href>Cement paste: chloride diffusivity and elasticity</a><ul class="internal"><li><a class="tocitem" href="#Volume-fractions:-Powers&#39;-hydration-model"><span>Volume fractions: Powers&#39; hydration model</span></a></li><li><a class="tocitem" href="#Engineering-model"><span>Engineering model</span></a></li><li><a class="tocitem" href="#Detailed-model"><span>Detailed model</span></a></li><li><a class="tocitem" href="#Comparison-of-both-models"><span>Comparison of both models</span></a></li><li><a class="tocitem" href="#Percolation-diagrams:-role-of-the-inclusion-shapes"><span>Percolation diagrams: role of the inclusion shapes</span></a></li></ul></li><li><a class="tocitem" href="../strength/">Quasi-brittle strength of cement paste and mortar</a></li><li><a class="tocitem" href="../bituminous/">Viscoelastic complex modulus of a bituminous mixture</a></li><li><a class="tocitem" href="../ageing_creep/">Ageing creep of solidifying cementitious materials</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-5" type="checkbox"/><label class="tocitem" for="menuitem-5"><span class="docs-label">Developer</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../developer/architecture/">Architecture</a></li><li><a class="tocitem" href="../../developer/adding_inclusion/">Adding a new inclusion</a></li><li><a class="tocitem" href="../../developer/adding_algorithm/">Adding a new algorithm</a></li><li><a class="tocitem" href="../../developer/adding_scheme/">Adding a homogenization scheme</a></li><li><a class="tocitem" href="../../developer/testing_conventions/">Testing conventions</a></li><li><a class="tocitem" href="../../developer/performance_notes/">Performance notes</a></li><li><a class="tocitem" href="../../developer/roadmap/">Roadmap</a></li></ul></li><li><input class="collapse-toggle" id="menuitem-6" type="checkbox"/><label class="tocitem" for="menuitem-6"><span class="docs-label">API</span><i class="docs-chevron"></i></label><ul class="collapsed"><li><a class="tocitem" href="../../api/elliptic/">Elliptic integrals — API</a></li><li><a class="tocitem" href="../../api/core/">API — Core</a></li><li><a class="tocitem" href="../../api/elasticity/">API — Elasticity</a></li><li><a class="tocitem" href="../../api/cracks/">API — Cracks</a></li><li><a class="tocitem" href="../../api/conductivity/">API — Conductivity</a></li><li><a class="tocitem" href="../../api/localization/">API — Localization &amp; contribution</a></li><li><a class="tocitem" href="../../api/layered_sphere/">API — LayeredSphere</a></li><li><a class="tocitem" href="../../api/schemes/">API — Schemes</a></li><li><a class="tocitem" href="../../api/viscoelasticity/">Viscoelasticity API</a></li><li><a class="tocitem" href="../../api/sensitivities/">API — Sensitivities</a></li></ul></li><li><a class="tocitem" href="../../references/">References</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Applications</a></li><li class="is-active"><a href>Cement paste: chloride diffusivity and elasticity</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Cement paste: chloride diffusivity and elasticity</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Cement-paste:-chloride-diffusivity-and-elasticity"><a class="docs-heading-anchor" href="#Cement-paste:-chloride-diffusivity-and-elasticity">Cement paste: chloride diffusivity and elasticity</a><a id="Cement-paste:-chloride-diffusivity-and-elasticity-1"></a><a class="docs-heading-anchor-permalink" href="#Cement-paste:-chloride-diffusivity-and-elasticity" title="Permalink"></a></h1><p>Following [<a href="../../references/#achourCBM2020">46</a>] — and mirroring the corresponding chapter of the Echoes book [<a href="../../references/#echoes">42</a>] — this page builds a multi-scale micromechanical model of Portland cement paste that <strong>simultaneously predicts its elastic moduli and its chloride diffusivity</strong> from a single microstructural description, as a function of the water-to-cement ratio <span>$w/c$</span> and the hydration degree <span>$\alpha$</span>.</p><p>Two models of increasing complexity are presented:</p><ul><li>an <strong>engineering model</strong> (two scales): hydrate foam + clinker;</li><li>a <strong>detailed model</strong> (three scales): C-S-H gel → hydrate layers → cement paste.</li></ul><p>The self-consistent scheme is used at each scale to capture the <strong>percolation</strong> of both the solid skeleton (governing stiffness) and the pore network (governing diffusivity). The detailed model assembles a genuine composite sphere — an anhydrous core coated by inner- and outer-hydrate shells — which enters the scheme through its concentration tensors, exactly as in [<a href="../../references/#echoes">42</a>].</p><p>Because a single <a href="../../api/schemes/#MeanFieldHom.Schemes.RVE"><code>RVE</code></a> carries several property keys at once, the <em>same</em> microstructure is homogenized for stiffness (<code>:C</code>, a 4th-order tensor) and for diffusivity (<code>:D</code>, a 2nd-order tensor). All diffusivities are normalized by the bulk-water value <span>$D_\text{bulk} = 1$</span>.</p><pre><code class="language-julia hljs">using MeanFieldHom
+using TensND
+using LinearAlgebra
+using Plots
+gr()  # headless backend; GKSwstype is set to &quot;100&quot; in make.jl
+
+# Isotropic property helpers.
+Diso(d) = TensISO{3}(d)             # isotropic 2nd-order diffusivity d·𝟏
+avg_D(D) = tr(Array(D)) / 3         # scalar diffusivity from a 2nd-order tensor
+const D_bulk = Diso(1.0)            # capillary / bulk-water diffusivity
+const Z4 = TensISO{3}(0.0, 0.0)     # empty pore stiffness
+const Z2 = Diso(0.0)                # zero diffusivity (impervious solid)</code></pre><h2 id="Volume-fractions:-Powers&#39;-hydration-model"><a class="docs-heading-anchor" href="#Volume-fractions:-Powers&#39;-hydration-model">Volume fractions: Powers&#39; hydration model</a><a id="Volume-fractions:-Powers&#39;-hydration-model-1"></a><a class="docs-heading-anchor-permalink" href="#Volume-fractions:-Powers&#39;-hydration-model" title="Permalink"></a></h2><p>The volume fractions of the main phases follow Powers&#39; hydration model as functions of <span>$w/c$</span> and <span>$\alpha$</span> [<a href="../../references/#achourCBM2020">46</a>]:</p><p class="math-container">\[f_a = \frac{1-\alpha}{1+\rho_a\,w/c}, \quad
+f_h = \frac{\kappa_h\,\alpha}{1+\rho_a\,w/c}, \quad
+f_{cp} = 1 - f_a - f_h,\]</p><p>with <span>$\rho_a = 3.13$</span> (clinker-to-water density ratio) and <span>$\kappa_h = 2.13$</span> (hydrate volume per unit volume of clinker). Hydration stops when the pore space is filled:</p><p class="math-container">\[\alpha_{\max} = \min\!\left(1,\; \frac{\rho_a\,w/c}{\kappa_h-1}\right).\]</p><p>The Tennis–Jennings correlation [<a href="../../references/#tennis2000">45</a>] gives the mass ratio of low-density (LD) to total C-S-H, which splits the hydration products into an <strong>inner layer</strong> (HD-C-S-H, porosity <span>$\varphi_{HD} = 0.24$</span>) and an <strong>outer layer</strong> (LD-C-S-H, <span>$\varphi_{LD} = 0.37$</span>), with a fraction <span>$\eta = 20\%$</span> of crystalline hydrates (portlandite) in each.</p><pre><code class="language-julia hljs">const ρ_a, κ_h, η = 3.13, 2.13, 0.20
+const φ_HD, φ_LD = 0.24, 0.37
+const φ_od0 = 0.63          # initial small-capillary fraction in the outer domain
+
+αmax(wc) = min(1.0, wc * ρ_a / (κ_h - 1.0))
+
+fa(wc, α) = (1.0 - α) / (1.0 + ρ_a * wc)
+fh(wc, α) = κ_h * α / (1.0 + ρ_a * wc)
+fcp(wc, α) = max(0.0, 1.0 - fa(wc, α) - fh(wc, α))
+
+mLD(wc, α) = min(1.0, 0.538 + α * (3.017wc - 1.347))
+function μLD(wc, α)
+    mr = mLD(wc, α)
+    return mr * (1.0 - φ_HD) / (1.0 - φ_LD + mr * (φ_LD - φ_HD))
+end
+
+fihp(wc, α) = (1.0 - μLD(wc, α)) * fh(wc, α)   # inner hydration products
+fohp(wc, α) = μLD(wc, α) * fh(wc, α)           # outer hydration products
+
+function ψf(wc, α)
+    denom = 1.0 - fa(wc, α) - fihp(wc, α)
+    return denom &lt; 1.0e-12 ? 0.0 : fohp(wc, α) / denom
+end
+function fscp(wc, α)                            # small capillary pores
+    φ = φ_od0 * (1.0 - ψf(wc, α))
+    return fohp(wc, α) * φ / max(1.0 - φ, 1.0e-12)
+end
+flcp(wc, α) = max(0.0, fcp(wc, α) - fscp(wc, α))  # large capillary pores
+
+(fa = round(fa(0.4, 0.8), digits = 4), fcp = round(fcp(0.4, 0.8), digits = 4))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(fa = 0.0888, fcp = 0.1545)</code></pre><h2 id="Engineering-model"><a class="docs-heading-anchor" href="#Engineering-model">Engineering model</a><a id="Engineering-model-1"></a><a class="docs-heading-anchor-permalink" href="#Engineering-model" title="Permalink"></a></h2><p>The engineering model [<a href="../../references/#achourCBM2020">46</a>, <a href="../../references/#pichler2011">47</a>] involves two homogenization steps:</p><ol><li><strong>Level I — hydrate foam</strong> (self-consistent): an aging disordered assemblage of hydration products and capillary pores. The hydrates are oblate spheroids (<span>$\omega_h = 0.013$</span>) so that the solid percolates at the observed setting degree; the capillary pores are prolate (<span>$\omega_{cp} = 6$</span>) so the pore network stays connected throughout hydration.</li><li><strong>Level II — cement paste</strong> (Mori-Tanaka): spherical anhydrous clinker inclusions embedded in the hydrate-foam matrix.</li></ol><p>The same phase properties serve the mechanical and the diffusion problems.</p><pre><code class="language-julia hljs">const C_anhyd = iso_stiffness_E_nu(135.0, 0.3)    # anhydrous clinker
+const C_hyd = iso_stiffness_E_nu(25.3, 0.29)      # hydration products (calibrated)
+const D_hyd = Diso(5.04e-4)                       # hydrate diffusivity (Yu 1991 fit)
+
+const ω_h, ω_cp = 0.013, 6.0
+
+function engineering_model(wc, α = -1.0)
+    α &lt; 0 &amp;&amp; (α = αmax(wc))
+    _fa, _fh, _fcp = fa(wc, α), fh(wc, α), fcp(wc, α)
+    ft = _fh + _fcp                       # foam total (= 1 - fa)
+    ft &lt; 1.0e-10 &amp;&amp; return (nothing, nothing)
+
+    # Level I — hydrate foam (SC): HYD taken as the reference matrix.
+    foam = RVE(:HYD)
+    add_matrix!(
+        foam, Ellipsoid(1.0, 1.0, ω_h), Dict(:C =&gt; C_hyd, :D =&gt; D_hyd);
+        symmetrize = IsoSymmetrize()
+    )
+    add_phase!(
+        foam, :CAP, Ellipsoid(1.0, 1.0, ω_cp), Dict(:C =&gt; Z4, :D =&gt; D_bulk);
+        fraction = _fcp / ft, symmetrize = IsoSymmetrize()
+    )
+    C_foam = homogenize(foam, SelfConsistent(), :C)
+    D_foam = homogenize(foam, SelfConsistent(), :D)
+    k_mu(C_foam)[1] &lt; 1.0e-6 &amp;&amp; return (0.0, avg_D(D_foam))  # foam not percolated
+
+    # Level II — cement paste (MT): clinker spheres in the foam matrix.
+    paste = RVE(:FOAM)
+    add_matrix!(paste, Ellipsoid(1.0, 1.0, 1.0), Dict(:C =&gt; C_foam, :D =&gt; D_foam))
+    add_phase!(
+        paste, :CLINKER, Ellipsoid(1.0, 1.0, 1.0), Dict(:C =&gt; C_anhyd, :D =&gt; Z2);
+        fraction = _fa
+    )
+    C_cp = homogenize(paste, MoriTanaka(), :C)
+    D_cp = homogenize(paste, MoriTanaka(), :D)
+    return (E_nu(C_cp)[1], avg_D(D_cp))
+end
+
+engineering_model(0.4, 0.6)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(13.955316732214081, 0.004617955939166669)</code></pre><p>The effective Young&#39;s modulus and (log-scale) chloride diffusivity over the whole hydration range, for a set of water-to-cement ratios:</p><pre><code class="language-julia hljs">const WC_LIST = (0.30, 0.40, 0.50, 0.60)
+
+function model_curves(model, wc; n = 40)
+    αs = range(0.02, αmax(wc); length = n)
+    E = Float64[]
+    D = Float64[]
+    a = Float64[]
+    for α in αs
+        e, d = model(wc, α)
+        (e === nothing || d === nothing) &amp;&amp; continue
+        push!(a, α); push!(E, e); push!(D, d)
+    end
+    return a, E, D
+end
+
+function plot_model(model, title)
+    pE = plot(; xlabel = &quot;α&quot;, ylabel = &quot;E_hom (GPa)&quot;, title = &quot;$title — modulus&quot;,
+        legend = :topleft, framestyle = :box)
+    pD = plot(; xlabel = &quot;α&quot;, ylabel = &quot;D_hom / D_bulk&quot;, yscale = :log10,
+        title = &quot;$title — diffusivity&quot;, legend = :topright, framestyle = :box)
+    for wc in WC_LIST
+        a, E, D = model_curves(model, wc)
+        plot!(pE, a, E; label = &quot;w/c=$wc&quot;, lw = 2)
+        plot!(pD, a, max.(D, 1.0e-8); label = &quot;w/c=$wc&quot;, lw = 2)
+    end
+    return plot(pE, pD; layout = (1, 2), size = (960, 400))
+end
+
+plot_model(engineering_model, &quot;Engineering model&quot;)</code></pre><img src="eac8778f.svg" alt="Example block output"/><h2 id="Detailed-model"><a class="docs-heading-anchor" href="#Detailed-model">Detailed model</a><a id="Detailed-model-1"></a><a class="docs-heading-anchor-permalink" href="#Detailed-model" title="Permalink"></a></h2><p>The detailed three-scale model tracks the C-S-H gel microstructure at the nanometre scale, the inner/outer hydrate layers at the micrometre scale, and the cement-paste assembly at the grain scale.</p><h3 id="Level-0-—-C-S-H-gels"><a class="docs-heading-anchor" href="#Level-0-—-C-S-H-gels">Level 0 — C-S-H gels</a><a id="Level-0-—-C-S-H-gels-1"></a><a class="docs-heading-anchor-permalink" href="#Level-0-—-C-S-H-gels" title="Permalink"></a></h3><p>Both HD- and LD-C-S-H gels are self-consistent assemblages of <strong>oblate solid bricks</strong> (<span>$\omega_s = 0.12$</span>, <span>$E = 63$</span> GPa, <span>$\nu = 0.27$</span>, impervious) and <strong>prolate gel pores</strong> (<span>$\omega_p = 1/\omega_s \approx 8.3$</span>, <span>$D_{gel} = 0.025\,D_\text{bulk}$</span>). The prolate pore shape is what keeps the gel diffusivity non-zero at the HD porosity <span>$\varphi_{HD} = 0.24$</span>. The gel properties are fixed (independent of <span>$w/c$</span> and <span>$\alpha$</span>), so they are computed once.</p><pre><code class="language-julia hljs">const ω_s = 0.12
+const ω_p = 1.0 / ω_s
+const C_brick = iso_stiffness_E_nu(63.0, 0.27)
+const C_crystal = iso_stiffness_E_nu(42.3, 0.324)   # portlandite
+const D_gel = Diso(0.025)
+
+function homogenize_csh(φ)
+    gel = RVE(:BRICK)
+    add_matrix!(
+        gel, Ellipsoid(1.0, 1.0, ω_s), Dict(:C =&gt; C_brick, :D =&gt; Z2);
+        symmetrize = IsoSymmetrize()
+    )
+    add_phase!(
+        gel, :PORE, Ellipsoid(1.0, 1.0, ω_p), Dict(:C =&gt; Z4, :D =&gt; D_gel);
+        fraction = φ, symmetrize = IsoSymmetrize()
+    )
+    C = homogenize(gel, SelfConsistent(), :C)
+    D = homogenize(gel, SelfConsistent(), :D)
+    return C, D
+end
+
+C_HD, D_HD = homogenize_csh(φ_HD)
+C_LD, D_LD = homogenize_csh(φ_LD)
+(E_HD = round(E_nu(C_HD)[1], digits = 2), D_HD = round(avg_D(D_HD), sigdigits = 3),
+    E_LD = round(E_nu(C_LD)[1], digits = 2), D_LD = round(avg_D(D_LD), sigdigits = 3))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(E_HD = 31.04, D_HD = 0.000443, E_LD = 17.59, D_LD = 0.0016)</code></pre><h3 id="Level-I-—-inner-and-outer-hydrate-layers"><a class="docs-heading-anchor" href="#Level-I-—-inner-and-outer-hydrate-layers">Level I — inner and outer hydrate layers</a><a id="Level-I-—-inner-and-outer-hydrate-layers-1"></a><a class="docs-heading-anchor-permalink" href="#Level-I-—-inner-and-outer-hydrate-layers" title="Permalink"></a></h3><p>The <strong>inner layer</strong> is a self-consistent mixture of HD-C-S-H gel and spherical nano-crystals. The <strong>outer layer</strong> is built in two SC steps: oblate LD-C-S-H foam (<span>$\omega_{LD} = 0.14$</span>, the aspect ratio that controls its setting threshold) mixed with spherical small capillary pores, then folded together with spherical micro-crystals.</p><pre><code class="language-julia hljs">const ω_LD = 0.14
+
+function inner_layer_props()
+    r = RVE(:CSH)
+    add_matrix!(r, Ellipsoid(1.0, 1.0, 1.0), Dict(:C =&gt; C_HD, :D =&gt; D_HD))
+    add_phase!(
+        r, :CRYSTAL, Ellipsoid(1.0, 1.0, 1.0), Dict(:C =&gt; C_crystal, :D =&gt; Z2);
+        fraction = η
+    )
+    return homogenize(r, SelfConsistent(), :C), homogenize(r, SelfConsistent(), :D)
+end
+
+const C_inner, D_inner = inner_layer_props()   # fixed, α-independent
+
+function outer_layer_props(wc, α)
+    _fohp, _fscp = fohp(wc, α), fscp(wc, α)
+    f_ld = (1.0 - η) * _fohp
+    f_tot = f_ld + _fscp
+    f_tot &lt; 1.0e-12 &amp;&amp; return C_LD, D_LD
+    φ_scp = _fscp / f_tot
+
+    # Step 1 — oblate LD-C-S-H foam + spherical small capillary pores.
+    r1 = RVE(:LDCSH)
+    add_matrix!(
+        r1, Ellipsoid(1.0, 1.0, ω_LD), Dict(:C =&gt; C_LD, :D =&gt; D_LD);
+        symmetrize = IsoSymmetrize()
+    )
+    add_phase!(
+        r1, :SCP, Ellipsoid(1.0, 1.0, 1.0), Dict(:C =&gt; Z4, :D =&gt; D_bulk);
+        fraction = φ_scp
+    )
+    C1 = homogenize(r1, SelfConsistent(), :C)
+    D1 = homogenize(r1, SelfConsistent(), :D)
+
+    # Step 2 — outer C-S-H + spherical micro-crystals.
+    η_out = η * _fohp / (_fohp + _fscp)
+    r2 = RVE(:CSH)
+    add_matrix!(r2, Ellipsoid(1.0, 1.0, 1.0), Dict(:C =&gt; C1, :D =&gt; D1))
+    add_phase!(
+        r2, :CRYSTAL, Ellipsoid(1.0, 1.0, 1.0), Dict(:C =&gt; C_crystal, :D =&gt; Z2);
+        fraction = η_out
+    )
+    return homogenize(r2, SelfConsistent(), :C), homogenize(r2, SelfConsistent(), :D)
+end</code></pre><h3 id="Level-II-—-cement-paste"><a class="docs-heading-anchor" href="#Level-II-—-cement-paste">Level II — cement paste</a><a id="Level-II-—-cement-paste-1"></a><a class="docs-heading-anchor-permalink" href="#Level-II-—-cement-paste" title="Permalink"></a></h3><p>The paste is a generalized self-consistent scheme with two inclusion types: a three-layer composite sphere (anhydrous core + inner layer + outer layer) and spherical <strong>large capillary pores</strong>. The layer radii are recovered from the cumulative layer volume fractions; because a <a href="../../api/layered_sphere/#MeanFieldHom.LayeredSpheres.LayeredSphere"><code>LayeredSphere</code></a> stores one property family, the stiffness and diffusivity problems each get their own sphere (same radii, different per-layer moduli).</p><pre><code class="language-julia hljs"># Ascending radii from layer volume fractions g₁,…,g_M (outer radius = 1).
+function layer_radii(gs)
+    c = cumsum(collect(gs))
+    total = c[end]
+    return ntuple(k -&gt; (c[k] / total)^(1 / 3), length(gs))
+end
+
+# Coerce a homogenized isotropic result to a TensISO the sphere can store.
+iso_C(C) = (k = k_mu(C); iso_stiffness(k[1], k[2]))
+iso_D(D) = Diso(avg_D(D))
+
+function detailed_model(wc, α = -1.0)
+    α &lt; 0 &amp;&amp; (α = αmax(wc))
+    _fa, _fihp, _fohp = fa(wc, α), fihp(wc, α), fohp(wc, α)
+    _fscp, _flcp = fscp(wc, α), flcp(wc, α)
+    g = (_fa, _fihp, _fohp + _fscp)         # core, inner, outer
+    f_layers = sum(g)
+    f_layers &lt; 1.0e-10 &amp;&amp; return (nothing, nothing)
+    g[1] &lt; 1.0e-10 &amp;&amp; return (nothing, nothing)   # no anhydrous core
+
+    C_outer, D_outer = outer_layer_props(wc, α)
+    radii = layer_radii(g)
+
+    sphere_C = LayeredSphere(radii, (C_anhyd, iso_C(C_inner), iso_C(C_outer)))
+    sphere_D = LayeredSphere(radii, (Z2, iso_D(D_inner), iso_D(D_outer)))
+
+    rC = RVE(:PASTE)
+    add_matrix!(rC, Ellipsoid(1.0, 1.0, 1.0), Dict(:C =&gt; C_LD))   # SC: reference only
+    add_phase!(rC, :LAYERS, sphere_C, Dict(:C =&gt; C_anhyd); fraction = f_layers)
+    add_phase!(rC, :LCP, Ellipsoid(1.0, 1.0, 1.0), Dict(:C =&gt; Z4); fraction = _flcp)
+    C_cp = homogenize(rC, SelfConsistent(), :C)
+
+    rD = RVE(:PASTE)
+    add_matrix!(rD, Ellipsoid(1.0, 1.0, 1.0), Dict(:D =&gt; D_LD))
+    add_phase!(rD, :LAYERS, sphere_D, Dict(:D =&gt; D_bulk); fraction = f_layers)
+    add_phase!(rD, :LCP, Ellipsoid(1.0, 1.0, 1.0), Dict(:D =&gt; D_bulk); fraction = _flcp)
+    D_cp = homogenize(rD, SelfConsistent(), :D)
+
+    return (E_nu(C_cp)[1], avg_D(D_cp))
+end
+
+detailed_model(0.4, 0.6)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(13.382003926144565, NaN)</code></pre><pre><code class="language-julia hljs">plot_model(detailed_model, &quot;Detailed model&quot;)</code></pre><img src="e05ba227.svg" alt="Example block output"/><h2 id="Comparison-of-both-models"><a class="docs-heading-anchor" href="#Comparison-of-both-models">Comparison of both models</a><a id="Comparison-of-both-models-1"></a><a class="docs-heading-anchor-permalink" href="#Comparison-of-both-models" title="Permalink"></a></h2><p>The two models predict consistent trends. The engineering model is faster but relies on effective hydrate properties calibrated from mature paste; the detailed model is richer in microstructural content and agrees more closely with experiment across the full hydration range [<a href="../../references/#achourCBM2020">46</a>]. For a given <span>$w/c$</span> both predict a <strong>percolation threshold</strong> in stiffness near the observed setting degree, and a <strong>sharp drop</strong> in diffusivity at intermediate-to-high hydration as the large capillary pores disconnect and transport is forced through the poorly-diffusive gel.</p><pre><code class="language-julia hljs">wc = 0.4
+ae, Ee, De = model_curves(engineering_model, wc)
+ad, Ed, Dd = model_curves(detailed_model, wc)
+
+pE = plot(; xlabel = &quot;α&quot;, ylabel = &quot;E_hom (GPa)&quot;, title = &quot;Young&#39;s modulus — w/c=$wc&quot;,
+    legend = :topleft, framestyle = :box)
+plot!(pE, ae, Ee; label = &quot;engineering&quot;, lw = 2, ls = :dash)
+plot!(pE, ad, Ed; label = &quot;detailed&quot;, lw = 2)
+
+pD = plot(; xlabel = &quot;α&quot;, ylabel = &quot;D_hom / D_bulk&quot;, yscale = :log10,
+    title = &quot;Chloride diffusivity — w/c=$wc&quot;, legend = :topright, framestyle = :box)
+plot!(pD, ae, max.(De, 1.0e-8); label = &quot;engineering&quot;, lw = 2, ls = :dash)
+plot!(pD, ad, max.(Dd, 1.0e-8); label = &quot;detailed&quot;, lw = 2)
+
+plot(pE, pD; layout = (1, 2), size = (960, 400))</code></pre><img src="8ac0e54a.svg" alt="Example block output"/><h2 id="Percolation-diagrams:-role-of-the-inclusion-shapes"><a class="docs-heading-anchor" href="#Percolation-diagrams:-role-of-the-inclusion-shapes">Percolation diagrams: role of the inclusion shapes</a><a id="Percolation-diagrams:-role-of-the-inclusion-shapes-1"></a><a class="docs-heading-anchor-permalink" href="#Percolation-diagrams:-role-of-the-inclusion-shapes" title="Permalink"></a></h2><p>The oblate/prolate aspect ratios of the engineering model are not free: they are fixed by requiring the <strong>elastic</strong> and <strong>diffusion</strong> percolation thresholds to fall at the porosities observed experimentally [<a href="../../references/#achourCBM2020">46</a>]. For a self-consistent two-phase medium of solid spheroids (aspect ratio <span>$\omega_s$</span>, <span>$\mathbb C_s \neq 0$</span>, impervious) and pore spheroids (<span>$\omega_p$</span>, <span>$\mathbb C_p = 0$</span>, <span>$\mathbf D_p \neq 0$</span>), both thresholds depend only on the two shapes, not on the (non-zero) modulus values.</p><p>The <strong>diffusion threshold</strong> <span>$\varphi^{\rm diff}$</span> — the porosity above which the pore network conducts — follows in closed form from the 2nd-order SC equation at <span>$\mathbf D^{\rm hom}\to 0^+$</span>:</p><p class="math-container">\[\varphi^{\rm diff}
+  = \frac{\operatorname{tr}\mathbf Q_s^{-1}}
+         {\operatorname{tr}\mathbf P_p^{-1} + \operatorname{tr}\mathbf Q_s^{-1}},
+\qquad
+\mathbf P_p = \mathbf P(\omega_p,\mathbf 1),\quad
+\mathbf Q_s = \mathbf 1 - \mathbf P(\omega_s,\mathbf 1).\]</p><p>The <strong>elastic threshold</strong> <span>$\varphi^{\rm elas}$</span> — the porosity above which the solid skeleton loses rigidity, <span>$\mathbb C^{\rm hom}\to 0^+$</span> — reduces to a coupled system in the solid fraction <span>$f_s$</span> and the Poisson ratio <span>$\nu$</span> of the SC medium, involving the Hill tensor <span>$\mathbb P_s = \mathbb P(\omega_s,\mathbb C(\nu))$</span> of the solid and the dual Hill tensor <span>$\mathbb Q_p = \mathbb C - \mathbb C:\mathbb P_p:\mathbb C$</span> of the pore (with <span>$\mathbb C(\nu)$</span> the SC medium normalized to unit Young&#39;s modulus):</p><p class="math-container">\[f_s = \frac{\operatorname{tr}(\mathbb J : \mathbb Q_p^{-1})}
+           {(1-2\nu)^2\operatorname{tr}(\mathbb J:\mathbb P_s^{-1})
+            + \operatorname{tr}(\mathbb J:\mathbb Q_p^{-1})},
+\qquad
+f_s (1+\nu)^2 \operatorname{tr}(\mathbb K:\mathbb P_s^{-1})
+   = (1-f_s)\operatorname{tr}(\mathbb K:\mathbb Q_p^{-1}),\]</p><p>with <span>$\varphi^{\rm elas} = 1 - f_s$</span>. These are exactly the relations of the Echoes book [<a href="../../references/#echoes">42</a>]; the two implementations agree to machine precision.</p><pre><code class="language-julia hljs"># Frobenius double-double contraction ⟨A,B⟩ = A_ijkl B_ijkl, matching the
+# 6×6 Mandel `tr(A·B)` used in Echoes.
+frob(A, B) = sum(Array(A) .* Array(B))
+const 𝕁 = TensISO{3}(1.0, 0.0)
+const 𝕂 = TensISO{3}(0.0, 1.0)
+
+function bisect_root(f, lo, hi; n = 60)
+    flo = f(lo)
+    for _ in 1:n
+        m = (lo + hi) / 2
+        if flo * f(m) &lt;= 0
+            hi = m
+        else
+            lo = m; flo = f(lo)
+        end
+    end
+    return (lo + hi) / 2
+end
+
+# Elastic percolation threshold φ_elas = 1 - f_s (pore fraction).
+function φ_elas(ωs, ωp)
+    Es, Ep = Ellipsoid(1.0, 1.0, ωs), Ellipsoid(1.0, 1.0, ωp)
+    function invPQ(ν)
+        C = iso_stiffness_E_nu(1.0, ν)
+        iPs = inv(hill_tensor(Es, C))
+        iQp = inv(C - C ⊡ hill_tensor(Ep, C) ⊡ C)   # dual Hill of the pore
+        return iPs, iQp
+    end
+    solf(iPs, iQp, ν) = (a = frob(𝕁, iPs); b = frob(𝕁, iQp); b / ((1 - 2ν)^2 * a + b))
+    function eqν(ν)
+        iPs, iQp = invPQ(ν)
+        f = solf(iPs, iQp, ν)
+        return f * (1 + ν)^2 * frob(𝕂, iPs) - (1 - f) * frob(𝕂, iQp)
+    end
+    ν = bisect_root(eqν, 0.0, 0.4)
+    iPs, iQp = invPQ(ν)
+    return 1 - solf(iPs, iQp, ν)
+end
+
+# Diffusion percolation threshold (pore fraction) — closed form.
+function φ_diff(ωs, ωp)
+    Pp = Array(hill_tensor(Ellipsoid(1.0, 1.0, ωp), TensISO{3}(1.0)))
+    Ps = Array(hill_tensor(Ellipsoid(1.0, 1.0, ωs), TensISO{3}(1.0)))
+    a = tr(inv(Pp))
+    b = tr(inv(Array(TensISO{3}(1.0)) - Ps))
+    return b / (a + b)
+end
+
+(elastic = round(100 * φ_elas(0.013, 6.0), digits = 1),
+    diffusion = round(100 * φ_diff(0.013, 6.0), digits = 1))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(elastic = 92.6, diffusion = 65.5)</code></pre><p>The two thresholds, mapped over <span>$(\log_{10}\omega_s, \log_{10}\omega_p)$</span>, with the calibration points of the engineering model (<span>$\star$</span>) and of the C-S-H gel (<span>$\triangle$</span>):</p><pre><code class="language-julia hljs">n = 41
+logω = range(-3.0, 2.0; length = n)
+ω = 10.0 .^ logω
+Ze = [100 * φ_elas(ω[i], ω[j]) for j in 1:n, i in 1:n]   # rows = ωp, cols = ωs
+Zd = [100 * φ_diff(ω[i], ω[j]) for j in 1:n, i in 1:n]
+
+cal_s = (log10(0.013), log10(0.12))
+cal_p = (log10(6.0), log10(1 / 0.12))
+
+function threshold_panel(Z, title)
+    p = contour(logω, logω, Z; fill = true, c = :viridis, levels = 12,
+        xlabel = &quot;log₁₀ ωs (solid)&quot;, ylabel = &quot;log₁₀ ωp (pore)&quot;,
+        title = title, colorbar_title = &quot; φ (%)&quot;, framestyle = :box)
+    scatter!(p, [cal_s[1]], [cal_p[1]]; m = :star5, ms = 9, c = :red, label = &quot;eng.&quot;)
+    scatter!(p, [cal_s[2]], [cal_p[2]]; m = :utriangle, ms = 7, c = :white, label = &quot;gel&quot;)
+    return p
+end
+
+plot(threshold_panel(Ze, &quot;Elastic φ_elas (%)&quot;),
+    threshold_panel(Zd, &quot;Diffusion φ_diff (%)&quot;);
+    layout = (1, 2), size = (980, 420))</code></pre><img src="9a881e0c.svg" alt="Example block output"/><p>At the engineering calibration point the solid is a very thin oblate platelet (<span>$\omega_s = 0.013$</span>): it percolates at a tiny solid fraction, so the skeleton carries load up to a <strong>high</strong> porosity, <span>$\varphi^{\rm elas} \approx 93\%$</span> — the paste sets early (low <span>$\alpha$</span>). The prolate pores combined with those thin solid barriers give <span>$\varphi^{\rm diff} \approx 66\%$</span>, so the capillary network disconnects only at low porosity (high <span>$\alpha$</span>): the elastic and diffusion thresholds are well separated, which is exactly the behaviour needed to reproduce both the early set and the late diffusivity drop. The C-S-H gel point sits at <span>$\varphi^{\rm elas} \approx 64\%$</span> and <span>$\varphi^{\rm diff} \approx 17\%$</span>, so at the HD porosity <span>$\varphi_{HD} = 0.24$</span> the gel is simultaneously load-bearing (<span>$0.24 &lt; 0.64$</span>) and diffusive (<span>$0.24 &gt; 0.17$</span>) — the prolate gel pores are what keep <span>$\mathbf D_{HD} &gt; 0$</span>.</p><div class="admonition is-info" id="Numerical-agreement-with-Echoes-7c1ba94692c0e072"><header class="admonition-header">Numerical agreement with Echoes<a class="admonition-anchor" href="#Numerical-agreement-with-Echoes-7c1ba94692c0e072" title="Permalink"></a></header><div class="admonition-body"><p>Evaluated with the compiled Echoes library, <span>$\varphi^{\rm elas}$</span> and <span>$\varphi^{\rm diff}$</span> at these points coincide with the values above to the third decimal (identical Poisson ratio at the elastic root), confirming that <code>MeanFieldHom</code> and Echoes share the same Hill/dual-Hill kernels.</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../cement_paste/">« Multiscale elasticity of a hydrating cement paste</a><a class="docs-footer-nextpage" href="../strength/">Quasi-brittle strength of cement paste and mortar »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 23 July 2026 13:56">Thursday 23 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
