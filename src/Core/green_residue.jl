@@ -87,10 +87,14 @@ function _build_poly_system(
         K_poly[i, j] = poly([A₀[i, j], A₁[i, j], A₂[i, j]])
     end
 
+    # Complementary row/column indices for a fixed 3×3 pattern — a static
+    # tuple lookup instead of `setdiff(1:3, [j])`, which allocates two
+    # `Vector`s (plus the single-element literal) per one of the 9 entries.
+    _other2(m::Int) = m == 1 ? (2, 3) : m == 2 ? (1, 3) : (1, 2)
     adj_poly = Matrix{Polynomial{ComplexF64, :z}}(undef, 3, 3)
     @inbounds for j in 1:3, i in 1:3
-        rows = setdiff(1:3, [j])
-        cols = setdiff(1:3, [i])
+        rows = _other2(j)
+        cols = _other2(i)
         minor = K_poly[rows[1], cols[1]] * K_poly[rows[2], cols[2]] -
             K_poly[rows[1], cols[2]] * K_poly[rows[2], cols[1]]
         adj_poly[i, j] = isodd(i + j) ? -minor : minor

@@ -873,12 +873,18 @@ function _shear_state_seq_alv(
         else
             (M_κ_b, M_μ_b) = (M_κ_0, M_μ_0)
         end
-        T_intf = _shear_interface_T_alv(
-            intf,
-            M_κ_a, M_μ_a, M_κ_b, M_μ_b, radii[k], times, n
-        )
-        sa = T_intf * sa
-        sb = T_intf * sb
+        # `PerfectInterface` is the identity jump on (U,V,σ_rr,σ_rθ) — skip
+        # building and applying the `(4n×4n)` identity matrix entirely
+        # rather than pay for a materialized `Matrix{T}(I,4n,4n)` and a
+        # matmul that both reduce to a no-op.
+        if !(intf isa PerfectInterface)
+            T_intf = _shear_interface_T_alv(
+                intf,
+                M_κ_a, M_μ_a, M_κ_b, M_μ_b, radii[k], times, n
+            )
+            sa = T_intf * sa
+            sb = T_intf * sb
+        end
         if k < N
             T_layer = _shear_layer_transfer_alv(
                 radii[k + 1], radii[k],
@@ -922,9 +928,14 @@ function shear_localization_alv(
     )
     radii = sphere.radii
 
-    # Matrix-side amplitudes of each probe at r_N⁺.
-    a_a, b_a = _shear_amp_blocks_alv(radii[N], M_κ_0, M_μ_0, n, s_mat_a)
-    a_b, b_b = _shear_amp_blocks_alv(radii[N], M_κ_0, M_μ_0, n, s_mat_b)
+    # Matrix-side amplitudes of each probe at r_N⁺. The closed-form
+    # `M(r_N)^{-1}` inside `_shear_amp_blocks_alv` is the same for both
+    # probes — concatenate them into one call instead of computing that
+    # inverse twice.
+    state_ab = hcat(s_mat_a, s_mat_b)
+    a_ab, b_ab = _shear_amp_blocks_alv(radii[N], M_κ_0, M_μ_0, n, state_ab)
+    a_a, a_b = a_ab[:, 1:n], a_ab[:, (n + 1):(2n)]
+    b_a, b_b = b_ab[:, 1:n], b_ab[:, (n + 1):(2n)]
 
     # Linear combination giving (a_{N+1}, b_{N+1}) = (I_n, 0).
     λ_a, λ_b = _shear_solve_far_field_alv(a_a, a_b, b_a, b_b, n)

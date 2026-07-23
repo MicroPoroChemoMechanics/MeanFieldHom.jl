@@ -155,13 +155,10 @@ function multiscale_C_mo(wc, α_p, sc, μ_b0; N::Int = NTHETA, ω::Real = ω_asp
 end
 
 # ── Iso bulk / shear moduli of a (nearly) iso 4-tensor ─────────────────────
-function extract_kμ(arr::AbstractArray)
-    K = sum(arr[i, i, j, j] for i in 1:3, j in 1:3) / 9
-    full_trace = sum(arr[i, j, i, j] for i in 1:3, j in 1:3)
-    μ = (full_trace - 3K) / 10
-    return K, μ
-end
-extract_E(K, μ) = 9K * μ / (3K + μ)
+# `proj_tens(:ISO, ...)` is TensND's paramsym-style best-fit projection
+# (echoes' `.paramsym(sym=ISO)` analogue); `k_mu` is MeanFieldHom's
+# stiffness-role interpretation of the resulting (α,β) = (3k,2μ) coefficients.
+extract_kμ(arr::AbstractArray) = k_mu(TensND.proj_tens(Val(:ISO), arr)[1])
 
 # ── Strength criterion (Pichler & Hellmich 2011) ───────────────────────────
 #
@@ -201,7 +198,7 @@ function compute_point(wc, α_p; sc = 0.0, N::Int = NTHETA, ω::Real = ω_aspect
     arr_dC_mo = ForwardDiff.partials.(arr_dual, 1)
 
     K_mo, μ_mo = extract_kμ(arr_C_mo)
-    E_mo = extract_E(K_mo, μ_mo)
+    E_mo, _ = E_nu(iso_stiffness(K_mo, μ_mo))
 
     fhyd_in_mortar = f_hyd(wc, α_p) * (1 - fh_san(wc, sc))
     f_θ = fhyd_in_mortar * polar_orientation_bins(N)[1].weight

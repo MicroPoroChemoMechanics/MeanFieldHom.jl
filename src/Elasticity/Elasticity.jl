@@ -35,6 +35,7 @@ include("hill_3d_cylinder_aniso.jl")
 include("hill_2d_iso.jl")
 include("hill_2d_aniso.jl")
 include("api.jl")
+include("param_conversions.jl")
 
 # ── TI-coaxial dispatch refinement ──────────────────────────────────────────
 # Inject specialised resolution for TI matrix + coaxial spheroid; falls back
@@ -73,5 +74,7 @@ export EllipsoidShape, Spherical, Prolate, Oblate, Triaxial, Circular, Elliptic
 export Cylinder, CylindricalShape, CircularCylindrical, EllipticCylindrical
 export tens_IA, tens_UA, tens_VA
 export hill_tensor
+export k_mu, iso_stiffness, E_nu, iso_stiffness_E_nu
+export hoenig_params, hoenig_stiffness
 
 end # module

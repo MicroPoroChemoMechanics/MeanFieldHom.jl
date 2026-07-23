@@ -50,10 +50,7 @@ for f in (0.05, 0.1, 0.2, 0.3, 0.4)
         fraction = f
     )
     C_mt = homogenize(rve, MoriTanaka())
-    # TensISO{3}(α, β) stores (3k, 2μ) directly in `data`.
-    α, β = TensND.get_data(C_mt)
-    k_mfh = α / 3
-    μ_mfh = β / 2
+    k_mfh, μ_mfh = k_mu(C_mt)
     k_cf, μ_cf = mt_closed_form(km, μm, ki, μi, f)
     @printf(
         "%6.3f   %12.6f   %12.6f   %12.6f   %12.6f\n",

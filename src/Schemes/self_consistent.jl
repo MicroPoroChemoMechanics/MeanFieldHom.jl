@@ -241,8 +241,9 @@ function _solve_sc(
     last_resid = _sc_residual_zero(x0)
     x_best = x0
     resid_best_val = typemax(_value_eltype(x0))
+    ε_pos = _sc_pd_eps(x0)
     for k in 1:maxiters
-        x = _sc_pd_guard(x, x0)
+        x = _sc_pd_guard_apply(x, ε_pos)
         x_new = step(x)
         last_resid = _sc_residual_norm(x_new, x)
         norm_x = _sc_residual_norm(x, zero(x))
@@ -302,8 +303,9 @@ function _solve_sc(
     L = length(p0)
     Tref = float(eltype(p0))
     rebuild = p -> _tens_from_param_vec(x0, p)
+    ε_pos = _sc_pd_eps(x0)
     residual_vec = function (p)
-        x_in = _sc_pd_guard(rebuild(p), x0)
+        x_in = _sc_pd_guard_apply(rebuild(p), ε_pos)
         x_out = step(x_in)
         return _tens_to_param_vec(x_out) .- _tens_to_param_vec(x_in)
     end
@@ -372,9 +374,16 @@ end
 # (matrix scale).
 
 function _sc_pd_guard(x, x0)
+    return _sc_pd_guard_apply(x, _sc_pd_eps(x0))
+end
+
+# `x0` is fixed for the entire SC iteration (Picard or Newton) — computing
+# this once and passing `ε_pos` into `_sc_pd_guard_apply` directly avoids
+# recomputing `_max_canonical_value(x0)` (which itself does a `try`/`catch`,
+# blocking inlining) on every single guard call within the loop.
+function _sc_pd_eps(x0)
     α0_max = _max_canonical_value(x0)
-    ε_pos = max(α0_max * sqrt(eps(real(_value_eltype(x0)))), 1.0e-12)
-    return _sc_pd_guard_apply(x, ε_pos)
+    return max(α0_max * sqrt(eps(real(_value_eltype(x0)))), 1.0e-12)
 end
 
 # Iso 4-tensor: check (α, β); reset to ε·𝕁 + ε·𝕂 if either component

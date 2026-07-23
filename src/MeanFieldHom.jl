@@ -95,6 +95,8 @@ export Cylinder, CylindricalShape, CircularCylindrical, EllipticCylindrical
 export newton_potential_3d_cylinder
 export tens_IA, tens_UA, tens_VA
 export hill_tensor
+export k_mu, iso_stiffness, E_nu, iso_stiffness_E_nu
+export hoenig_params, hoenig_stiffness
 
 # ── Cracks ───────────────────────────────────────────────────────────────────
 export CrackShape, Penny, EllipticShape, Ribbon
@@ -129,7 +131,7 @@ export AbstractDistributionShape, UniformDistribution
 export AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize
 export isotropify, transverse_isotropify
 export ti_average_mandel66, iso_average_mandel66
-export best_fit_ti, best_fit_iso
+export best_fit_ti, best_fit_iso, best_fit_ortho
 export polar_orientation_bins
 export Phase, RVE
 export add_matrix!, add_phase!

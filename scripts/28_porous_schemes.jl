@@ -58,14 +58,11 @@ end
 # script robust if a scheme returns a slightly anisotropic tensor due
 # to numerical drift.
 function extract_kμ(C::TensND.TensISO{4, 3})
-    α, β = TensND.get_data(C)
-    return max(α / 3, 0.0), max(β / 2, 0.0)
+    K, μ = k_mu(C)
+    return max(K, 0.0), max(μ, 0.0)
 end
 function extract_kμ(C::TensND.AbstractTens)
-    a = TensND.get_array(C)
-    K = sum(a[i, i, j, j] for i in 1:3, j in 1:3) / 9
-    full_trace = sum(a[i, j, i, j] for i in 1:3, j in 1:3)
-    μ = (full_trace - 3 * K) / 10
+    K, μ = k_mu(best_fit_iso(C))
     return max(K, 0.0), max(μ, 0.0)
 end
 

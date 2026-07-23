@@ -122,9 +122,7 @@ plt = plot(
 # scheme as the ALV run).
 function elastic_compliance(omega, f, t, sch::HomogenizationScheme)
     C_M_arr = inv(Js(t, t))   # 6×6
-    α_M = (C_M_arr[1, 1] + 2 * C_M_arr[1, 2])
-    β_M = C_M_arr[4, 4]
-    C_M_t = TensISO{3}(α_M, β_M)
+    C_M_t = best_fit_iso(TensND.Tens(MeanFieldHom.Core.array_from_mandel66(C_M_arr)))
     rve_e = RVE(:M)
     add_matrix!(rve_e, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_M_t))
     sh = omega == 1.0 ? Ellipsoid(1.0, 1.0, 1.0) : Spheroid(omega)
@@ -134,11 +132,7 @@ function elastic_compliance(omega, f, t, sch::HomogenizationScheme)
         fraction = f, symmetrize = :iso
     )
     C_eff = homogenize(rve_e, sch, :C)
-    arr = TensND.get_array(C_eff)
-    α_eff = arr[1, 1, 1, 1] + 2 * arr[1, 1, 2, 2]
-    β_eff = 2 * arr[1, 2, 1, 2]
-    K_eff = α_eff / 3;  μ_eff = β_eff / 2
-    E_eff = 9 * K_eff * μ_eff / (3 * K_eff + μ_eff)
+    E_eff, _ = E_nu(best_fit_iso(C_eff))
     return 1 / E_eff
 end
 

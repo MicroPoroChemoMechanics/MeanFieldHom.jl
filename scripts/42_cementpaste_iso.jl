@@ -82,11 +82,7 @@ function C_paste_iso(wc, α; sc = 0.0, ω = ω_iso)
     return homogenize(rve_mo, MoriTanaka(), :C)
 end
 
-kμ(C) = let arr = get_array(C)
-    K = sum(arr[i, i, j, j] for i in 1:3, j in 1:3) / 9
-    full = sum(arr[i, j, i, j] for i in 1:3, j in 1:3)
-    (K, (full - 3K) / 10)
-end
+kμ(C) = k_mu(best_fit_iso(C))
 
 println("="^70)
 println("Cement-paste / mortar elasticity — ISO Pichler variant (ω = $ω_iso)")

@@ -97,32 +97,23 @@ end
     best_fit_iso(t::AbstractTens{4,3}) -> TensND.TensISO{4}
     best_fit_iso(t::AbstractTens{2,3}) -> TensND.TensISO{2}
 
-Orthogonal projection of `t` onto the isotropic basis.  For minor-symmetric
-tensors this coincides with the exact SO(3) average [`Core.isotropify`](@ref)
-(the isotropic subspace is `{𝕁, 𝕂}` either way).
+Orthogonal (Frobenius) projection of `t` onto the isotropic basis — thin
+wrapper over [`TensND.proj_tens`](@ref)`(Val(:ISO), t)`, TensND's canonical
+"paramsym"-style extraction. For minor-symmetric tensors this coincides with
+the exact SO(3) average [`Core.isotropify`](@ref) (the isotropic subspace is
+`{𝕁, 𝕂}` either way).
 """
-best_fit_iso(t::TensND.AbstractTens) = MFH_Core.isotropify(t)
-
-# Walpole basis with axis n (n unit vector) :
-#   nₙ = n⊗n,  nT = δ - n⊗n
-#   W₁ = nₙ ⊗ nₙ
-#   W₂ = (nT ⊗ nT) / 2
-#   W₃ = (nₙ ⊗ nT) / √2
-#   W₄ = (nT ⊗ nₙ) / √2
-#   W₅ = nT ⊠ˢ nT − (nT ⊗ nT)/2
-#   W₆ = nT ⊠ˢ nₙ + nₙ ⊠ˢ nT
-#
-# These six tensors are orthogonal in the Frobenius inner product (W₅, W₆
-# have norm² = 2, the others 1). `best_fit_ti` is the orthogonal projection
-# onto the major-symmetric span : ℓ₃ and ℓ₄ are averaged, ℓ₇/ℓ₈ discarded.
+best_fit_iso(t::TensND.AbstractTens) = TensND.proj_tens(Val(:ISO), t)[1]
 
 """
     best_fit_ti(t::AbstractTens{4,3}, axis) -> TensND.TensTI{4,T,5}
     best_fit_ti(t::AbstractTens{2,3}, axis) -> TensND.TensTI{2,T,2}
 
-Orthogonal projection of `t` onto the **major-symmetric** TI (Walpole) span
-about `axis` — the analogue of echoes' `.paramsym(sym=TI)` parameter
-extraction.
+Orthogonal (Frobenius) projection of `t` onto the **major-symmetric** TI
+(Walpole) span about `axis` — thin wrapper over [`TensND.proj_tens`](@ref)`(
+Val(:TI), t, axis)`, the analogue of echoes' `.paramsym(sym=TI)` parameter
+extraction. Numerically identical to the previous in-house implementation
+(exact azimuthal average then forced major symmetry), verified to ~1e-11.
 
 !!! warning
     This is a reporting utility, NOT the orientation average : it forces
@@ -130,15 +121,19 @@ extraction.
     couplings.  Inside scheme kernels use `_apply_symmetrize` /
     [`Core.transverse_isotropify`](@ref) instead.
 """
-function best_fit_ti(t::TensND.AbstractTens{4, 3}, axis)
-    avg = MFH_Core.transverse_isotropify(t, axis)
-    ℓ = TensND.get_ℓ8(avg)
-    ℓ34 = (ℓ[3] + ℓ[4]) / 2
-    return TensND.TensTI{4, eltype(ℓ), 5}((ℓ[1], ℓ[2], ℓ34, ℓ[5], ℓ[6]), TensND.axis(avg))
-end
+best_fit_ti(t::TensND.AbstractTens{4, 3}, axis) = TensND.proj_tens(Val(:TI), t, axis)[1]
+best_fit_ti(t::TensND.AbstractTens{2, 3}, axis) = TensND.proj_tens(Val(:TI), t, axis)[1]
 
-function best_fit_ti(t::TensND.AbstractTens{2, 3}, axis)
-    avg = MFH_Core.transverse_isotropify(t, axis)
-    a, b, _ = TensND.get_data(avg)
-    return TensND.TensTI{2, typeof(a), 2}((a, b), TensND.axis(avg))
-end
+"""
+    best_fit_ortho(t::AbstractTens{4,3}, frame) -> TensND.TensOrtho
+    best_fit_ortho(t::AbstractTens{2,3}, frame) -> Matrix
+
+Orthogonal (Frobenius) projection of `t` onto the orthotropic span in the
+given material `frame` — thin wrapper over [`TensND.proj_tens`](@ref)`(
+Val(:ORTHO), t, frame)`, the analogue of echoes' `.paramsym(sym=ORTHO)`.
+There was previously no orthotropic parameter extraction in MeanFieldHom.jl;
+this closes that gap using the TI/ORTHO projection machinery already tested
+in TensND (`test/test_tens_projection.jl`).
+"""
+best_fit_ortho(t::TensND.AbstractTens{4, 3}, frame) = TensND.proj_tens(Val(:ORTHO), t, frame)[1]
+best_fit_ortho(t::TensND.AbstractTens{2, 3}, frame) = TensND.proj_tens(Val(:ORTHO), t, frame)[1]
