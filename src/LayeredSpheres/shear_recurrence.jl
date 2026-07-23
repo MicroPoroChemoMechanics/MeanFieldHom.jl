@@ -1,6 +1,6 @@
 # =============================================================================
 #  shear_recurrence.jl — deviatoric (Y₂-harmonic) recurrence for the
-#  isotropic n-layer spherical inclusion, in the (κ, μ) parametrisation
+#  isotropic n-layer spherical inclusion, in the (κ, μ) parametrization
 #  that stays regular in the incompressibility limit (κ → ∞).
 #
 #  Under a remote pure-deviatoric loading the displacement field in an
@@ -46,7 +46,7 @@
 #  whole stack, extract the matrix-side (a, b) amplitudes from the state
 #  at r_N⁺, and form the linear combination that yields a unit remote
 #  deviatoric far-field (a_{N+1}, b_{N+1}) = (1, 0).  The per-layer
-#  shear localisation is β_k = a_k (volume-averaged Y₂ projection).
+#  shear localization is β_k = a_k (volume-averaged Y₂ projection).
 # =============================================================================
 
 """
@@ -210,7 +210,7 @@ end
     _shear_localization_single_layer(sphere, C₀) -> β::T
 
 For a single-layer (`N = 1`) composite sphere, delegate the deviatoric
-localisation to the existing `Ellipsoid(r)` Eshelby machinery.
+localization to the existing `Ellipsoid(r)` Eshelby machinery.
 """
 function _shear_localization_single_layer(
         sphere::LayeredSphere{T, 1}, C₀::TensND.TensISO{4, 3}
@@ -231,7 +231,7 @@ the innermost layer) of moduli `(κ, μ)`.  Equals
 `(21/5) · (3κ + μ)/μ · (r_b⁵ - r_a⁵) / (r_b³ - r_a³)` (Christensen-Lo
 mode-2 angular integral; modes 3 and 4 contribute zero to the dev β).
 
-The full per-layer dev localisation is therefore
+The full per-layer dev localization is therefore
 `β_k = a_k + b_k · _layer_avg_dev_shear_factor(r_a, r_b, κ_k, μ_k)`.
 """
 @inline function _layer_avg_dev_shear_factor(r_a, r_b, κ, μ)
@@ -246,7 +246,7 @@ end
 """
     _shear_localization_multi(sphere, C₀) -> NTuple{N}
 
-Multi-layer (`N ≥ 2`) per-layer deviatoric localisation `β_k` from the
+Multi-layer (`N ≥ 2`) per-layer deviatoric localization `β_k` from the
 4×4 state-vector recurrence.  For a spherical shell layer, the
 volume-averaged deviatoric strain involves both the mode-1 amplitude
 (uniform deviatoric part) **and** the mode-2 amplitude (whose r³
@@ -277,7 +277,7 @@ end
 """
     _shear_localization(sphere, C₀) -> NTuple{N}
 
-Per-layer deviatoric localisation `β_k` under a remote unit deviatoric
+Per-layer deviatoric localization `β_k` under a remote unit deviatoric
 far-field.  Dispatches to the single-layer Eshelby delegation for
 `N = 1` and to the state-vector recurrence for `N ≥ 2`.
 """

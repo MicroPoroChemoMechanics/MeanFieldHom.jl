@@ -17,12 +17,9 @@ E, ν = 1.0, 0.25
 k, μ = E / (3(1 - 2ν)), E / (2(1 + ν))
 C_iso = TensISO{3}(3k, 2μ)
 
-# Promote to generic Tens to force the numerical dispatch
-C_generic = zeros(3, 3, 3, 3)
-for i in 1:3, j in 1:3, p in 1:3, q in 1:3
-    C_generic[i, j, p, q] = C_iso[i, j, p, q]
-end
-C_gen = Tens(C_generic, CanonicalBasis{3, Float64}())
+# Promote to generic Tens to force the numerical dispatch (`get_array` gives
+# the dense 3×3×3×3 components directly — no index loop needed).
+C_gen = Tens(get_array(C_iso), CanonicalBasis{3, Float64}())
 
 r = RibbonCrack(1.0)
 println("Analytical (TensISO): ", cod_tensor(r, C_iso))

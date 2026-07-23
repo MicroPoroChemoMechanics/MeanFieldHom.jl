@@ -3,7 +3,7 @@
 #
 #  Thin wrapper around the factored polynomial machinery of
 #  `Core.green_residue.jl`.  The Hill residue algorithm specific pieces
-#  — per-φ ζ(z) parametrisation, 21 Voigt-indexed numerators, Masson
+#  — per-φ ζ(z) parametrization, 21 Voigt-indexed numerators, Masson
 #  log-factor post-processing — live here.  The generic polynomial
 #  bookkeeping (acoustic tensor, adjugate, determinant, root finding) is
 #  delegated to `Core._build_poly_system`.

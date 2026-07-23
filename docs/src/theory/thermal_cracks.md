@@ -1,6 +1,6 @@
 # Thermal cracks — COD scalar and resistivity contribution
 
-This page gives the analogue of the **elasticity crack quantities** for
+This page gives the analog of the **elasticity crack quantities** for
 the 2nd-order (conductivity / diffusion / Darcy) problem.  It is the
 direct transposition of the theory in
 [Crack opening displacement and compliance tensors](cod_tensors.md)
@@ -16,10 +16,10 @@ vector (heat flux or gradient) rather than a symmetric 2-tensor.
 | Stiffness ``\mathbb C`` — 4-tensor, 21 independent components    | Conductivity ``\mathbf K_0`` — 2-tensor, 6 independent components       |
 | Hill tensor ``\mathbb P`` — 4-tensor                             | Hill tensor ``\mathbf P`` — 2-tensor                                    |
 | COD tensor ``\mathbf B`` — **2-tensor** (6 components)           | COD scalar ``b`` — **scalar** (1 component)                             |
-| Kachanov factorisation ``\mathbb H = k\,\hat{\mathbf n}\stackrel{s}{\otimes}\mathbf B\stackrel{s}{\otimes}\hat{\mathbf n}``, ``k=3/4`` (elliptic), ``k=2/\pi`` (ribbon) | Rank-1 factorisation ``\mathbf R = k\,b\,\hat{\mathbf n}\otimes\hat{\mathbf n}``, same ``k`` |
+| Kachanov factorization ``\mathbb H = k\,\hat{\mathbf n}\stackrel{s}{\otimes}\mathbf B\stackrel{s}{\otimes}\hat{\mathbf n}``, ``k=3/4`` (elliptic), ``k=2/\pi`` (ribbon) | Rank-1 factorization ``\mathbf R = k\,b\,\hat{\mathbf n}\otimes\hat{\mathbf n}``, same ``k`` |
 | Dilute contribution ``\Delta\mathbb S = (4\pi/3)\varepsilon^{3\mathrm d}\mathbb H`` (elliptic), ``= \pi\varepsilon^{2\mathrm d}\mathbb H`` (ribbon) | Dilute contribution ``\Delta\mathbf R = (4\pi/3)\varepsilon^{3\mathrm d}\mathbf R`` (elliptic), ``= \pi\varepsilon^{2\mathrm d}\mathbf R`` (ribbon) |
 | Sextic acoustic polynomial (Masson 2008)                         | Quadratic acoustic form ``\xi\cdot\mathbf K_0\cdot\xi`` → **analytical** |
-| Stress intensity factors ``K_I, K_{II}, K_{III}``                | Heat-flux intensity factor ``K_T`` — scalar (mode I analogue only)      |
+| Stress intensity factors ``K_I, K_{II}, K_{III}``                | Heat-flux intensity factor ``K_T`` — scalar (mode I analog only)      |
 | Displacement intensity factor ``\hat{\mathbf N}``                | Temperature intensity factor — scalar ``[T]_\text{avg}``                |
 
 Why a scalar ``b`` and not a tensor? In the 2nd-order problem, the
@@ -203,10 +203,10 @@ These reduce to the Sevostianov–Kachanov expressions
 
 ## Intensity factors
 
-Thermal analogues of the elastic stress / displacement intensity
+Thermal analogs of the elastic stress / displacement intensity
 factors:
 
-- **Heat-flux intensity factor** ``K_T`` (mode I analogue, scalar):
+- **Heat-flux intensity factor** ``K_T`` (mode I analog, scalar):
   the singular crack-tip field scales as ``\sim K_T/\sqrt{r}``.  For a
   ribbon crack of half-width ``b`` and remote flux ``\mathbf q^\infty``,
   ``K_T = \sqrt{\pi b}\,(\hat{\mathbf n}\cdot\mathbf q^{\infty})``.

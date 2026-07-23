@@ -4,7 +4,7 @@
 #  ForwardDiff-compatible 1D quadrature for the 3D Hill tensor of an
 #  infinite cylinder (axis = e₁) embedded in a general anisotropic matrix.
 #  Single QuadGK integral over φ ∈ [0, 2π] — the transverse-plane
-#  parametrisation `ζ(φ) = (0, cos φ / b, sin φ / c)`.
+#  parametrization `ζ(φ) = (0, cos φ / b, sin φ / c)`.
 #
 #  Mirrors the structure of `_hill_3d_aniso_decuhr` but collapses the
 #  (z, φ) double cubature to a single 1D integral since the cylinder

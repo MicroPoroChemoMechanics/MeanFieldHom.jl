@@ -7,7 +7,7 @@
 
 2nd-order Hill polarisation tensor of a 2-D ellipse in an isotropic
 conductor ``\\mathbf K_0 = K\\,\\mathbf 1``, closed form
-``\\mathbf P = \\mathbf I^{\\mathbf A}/K`` specialised to the plane-strain
+``\\mathbf P = \\mathbf I^{\\mathbf A}/K`` specialized to the plane-strain
 unit circle (prefactor ``1/(2\\pi)``).
 """
 function _hill_order2_2d_iso(ell::Ellipsoid{2, Circular}, K₀)
@@ -32,7 +32,7 @@ end
 2nd-order Hill polarisation tensor of a 2-D ellipse in an arbitrarily
 anisotropic conductor. Obtained in closed form from the
 ``\\mathbf K^{-1/2}`` change-of-variable of
-[Giraud et al. 2019](@cite giraudMOM2019) (2-D specialisation);
+[Giraud et al. 2019](@cite giraudMOM2019) (2-D specialization);
 the code falls back to the nearly-isotropic limit when the acoustic
 denominator ``\\det(\\mathbf K) - k_{12}^{2}`` approaches zero.
 """

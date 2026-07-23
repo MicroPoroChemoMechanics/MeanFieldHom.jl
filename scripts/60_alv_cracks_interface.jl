@@ -109,7 +109,7 @@ const JULIA_SCHEME_OBJ = Dict(
     "PCW" => PonteCastanedaWillis()
 )
 const SCHEME_NAMES = ("MT", "SC", "PCW")
-const SCHEME_COLOURS = Dict("MT" => :blue, "SC" => :red, "PCW" => :green)
+const SCHEME_COLORS = Dict("MT" => :blue, "SC" => :red, "PCW" => :green)
 
 ε_echoes = Dict{String, Vector{Float64}}()
 for name in SCHEME_NAMES
@@ -193,7 +193,7 @@ plt = plot(
     legend = :bottomright, size = (1200, 800)
 )
 for name in SCHEME_NAMES
-    col = SCHEME_COLOURS[name]
+    col = SCHEME_COLORS[name]
     plot!(
         plt, TIMES[keep], ε_echoes[name][keep];
         label = "ECHOES C++ ($name)", color = col, linestyle = :solid,

@@ -4,7 +4,7 @@
 #  ForwardDiff-compatible 2D cubature for the 3D anisotropic Hill tensor
 #  via nested QuadGK: outer integral over u ∈ [0, 1], inner over φ ∈ [0, 2π].
 #
-#  The specific 2D parametrisation
+#  The specific 2D parametrization
 #
 #     ζ(z, φ) = (√(1 - z²) cos φ, √(1 - z²) sin φ / η, z / ω)
 #
@@ -41,7 +41,7 @@ symmetric 3×3 matrix — no `Matrix` allocation, no LU factorization, Dual-safe
 Returned flattened in column-major order, so `iK[i + (j-1)*3]` mirrors `iK[i,j]`.
 
 A standalone top-level function (not a nested closure): closures capturing many
-local scalars showed measurably *worse* allocation behaviour than hoisting this
+local scalars showed measurably *worse* allocation behavior than hoisting this
 computation out, so it is kept separate deliberately.
 """
 @inline function _sym3_inv_acoustic(C₀_arr::AbstractArray{T, 4}, ζ) where {T}
@@ -93,7 +93,7 @@ function _hill_3d_aniso_nestedquadgk(
 
     # --- Axis sort (descending) -----------------------------------------------
     # Sort semi-axes so a₁ ≥ a₂ ≥ a₃, guaranteeing η ≤ 1 and ω ≤ 1.
-    # The stiffness tensor is permuted consistently so that the parametrisation
+    # The stiffness tensor is permuted consistently so that the parametrization
     # ζ = (√(1-z²)cosφ, √(1-z²)sinφ/η, z/ω) matches the sorted frame.
     # After integration, the result is un-permuted via the inverse permutation.
     p = sortperm(collect(ell.semi_axes), rev = true)

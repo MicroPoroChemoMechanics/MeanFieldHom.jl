@@ -5,7 +5,7 @@
 #   * the volume fraction of an inclusion phase,
 #   * the moduli of a phase (E-like, μ-like).
 #
-#  Compares the AD derivative against a centred-finite-difference reference
+#  Compares the AD derivative against a centerd-finite-difference reference
 #  to relative tolerance 1e-5.
 # =============================================================================
 
@@ -37,7 +37,7 @@ const RTOL_AD = 1.0e-5
             return get_array(homogenize(rve, sch))[1, 1, 1, 1]
         end
         df_ad = ForwardDiff.derivative(f_eff, 0.25)
-        # Centred FD reference
+        # Centerd FD reference
         h = 1.0e-6
         df_fd = (f_eff(0.25 + h) - f_eff(0.25 - h)) / (2h)
         @test isfinite(df_ad)

@@ -55,16 +55,8 @@ function print_voigt(C; label = "P", scale = 1.0e6, unit = "×10⁻⁶ MPa⁻¹"
     return
 end
 
-# Double contraction  (A:B)_{ijkl} = Σ_{mn} A_{ijmn} B_{mnkl}
-function dcontract(A, B, dim = 3)
-    S = zeros(dim, dim, dim, dim)
-    for i in 1:dim, j in 1:dim, k in 1:dim, l in 1:dim
-        for m in 1:dim, n in 1:dim
-            S[i, j, k, l] += A[i, j, m, n] * B[m, n, k, l]
-        end
-    end
-    return S
-end
+# Double contraction is TensND's `⊡` (see `S = P ⊡ C_iso` below) — no need to
+# reimplement it with index loops.
 
 # Mandel 6×6 matrix (M_{IJ} = T_{ijkl} fI fJ, f=[1,1,1,√2,√2,√2])
 const mandel_f = (1.0, 1.0, 1.0, √2, √2, √2)
@@ -234,7 +226,7 @@ println("="^70)
 println("\n  Sphere, isotropic matrix — Eshelby (1957) analytical values:")
 let ell = Ellipsoid(1.0)
     P = hill_tensor(ell, C_iso)
-    S = dcontract(P, C_iso)
+    S = P ⊡ C_iso
 
     # Analytical formulas
     S1111_th = (7 - 5ν_ref) / (15 * (1 - ν_ref))
@@ -248,7 +240,7 @@ let ell = Ellipsoid(1.0)
 
     println("\n  Prolate spheroid  (a=5, b=c=1) — Eshelby tensor:")
     P2 = hill_tensor(Ellipsoid(5.0, 1.0, 1.0), C_iso)
-    S2 = dcontract(P2, C_iso)
+    S2 = P2 ⊡ C_iso
     @printf "  S[1,1,1,1] = %.7f  (axial)\n" S2[1, 1, 1, 1]
     @printf "  S[2,2,2,2] = %.7f  (transverse)\n" S2[2, 2, 2, 2]
     @printf "  S[1,1,2,2] = %.7f\n" S2[1, 1, 2, 2]

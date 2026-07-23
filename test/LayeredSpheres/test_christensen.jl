@@ -5,7 +5,7 @@ using LinearAlgebra
 
 # =============================================================================
 #  Multi-layer shear recurrence — validation against known limiting cases
-#  (Christensen-Lo 1979 generalised self-consistent / Eshelby single-layer).
+#  (Christensen-Lo 1979 generalized self-consistent / Eshelby single-layer).
 # =============================================================================
 
 @testset "Shear — N=2 homogeneous gives β_k = 1" begin

@@ -6,7 +6,7 @@ Ageing linear viscoelastic (ALV) homogenization.  Provides:
   * [`ViscoLaw`](@ref) — relaxation `R(t,t')` or creep `J(t,t')` kernel,
     scalar- or 4-tensor-valued, with built-in Maxwell / Kelvin
     constructors.
-  * [`trapezoidal_matrix`](@ref) — discretisation of the Stieltjes
+  * [`trapezoidal_matrix`](@ref) — discretization of the Stieltjes
     integral on a time grid into a lower-block-triangular matrix
     (`n×n` for scalar, `6n×6n` for 4-tensor in Mandel form).
   * [`volterra_inverse`](@ref) — block forward-substitution that takes

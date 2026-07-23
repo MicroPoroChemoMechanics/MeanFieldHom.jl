@@ -24,7 +24,7 @@
 Self-consistent ALV homogenization.  Iterates the symmetric Picard
 fixed point on the `(6n × 6n)` block matrix until convergence.
 
-The initial estimate is the discretised matrix kernel `C̃^0`. Each
+The initial estimate is the discretized matrix kernel `C̃^0`. Each
 iteration rebuilds the per-phase Hill kernels using the current
 estimate's iso parameters, computes the dilute concentration tensors,
 and forms `C̃_{m+1}`.
@@ -51,7 +51,7 @@ function self_consistent_alv(
         verbose::Bool = false,
         select_best::Bool = false
     )
-    # 1. Discretise every phase's kernel once.
+    # 1. Discretize every phase's kernel once.
     C_M_law = matrix_property(rve, prop)
     C_M_law isa ViscoLaw ||
         throw(ArgumentError("self_consistent_alv: matrix property is not a ViscoLaw"))
@@ -67,7 +67,7 @@ function self_consistent_alv(
     symmetrizes = AbstractSymmetrize[NoSymmetrize()]
     # crack_data tuple: (geom, density, sym, Rn_mat::Union{Nothing, Matrix},
     #                    Rt_mat::Union{Nothing, Matrix}).  The interface
-    # matrices are pre-discretised once on the times grid and reused by
+    # matrices are pre-discretized once on the times grid and reused by
     # every SC iteration when computing the crack stiffness contribution
     # against the running estimate C_m.
     crack_data = Tuple{

@@ -42,12 +42,12 @@ const K_clin, μ_clin = 116.7, 53.8
 const K_hyd_ref, μ_hyd_ref = 18.7, 11.8
 const K_san, μ_san = 37.8, 44.3
 
-# Water / air stiffness regularisation : echoes uses an exact zero; the small
+# Water / air stiffness regularization : echoes uses an exact zero; the small
 # positive TINY selects the physically relevant (percolating) SC branch while
 # keeping the iteration smooth (documented deliberate deviation).
 const TINY = 1.0e-3
 
-# Needle aspect ratio and angular discretisation (main CCR2011 script; the
+# Needle aspect ratio and angular discretization (main CCR2011 script; the
 # companion iso variant uses ω = 100 — see `4x_cementpaste_iso.jl`).
 const NTHETA = 20
 const ω_aspect = 1.0e4
@@ -156,7 +156,7 @@ end
 
 # ── Iso bulk / shear moduli of a (nearly) iso 4-tensor ─────────────────────
 # `proj_tens(:ISO, ...)` is TensND's paramsym-style best-fit projection
-# (echoes' `.paramsym(sym=ISO)` analogue); `k_mu` is MeanFieldHom's
+# (echoes' `.paramsym(sym=ISO)` analog); `k_mu` is MeanFieldHom's
 # stiffness-role interpretation of the resulting (α,β) = (3k,2μ) coefficients.
 extract_kμ(arr::AbstractArray) = k_mu(TensND.proj_tens(Val(:ISO), arr)[1])
 
@@ -169,20 +169,11 @@ function pichler_strength(
         arr_C_mo::AbstractArray, arr_dC::AbstractArray,
         μh::Real, f_θ::Real
     )
-    K_mo, μ_mo = extract_kμ(arr_C_mo)
-    arr_S = zeros(eltype(arr_dC), 3, 3, 3, 3)
-    for i in 1:3, j in 1:3, k in 1:3, l in 1:3
-        arr_S[i, j, k, l] = (i == j) * (k == l) / (9 * K_mo) +
-            (
-            ((i == k) * (j == l) + (i == l) * (j == k)) -
-                2 * (i == j) * (k == l) / 3
-        ) / (4 * μ_mo)
-    end
-    M_axial = zero(eltype(arr_dC))
-    @inbounds for a in 1:3, b in 1:3, c in 1:3, d in 1:3
-        M_axial += arr_S[3, 3, a, b] * arr_dC[a, b, c, d] * arr_S[c, d, 3, 3]
-    end
-    return 1 / sqrt(abs(M_axial) * 2 * μh^2 / f_θ)
+    # Intrinsic TensND algebra: full effective compliance and the double
+    # contraction `S ⊡ dC ⊡ S` — no index loops, no iso approximation.
+    S = inv(Tens(arr_C_mo))
+    M = S ⊡ Tens(arr_dC) ⊡ S
+    return 1 / sqrt(abs(M[3, 3, 3, 3]) * 2 * μh^2 / f_θ)
 end
 
 # ── One (wc, α) point : elastic moduli + strength ──────────────────────────

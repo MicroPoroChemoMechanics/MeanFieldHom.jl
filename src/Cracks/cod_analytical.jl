@@ -91,7 +91,7 @@ end
 Closed-form COD tensor of an elliptic crack in a transversely
 isotropic matrix whose TI axis is aligned with the crack normal
 ``\\hat{\\mathbf n}``. Expressions are given in the engineering
-parameterisation ``(E,\\nu_{1},\\nu_{2},H,\\Gamma)`` of
+parameterization ``(E,\\nu_{1},\\nu_{2},H,\\Gamma)`` of
 [Hoenig 1978](@cite hoenig1978),
 [Kanaun & Levin 2009](@cite kanaun2009),
 [Barthélémy et al. 2021](@cite barthelemyIJES2021); the auxiliary scalar
@@ -113,7 +113,7 @@ end
 
 # NB: the Penny case (η = 1) is handled by the generic elliptic formula
 # above; `_elliptic_CS(1)` returns the limit values `(π/4, π/4, π/2)` and
-# the closed form is regular at η = 1. A previous specialised
+# the closed form is regular at η = 1. A previous specialized
 # `_cod_ti_ellipse(::EllipticCrack{T, Penny}, …)` had erroneous prefactors
 # (it did not reduce to the isotropic Penny formula
 # `Bnn_iso = 16(1-ν²)/(3πE)` in the limit ν₁=ν₂=ν, H=Γ=1) and was removed.

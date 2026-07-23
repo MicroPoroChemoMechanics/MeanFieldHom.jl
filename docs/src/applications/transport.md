@@ -182,6 +182,71 @@ plot!(plt2, φ_plot, D33; label = "D₃₃ (through-thickness)", lw = 2, ls = :d
 plt2
 ```
 
+## Effect of the Interfacial Transition Zone (ITZ)
+
+In mortar, the **Interfacial Transition Zone** is a thin shell (~50 µm) of
+higher-porosity — hence higher-diffusivity — cement paste around each aggregate.
+The reduction in diffusivity caused by the impermeable aggregates can be offset,
+or even reversed, by this more permeable surrounding shell.
+
+![RVE of a mortar: cement paste matrix with aggregate particles coated by ITZ shells (from the Echoes book [echoes](@cite)).](../assets/veritz.png)
+
+The aggregate + ITZ is a two-layer [`LayeredSphere`](@ref) — an impermeable core
+(``D = 0``, radius ``R_{\rm agg}``) inside an ITZ shell (thickness ``e_{\rm ITZ}``)
+— embedded in the cement-paste matrix of reference diffusivity ``D_{cp} = 1`` and
+homogenized by Mori-Tanaka. Because the composite-sphere inclusion covers
+aggregate *and* shell, its volume fraction exceeds the bare-aggregate fraction
+``f``: ``f_{\rm inc} = f\,(1 + e_{\rm ITZ}/R_{\rm agg})^3``.
+
+```@example transport
+const Ragg, eITZ = 5.0e3, 50.0    # µm
+
+function D_itz(f, d_itz)
+    f_inc = f * (1 + eITZ / Ragg)^3
+    r = RVE(:CEMENT)
+    add_matrix!(r, Ellipsoid(1.0), Dict(:K => TensISO{3}(1.0)))
+    agg = LayeredSphere((Ragg, Ragg + eITZ), (TensISO{3}(0.0), TensISO{3}(d_itz)))
+    add_phase!(r, :AGG, agg, Dict(:K => TensISO{3}(1.0)); fraction = f_inc)
+    return tr(Array(homogenize(r, MoriTanaka(), :K))) / 3
+end
+
+# spot values reproduce the Echoes reference exactly
+[round(D_itz(0.2, d), digits = 4) for d in (0.001, 50.0, 100.0)]
+```
+
+Sweeping the aggregate fraction for a range of ITZ-to-paste diffusivity ratios
+``D_{\rm itz}/D_{cp}``, against the two classical bounds for purely impenetrable
+spheres (``(1-f)^{3/2}`` and the Maxwell form ``(1-f)/(1+f/2)``):
+
+```@example transport
+fs = range(0.001, 0.85; length = 40)
+plt3 = plot(; xlabel = "aggregate fraction f", ylabel = "D_eff / D_cp",
+    legend = :topright, framestyle = :box, ylims = (0, 2), size = (760, 480))
+for d in (100.0, 60.0, 50.0, 40.0, 20.0, 0.001)
+    lbl = d ≥ 1 ? "D_itz/D_cp = $(Int(d))" : "D_itz/D_cp = 0"
+    plot!(plt3, fs, [D_itz(f, d) for f in fs]; lw = 2, label = lbl)
+end
+plot!(plt3, fs, [(1 - f)^1.5 for f in fs]; c = :black, ls = :dash, label = "(1-f)^{3/2}")
+plot!(plt3, fs, [(1 - f) / (1 + 0.5f) for f in fs]; c = :black, ls = :dot, label = "(1-f)/(1+f/2)")
+plt3
+```
+
+The role of the aggregate + ITZ composite depends strongly on ``D_{\rm itz}/D_{cp}``:
+an impermeable ITZ (``\ll 1``) drives ``D^{\rm hom}`` below both impenetrable-sphere
+bounds; near ``D_{\rm itz}/D_{cp} \approx 50`` the two effects nearly cancel and
+``D^{\rm hom} \approx D_{cp}``; a highly permeable ITZ (``\gg 1``) turns the shells
+into a connected fast-transport network that lifts ``D^{\rm hom}`` above the neat
+paste value.
+
+!!! note "Zero-thickness interface (DUALDISC)"
+    The Echoes book also replaces the thin ITZ shell by a *zero-thickness*
+    interface of transmissivity ``\alpha = D_s\,e`` (its `DUALDISC` model). This is
+    a distinct interface physics from the surface-elastic / Kapitza interfaces
+    that a `MeanFieldHom` [`LayeredSphere`](@ref) currently exposes
+    (`SurfaceConductiveInterface`, `KapitzaInterface`), so the explicit two-layer
+    composite sphere above — which reproduces the Echoes layer-model curve to the
+    digit — is used here instead.
+
 ## Cross-property coupling
 
 Because a single [`RVE`](@ref) carries several property keys at once, the same

@@ -3,7 +3,7 @@
 
 2nd-order Hill tensor for conductivity / diffusivity problems.
 Extends the `_kernel` method table of [`MeanFieldHom.Elasticity`] with
-additional 2nd-order specialisations.
+additional 2nd-order specializations.
 """
 module Conductivity
 

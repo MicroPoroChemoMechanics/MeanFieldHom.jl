@@ -7,7 +7,7 @@
 #
 #      <ε>_k = α_k · ε∞   for purely hydrostatic ε∞,
 #
-#  where `α_k` is the per-layer bulk localisation.  For a general remote
+#  where `α_k` is the per-layer bulk localization.  For a general remote
 #  strain, the decomposition splits bulk + deviatoric and the shear
 #  contribution is delegated to the multi-layer shear solver (single
 #  layer only for now).
@@ -19,8 +19,8 @@
 Volume-averaged strain tensor `<ε>_layer` inside the `layer`-th layer
 of a `LayeredSphere` embedded in an isotropic matrix `C₀`, under a
 remote strain `ε∞`.  Returns a symmetric 2-tensor in the canonical
-frame.  Combines the bulk localisation `α_k` (hydrostatic part) and
-the shear localisation `β_k` (deviatoric part).
+frame.  Combines the bulk localization `α_k` (hydrostatic part) and
+the shear localization `β_k` (deviatoric part).
 """
 function layer_strain_average(
         sphere::LayeredSphere{T, N},
@@ -61,8 +61,8 @@ end
 """
     cumulative_strain_average(sphere, C₀, ε∞, r) -> Tens{2,3}
 
-Volume-averaged strain over the ball of radius `r ∈ (0, r_N]` centred
-on the composite sphere centre.  The ball may cross several layers;
+Volume-averaged strain over the ball of radius `r ∈ (0, r_N]` centerd
+on the composite sphere center.  The ball may cross several layers;
 the result is the volume-weighted average of the per-layer averages
 truncated by the final partial layer.
 """

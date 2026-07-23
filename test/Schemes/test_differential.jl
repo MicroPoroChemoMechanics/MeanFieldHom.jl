@@ -59,7 +59,7 @@ end
     # Tsit5 takes different adaptive steps depending on the smoothness
     # of `df/dτ` (Proportional has constant df, Sequential has step
     # discontinuities at window boundaries, CustomPath is piecewise
-    # linear), so the parametrisation invariance holds only up to the
+    # linear), so the parametrization invariance holds only up to the
     # solver's reltol (1e-6 by default).
     @test isapprox(C_prop, C_seq; rtol = 1.0e-5)
     @test isapprox(C_prop, C_cus; rtol = 1.0e-5)
@@ -137,7 +137,7 @@ end
         fraction = 0.3
     )
     # f(τ) = τ² is monotone with f(0)=0, f(1)=1.  Since DEM with one
-    # solid phase is parametrisation-invariant in τ, this should give
+    # solid phase is parametrization-invariant in τ, this should give
     # the same C^hom(τ=1) as the default Proportional path.
     C_path = homogenize(
         rve, DifferentialScheme(;

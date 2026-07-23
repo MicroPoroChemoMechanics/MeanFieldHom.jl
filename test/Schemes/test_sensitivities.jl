@@ -196,10 +196,10 @@ end
 end
 
 # =============================================================================
-#  Inclusion utilisateur — démontrer l'extensibilité automatique
+#  Inclusion utilizateur — démontrer l'extensibilité automatique
 # =============================================================================
 #
-#  On définit ici un type d'inclusion utilisateur minimal `Blob` réutilisant le
+#  On définit ici un type d'inclusion utilizateur minimal `Blob` réutilizant le
 #  noyau `Sphere` pour le `hill_tensor`. La sensibilité au champ `radius` doit
 #  fonctionner sans modification de `parameters.jl` — seule la réflexion via
 #  `_replace_geom_field` est nécessaire.

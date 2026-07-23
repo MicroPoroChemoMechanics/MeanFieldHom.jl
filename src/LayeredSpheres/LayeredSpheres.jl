@@ -5,7 +5,7 @@ Isotropic `n`-layer spherical composite inclusion (core + concentric
 shells) embedded in an infinite matrix, with perfect or imperfect
 interfaces (spring / surface-elastic / Kapitza / surface-conductive).
 Public entry points: [`LayeredSphere`](@ref), the bulk / shear
-localisation and layer-average utilities.
+localization and layer-average utilities.
 """
 module LayeredSpheres
 
@@ -29,18 +29,18 @@ import ..Core: strain_strain_loc, stress_strain_loc, strain_stress_loc,
 include("interfaces.jl")
 include("geometry.jl")
 include("interface_transfer.jl") # interface jump matrices (bulk + shear)
-include("bulk_recurrence.jl")    # bulk state-vector transfer + localisation
+include("bulk_recurrence.jl")    # bulk state-vector transfer + localization
 include("shear_recurrence.jl")   # multi-layer shear stub
 include("conductivity.jl")       # Y₁-harmonic conductivity state-vector
 include("averages.jl")
 include("scheme_integration.jl") # concentration tensors → mean-field schemes
 
-# ── Localisation / contribution overrides for LayeredSphere ─────────────────
+# ── Localization / contribution overrides for LayeredSphere ─────────────────
 
 """
     strain_strain_loc(sphere::LayeredSphere, C₀::TensISO{4,3}; layer::Int) -> Tens{4,3}
 
-Per-layer strain-strain localisation tensor in an ISO `LayeredSphere`.
+Per-layer strain-strain localization tensor in an ISO `LayeredSphere`.
 Returns the isotropic 4-tensor `A_k = α_k J + β_k K` for the requested
 layer.  `layer` must be in `1..N`.
 """
@@ -97,7 +97,7 @@ end
 """
     gradient_gradient_loc(sphere::LayeredSphere, K₀; layer)
 
-Per-layer gradient-gradient localisation tensor for an isotropic
+Per-layer gradient-gradient localization tensor for an isotropic
 `LayeredSphere` embedded in an isotropic matrix of conductivity `K₀`.
 Returns the scalar `α_k` packed as `TensISO{3}(α_k)` (isotropic
 2-tensor), satisfying `<∇T>_layer = α_k · ∇T∞`.

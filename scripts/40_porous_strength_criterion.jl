@@ -34,7 +34,7 @@ const TINY = 1.0e-12
 const ω_aspect = 0.1
 const φ_value = 0.15
 
-# Build an iso 2-vector (α=3K, β=2μ) of the homogenised stiffness, parametrised
+# Build an iso 2-vector (α=3K, β=2μ) of the homogenised stiffness, parametrized
 # by the SOLID shear modulus `μs` (so that ForwardDiff can differentiate).
 function _C_hom_iso_2vec(μs::Real, ks, φ, scheme)
     T = typeof(μs)

@@ -93,7 +93,7 @@ They are exposed through [`tens_IA`](@ref), [`tens_UA`](@ref) and
 [`tens_VA`](@ref). The intrinsic change-of-variable linking the
 ``\hat{\boldsymbol\xi}`` and
 ``\hat{\boldsymbol\zeta}=\mathbf A\cdot\hat{\boldsymbol\xi}/\|\cdot\|``
-parameterisations is detailed in [barthelemyIJSS2016](@cite).
+parameterizations is detailed in [barthelemyIJSS2016](@cite).
 
 ### Diagonal coefficients ``I_i^{\mathbf A}``, ``I_{ij}^{\mathbf A}``
 

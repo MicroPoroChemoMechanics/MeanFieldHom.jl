@@ -317,7 +317,7 @@ end
 Compute the four `(6n × 6n)` matrices needed by the ALV scheme
 dispatch for a single inclusion of geometry `geom`.  Default method
 covers ellipsoidal geometries (Hill kernel + dilute formulas);
-specialisations for `LayeredSphere` use the layered-sphere recurrences.
+specializations for `LayeredSphere` use the layered-sphere recurrences.
 """
 function _inclusion_alv_quantities(
         geom, C_r_law,

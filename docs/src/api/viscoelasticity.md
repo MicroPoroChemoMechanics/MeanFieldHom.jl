@@ -18,7 +18,7 @@ kelvin_iso
 heaviside_law
 ```
 
-## Trapezoidal discretisation
+## Trapezoidal discretization
 
 ```@docs
 trapezoidal_matrix

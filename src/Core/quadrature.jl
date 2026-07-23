@@ -1,9 +1,9 @@
 # =============================================================================
 #  quadrature.jl
 #
-#  Thin wrapper around `QuadGK.quadgk` that normalises the keyword-argument
+#  Thin wrapper around `QuadGK.quadgk` that normalizes the keyword-argument
 #  names (`abstol`, `reltol`, `maxiters`).  All downstream sub-modules should
-#  go through this helper so that any future change in backend is localised
+#  go through this helper so that any future change in backend is localized
 #  to this file.
 # =============================================================================
 

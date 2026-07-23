@@ -27,7 +27,7 @@
 #  method parameters.  Matching all three axes (method symbol × inclusion
 #  class × material symmetry) in a single signature avoids the
 #  classical "diamond" ambiguity between the inclusion-refined and the
-#  symmetry-refined specialisations.
+#  symmetry-refined specializations.
 # =============================================================================
 
 # ─── TensISO (any kind) → Analytical — most specific on symmetry ───────────

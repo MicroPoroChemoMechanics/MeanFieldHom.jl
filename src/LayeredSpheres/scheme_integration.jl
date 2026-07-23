@@ -3,13 +3,13 @@
 #
 #  A composite sphere has NO Hill tensor: it is not an ellipsoidal
 #  inhomogeneity with a uniform eigenstrain.  What it does have — and what the
-#  schemes actually need — is a **concentration (localisation) tensor**, which
+#  schemes actually need — is a **concentration (localization) tensor**, which
 #  the layered recurrences already provide per layer:
 #
 #      <ε>_k = α_k · ε∞_sph + β_k · ε∞_dev
 #
 #  The generic `strain_strain_loc(::AbstractInclusion, …)` in `localization.jl`
-#  builds `A` from `hill_tensor`, so without the specialisations below a
+#  builds `A` from `hill_tensor`, so without the specializations below a
 #  `LayeredSphere` phase would fall into it and fail.  The methods here
 #  short-circuit that path, exactly as the conductivity side already does.
 #
@@ -47,7 +47,7 @@ end
 """
     _layer_localizations(sphere, C₀) -> (α, β, f)
 
-Per-layer bulk (`α_k`) and deviatoric (`β_k`) localisation scalars together
+Per-layer bulk (`α_k`) and deviatoric (`β_k`) localization scalars together
 with the layer volume fractions.
 """
 function _layer_localizations(

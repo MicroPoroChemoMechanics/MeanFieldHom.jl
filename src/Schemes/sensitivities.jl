@@ -135,7 +135,7 @@ or perturbs an RVE, runs `homogenize`, and returns a scalar (or a tensor).
 - `:auto` (default) — pick one of the above from the types of `x₀` and `f(x₀)`.
 
 This entry point covers cases the `AbstractParameter` lenses cannot
-express (compound parametrisations, user-defined inclusion types without
+express (compound parametrizations, user-defined inclusion types without
 an exposed scalar field, etc.).
 
 Without `using ForwardDiff`: error.

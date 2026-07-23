@@ -90,7 +90,7 @@ using LinearAlgebra
         @test H_default[3, 3, 3, 3] ≈ H_ell[3, 3, 3, 3] atol = 1.0e-12
     end
 
-    @testset "Compliance contribution — H factorisation (ellipse vs ribbon)" begin
+    @testset "Compliance contribution — H factorization (ellipse vs ribbon)" begin
         E, ν = 1.0, 0.2
         k = E / (3 * (1 - 2ν))
         μ = E / (2 * (1 + ν))

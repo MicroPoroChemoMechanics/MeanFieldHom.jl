@@ -15,7 +15,7 @@ pairs per physics:
 
 ## Convention
 
-Radii are stored in ascending order from the centre,
+Radii are stored in ascending order from the center,
 
 ```math
 r_0 = 0\text{ (implicit)} < r_1 < r_2 < \cdots < r_N,
@@ -54,7 +54,7 @@ where ``α = 4μ/(3κ+4μ) ∈ [0,1]`` and ``β = 3κ/(3κ+4μ) ∈ [0,1]`` with
 degenerates smoothly (``α_k → 0`` for an incompressible core).
 
 The entry-point at ``r = 0^+`` is written in the "pressure amplitude"
-parameterisation ``P_1 = 3κ_1 A_1``, so that
+parameterization ``P_1 = 3κ_1 A_1``, so that
 
 ```math
 u_r(r_1^-) = \frac{r_1}{3κ_1}\,P_1 \xrightarrow{κ_1 → ∞} 0,\qquad
@@ -95,7 +95,7 @@ with ``M(r) = \begin{pmatrix}r & 1/r² \\ -k & 2k/r³\end{pmatrix}``.
 
 Interface jumps for conductivity are given above (Kapitza primal,
 SurfaceConductive dual, matching the structural pattern of their
-elastic analogues).  The per-layer gradient localisation
+elastic analogs).  The per-layer gradient localization
 ``α_k = A_k/A_∞`` reduces, in the single-layer case, to the classical
 `3 k_0 / (2 k_0 + k_1)` of Maxwell-type composites.
 
@@ -121,7 +121,7 @@ by wrapping the computation in `ForwardDiff.derivative` /
 Under a remote pure-deviatoric strain, the displacement field in an
 isotropic layer has the axisymmetric form
 ``u_r = U(r)\,P_2(\cos θ)``, ``u_θ = W(r)\,P_2'(\cos θ)``, and the
-four linearly-independent Navier solutions at ``ℓ = 2`` are parametrised
+four linearly-independent Navier solutions at ``ℓ = 2`` are parametrized
 by the power-law exponents ``n \in \{1, 3, -4, -2\}`` with material-
 dependent ``U/W`` ratios derived directly from the Navier characteristic
 equation (using ``x = κ/μ``):
@@ -162,7 +162,7 @@ Seeding at ``r_1^-`` uses the two regular modes (``a_1 = 1, b_1 = 0``
 and ``a_1 = 0, b_1 = 1``; the two singular amplitudes ``c_1 = d_1 = 0``
 are forced by regularity at the origin).  Propagating both probes and
 solving a 2×2 linear system for the matrix-side far-field ``(a_∞, b_∞)
-= (1, 0)`` yields the per-layer localisation ``β_k = a_k``.
+= (1, 0)`` yields the per-layer localization ``β_k = a_k``.
 
 For ``N = 1`` the recurrence reduces to the classical Eshelby single-
 sphere result; for ``N ≥ 2`` it reproduces Christensen-Lo 1979 core-shell
@@ -171,7 +171,7 @@ effective shear modulus and passes the Eshelby consistency tests
 
 ## Averages (Echoes-style)
 
-Three volume-average flavours are provided:
+Three volume-average flavors are provided:
 
 - [`layer_strain_average`](@ref)`(sphere, C₀, ε∞, k)` — mean strain in
   layer ``k`` (bulk + deviatoric parts).

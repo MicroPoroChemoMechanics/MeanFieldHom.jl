@@ -91,7 +91,7 @@ end
 # iteration : all phases (matrix included) carry a non-trivial dilute strain
 # concentration A_α = inv(I + P(C_α - C_n)) computed in the iterating
 # effective medium C_n. This gives the textbook SC fixed point with
-# Hashin-Shtrikman lower-bound percolation behaviour for porous media.
+# Hashin-Shtrikman lower-bound percolation behavior for porous media.
 function _sc_step_dispatch(
         rve::RVE, C_n::TensND.AbstractTens{4, 3}, prop::Symbol;
         kw...
@@ -147,7 +147,7 @@ function _sc_step_dispatch(
         rve::RVE, K_n::TensND.AbstractTens{2, 3}, prop::Symbol;
         kw...
     )
-    # Conduction analogue of the 4th-order ECHOES SC body :
+    # Conduction analog of the 4th-order ECHOES SC body :
     # solids have `gradient_Flux = A · R_n` (R_n = inv(K_n) — resistivity),
     # cracks contribute the bare resistivity contribution `R_c`.
     A_avg = zero(K_n)
@@ -272,7 +272,7 @@ end
 """
     _solve_sc(::NewtonDefault, step, x0::AbstractTens; …) -> AbstractTens
 
-Built-in Newton-Raphson SC solver, parameterising the iterating
+Built-in Newton-Raphson SC solver, parameterizing the iterating
 estimate by its symmetry-class **canonical components**
 (`TensND.get_data` → `(α, β)` for iso, `(ℓ₁, …, ℓ₆)` for TI / Walpole,
 9 components for ortho).  At each Newton step:
@@ -284,7 +284,7 @@ estimate by its symmetry-class **canonical components**
 4. Fall back to a single Picard step when the line search fails.
 
 Compared to the SciML weak-extension path, this is dependency-free and
-specialised to the small parameter spaces of `MeanFieldHom` symmetry
+specialized to the small parameter spaces of `MeanFieldHom` symmetry
 classes (≤ 21 components for the most general aniso 4-tensor); the
 Jacobian is computed once per iteration through the same `step`
 function the AndersonDefault loop calls.
@@ -324,7 +324,7 @@ function _solve_sc(
         end
         # Jacobian via ForwardDiff (strong dependency).
         J = ForwardDiff.jacobian(residual_vec, p)
-        # Solve J·δ = -r with a regularising fallback if J is singular.
+        # Solve J·δ = -r with a regularizing fallback if J is singular.
         δ = try
             J \ (-r)
         catch err
@@ -585,12 +585,12 @@ function _asc_step_stiffness_dispatch(
         a = rve.amounts[name]
         a isa VolumeFraction || continue   # cracks not supported in stiffness form
         f = amount_value(a)
-        # Asymétrie propre à l'ASC : la localisation se calcule dans le milieu
+        # Asymétrie propre à l'ASC : la localization se calcule dans le milieu
         # de référence courant `C_n`, mais la contribution se mesure contre la
         # MATRICE `C_m`.  On ne peut donc pas appeler
-        # `_phase_stiffness_contribution`, qui utilise la même référence pour
+        # `_phase_stiffness_contribution`, qui utilize la même référence pour
         # les deux.  Le tenseur B (⟨C:A⟩) traite les inclusions hétérogènes et
-        # symétrise le produit ; le terme en C_m réutilise ⟨A⟩.
+        # symétrise le produit ; le terme en C_m réutilize ⟨A⟩.
         A_dil = _phase_dilute_concentration(rve, name, prop, C_n; kw...)
         CA = _phase_stress_strain_average(rve, name, prop, C_n, A_dil; kw...)
         Δ += f * (CA - C_m ⊡ A_dil)

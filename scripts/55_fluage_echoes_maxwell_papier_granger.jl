@@ -4,7 +4,7 @@
 #  Julia reproduction of
 #  `tests/python/creep/fluage_echoes_maxwell_papier_granger.py`
 #  (which itself uses the `v_granger_fp.py` Granger / Code_Aster creep
-#  parametrisation).
+#  parametrization).
 #
 #  Setup :
 #    * iso ALV matrix : Granger creep law with `(E, ν) = (1, 0.25)`, 2

@@ -10,7 +10,7 @@
 #      the isotropic analytical result.
 #   2. Cross-validation against the residue and DECUHR numerical backends
 #      on a true TI matrix (Sevostianov-Yilmaz-Kushch-Levin 2005 stiffness).
-#   3. Penny crack (η=1) and ribbon crack — specialised closed forms.
+#   3. Penny crack (η=1) and ribbon crack — specialized closed forms.
 #   4. Dispatcher: Analytical when TI axis = crack normal, Residue otherwise.
 #   5. ForwardDiff compatibility through the analytical branch.
 # =============================================================================

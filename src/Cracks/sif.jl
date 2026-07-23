@@ -106,13 +106,13 @@ end
 #  Thermal (2nd-order) — heat-flux / temperature intensity factors.
 # =============================================================================
 
-# Heat-flux intensity factor `K_T` — thermal analogue of the elasticity SIF.
+# Heat-flux intensity factor `K_T` — thermal analog of the elasticity SIF.
 # For a flat crack driven by remote heat flux ``\mathbf q^∞``, the crack-tip
 # singular field scales as ``\sim K_T/\sqrt{r}``:
 #   - Ribbon:    ``K_T = \sqrt{\pi b}\,(\hat n\cdot \mathbf q^∞)``
 #   - Elliptic:  ``K_T = (3\pi^{3/2} b/8)\sqrt{b\,n_S}\,(b^{\mathcal E}/b^{\mathcal R})
 #                      \,(\hat n\cdot \mathbf q^∞)``
-# Only the mode I analogue exists in the scalar-temperature case (no shear mode).
+# Only the mode I analog exists in the scalar-temperature case (no shear mode).
 
 """
     sif(crack::RibbonCrack, K₀::AbstractTens{2,3}, q∞; kw...) -> Real
@@ -170,7 +170,7 @@ end
 """
     dif(crack, K₀::AbstractTens{2,3}, q∞; method=:auto, kw...) -> Real
 
-Temperature intensity factor (analogue of displacement intensity
+Temperature intensity factor (analog of displacement intensity
 factor) for a flat crack driven by a remote heat-flux vector
 ``\\mathbf q^{\\infty}``:
 

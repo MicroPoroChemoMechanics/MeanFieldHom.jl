@@ -2,7 +2,7 @@
 #  cod_H_bridge.jl — bridge between the crack compliance contribution
 #  tensor H and the COD tensor B.
 #
-#  The factorisation H = k (n̂ ⊗ˢ B ⊗ˢ n̂) depends on the crack shape:
+#  The factorization H = k (n̂ ⊗ˢ B ⊗ˢ n̂) depends on the crack shape:
 #     k = 3/4  for an elliptic (including penny) crack (Kachanov / Echoes)
 #     k = 2/π  for a ribbon (tunnel) crack
 #  The inverse mapping therefore dispatches on the crack type.

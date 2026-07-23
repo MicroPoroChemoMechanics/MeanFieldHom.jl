@@ -34,7 +34,7 @@ The output is a `(6n × 6n)` lower-block-triangular `Matrix{T}` with
 Implementation follows the time-space decoupling formula of the
 ECHOES manual appendix `viscoelastic_hill_kernel.qmd`:
 
-  1. Discretise the matrix kernel `C0_law` on `times` to a `6n × 6n`
+  1. Discretize the matrix kernel `C0_law` on `times` to a `6n × 6n`
      block matrix `R̃_M`.
   2. Extract the iso scalar parameter matrices `(α, β)` of `R̃_M`
      (`α = 3K`, `β = 2μ` per Mandel convention).

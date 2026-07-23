@@ -2,7 +2,7 @@
 #  geometry.jl — concrete type `LayeredSphere` (n-layer spherical
 #  composite inclusion, isotropic elasticity / conductivity).
 #
-#  Convention: radii are listed in ASCENDING order from the centre,
+#  Convention: radii are listed in ASCENDING order from the center,
 #      r₀ = 0  (implicit),  r₁ < r₂ < … < r_N,
 #  with layer `k` occupying `r_{k-1} ≤ r < r_k` (layer 1 is the core).
 #  The composite sphere is embedded in an infinite matrix outside r_N

@@ -192,7 +192,7 @@ plot_model(engineering_model, "Engineering model")
 ## Detailed model
 
 The detailed three-scale model tracks the C-S-H gel microstructure at the
-nanometre scale, the inner/outer hydrate layers at the micrometre scale, and the
+nanometer scale, the inner/outer hydrate layers at the micrometer scale, and the
 cement-paste assembly at the grain scale.
 
 ### Level 0 — C-S-H gels
@@ -460,11 +460,13 @@ function φ_elas(ωs, ωp)
 end
 
 # Diffusion percolation threshold (pore fraction) — closed form.
+# `hill_tensor` returns a 2nd-order `Tens`; `tr`, `inv` and tensor subtraction
+# are intrinsic TensND operations, so no array materialization is needed.
 function φ_diff(ωs, ωp)
-    Pp = Array(hill_tensor(Ellipsoid(1.0, 1.0, ωp), TensISO{3}(1.0)))
-    Ps = Array(hill_tensor(Ellipsoid(1.0, 1.0, ωs), TensISO{3}(1.0)))
+    Pp = hill_tensor(Ellipsoid(1.0, 1.0, ωp), TensISO{3}(1.0))
+    Ps = hill_tensor(Ellipsoid(1.0, 1.0, ωs), TensISO{3}(1.0))
     a = tr(inv(Pp))
-    b = tr(inv(Array(TensISO{3}(1.0)) - Ps))
+    b = tr(inv(TensISO{3}(1.0) - Ps))
     return b / (a + b)
 end
 
@@ -500,13 +502,27 @@ plot(threshold_panel(Ze, "Elastic φ_elas (%)"),
     layout = (1, 2), size = (980, 420))
 ```
 
+The same two threshold maps as 3D surfaces over ``(\log_{10}\omega_s,
+\log_{10}\omega_p)`` — the Echoes book renders these interactively (Plotly); here
+they are static GR surfaces of the *same* `Ze`, `Zd` arrays:
+
+```@example diffusion
+sE = surface(logω, logω, Ze; xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp",
+    zlabel = "φ_elas (%)", title = "Elastic threshold", c = :viridis,
+    camera = (40, 30), colorbar = false)
+sD = surface(logω, logω, Zd; xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp",
+    zlabel = "φ_diff (%)", title = "Diffusion threshold", c = :viridis,
+    camera = (40, 30), colorbar = false)
+plot(sE, sD; layout = (1, 2), size = (980, 420))
+```
+
 At the engineering calibration point the solid is a very thin oblate platelet
 (``\omega_s = 0.013``): it percolates at a tiny solid fraction, so the skeleton
 carries load up to a **high** porosity, ``\varphi^{\rm elas} \approx 93\%`` — the
 paste sets early (low ``\alpha``). The prolate pores combined with those thin
 solid barriers give ``\varphi^{\rm diff} \approx 66\%``, so the capillary network
 disconnects only at low porosity (high ``\alpha``): the elastic and diffusion
-thresholds are well separated, which is exactly the behaviour needed to reproduce
+thresholds are well separated, which is exactly the behavior needed to reproduce
 both the early set and the late diffusivity drop. The C-S-H gel point sits at
 ``\varphi^{\rm elas} \approx 64\%`` and ``\varphi^{\rm diff} \approx 17\%``, so at
 the HD porosity ``\varphi_{HD} = 0.24`` the gel is simultaneously load-bearing

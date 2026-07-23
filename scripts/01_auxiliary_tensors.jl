@@ -12,7 +12,7 @@
 #   U^A_{ijkl} = (det A / 4π) ∫ ξᵢξⱼξₖξₗ / ‖A·ξ‖⁵ dS_ξ
 #   V^A        = (1 ⊠ˢ I^A + I^A ⊠ˢ 1) / 2
 #
-#  Normalisation: Σᵢ I^A_i = 1  (3D),   I^A_1 + I^A_2 = 1  (2D)
+#  Normalization: Σᵢ I^A_i = 1  (3D),   I^A_1 + I^A_2 = 1  (2D)
 # =============================================================================
 
 import Pkg
@@ -54,7 +54,7 @@ end
 println("="^70)
 println("  AUXILIARY TENSORS  I^A, U^A, V^A  —  MeanFieldHom.jl")
 println("="^70)
-println("  Normalisation: Σᵢ I^A_i = 1 (3D),  I^A_1+I^A_2 = 1 (2D)")
+println("  Normalization: Σᵢ I^A_i = 1 (3D),  I^A_1+I^A_2 = 1 (2D)")
 
 # ═══════════════════════════════════════════════════════════════════════
 println("\n", "─"^70)
@@ -204,5 +204,5 @@ end
 
 println()
 println("="^70)
-println("  All normalisation checks verified.")
+println("  All normalization checks verified.")
 println("="^70)

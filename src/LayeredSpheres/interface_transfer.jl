@@ -16,7 +16,7 @@
 #   PerfectInterface    : J = I
 #   SpringInterface     : J = [1  kn ;  0  1]     (bulk uses kn only)
 #   MembraneInterface   : J = [1   0 ; 4κs/r²  1] (bulk uses κs only)
-#   (Thermal analogues live in `conductivity.jl`.)
+#   (Thermal analogs live in `conductivity.jl`.)
 
 """
     _bulk_interface_T(intf, κ, μ, r) -> Matrix(2×2)

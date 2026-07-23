@@ -149,80 +149,73 @@ nothing # hide
 
 ## Results
 
-For five loading ages ``t_0``, the history-dependent (solid) and frozen (dashed)
-creep curves of the efficient `:layers` model, with the instantaneous elastic
-compliance ``1/E^{\rm hom}(t)`` as reference:
+Following [sanahuja2013](@cite), the effective creep is computed for five loading
+ages ``t_0`` (history-dependent, solid `+`; frozen, dashed) with both RVE
+topologies, side by side as in the Echoes book. `N = 100` layers are used.
+
+The **elastic reference** ``1/E^{\rm hom}(t)`` (black dotted) is the
+instantaneous compliance, obtained from the *same* topology by evaluating the
+ageing homogenization over a single time (the relaxation at zero elapsed time is
+the glassy/elastic modulus). Because it uses the same morphology, every creep
+curve starts exactly *on* this reference at ``t = t_0``.
 
 ```@example creep
-const N, α_solid, t_max = 20, 4.0, 10 / 3
+const N, α_solid, t_max = 100, 4.0, 10 / 3
 loading_ages = (1 / 3, 2 / 3, 4 / 3, 2.0, 8 / 3)
 cmap = palette(:viridis, length(loading_ages))
 
-p = plot(; xlabel = "t", ylabel = "E₀ · J^E_eff(t, t₀)", legend = :topleft,
-    framestyle = :box, xlims = (0, t_max), ylims = (0, 15), size = (820, 520))
+# Instantaneous elastic compliance of a given topology at time t: one-time ALV.
+elastic_ref(t, model) =
+    uniaxial_creep(homogenize_alv(build_rve(N, α_solid, t, model; fixed = false),
+        MoriTanaka(), :C; times = [t]))[1]
 
-for (k, t0) in enumerate(loading_ages)
-    T = collect(range(t0, t_max; length = 31))
-    Jh = creep_curve(N, α_solid, t0, T, :layers; fixed = false)
-    Jf = creep_curve(N, α_solid, t0, T, :layers; fixed = true)
-    plot!(p, T, E0 .* Jh; lw = 2, color = cmap[k], label = "history t₀=$(round(t0, digits = 2))")
-    plot!(p, T, E0 .* Jf; lw = 2, color = cmap[k], ls = :dash, label = "frozen t₀=$(round(t0, digits = 2))")
-end
-
-# Elastic reference: frozen instantaneous stiffness at each time.
-function elastic_compliance(t)
-    t_sets = setting_times(N, α_solid)
-    rve = RVE(:M)
-    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(3k0, 2μ0)))
-    add_phase!(rve, :PORE, Ellipsoid(1.0), Dict(:C => C_p); fraction = fp)
-    for i in 1:N
-        Ci = t ≥ t_sets[i] ? TensISO{3}(3k1, 2μ1) : C_p
-        add_phase!(rve, Symbol(:INC_, i), Ellipsoid(1.0), Dict(:C => Ci); fraction = finf / N)
+function creep_panel(model, title)
+    p = plot(; xlabel = "t", ylabel = "E₀ · J^E_eff(t, t₀)", legend = :topleft,
+        framestyle = :box, xlims = (0, t_max), ylims = (0, 20), title = title)
+    for (k, t0) in enumerate(loading_ages)
+        T = collect(range(t0, t_max; length = 31))
+        Jh = creep_curve(N, α_solid, t0, T, model; fixed = false)
+        Jf = creep_curve(N, α_solid, t0, T, model; fixed = true)
+        plot!(p, T, E0 .* Jh; lw = 2, color = cmap[k], marker = :+, ms = 2,
+            label = "history t₀=$(round(t0, digits = 2))")
+        plot!(p, T, E0 .* Jf; lw = 1.5, color = cmap[k], ls = :dash, label = "")
     end
-    return E0 / max(E_nu(homogenize(rve, MoriTanaka(), :C))[1], 1e-12)
+    T_ref = vcat([1e-3], filter(≤(t_max), setting_times(N, α_solid)), [t_max])
+    plot!(p, T_ref, [elastic_ref(t, model) for t in T_ref]; lw = 2, color = :black,
+        ls = :dot, label = "1/E^hom(t)")
+    return p
 end
 
-T_ref = vcat([0.0], filter(≤(t_max), setting_times(N, α_solid)), [t_max])
-plot!(p, T_ref, elastic_compliance.(T_ref); lw = 2, color = :black, ls = :dot,
-    label = "1/E^hom(t) (elastic)")
-p
+plot(creep_panel(:layers, "model = :layers"),
+    creep_panel(:whole_pores, "model = :whole_pores");
+    layout = (2, 1), size = (760, 820))
 ```
 
-Early loading ages (``t_0`` small) give much larger creep — many layers have not
-yet solidified — decreasing toward the elastic limit as ``t_0`` grows. The frozen
-approach overestimates creep at early ages (it ignores solidification before
-``t_0``) and converges with the history-dependent result at late ages.
+Three observations, all reproducing [sanahuja2013](@cite):
 
-## Composite sphere vs separate inclusions
+1. **Ageing** — early loading ages (``t_0`` small) give much larger creep because
+   many layers have not yet solidified; the compliance decreases toward the
+   elastic limit as ``t_0`` grows.
+2. **History vs frozen** — the frozen approach overestimates creep at early ages
+   (it ignores solidification before ``t_0``) and converges with the
+   history-dependent result at late ages. Each curve starts on the dotted elastic
+   reference of its own panel.
+3. **Morphology** — the two panels do **not** coincide: `:whole_pores` is
+   systematically more compliant than `:layers`.
+
+## A note on the two topologies
 
 The `:layers` composite sphere and the `:whole_pores` collection of ``N+1``
-separate inclusions are **different morphologies** — the first places the pore
-and the solidifying shells concentrically (as hydrates deposit around a pore),
-the second scatters them independently in the matrix. They therefore give
-different effective creep: `:whole_pores` is systematically more compliant.
+separate inclusions are **different morphologies** — the first packs the pore and
+the solidifying shells concentrically (as hydrates deposit around a pore), the
+second scatters them independently in the matrix.
 
-```@example creep
-t0 = 2 / 3
-T = collect(range(t0, t_max; length = 31))
-Jl = creep_curve(N, α_solid, t0, T, :layers; fixed = false)
-Jw = creep_curve(N, α_solid, t0, T, :whole_pores; fixed = false)
-
-pc = plot(; xlabel = "t", ylabel = "E₀ · J^E_eff(t, t₀)", legend = :topleft,
-    framestyle = :box, size = (720, 440), title = "t₀ = $(round(t0, digits = 2))")
-plot!(pc, T, E0 .* Jl; lw = 3, color = :steelblue, label = ":layers (composite sphere)")
-plot!(pc, T, E0 .* Jw; lw = 2, color = :orange, ls = :dash, label = ":whole_pores (N inclusions)")
-pc
-```
-
-The composite sphere is the morphologically-motivated, efficient model of
-[sanahuja2013](@cite) — one Eshelby problem instead of ``N+1``.
-
-!!! note "Reproducing Echoes, and a note on the book text"
-    `MeanFieldHom` reproduces the Echoes reference for **both** topologies to
-    better than 1 % (`:layers` ``E_0 J`` ranges 1.60 → 11.16 vs Echoes 1.60 →
-    11.06; `:whole_pores` 1.96 → 17.57 vs 1.96 → 17.54). Note that the Echoes
-    *book* describes the two as yielding "identical compliance curves"; its own
-    code does **not** — they differ by ``\approx 6.5`` in ``E_0 J`` here, exactly
-    as `MeanFieldHom` finds. The composite-sphere packing is an efficient,
-    physically-motivated model, not an exact reformulation of the separate-
-    inclusion RVE.
+!!! note "Reproducing Echoes, and a correction to the book text"
+    `MeanFieldHom` reproduces the Echoes *code* for **both** topologies to better
+    than 1 % (`:layers` ``E_0 J`` ≈ 1.60 → 11.06; `:whole_pores` ≈ 1.96 → 17.54 at
+    ``t_0 = 2/3``). The Echoes *book* text states the two give "identical
+    compliance curves"; its own code does **not** — they differ by ``\approx 6.5``
+    in ``E_0 J``, exactly as found here. The composite-sphere packing of
+    [sanahuja2013](@cite) is an efficient, physically-motivated model — one
+    Eshelby problem instead of ``N+1`` — not an exact reformulation of the
+    separate-inclusion RVE.

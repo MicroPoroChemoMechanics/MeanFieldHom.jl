@@ -11,9 +11,9 @@ two-time kernel — relaxation `R(t,t')` or compliance / creep `J(t,t')`
                           \mathrm{d}\boldsymbol{\varepsilon}(t').
 ```
 
-After discretisation on a time grid `t = (t_1, …, t_n)` via the
+After discretization on a time grid `t = (t_1, …, t_n)` via the
 trapezoidal rule, every viscoelastic operator (kernel, Hill tensor,
-localisation tensor, effective stiffness) becomes a **lower
+localization tensor, effective stiffness) becomes a **lower
 block-triangular** matrix of size `(B·n) × (B·n)` with `B = 6` for
 4-tensors (Mandel form) and `B = 3` for 2-tensors (conductivity /
 diffusion). Causality is encoded in the lower-triangular structure;
@@ -23,7 +23,7 @@ matrix products / forward-substitutions.
 ## Time-space decoupling for an isotropic matrix
 
 For an **isotropic** ALV matrix the Hill polarisation tensor admits a
-particularly clean factorisation [@barthelemyIJSS2016, App.] :
+particularly clean factorization [@barthelemyIJSS2016, App.] :
 
 ```math
 \widetilde{\mathbb{P}}_{\mathcal{E}}(t,t')
@@ -64,7 +64,7 @@ while preserving the storage savings and algebra closure.
 A flat crack (penny / elliptic / ribbon) carries no volume but
 contributes a `ΔC̃_crack` term to the **numerator** of every scheme
 [@barthelemyIJES2019, §4]. The ALV crack-opening-displacement (COD)
-tensor `B̃` factorises like the iso Hill kernel : two scalar Volterra
+tensor `B̃` factorizes like the iso Hill kernel : two scalar Volterra
 matrices (one normal, one tangential compliance) times geometric
 4-tensors. From `B̃` follow the compliance contribution `H̃` and the
 stiffness contribution `Ñ = -C̃_M·H̃·C̃_M`.

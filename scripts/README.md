@@ -102,7 +102,7 @@ counterpart (native demonstration).
   symmetric content preserved). `best_fit_ti` (→ `TensTI{4,T,5}`) is the
   echoes `.paramsym(sym=TI)` reporting projection — never used in kernels.
   `70_symmetrization_showcase.jl` demonstrates the difference.
-- **Water/air TINY = 1e-3.** The Pichler scripts regularise the exactly-zero
+- **Water/air TINY = 1e-3.** The Pichler scripts regularize the exactly-zero
   echoes water/air stiffness with a small positive `TINY`, which selects the
   physical (percolating) Self-Consistent branch. Expect a matching small
   offset from echoes near α→0. The ISO variant (`42_cementpaste_iso.jl`) uses

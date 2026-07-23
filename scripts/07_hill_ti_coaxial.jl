@@ -128,7 +128,7 @@ println()
 #   * For oblate (ξ > 1): semi_axes = (a, a, c) with c < a, axis e₃ — TI on e₃.
 #   * For prolate (ξ < 1): semi_axes = (c, a, a) with c > a, axis e₁ — TI on e₁.
 # Components are reported in the (axial, transverse, transverse′) frame,
-# matching the paper's index labelling (axial = "3", transverse = "1" or "2").
+# matching the paper's index labeling (axial = "3", transverse = "1" or "2").
 
 println("Generating Figure 1 (Barthélémy 2020) — 100 points logspace(-2, 2)…")
 

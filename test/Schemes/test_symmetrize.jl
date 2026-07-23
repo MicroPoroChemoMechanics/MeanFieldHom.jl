@@ -103,7 +103,7 @@ import ForwardDiff as FD
         sym_none = TISymmetrize((0.0, 0.0, 1.0); matrix_projection = :none)
         @test sym_none.matrix_projection === :none
         @test_throws ArgumentError TISymmetrize((0.0, 0.0, 1.0); matrix_projection = :foo)
-        # _project_matrix behaviour
+        # _project_matrix behavior
         C_ti = TensND.TensTI{4, Float64, 5}((10.0, 6.0, 2.0, 3.0, 4.0), (0.0, 0.0, 1.0))
         @test _project_matrix(C_ti, sym_none) === C_ti
         @test _project_matrix(C_ti, sym_def) isa TensND.TensISO{4, 3}

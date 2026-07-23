@@ -93,7 +93,7 @@ _normalize_euler(::Tuple{}) = (0.0, 0.0, 0.0)
     _default_basis(::Type{T}, euler_angles)
 
 Build the default TensND basis associated with a set of ZYZ Euler
-angles: `CanonicalBasis{3,_basis_eltype(T)}` when all (normalised)
+angles: `CanonicalBasis{3,_basis_eltype(T)}` when all (normalized)
 angles are zero, `RotatedBasis(normalized...)` otherwise.  Accepts any
 tuple of length 0–3 with heterogeneous `Real` entries — see
 [`_normalize_euler`](@ref).

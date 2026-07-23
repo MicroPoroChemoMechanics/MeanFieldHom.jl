@@ -10,7 +10,7 @@ using MeanFieldHom
 #    w_i = cos θ_i⁻ − cos θ_i⁺,  Σ w_i = 1.
 # =============================================================================
 
-@testset "polar_orientation_bins — convention et normalisation" begin
+@testset "polar_orientation_bins — convention et normalization" begin
     for N in (2, 3, 5, 12, 64)
         bins = polar_orientation_bins(N)
         @test length(bins) == N

@@ -173,17 +173,12 @@ final array — one pass through the whole three-scale chain.
 extract_kμ(arr) = k_mu(TensND.proj_tens(Val(:ISO), arr)[1])
 
 function pichler_strength(arr_C_mo, arr_dC, μh, f_θ)
-    K_mo, μ_mo = extract_kμ(arr_C_mo)
-    S = zeros(eltype(arr_dC), 3, 3, 3, 3)
-    for i in 1:3, j in 1:3, k in 1:3, l in 1:3
-        S[i, j, k, l] = (i == j) * (k == l) / (9K_mo) +
-            (((i == k) * (j == l) + (i == l) * (j == k)) - 2 * (i == j) * (k == l) / 3) / (4μ_mo)
-    end
-    M = zero(eltype(arr_dC))
-    @inbounds for a in 1:3, b in 1:3, c in 1:3, d in 1:3
-        M += S[3, 3, a, b] * arr_dC[a, b, c, d] * S[c, d, 3, 3]
-    end
-    return 1 / sqrt(abs(M) * 2μh^2 / f_θ)
+    # `arr_C_mo` (value) and `arr_dC` (∂/∂μ) are 3×3×3×3 arrays; wrap them as
+    # `Tens` and use intrinsic TensND algebra — the effective compliance is the
+    # full inverse and the pull-back is one double contraction, no index loops.
+    S = inv(Tens(arr_C_mo))
+    M = S ⊡ Tens(arr_dC) ⊡ S
+    return 1 / sqrt(abs(M[3, 3, 3, 3]) * 2μh^2 / f_θ)
 end
 
 function compute_point(wc, α_p; sc = 0.0, N = NTHETA, ω = ω_aspect)

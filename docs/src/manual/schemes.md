@@ -19,7 +19,7 @@ add_phase!(rve, :CRACK, PennyCrack(1.0),
 ```
 
 Volume fractions are stored at the RVE level (not on the inclusions),
-so a single inclusion remains usable for localisation-tensor
+so a single inclusion remains usable for localization-tensor
 calculations without any RVE machinery
 ([`hill_tensor`](@ref), [`strain_strain_loc`](@ref), …). The matrix
 volume fraction is implicit (`1 - Σ f_inc`); crack densities are

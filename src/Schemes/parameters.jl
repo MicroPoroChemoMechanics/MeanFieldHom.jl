@@ -348,7 +348,7 @@ function _replace_tuple_at(t::NTuple{N, T}, i::Int, v::Tv) where {N, T, Tv}
     return ntuple(k -> k == i ? convert(Tnew, v) : convert(Tnew, t[k]), N)
 end
 
-# ─── Specialisations for built-in inclusion types ────────────────────────────
+# ─── Specializations for built-in inclusion types ────────────────────────────
 # Parametric structs whose type parameters are computed from the values
 # (Ellipsoid, EllipticCrack, RibbonCrack) need explicit reconstruction
 # with the right parameter binding ; the @generated fallback fails for
@@ -587,7 +587,7 @@ uniform type-stability across all the lenses involved.
 
 The default implementation composes individual `set_param` calls; for
 `AbstractParameter`s that target the same field type (e.g. several
-amounts), a future optimisation could fuse the passes. Correctness is
+amounts), a future optimization could fuse the passes. Correctness is
 preserved by composition.
 """
 function _set_many(rve::RVE, params::AbstractVector{<:AbstractParameter}, values::AbstractVector)

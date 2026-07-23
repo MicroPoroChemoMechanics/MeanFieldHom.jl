@@ -4,7 +4,7 @@ using TensND
 using LinearAlgebra
 
 # =============================================================================
-#  Conductivity LayeredSphere — Y₁-harmonic gradient-gradient localisation.
+#  Conductivity LayeredSphere — Y₁-harmonic gradient-gradient localization.
 # =============================================================================
 
 @testset "Conductivity — single-layer ≡ Ellipsoid Eshelby" begin
@@ -35,6 +35,30 @@ end
     # Sum rule: Σ f_k · k_k · α_k should equal k_eff of the composite.
     k_eff = MeanFieldHom.LayeredSpheres._effective_conductivity(s, k₀)
     @test isfinite(k_eff) && k_eff > 0
+end
+
+@testset "Conductivity — impermeable (k=0) core is finite" begin
+    # A solid, impermeable aggregate (k_core = 0) coated by a conductive shell:
+    # the transfer-matrix `q̂n/k` term is 0/0 for the core, but regularity
+    # (B = 0) gives a finite localization.  Regression for the NaN bug.
+    k₀, k_shell = 1.0, 50.0
+    K₀ = TensISO{3}(k₀)
+    s = LayeredSphere((1.0, 1.01), (TensISO{3}(0.0), TensISO{3}(k_shell)))
+
+    α = MeanFieldHom.LayeredSpheres._cond_localization(s, k₀)
+    @test all(isfinite, α)
+    N = conductivity_contribution(s, K₀)
+    @test isfinite(N[1, 1])
+
+    # ITZ mortar (impermeable aggregate + conductive shell, MT) — matches the
+    # Echoes reference value D_eff/D_cp = 0.9979 at f = 0.2, D_itz/D_cp = 50
+    # (here the shell conductivity k_shell = 50).
+    f_inc = 0.2 * 1.01^3
+    rve = RVE(:CEMENT)
+    add_matrix!(rve, Ellipsoid(1.0), Dict(:K => TensISO{3}(1.0)))
+    add_phase!(rve, :AGG, s, Dict(:K => TensISO{3}(1.0)); fraction = f_inc)
+    D_eff = tr(Array(homogenize(rve, MoriTanaka(), :K))) / 3
+    @test D_eff ≈ 0.9979 rtol = 1.0e-3
 end
 
 @testset "KapitzaInterface — limits" begin

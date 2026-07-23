@@ -72,7 +72,7 @@ second Hill tensor
 ([Kachanov 1992](@cite kachanov1992),
  [Sevostianov & Kachanov 2002](@cite sevostianov2002),
  [Barthélémy et al. 2021](@cite barthelemyIJES2021)).  The elliptic and ribbon
-factorisations are related by ``\\mathbf B^{\\mathcal R} =
+factorizations are related by ``\\mathbf B^{\\mathcal R} =
 \\tfrac{3\\pi}{8}\\,\\lim_{\\eta\\to 0}\\mathbf B^{\\mathcal E}``.
 
 For isotropic or aligned-TI matrices the kernel is analytical
@@ -138,7 +138,7 @@ end
 
 Size-independent **thermal crack-opening-displacement scalar** ``b``
 for a flat crack in a conductor of 2nd-order conductivity tensor
-``\\mathbf K_0``.  Analogue of the elasticity COD tensor: in the 2nd-
+``\\mathbf K_0``.  Analog of the elasticity COD tensor: in the 2nd-
 order problem, the temperature jump across the crack is scalar and
 only the normal component of the heat flux drives it, so a single
 scalar captures the full crack flexibility.  The associated
@@ -159,7 +159,7 @@ correction ``\\Delta\\mathbf R = (4\\pi/3)\\varepsilon^{3\\mathrm d}\\mathbf R``
 Closed-form derivation via the square-root change-of-variable of
 [Giraud et al. 2019](@cite giraudMOM2019), in the framework of
 [Sevostianov & Kachanov 2002](@cite sevostianov2002) for the rank-1
-factorisation ``\\mathbf R \\propto \\hat{\\mathbf w}\\otimes\\hat{\\mathbf w}``.
+factorization ``\\mathbf R \\propto \\hat{\\mathbf w}\\otimes\\hat{\\mathbf w}``.
 See the theory page `docs/src/theory/thermal_cracks.md`
 for the mathematical details and the elasticity ↔ conductivity
 correspondence table.
@@ -198,7 +198,7 @@ _cod_thermal(crack::RibbonCrack, K₀::TensND.AbstractTens{2, 3}) =
     compliance_contribution(crack, K₀::AbstractTens{2,3}; kw...) -> Tens{2,3}
 
 Size-independent **crack resistivity contribution tensor** ``\\mathbf R``
-(thermal analogue of the elasticity [`compliance_contribution`](@ref)):
+(thermal analog of the elasticity [`compliance_contribution`](@ref)):
 
 - Elliptic crack:  ``\\mathbf R = \\tfrac{3}{4}\\,b\\,
   \\hat{\\mathbf w}\\otimes\\hat{\\mathbf w}``.

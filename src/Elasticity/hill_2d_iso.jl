@@ -7,7 +7,7 @@
 #  `C₀ = TensISO{2}(α, β) = α·𝕁₂ + β·𝕂₂`, `α = 3k`, `β = 2μ`, plane strain
 #  gives `α = 2(λ+μ)` and `β = 2μ`, hence `ν = (α-β)/(2α)`.
 #
-#  Everything is parametrised by
+#  Everything is parametrized by
 #      s = 3k/(3k+2μ)      t = 2μ/(3k+2μ) = 1 - s
 #  which stay finite as `k → ∞` (`s → 1`, `t → 0`), so the incompressible
 #  case needs no separate formula beyond `1/α → 0`.
@@ -42,7 +42,7 @@ function _hill_2d_iso(ell::Ellipsoid{2, Circular}, C₀)
     α, β = C₀.data
     k = α / 3
     μ = β / 2
-    # ρ = 1 specialisation of the elliptic formulas below:
+    # ρ = 1 specialization of the elliptic formulas below:
     #   P = P_J·𝕁₂ + P_K·𝕂₂,  P_J = 1/(3k+2μ),  P_K = (3k+4μ)/(4μ(3k+2μ)).
     local P1111, P1122
     if isa(k, AbstractFloat) && isinf(k)

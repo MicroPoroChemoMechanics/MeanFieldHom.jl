@@ -1,7 +1,7 @@
 # =============================================================================
 #  70_symmetrization_showcase.jl
 #
-#  The didactic centrepiece of the symmetrization overhaul : the DIFFERENCE
+#  The didactic centerpiece of the symmetrization overhaul : the DIFFERENCE
 #  between the two mechanisms echoes (and now MeanFieldHom) provide, on a
 #  NON-major-symmetric strain-concentration tensor.
 #

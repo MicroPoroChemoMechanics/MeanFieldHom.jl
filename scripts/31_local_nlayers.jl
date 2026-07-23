@@ -41,7 +41,7 @@ import MeanFieldHom.LayeredSpheres: _iso_bulk_shear, _bulk_state_seq,
     bulk_AB(sphere, C₀) -> (AB, B_inf)
 
 Per-layer coefficients `(A_k, B_k)` of the bulk displacement
-`u_r = A_k r + B_k/r²` inside a `LayeredSphere`, normalised so that
+`u_r = A_k r + B_k/r²` inside a `LayeredSphere`, normalized so that
 the matrix far-field amplitude `A_∞ = 1`.  Returns `B_inf` (matrix-
 side `B`-coefficient) as the second element.
 """
@@ -68,7 +68,7 @@ Return `(σ_rr, σ_θθ)` at radius `r` under a remote hydrostatic
 strain `ε∞ = ε_v · 𝟙`.  `r > 0` may be inside the composite sphere
 (any layer) or in the matrix.  Continuity of σ_rr across perfect
 interfaces is automatic; explicit jumps for imperfect interfaces are
-not modelled here.
+not modeled here.
 """
 function bulk_stresses(
         sphere::LayeredSphere{T, N}, C₀::TensISO{4, 3}, r;

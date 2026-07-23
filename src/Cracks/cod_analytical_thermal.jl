@@ -1,7 +1,7 @@
 # =============================================================================
 #  cod_analytical_thermal.jl — closed-form thermal COD scalars.
 #
-#  Analogue of `cod_analytical.jl` for the 2nd-order (conductivity /
+#  Analog of `cod_analytical.jl` for the 2nd-order (conductivity /
 #  diffusion) problem.  Returns a **scalar** `b` instead of a symmetric
 #  2nd-order tensor: since the temperature jump across a flat crack is a
 #  scalar driven only by the normal component of the heat flux, a single

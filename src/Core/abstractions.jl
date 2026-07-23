@@ -6,7 +6,7 @@
 #  Every inclusion geometry (ellipsoid, crack, multi-layer, user-defined, …)
 #  subtypes `AbstractInclusion{T}`, where `T` is the element type of the
 #  geometric scalars (semi-axes, half-widths, radii, …).  Sub-hierarchies
-#  organise the dispatch tables at the next level:
+#  organize the dispatch tables at the next level:
 #
 #     AbstractInclusion{T}
 #       ├── AbstractEllipsoidalInclusion{dim,T}   — ellipsoids (2D / 3D)
@@ -252,7 +252,7 @@ function stiffness_contribution end
     conductivity_contribution(crack, K₀; kw...)     -> Tens{2,3}
 
 Size-independent conductivity contribution tensor for the 2nd-order
-transport problem.  Analogue of [`stiffness_contribution`](@ref).
+transport problem.  Analog of [`stiffness_contribution`](@ref).
 """
 function conductivity_contribution end
 
@@ -260,7 +260,7 @@ function conductivity_contribution end
     resistivity_contribution(incl, K₁, K₀; kw...) -> Tens{2,3}
 
 Size-independent resistivity contribution tensor of an inclusion
-(2nd-order analogue of [`compliance_contribution`](@ref MeanFieldHom.Cracks.compliance_contribution) for solid
+(2nd-order analog of [`compliance_contribution`](@ref MeanFieldHom.Cracks.compliance_contribution) for solid
 ellipsoids).
 """
 function resistivity_contribution end

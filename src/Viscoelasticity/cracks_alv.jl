@@ -132,7 +132,7 @@ Apply the interface-stiffness post-correction
 `B̃_eff = B̃ ∘ (𝟙 + b · K ∘ B̃)^{-vol}`
 to the traction-free COD matrices `B_n`, `B_t`.  When one of the two
 interface laws is `nothing`, the corresponding component is left
-untouched (modelling the traction-free direction).
+untouched (modeling the traction-free direction).
 """
 function _apply_interface_stiffness_alv(
         B_n::AbstractMatrix, B_t::AbstractMatrix,
@@ -237,7 +237,7 @@ Discrete (6n × 6n) crack **stiffness** contribution
    `Ñ = − C̃_ref ∘ H̃ ∘ C̃_ref`,
 mirror of the elastic [`stiffness_contribution(crack, C₀)`] formula.
 `C_ref` may be a `ViscoLaw` (the matrix law — relaxation auto-built
-through [`_trapezoidal_relaxation`](@ref)) or a pre-discretised
+through [`_trapezoidal_relaxation`](@ref)) or a pre-discretized
 `(6n × 6n)` reference matrix (used by SC iterations against the
 running estimate `C_n`).
 """
@@ -254,7 +254,7 @@ end
 """
     stiffness_contribution_alv_at(crack, C_ref::AbstractMatrix) -> Matrix
 
-Variant that takes a pre-discretised `(6n × 6n)` reference matrix.
+Variant that takes a pre-discretized `(6n × 6n)` reference matrix.
 The compliance contribution is recomputed from the iso parameters of
 `C_ref` (only iso ALV matrices are currently supported by
 [`compliance_contribution_alv`](@ref)).
@@ -280,7 +280,7 @@ function stiffness_contribution_alv_at(
     B_n = (8 / (3π)) .* volterra_left_divide(βα1, α_p_2β)
     B_t = (32 / (9π)) .* volterra_left_divide(βα2, α_p_2β)
     # Optional Sevostianov interface-stiffness correction.  Caller
-    # supplies the **already-discretised** scalar interface matrices
+    # supplies the **already-discretized** scalar interface matrices
     # `Rn_mat`, `Rt_mat` (n × n Volterra) — the iteration of SC against
     # the running estimate does not need to re-trapezoidalise the
     # interface laws each pass.

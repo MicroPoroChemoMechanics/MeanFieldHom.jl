@@ -90,7 +90,7 @@ end
 """
     maxwell_relaxation(C_inf, C_branches, taus; mode = :relaxation)
 
-Build a generalised Maxwell relaxation kernel
+Build a generalized Maxwell relaxation kernel
 
 ```
 R(t, t') = C_inf + Σ_i C_branches[i] · exp(-(t - t')/taus[i])
@@ -123,7 +123,7 @@ end
 """
     kelvin_creep(J_0, J_branches, taus; mode = :creep)
 
-Build a Kelvin (or Kelvin-Voigt-Generalised) creep kernel
+Build a Kelvin (or Kelvin-Voigt-Generalized) creep kernel
 
 ```
 J(t, t') = J_0 + Σ_i J_branches[i] · (1 - exp(-(t - t')/taus[i]))

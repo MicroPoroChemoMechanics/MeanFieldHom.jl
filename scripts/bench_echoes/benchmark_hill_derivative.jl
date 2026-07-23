@@ -18,7 +18,7 @@
 #    * ORTHO — the 9 orthotropic parameters ; echoes NUMINT3D vs MFH
 #              ForwardDiff (recombined along an example direction).
 #    * ANISO — a fully triclinic reference ; MFH ForwardDiff only (echoes'
-#              hill_derivative has no triclinic parameterisation).
+#              hill_derivative has no triclinic parameterization).
 #
 #  Elastic 4th order only.  Requires PyCall + an importable `echoes`.
 # =============================================================================
@@ -153,7 +153,7 @@ end
 #  Triclinic reference — MFH ForwardDiff only (no echoes counterpart)
 # =============================================================================
 println("\n  Fully triclinic reference — MeanFieldHom ForwardDiff only")
-println("  (echoes hill_derivative has no triclinic parameterisation)")
+println("  (echoes hill_derivative has no triclinic parameterization)")
 let ell_jl = Ellipsoid(3.0, 2.0, 1.0; euler_angles = (0.2, 0.3, 0.1))
     C_KM = collect(KM(TensISO{3}(3 * 60.0e3, 2 * 40.0e3)))
     C_KM[1, 1] += 8.0e3; C_KM[1, 4] += 3.0e3; C_KM[4, 1] += 3.0e3   # break symmetry class

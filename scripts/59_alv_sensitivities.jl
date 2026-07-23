@@ -41,7 +41,7 @@ using Printf
 const N_TIMES = 8
 const TIMES = collect(range(0.0, 2.0; length = N_TIMES))
 
-# Maxwell-iso matrix law parametrised by `(k_M, μ_M, τ_K, τ_μ)`.
+# Maxwell-iso matrix law parametrized by `(k_M, μ_M, τ_K, τ_μ)`.
 # Closure pattern: each call returns a fresh `ViscoLaw`.
 function build_law_M(k_M, μ_M, τ_K = 1.0, τ_μ = 0.5)
     function R_iso(t, tp)

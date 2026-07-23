@@ -19,7 +19,7 @@ viscoelastic laws, user-defined inclusions).
   (Voigt, Reuss, Dilute, Mori-Tanaka, Maxwell, PCW, SC, ASC,
   Differential), parameter sensitivities (autodiff).
 - `MeanFieldHom.Viscoelasticity` — ageing linear viscoelastic
-  homogenization (`ViscoLaw`, trapezoidal Stieltjes discretisation,
+  homogenization (`ViscoLaw`, trapezoidal Stieltjes discretization,
   Volterra algebra, ALV Hill kernel, iso / TI / ortho fast paths,
   cracks, layered spheres, order-2 conductivity / diffusion).
 

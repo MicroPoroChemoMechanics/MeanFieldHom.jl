@@ -22,7 +22,7 @@
 #      A_εσ = A_εε : S₀    (S₀ = C₀⁻¹)
 #      A_σσ = C₁ : A_εε : S₀ = A_σε : S₀
 #
-#  Conductivity analogues (2-tensor fields, 2-tensor Hill/moduli) use
+#  Conductivity analogs (2-tensor fields, 2-tensor Hill/moduli) use
 #  the same formulas with `·` in place of `:`.
 #
 #  Type-genericity: the implementation works for Float64, BigFloat,
@@ -140,7 +140,7 @@ order transport problem:
 A_∇∇   = [𝟙 + ℙ(incl, K₀) · (K₁ - K₀)]⁻¹.
 ```
 
-Conductivity analogue of [`strain_strain_loc`](@ref).  Keyword arguments
+Conductivity analog of [`strain_strain_loc`](@ref).  Keyword arguments
 are forwarded to [`hill_tensor`](@ref).
 """
 function gradient_gradient_loc(

@@ -41,7 +41,7 @@ end
 
 @testset "bulk_localization_alv — single-layer sphere ≡ Eshelby bulk α" begin
     # Single layer = single sphere ; bulk α should equal the Eshelby
-    # bulk localisation factor for a sphere (k_inc) in matrix (k_0, μ_0).
+    # bulk localization factor for a sphere (k_inc) in matrix (k_0, μ_0).
     C_M = TensISO{3}(30.0, 8.0)
     C_1 = TensISO{3}(60.0, 16.0)
     sphere = LayeredSphere((1.0,), (C_1,))
@@ -56,7 +56,7 @@ end
 @testset "bulk_localization_alv — Maxwell relaxation kernel structure" begin
     # Matrix is a Maxwell relaxation ; layers are elastic.  At t = 0 the
     # response is elastic-instantaneous ; at later t' < t the kernel has
-    # decayed and the localisation factor changes accordingly.
+    # decayed and the localization factor changes accordingly.
     C_1 = TensISO{3}(60.0, 16.0)
     C_2 = TensISO{3}(90.0, 24.0)
     sphere = LayeredSphere((0.5, 1.0), (C_1, C_2))

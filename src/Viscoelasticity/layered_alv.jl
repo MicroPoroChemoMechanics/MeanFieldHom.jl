@@ -14,7 +14,7 @@
 #
 #  This file delivers BOTH the **bulk (Y₀ harmonic)** and the
 #  **shear (Y₂ harmonic)** ALV recurrences, plus the corresponding
-#  per-layer localisation matrices and the ALV interface transfers.
+#  per-layer localization matrices and the ALV interface transfers.
 #  Both are exercised (incl. an N=2 cross-check against ECHOES Python)
 #  in `test/Viscoelasticity/test_layered_alv.jl`.
 # =============================================================================
@@ -316,7 +316,7 @@ end
 """
     bulk_localization_alv(sphere, C0_law, times) -> NTuple{N, Matrix}
 
-Per-layer bulk localisation matrices `α_k(t,t')` (`n × n` each), such
+Per-layer bulk localization matrices `α_k(t,t')` (`n × n` each), such
 that `<ε_v>_layer_k = ⟨α_k⟩ ∘ ε_v_∞` in the Volterra sense.
 
 For the bulk Y₀ harmonic, the volume-averaged volumetric strain in
@@ -397,7 +397,7 @@ end
 #  to invert it via block forward-substitution.
 #
 #  Reference : Hervé-Zaoui 1993 (elastic) ; Sanahuja IJSS 2013 ALV
-#  generalisation ; ECHOES manual ch07 §"Layered sphere ALV".
+#  generalization ; ECHOES manual ch07 §"Layered sphere ALV".
 # =============================================================================
 
 """
@@ -405,7 +405,7 @@ end
 
 ALV fundamental matrix for the deviatoric Y₂ harmonic, in
 **τ-scaling** : the state vector is `(U, V, τ_rr, τ_rθ)` with
-`τ = σ / μ` (per-layer normalisation).  Rows 3 and 4 of the matrix
+`τ = σ / μ` (per-layer normalization).  Rows 3 and 4 of the matrix
 no longer carry an explicit `μ` factor; all entries are functions of
 the modulus ratio `M_x = M_κ ∘ M_μ^{-vol}` and the radius only.
 This keeps every entry `O(1)` for **any** physically-admissible
@@ -755,8 +755,8 @@ Given a `(4n × m)` state matrix in time-major layout and the Volterra
 moduli of the layer at radius `r`, solve `M(r) · x = state` (Volterra
 inverse with `block_size = 4`) and extract the "mode 1" and "mode 2"
 amplitude blocks (`n × m` each).  Modes 3 and 4 are not returned (they
-are not needed for layered-sphere localisation since `c = d = 0` for the
-core probe construction and the matrix-side normalisation only fixes
+are not needed for layered-sphere localization since `c = d = 0` for the
+core probe construction and the matrix-side normalization only fixes
 `a` and `b`).
 """
 function _shear_amp_blocks_alv(
@@ -900,7 +900,7 @@ end
 """
     shear_localization_alv(sphere, C0_law, times) -> NTuple{N, Matrix}
 
-Per-layer deviatoric ALV localisation matrices `β_k(t,t')` (`n × n`
+Per-layer deviatoric ALV localization matrices `β_k(t,t')` (`n × n`
 each), defined by `<ε_d>_layer_k = ⟨β_k⟩ ∘ ε_d_∞` in the Volterra
 sense — the `n × n` Volterra matrix that maps a unit deviatoric remote
 strain to the volume-averaged deviatoric strain in layer `k`.
@@ -913,7 +913,7 @@ that picks the linear combination matching unit far-field
 amplitude block extracted from the combined inside state.
 
 Reference : ECHOES manual ch07 §"n-layer ALV shear recurrence" ;
-Hervé-Zaoui 1993 generalised to ALV via [@sanahuja2013].
+Hervé-Zaoui 1993 generalized to ALV via [@sanahuja2013].
 """
 function shear_localization_alv(
         sphere::LayeredSphere{T, N},
@@ -950,7 +950,7 @@ function shear_localization_alv(
         # Mode-2 contribution to the layer-volume-averaged deviatoric strain.
         # `(21/5) · μ^{-vol} · (3κ + μ) · (r_b⁵ − r_a⁵)/(r_b³ − r_a³)`
         # (Christensen–Lo mode-2 angular integral with the C++ mode
-        # normalisation in `_shear_M_matrix_alv`).
+        # normalization in `_shear_M_matrix_alv`).
         geom = (r_b^5 - r_a^5) / (r_b^3 - r_a^3)
         F_k = (21 / 5) * geom * volterra_left_divide(
             M_μ_k, 3 .* M_κ_k .+ M_μ_k;
@@ -963,8 +963,8 @@ end
 # =============================================================================
 #  Public ALV-contribution / localization assembly for the layered sphere.
 #
-#  The combination of bulk α_k and shear β_k localisation matrices into
-#  isotropic 6n×6n strain-strain localisation and stiffness contribution
+#  The combination of bulk α_k and shear β_k localization matrices into
+#  isotropic 6n×6n strain-strain localization and stiffness contribution
 #  tensors mirrors the elastic helpers in `LayeredSpheres.jl`:
 #     A_loc = α 𝕁 + β 𝕂                (mean strain-strain in the sphere)
 #     N     = Σ_k f_k (C_k − C_0) ∘ A_k  (size-independent contribution).
@@ -974,13 +974,13 @@ end
     strain_strain_loc_alv(sphere, C0_law, times) -> Matrix{T}
 
 `(6n × 6n)` block matrix describing the volume-averaged strain-strain
-localisation across the **entire** layered sphere under a unit
+localization across the **entire** layered sphere under a unit
 Volterra far-field strain.  In iso form this is
 `A_avg = ⟨α⟩ 𝕁 + ⟨β⟩ 𝕂` with
 `⟨α⟩ = Σ_k f_k α_k(t,t')` and `⟨β⟩ = Σ_k f_k β_k(t,t')` (Volterra
 products).
 
-This is the analogue used by the ALV dilute / MT / Maxwell schemes
+This is the analog used by the ALV dilute / MT / Maxwell schemes
 when the inclusion phase is a `LayeredSphere`.
 """
 function strain_strain_loc_alv(
@@ -1004,7 +1004,7 @@ sphere relative to its iso ALV matrix `C0_law`.  Iso parameters
 (α-, β-blocks of the assembled matrix) are
    `α = 3 Σ_k f_k (M_κ_k − M_κ_0) ∘ α_k`,
    `β = 2 Σ_k f_k (M_μ_k − M_μ_0) ∘ β_k`,
-where `α_k`, `β_k` are the per-layer localisation matrices and `M_κ_k`,
+where `α_k`, `β_k` are the per-layer localization matrices and `M_κ_k`,
 `M_μ_k` the per-layer Volterra moduli.
 
 The dilute-scheme effective stiffness with this inclusion at volume

@@ -16,7 +16,7 @@
 #  2. BEST-FIT projection (reporting / parameter extraction ONLY) —
 #     `best_fit_ti(t, axis)` (→ major-symmetric `TensTI{4,T,5}`) and
 #     `best_fit_iso(t)`.  This is the orthogonal projection onto the
-#     symmetric Walpole span, the analogue of echoes' `.paramsym(sym=TI)`.
+#     symmetric Walpole span, the analog of echoes' `.paramsym(sym=TI)`.
 #     Do NOT use it inside scheme kernels : it silently drops the
 #     non-major-symmetric content of concentration tensors.
 #
@@ -111,7 +111,7 @@ best_fit_iso(t::TensND.AbstractTens) = TensND.proj_tens(Val(:ISO), t)[1]
 
 Orthogonal (Frobenius) projection of `t` onto the **major-symmetric** TI
 (Walpole) span about `axis` — thin wrapper over [`TensND.proj_tens`](@ref)`(
-Val(:TI), t, axis)`, the analogue of echoes' `.paramsym(sym=TI)` parameter
+Val(:TI), t, axis)`, the analog of echoes' `.paramsym(sym=TI)` parameter
 extraction. Numerically identical to the previous in-house implementation
 (exact azimuthal average then forced major symmetry), verified to ~1e-11.
 
@@ -130,7 +130,7 @@ best_fit_ti(t::TensND.AbstractTens{2, 3}, axis) = TensND.proj_tens(Val(:TI), t, 
 
 Orthogonal (Frobenius) projection of `t` onto the orthotropic span in the
 given material `frame` — thin wrapper over [`TensND.proj_tens`](@ref)`(
-Val(:ORTHO), t, frame)`, the analogue of echoes' `.paramsym(sym=ORTHO)`.
+Val(:ORTHO), t, frame)`, the analog of echoes' `.paramsym(sym=ORTHO)`.
 There was previously no orthotropic parameter extraction in MeanFieldHom.jl;
 this closes that gap using the TI/ORTHO projection machinery already tested
 in TensND (`test/test_tens_projection.jl`).

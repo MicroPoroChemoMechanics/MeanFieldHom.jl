@@ -1,6 +1,6 @@
 # Architecture
 
-`MeanFieldHom` is organised around a single principle:
+`MeanFieldHom` is organized around a single principle:
 
 > every high-level entry point dispatches via
 > `MeanFieldHom.Core._resolve_algo` on

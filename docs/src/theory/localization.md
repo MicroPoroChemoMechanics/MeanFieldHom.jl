@@ -77,7 +77,7 @@ volume fraction.  The same entry points apply, with the density
 
 ## Conductivity (2nd-order transport)
 
-Every routine above has a 2-tensor analogue, triggered by dispatch on
+Every routine above has a 2-tensor analog, triggered by dispatch on
 `::AbstractTens{2,3}` matrices:
 
 | Elasticity                           | Conductivity                           |

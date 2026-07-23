@@ -37,7 +37,7 @@ struct DECUHR <: AbstractAlgorithm end
 "Nested 1D QuadGK cubature (fallback to DECUHR, ForwardDiff-compatible). Historically shipped as `DECUHR` before the split."
 struct NestedQuadGK <: AbstractAlgorithm end
 
-"1D QuadGK quadrature dedicated to infinite cylinders (transverse-plane parametrisation ζ(φ) = (0, cos φ / b, sin φ / c)). ForwardDiff-compatible, selected whenever an [`AbstractEllipsoidalInclusion`](@ref) with a cylindrical-shape trait meets a general-anisotropic 3D stiffness."
+"1D QuadGK quadrature dedicated to infinite cylinders (transverse-plane parametrization ζ(φ) = (0, cos φ / b, sin φ / c)). ForwardDiff-compatible, selected whenever an [`AbstractEllipsoidalInclusion`](@ref) with a cylindrical-shape trait meets a general-anisotropic 3D stiffness."
 struct CylinderQuadrature <: AbstractAlgorithm end
 
 "Placeholder singleton used by `_resolve_algo(Val(:auto), …)` as an explicit *automatic* selection request."

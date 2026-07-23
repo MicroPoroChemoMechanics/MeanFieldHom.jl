@@ -12,7 +12,7 @@
 
 Size-independent **crack compliance contribution tensor**
 ``\\mathbb H`` (Echoes convention).  Assembled from the COD tensor
-``\\mathbf B = `` [`cod_tensor`](@ref) through the factorisation
+``\\mathbf B = `` [`cod_tensor`](@ref) through the factorization
 
 - Elliptic crack:  ``\\mathbb H = \\tfrac{3}{4}\\,\\hat{\\mathbf n}
   \\stackrel{s}{\\otimes}\\mathbf B\\stackrel{s}{\\otimes}\\hat{\\mathbf n}``.
@@ -25,7 +25,7 @@ The two geometric prefactors follow from the single definition
 \\stackrel{s}{\\otimes}\\hat{\\mathbf n}`` applied with
 ``S/V = 3/(4c)`` (elliptic, ``S=\\pi ab``, ``V=\\tfrac{4}{3}\\pi abc``)
 or ``S/V = 2/(\\pi c)`` (ribbon, ``S=4ab``, ``V=2\\pi abc``,
-``a\\to\\infty``).  The Kachanov–Echoes factorisation of the elliptic
+``a\\to\\infty``).  The Kachanov–Echoes factorization of the elliptic
 case is recovered for ``\\eta=1`` (penny).
 
 Apply [`delta_compliance`](@ref)`(crack, H, ε)` to obtain the dilute
@@ -150,7 +150,7 @@ delta_resistivity(crack::RibbonCrack, R, ε) = (one(eltype(R)) * π) * ε * R
 #  Stiffness / conductivity contribution for cracks (API symmetry with
 #  ellipsoids).  For a flat crack the dilute expansion of `inv(S₀+ΔS) - C₀`
 #  at first order in the density ε gives N_crack = -C₀ : H : C₀, so both
-#  contribution flavours are related by a simple ± C₀ : (·) : C₀ mapping.
+#  contribution flavors are related by a simple ± C₀ : (·) : C₀ mapping.
 # =============================================================================
 
 """

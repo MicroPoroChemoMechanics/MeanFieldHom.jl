@@ -20,7 +20,7 @@
 #  ------------------------------------
 #  The intra-layer transfer  `s(r_out) = T · s(r_in)` for a layer
 #  `(κ, μ)` is derived from `M(r_out) · M(r_in)⁻¹` where
-#  `M(r) = [r 1/r²; 3κ -4μ/r³]`.  The resulting 2×2 matrix factorises
+#  `M(r) = [r 1/r²; 3κ -4μ/r³]`.  The resulting 2×2 matrix factorizes
 #  via the bounded ratios `α = 4μ/(3κ+4μ) ∈ [0,1]` and
 #  `β = 3κ/(3κ+4μ) ∈ [0,1]`, so every element stays finite as
 #  `κ → ∞` (or `μ → ∞`).  The entry-point at `r = 0⁺` of the core
@@ -59,7 +59,7 @@ _iso_scalar(K::TensND.TensISO{2, 3}) = MFH_Core.extract_iso_conductivity(K)
 Intra-layer transfer matrix propagating the state vector
 `s = (u_r, σ_rr)` from radius `r_in` to `r_out` in an isotropic layer
 `(κ, μ)`.  Regular in the incompressibility limit `κ → ∞` (the matrix
-elements are written in the factorised `α, β` form with `α + β = 1`).
+elements are written in the factorized `α, β` form with `α + β = 1`).
 """
 @inline function _bulk_layer_transfer(r_out, r_in, κ, μ)
     T = promote_type(typeof(r_out), typeof(r_in), typeof(κ), typeof(μ))
@@ -173,7 +173,7 @@ end
 """
     _bulk_localization(sphere, κ₀, μ₀) -> NTuple{N, TP}
 
-Per-layer bulk localisation `α_k = A_k / A_∞` for the composite
+Per-layer bulk localization `α_k = A_k / A_∞` for the composite
 sphere.  Regular in the limit `κ_k → ∞` (gives `α_k → 0`, no
 volumetric strain in incompressible layer).
 """

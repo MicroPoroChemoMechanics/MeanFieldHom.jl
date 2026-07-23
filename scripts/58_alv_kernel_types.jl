@@ -6,7 +6,7 @@
 #  introduced in v0.7.0 of `MeanFieldHom.jl`.
 #
 #  These types parallel `TensND.TensISO / TensTI / TensOrtho` for the
-#  *time-discretised Volterra* algebra.  Each one stores the symmetry
+#  *time-discretized Volterra* algebra.  Each one stores the symmetry
 #  class compactly (2 / 6 / 12 `n × n` matrices respectively, instead
 #  of one `(6n × 6n)`) and the algebra closures `+, *, volterra_inverse`
 #  remain in the structured class without ever materialising the full

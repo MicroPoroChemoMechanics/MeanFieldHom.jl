@@ -3,7 +3,7 @@
 `MeanFieldHom.jl` treats an infinite cylinder as a first-class
 inclusion type (`Cylinder{S, T, B}`), obtained by passing `a → ∞` in
 the ellipsoid family. This page documents how the Newton-potential
-coefficients and the Hill polarisation tensor specialise in that
+coefficients and the Hill polarisation tensor specialize in that
 limit, matching the cylinder column of the Echoes appendix
 ([Mura 1987](@cite mura1987), §11.22).
 
@@ -23,7 +23,7 @@ transverse semi-axes (along ``\hat{\mathbf e}_2`` and
 
 Passing to the limit ``a\to\infty`` in the triaxial ``I_i^{\mathbf A}``
 / ``I_{ij}^{\mathbf A}`` formulas yields the Echoes-appendix cylinder
-column (normalised convention ``\sum_i I_i^{\mathbf A} = 1``):
+column (normalized convention ``\sum_i I_i^{\mathbf A} = 1``):
 
 ```math
 I_1^{\text{cyl}} = 0,\qquad
@@ -57,10 +57,10 @@ hence the dispatch split via the `CylindricalShape` trait.
 
 !!! note "Storage convention"
     Internally `newton_potential_3d_cylinder` returns the **raw**
-    (un-normalised) kernel, i.e. the values above multiplied by
-    ``4\pi``; the normalising division is applied at the
+    (un-normalized) kernel, i.e. the values above multiplied by
+    ``4\pi``; the normalizing division is applied at the
     [`tens_IA`](@ref) call site.  The expressions on this page match
-    the Echoes manual normalisation (``\sum_i I_i^{\text{cyl}}=1``).
+    the Echoes manual normalization (``\sum_i I_i^{\text{cyl}}=1``).
 
 ## Consequences for the Hill tensor
 

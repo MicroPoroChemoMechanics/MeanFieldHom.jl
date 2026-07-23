@@ -4,7 +4,7 @@
 #  Each concrete scheme implements a method
 #       _evaluate(rve::RVE, ::ConcreteScheme, ::Val{property}; kw...)
 #  in its own file (`voigt.jl`, `dilute.jl`, …). The `Val{property}` form
-#  enables compile-time specialisation on the property name (`:C`, `:K`)
+#  enables compile-time specialization on the property name (`:C`, `:K`)
 #  without paying the Symbol-dispatch cost at runtime.
 # =============================================================================
 
@@ -119,7 +119,7 @@ end
 
 Internal entry point that each concrete scheme implements. This generic
 fallback throws an explicit `ErrorException` so that a missing
-specialisation is reported clearly instead of dispatching to the wrong
+specialization is reported clearly instead of dispatching to the wrong
 method.
 """
 function _evaluate(rve::RVE, scheme::HomogenizationScheme, ::Val{p}; kw...) where {p}

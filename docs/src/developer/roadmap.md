@@ -25,7 +25,7 @@
 ## Open
 
 - Extended-COD crack model in conduction: resistive cracks (linear-spring
-  analogue) **and** conductive cracks (elastic-membrane analogue), via a
+  analog) **and** conductive cracks (elastic-membrane analog), via a
   tensorial conduction COD.
 - Multi-layer extensions: coated cylinders, anisotropic per-layer moduli,
   excentered spheres.

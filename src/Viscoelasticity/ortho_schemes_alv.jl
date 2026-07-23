@@ -3,7 +3,7 @@
 #
 #  When **every** ALV block matrix in a homogenization pipeline is an
 #  ortho 4-tensor with the **same canonical material frame**
-#  `(e₁, e₂, e₃)` (each `(6×6)` Mandel block is parametrised by 9 entries
+#  `(e₁, e₂, e₃)` (each `(6×6)` Mandel block is parametrized by 9 entries
 #  of a full 3×3 "normal" block plus 3 entries of a shear-diagonal block),
 #  the algebra collapses to:
 #

@@ -22,7 +22,7 @@ using Plots
 
 # ── Material moduli ───────────────────────────────────────────────────────
 const k_s, μ_s = 72.0, 32.0       # solid moduli
-const k_p, μ_p = 1.0e-6, 1.0e-6   # pore moduli (numerical regularisation)
+const k_p, μ_p = 1.0e-6, 1.0e-6   # pore moduli (numerical regularization)
 
 const C_s = TensISO{3}(3 * k_s, 2 * μ_s)
 const C_p = TensISO{3}(3 * k_p, 2 * μ_p)
@@ -35,7 +35,7 @@ const C_p = TensISO{3}(3 * k_p, 2 * μ_p)
 # branch and crosses to the lower (percolating) branch through Picard
 # noise around φ ≈ 0.5 for spheres ; the `select_best = true` mode
 # (passed via `homogenize`) keeps the best iterate seen during the
-# loop, matching the reference's behaviour at the percolation
+# loop, matching the reference's behavior at the percolation
 # threshold.
 function build_rve(::Any, φ; ω_s = 1.0, ω_p = 1.0, sym_s = nothing, sym_p = nothing)
     rve = RVE(:SOLID)

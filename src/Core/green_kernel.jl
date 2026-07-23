@@ -6,7 +6,7 @@
 #    * `_acoustic_tensor(C, ξ)` : 3×3 acoustic tensor `Kᵢⱼ = Cᵢₖⱼₗ ξₖ ξₗ`
 #    * `_Qnn_direct(C, ξ, n̂)`   : direct pointwise `Q̂_{nn}` evaluation
 #    * `_inv3(K)`               : explicit cofactor-based 3×3 inverse
-#                                 (ForwardDiff-safe, avoids LU factorisation)
+#                                 (ForwardDiff-safe, avoids LU factorization)
 #
 #  Shared by the residue and DECUHR paths of the `Elasticity` and `Cracks`
 #  sub-modules.
@@ -40,7 +40,7 @@ end
     _inv3(K) -> Matrix{T}
 
 Explicit closed-form inverse of a 3×3 matrix via the cofactor formula.
-Avoids the overhead of `inv`/LU factorisation on tiny matrices and is
+Avoids the overhead of `inv`/LU factorization on tiny matrices and is
 fully ForwardDiff-compatible (uses only `+`, `-`, `*`, `/`).
 """
 @inline function _inv3(K::AbstractMatrix{T}) where {T}

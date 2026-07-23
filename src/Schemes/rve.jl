@@ -108,7 +108,7 @@ This mirrors C++ ECHOES's `symmetrize=[ISO]` / `symmetrize=[TI]` keyword on
 `ellipsoid()`, but moved to the *RVE* side (just like volume fractions) :
 the same inclusion type can be re-used in different RVEs with different
 distribution assumptions, and a single inclusion remains usable for
-localisation-tensor calculations without any RVE.
+localization-tensor calculations without any RVE.
 """
 abstract type AbstractSymmetrize end
 

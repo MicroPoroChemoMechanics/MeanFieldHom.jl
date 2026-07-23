@@ -81,7 +81,7 @@ struct Maxwell <: HomogenizationScheme end
     PonteCastanedaWillis() <: HomogenizationScheme
 
 Ponte-Castañeda & Willis 1995 scheme — distribution-shape-aware
-generalisation of Mori-Tanaka.
+generalization of Mori-Tanaka.
 """
 struct PonteCastanedaWillis <: HomogenizationScheme end
 
@@ -126,7 +126,7 @@ SelfConsistent(; algorithm = AndersonDefault(), kwargs...) =
 
 Asymmetric self-consistent scheme: iterates in stiffness or compliance
 space depending on the matrix-vs-Voigt-bound contrast, providing a
-better behaviour than [`SelfConsistent`](@ref) in matrix-stiff /
+better behavior than [`SelfConsistent`](@ref) in matrix-stiff /
 inclusion-soft regimes.
 """
 struct AsymmetricSelfConsistent{A, K <: NamedTuple} <: HomogenizationScheme

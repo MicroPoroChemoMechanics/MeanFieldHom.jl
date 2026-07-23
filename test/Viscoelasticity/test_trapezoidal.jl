@@ -4,7 +4,7 @@ using TensND
 using LinearAlgebra
 
 # =============================================================================
-#  test_trapezoidal.jl — discretisation of Stieltjes integrals
+#  test_trapezoidal.jl — discretization of Stieltjes integrals
 # =============================================================================
 
 @testset "trapezoidal_matrix — scalar Heaviside (elastic limit)" begin

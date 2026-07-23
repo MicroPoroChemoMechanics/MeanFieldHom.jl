@@ -36,7 +36,7 @@
 
 Build the three 3×3 coefficient matrices of `K(z) = A₀ + A₁·z + A₂·z²`
 given the stiffness `C` (Float64 `3×3×3×3` array) and the two linear
-coefficients of the wave-vector parametrisation `ζ(z) = α₀ζ + α₁ζ · z`.
+coefficients of the wave-vector parametrization `ζ(z) = α₀ζ + α₁ζ · z`.
 
 Each `Aₖ` is a 3×3 matrix of real scalars ; they are assembled below
 into `ComplexF64` polynomial entries before root finding.
@@ -163,7 +163,7 @@ end
 # Threshold 1e-3 (relative to max|coeff|) is calibrated for degree-≤6 acoustic
 # polynomials with Bairstow-precision roots — it catches multiplicities up to
 # 6 without false positives on generically-distinct roots whose separation is
-# typically O(0.1) in normalised problems.
+# typically O(0.1) in normalized problems.
 
 """
     _polynomial_scale(Q) -> Float64
@@ -197,7 +197,7 @@ Three tolerances are used:
 
 * `ε_poly` — relative threshold on ``|Q^{(k-1)}(z)| / \\mathrm{scale}(Q^{(k-1)})``
   for the polynomial-vanishing test. 1e-3 catches multiplicities up to 6 in
-  a normalised degree-≤6 Q.
+  a normalized degree-≤6 Q.
 * `ε_match` — absolute distance in the complex plane below which an
   externally-supplied reference point is considered to coincide with a
   Bairstow root. Defaults to the Bairstow / Durand-Kerner precision floor,

@@ -307,7 +307,7 @@ end
 # ── Equality and hashing (field-wise) ────────────────────────────────────────
 # Two `Ellipsoid`s are equal when their semi-axes and local basis compare
 # equal (via `==`, i.e. by value — *not* by reference, which is the default
-# Julia behaviour for fields whose type is not `isbits`, such as
+# Julia behavior for fields whose type is not `isbits`, such as
 # `RotatedBasis`).
 
 Base.:(==)(x::T, y::T) where {T <: Ellipsoid} =

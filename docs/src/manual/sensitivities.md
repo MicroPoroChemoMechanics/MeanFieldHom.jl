@@ -96,7 +96,7 @@ J = jacobian(rve, MoriTanaka(), ps)         # size(J) == (81, 3)
 `gradient` and `jacobian` accept an optional `chunk = ForwardDiff.Chunk(N)`
 kwarg; without it ForwardDiff picks a chunk size automatically.
 
-## Closure fallback for arbitrary parameterisations
+## Closure fallback for arbitrary parameterizations
 
 Anything that can't be expressed as a single lens (composite parameters,
 parameters of a user inclusion that don't map to a `Number` field, etc.)
@@ -163,12 +163,12 @@ need the intermediate Jacobians.
 
 ## Symmetrize and orientation distributions
 
-Inclusions are often modelled as oriented distributions rather than a
+Inclusions are often modeled as oriented distributions rather than a
 single oriented inclusion: a thin oblate spheroid with a *uniform spatial
 distribution of orientations* is, on average, isotropic. The
 `symmetrize` keyword on `add_matrix!` / `add_phase!` declares such a
 distribution at the RVE level so the homogenization kernel projects the
-phase localisation tensor onto the corresponding symmetry class:
+phase localization tensor onto the corresponding symmetry class:
 
 | Symmetrize value           | Meaning                                                     | Result class |
 | -------------------------- | ----------------------------------------------------------- | ------------ |
@@ -205,7 +205,7 @@ projection automatically.
   get a non-trivial geometric sensitivity, perturb around an already
   non-degenerate (`Triaxial` / `Prolate` / `Oblate`) configuration.
 - **TI symmetrize on non-coaxial inclusions** routes the matrix used for
-  the localisation-tensor computation through an isotropic projection —
+  the localization-tensor computation through an isotropic projection —
   the result still satisfies the outer `TI(axis)` projection, and is
   exact at the iso fixed-point of the SC iteration. This is documented
   in [`src/Schemes/symmetrize.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Schemes/symmetrize.jl).
@@ -214,7 +214,7 @@ projection automatically.
 
 The package ships a cross-cutting test in
 [`test/Schemes/test_sensitivities.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/test/Schemes/test_sensitivities.jl)
-that compares every sensitivity against centred finite differences on every
+that compares every sensitivity against centerd finite differences on every
 scheme, plus an exact match against the Christensen 1990 closed form for
 `∂k_MT/∂f`. Expect agreement to `rtol ≈ 1e-6` for closed-form schemes and
 `rtol ≈ 1e-4` for iterative schemes (limited by the fixed-point tolerance,

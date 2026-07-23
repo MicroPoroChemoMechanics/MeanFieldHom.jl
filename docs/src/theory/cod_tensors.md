@@ -21,7 +21,7 @@ is introduced.
 
 A flat elliptic crack is the limit of a flat spheroidal inclusion as
 its smallest aspect ratio tends to zero. Keeping the Echoes
-parameterisation of the ellipsoid by the shape tensor ``\mathbf A``,
+parameterization of the ellipsoid by the shape tensor ``\mathbf A``,
 
 ```math
 \mathbf A
@@ -76,7 +76,7 @@ with ``c\to 0`` and ribbon cracks with ``a\to\infty``).
 
 The consistency ``\int\boldsymbol\varepsilon\,\mathrm dV =
 \int[\![\mathbf u]\!]\stackrel{s}{\otimes}\hat{\mathbf n}\,\mathrm dS``
-combined with the COD definition yields a **geometric factorisation of
+combined with the COD definition yields a **geometric factorization of
 ``\mathbb H``** through ``\mathbf B``:
 
 ```math
@@ -270,7 +270,7 @@ the asymptotic expansions of the displacement jump and traction read
 
 ``\hat{\mathbf N}`` is the **displacement intensity factor** (DIF)
 vector, ``\hat{\mathbf K}`` the **stress intensity factor** (SIF)
-vector. Their normalisation is chosen so that the local energy release
+vector. Their normalization is chosen so that the local energy release
 rate [barnett1972](@cite), [rice1989](@cite) reads
 ``G = \hat{\mathbf K}\cdot\hat{\mathbf N}``.
 
@@ -291,7 +291,7 @@ far-field loading.
 
 ### Elliptic crack
 
-The crack-plane parameterisation
+The crack-plane parameterization
 
 ```math
 \hat{\mathbf y}^{\star}_{0}

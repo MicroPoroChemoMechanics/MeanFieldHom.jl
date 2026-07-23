@@ -1,6 +1,6 @@
 # =============================================================================
 #  alv_kernel_types.jl — structured ALV kernel types analogous to TensISO /
-#  TensTI / TensOrtho but parametrised over discretised Volterra operators.
+#  TensTI / TensOrtho but parametrized over discretized Volterra operators.
 #
 #  An ALV kernel `M̃(t,t')` stored as a `(6n × 6n)` block matrix of memory
 #  has 36 n² Float64 entries.  In iso / TI / ortho form the same kernel

@@ -3,7 +3,7 @@
 #
 #  Basic walkthrough of the ALV pipeline:
 #    * build a Maxwell relaxation `ViscoLaw` for an iso 4-tensor matrix,
-#    * discretise the Stieltjes integral on a time grid (`trapezoidal_matrix`),
+#    * discretize the Stieltjes integral on a time grid (`trapezoidal_matrix`),
 #    * compute its Volterra inverse to obtain the corresponding creep
 #      compliance matrix,
 #    * extract scalar Volterra responses (uniaxial relaxation / creep)
@@ -38,7 +38,7 @@ println("law(1, 0)   = ", law(1.0, 0.0))
 println("law(0, 1)   = ", law(0.0, 1.0), "  (causality: t<t' ⇒ 0)")
 println()
 
-# ─── Trapezoidal discretisation ──────────────────────────────────────────────
+# ─── Trapezoidal discretization ──────────────────────────────────────────────
 
 const T_grid = collect(range(0.0, 5.0; length = 41))
 const n = length(T_grid)

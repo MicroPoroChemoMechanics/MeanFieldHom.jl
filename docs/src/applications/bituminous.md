@@ -1,17 +1,20 @@
 # Viscoelastic complex modulus of a bituminous mixture
 
 This chapter homogenizes the **complex modulus** ``E^*(\omega)`` of a bituminous
-mixture through three nested scales, mirroring the corresponding chapter of the
-Echoes book [echoes](@cite). The bitumen is viscoelastic (2S2P1D model); the
-mineral phases are elastic. Because every `MeanFieldHom` scheme is
-`ComplexF64`-safe, the frequency-domain correspondence principle is applied by
-simply running the homogenization with complex-valued stiffnesses.
+mixture through three nested scales, following [someCBM2022](@cite) and mirroring
+the corresponding chapter of the Echoes book [echoes](@cite). The bitumen is
+viscoelastic (2S2P1D model); the mineral phases are elastic. Because every
+`MeanFieldHom` scheme is `ComplexF64`-safe, the frequency-domain correspondence
+principle is applied by simply running the homogenization with complex-valued
+stiffnesses.
 
 | Scale | RVE | Phases | Scheme |
 |:-----:|:----|:-------|:------:|
 | 1 | Mastic | bitumen matrix + fillers | Mori-Tanaka |
 | 2 | Mortar | mastic matrix + sand | Mori-Tanaka |
 | 3 | Full mix | mortar matrix + coated coarse aggregates + pores | Self-Consistent |
+
+![Three-scale RVE of a bituminous mixture (from [someCBM2022](@cite), via the Echoes book [echoes](@cite)).](../assets/ver_multi_mix.png)
 
 The coarse aggregates are **coated grains** — a stiff core wrapped in a thin
 mastic film — represented by a two-layer [`LayeredSphere`](@ref) that enters the
@@ -40,13 +43,21 @@ end
 (m::Mod2S2P1D)(p) = m.E0 + (m.Einf - m.E0) /
     (1 + m.δ * (p * m.τE)^(-m.k) + (p * m.τE)^(-m.h) + 1 / (p * m.β * m.τE))
 
-# HMA binders and experimental mix master curves (2S2P1D fits, ageing H0/H3/H9)
+# Hot-mix asphalt (HMA) — binders and experimental mix curves, ageing H0/H3/H9
 E_BH0 = Mod2S2P1D(1e-7, 1000.0, 2.2, 1.94507827e-3, 0.22, 0.63, 50.0)
 E_BH3 = Mod2S2P1D(1e-7, 1000.0, 2.12, 2.88910275e-3, 0.22, 0.611998586, 146.0)
 E_BH9 = Mod2S2P1D(1e-7, 1000.0, 2.85, 7.07911122e-3, 0.22, 0.61430255, 178.0)
 E_EH0 = Mod2S2P1D(86.3470095, 26000.0, 2.52254414, 0.834764484, 0.22, 0.65, 43.3031679)
 E_EH3 = Mod2S2P1D(20.0, 24362.0, 2.6, 2.6604, 0.199, 0.65, 900.0)
 E_EH9 = Mod2S2P1D(20.0, 24470.541, 2.73135009, 4.95748334, 0.175991713, 0.60, 900.0)
+
+# Warm-mix asphalt (WMA) — binders and experimental mix curves, ageing W0/W3/W6
+E_BW0 = Mod2S2P1D(1e-7, 1000.0, 3.12, 9.49532017e-3, 0.22, 0.608684147, 101.0)
+E_BW3 = Mod2S2P1D(6.81e-6, 1000.0, 4.2, 3.209694e-2, 0.22, 0.55078753664, 393.0)
+E_BW6 = Mod2S2P1D(2.1e-4, 1000.0, 4.6, 3.78112337e-1, 0.22, 0.555320631, 808.0)
+E_EW0 = Mod2S2P1D(100.0, 21071.0, 2.4, 0.95, 0.207, 0.62, 9.45)
+E_EW3 = Mod2S2P1D(57.0, 20974.0, 2.6, 7.3168, 0.199, 0.59, 900.0)
+E_EW6 = Mod2S2P1D(100.0, 22290.0, 2.6, 89.095, 0.199, 0.59, 900.0)
 nothing # hide
 ```
 
@@ -150,43 +161,68 @@ end
 These reproduce the Echoes values (|E*| ≈ 224 / 3114 / 9083 / 12572 MPa,
 δ ≈ 29.8 / 37.9 / 14.1 / 11.1°) to the SC convergence tolerance.
 
+## Contact-parameter calibration
+
+The three contact parameters ``(\alpha, \chi, k_t)`` are calibrated by minimizing
+the relative distance between the multi-scale model and the experimental master
+curve of the **least-aged** state,
+
+```math
+J(\alpha,\chi,k_t) = \sum_\omega
+  \left|1 - \frac{E_{\rm mod}(i\omega)}{E_{\rm 2S2P1D}(i\omega)}\right|^2,
+```
+
+subject to inequality constraints keeping the fit acceptable for the more-aged
+states. [someCBM2022](@cite) perform this minimization with a derivative-free
+`COBYLA` routine; the resulting parameters are used directly here (the objective
+above can be minimized with any optimizer — e.g. `NLopt` or `Optim` — but the
+calibration is not repeated in this page). The calibrated sets are
+
+```@example bitumen
+x_HMA = (5.866e-3, 0.9760, 6366.1)   # J = 4.10e-1
+x_WMA = (4.165e-2, 0.9791, 3277.7)   # J = 2.39e-1
+nothing # hide
+```
+
 ## Master curves: binder amplification across ageing states
 
 For each ageing state the binder stiffness (dashed) is amplified by roughly three
 decades to the mix modulus (solid); the mix phase angle stays below the binder's,
 reflecting the stiffening by the rigid granular skeleton. Markers are the
-experimental 2S2P1D master curves.
+experimental 2S2P1D master curves. The same `plot_mix` helper is reused for the
+hot-mix (HMA) and warm-mix (WMA) asphalts.
 
 ```@example bitumen
 ωs = 10.0 .^ range(-3.5, 2.5; length = 22)
-states = (("H0", E_BH0, E_EH0), ("H3", E_BH3, E_EH3), ("H9", E_BH9, E_EH9))
 cols = (:black, :red, :blue)
 
-pE = plot(; xscale = :log10, yscale = :log10, xlabel = "ω (rad/s)",
-    ylabel = "|E*| (MPa)", legend = :bottomright, framestyle = :box)
-pδ = plot(; xscale = :log10, xlabel = "ω (rad/s)", ylabel = "δ (°)",
-    legend = false, framestyle = :box)
-
-for ((name, E_b, E_e), c) in zip(states, cols)
-    Em = Ehom(x_HMA, E_b)
-    Rb = [abs(E_b(im * ω)) for ω in ωs]
-    Re = [abs(E_e(im * ω)) for ω in ωs]
-    Rm = [abs(Em(im * ω)) for ω in ωs]
-    Pb = [rad2deg(angle(E_b(im * ω))) for ω in ωs]
-    Pe = [rad2deg(angle(E_e(im * ω))) for ω in ωs]
-    Pm = [rad2deg(angle(Em(im * ω))) for ω in ωs]
-    plot!(pE, ωs, Rb; ls = :dash, c = c, lw = 1.5, label = "binder $name")
-    plot!(pE, ωs, Rm; c = c, lw = 2, label = "mix $name (model)")
-    scatter!(pE, ωs, Re; c = c, ms = 2.5, markerstrokewidth = 0, label = "")
-    plot!(pδ, ωs, Pb; ls = :dash, c = c, lw = 1.5)
-    plot!(pδ, ωs, Pm; c = c, lw = 2)
-    scatter!(pδ, ωs, Pe; c = c, ms = 2.5, markerstrokewidth = 0)
+function plot_mix(x_opt, states, title)
+    pE = plot(; xscale = :log10, yscale = :log10, xlabel = "ω (rad/s)",
+        ylabel = "|E*| (MPa)", legend = :bottomright, framestyle = :box)
+    pδ = plot(; xscale = :log10, xlabel = "ω (rad/s)", ylabel = "δ (°)",
+        legend = false, framestyle = :box)
+    for ((name, E_b, E_e), c) in zip(states, cols)
+        Em = Ehom(x_opt, E_b)
+        plot!(pE, ωs, [abs(E_b(im * ω)) for ω in ωs]; ls = :dash, c = c, lw = 1.5, label = "binder $name")
+        plot!(pE, ωs, [abs(Em(im * ω)) for ω in ωs]; c = c, lw = 2, label = "mix $name (model)")
+        scatter!(pE, ωs, [abs(E_e(im * ω)) for ω in ωs]; c = c, ms = 2.5, markerstrokewidth = 0, label = "")
+        plot!(pδ, ωs, [rad2deg(angle(E_b(im * ω))) for ω in ωs]; ls = :dash, c = c, lw = 1.5)
+        plot!(pδ, ωs, [rad2deg(angle(Em(im * ω))) for ω in ωs]; c = c, lw = 2)
+        scatter!(pδ, ωs, [rad2deg(angle(E_e(im * ω))) for ω in ωs]; c = c, ms = 2.5, markerstrokewidth = 0)
+    end
+    return plot(pE, pδ; layout = (1, 2), size = (980, 400), plot_title = title)
 end
 
-plot(pE, pδ; layout = (1, 2), size = (980, 420),
-    plot_title = "Hot-mix asphalt (HMA) — model vs experiment")
+plot_mix(x_HMA, (("H0", E_BH0, E_EH0), ("H3", E_BH3, E_EH3), ("H9", E_BH9, E_EH9)),
+    "Hot-mix asphalt (HMA) — model vs experiment")
 ```
 
-The three ageing states shift the master curve toward higher stiffness and lower
-phase angle as the binder hardens — the model tracks the experimental curves
-across the whole frequency range with a single set of contact parameters.
+```@example bitumen
+plot_mix(x_WMA, (("W0", E_BW0, E_EW0), ("W3", E_BW3, E_EW3), ("W6", E_BW6, E_EW6)),
+    "Warm-mix asphalt (WMA) — model vs experiment")
+```
+
+In both mixes the ageing states shift the master curve toward higher stiffness
+and lower phase angle as the binder hardens — the model tracks the experimental
+curves across the whole frequency range with a single calibrated parameter set
+per mix.

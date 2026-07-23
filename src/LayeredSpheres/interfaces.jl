@@ -1,7 +1,7 @@
 # =============================================================================
 #  interfaces.jl — imperfect interface models for `LayeredSphere`.
 #
-#  Four physically-motivated interface types are provided, organised as
+#  Four physically-motivated interface types are provided, organized as
 #  a "primal / dual" pair per physics:
 #
 #   Elasticity
@@ -90,7 +90,7 @@ end
     KapitzaInterface{T}(resistance::T)
 
 Thermal imperfect interface with scalar thermal resistance:
-`[T] = resistance · q_n`, with `q_n` continuous.  Primal analogue of
+`[T] = resistance · q_n`, with `q_n` continuous.  Primal analog of
 [`SpringInterface`](@ref).
 """
 struct KapitzaInterface{T <: Number} <: AbstractInterface{T}
@@ -100,7 +100,7 @@ end
 """
     SurfaceConductiveInterface{T}(conductance::T)
 
-Highly-conductive 2D surface layer (dual analogue of
+Highly-conductive 2D surface layer (dual analog of
 [`MembraneInterface`](@ref)).  Introduces a flux jump driven by the
 surface Laplacian of the temperature; for the spherical harmonic `Y_n`
 on a spherical interface of radius `r`,

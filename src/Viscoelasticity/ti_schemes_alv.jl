@@ -3,7 +3,7 @@
 #
 #  When **every** ALV block matrix in a homogenization pipeline is a
 #  TI 4-tensor with the **same canonical axis** `n = e₃` (each `(6×6)`
-#  Mandel block is parametrised by the six Walpole coefficients
+#  Mandel block is parametrized by the six Walpole coefficients
 #  `(ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆)`), the algebra collapses to:
 #
 #    * a `(2n)×(2n)` block-Volterra problem on the synthetic 2×2 matrix

@@ -4,7 +4,7 @@
 schemes for computing the *effective* property tensor of a multi-phase
 heterogeneous medium given (i) the phase geometries, (ii) the phase
 properties, and (iii) the phase volume fractions or crack densities.
-This page summarises the mathematics behind each scheme and the design
+This page summarizes the mathematics behind each scheme and the design
 choices that govern their implementation.
 
 ## Notation

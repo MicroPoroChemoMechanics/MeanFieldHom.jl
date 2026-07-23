@@ -5,12 +5,12 @@
 #  independent references:
 #
 #   § 1  **Bulk α_k** vs `echoes.layer_eE` (volume-averaged strain
-#        localisation in each layer).
+#        localization in each layer).
 #   § 2  **Internal consistency**: Julia state-vector recurrence vs
 #        a direct 8×8 linear-system solver assembled from the same mode
 #        formulas (sanity check that the recurrence implements the
 #        correct boundary-value problem).
-#   § 3  **Analytical limits**: shear localisation `β_k` in degenerate
+#   § 3  **Analytical limits**: shear localization `β_k` in degenerate
 #        configurations (vanishing core, vanishing shell, core ≡ shell)
 #        compared to the closed-form single-layer Eshelby result.
 #   § 4  **Local bulk stress profile** `σ_rr(r), σ_θθ(r)` vs
@@ -184,7 +184,7 @@ println("="^78)
 # Unknowns x = (a₁, b₁, a₂, b₂, c₂, d₂, c_∞, d_∞);  c₁ = d₁ = 0 enforced.
 # BC at r = ∞ : matrix mode-1 amplitude = 1, mode-2 amplitude = 0.
 #
-# β_layer1 is the layer-VOLUME-AVERAGED deviatoric strain localisation, not
+# β_layer1 is the layer-VOLUME-AVERAGED deviatoric strain localization, not
 # the bare mode-1 amplitude a₁: the core carries both the uniform mode 1 (a₁)
 # and the r³-varying mode 2 (b₁), whose Y₂-projected volume average adds
 # `b₁ · F₁` with the Christensen-Lo factor F₁ = _layer_avg_dev_shear_factor.
@@ -234,7 +234,7 @@ println("="^78)
 println("§3  β_layer1 vs analytical Eshelby in degenerate limits")
 println("="^78)
 
-# Single-layer Eshelby strain localisation for a sphere of moduli (μ₁) in
+# Single-layer Eshelby strain localization for a sphere of moduli (μ₁) in
 # matrix (κ₀, μ₀):  β_∞ = 1 / (1 + α_dev (μ₁/μ₀ − 1))  with
 # α_dev = 6(κ₀+2μ₀) / (5(3κ₀+4μ₀)).
 function β_eshelby_sphere(μ1, κ0, μ0)

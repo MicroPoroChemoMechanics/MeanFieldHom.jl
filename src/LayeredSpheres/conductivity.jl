@@ -28,7 +28,7 @@
 #     Kapitza(ρ)                    J = [1  ρ ; 0  1]
 #     SurfaceConductive(ks)         J = [1  0 ; -n(n+1) ks/r²  1]  with n=1 ⇒ 2ks/r².
 #
-#  Per-layer gradient localisation `α_k = A_k / A_∞`.
+#  Per-layer gradient localization `α_k = A_k / A_∞`.
 # =============================================================================
 
 """
@@ -92,6 +92,13 @@ conductivity `k_iso` given the state `(T̂, q̂_n)` at radius `r`.
     Tr³ = Tr² * Tr
     Tk = T(k_iso)
     inv_3 = one(T) / 3
+    # Impermeable region (k = 0, e.g. a solid aggregate core): the normal flux
+    # is identically zero and carries no information on (A, B); the `q̂n/k` terms
+    # are the indeterminate `0/0`.  For the core, regularity at the origin fixes
+    # `B = 0`, so `A = T̂ / r`.  (A non-core impermeable shell is not supported.)
+    if iszero(Tk)
+        return T(T̂) / Tr, zero(T)
+    end
     A = (2 * T(T̂) - Tr * T(q̂n) / Tk) * inv_3 / Tr
     B = (Tr² * T(T̂) + Tr³ * T(q̂n) / Tk) * inv_3
     return A, B
@@ -123,7 +130,7 @@ function _cond_interface_T(intf::SurfaceConductiveInterface, k_iso, r)
     return T[one(T) zero(T); -2 * T(intf.conductance) / Tr² one(T)]
 end
 
-# ── Propagation and localisation ────────────────────────────────────────────
+# ── Propagation and localization ────────────────────────────────────────────
 
 # Cached tuple of per-layer scalar conductivities, built once from the
 # `sphere.moduli` field.
@@ -166,7 +173,7 @@ end
 """
     _cond_localization(sphere, k₀) -> NTuple{N, TP}
 
-Per-layer gradient localisation `α_k = A_k / A_∞` under a remote
+Per-layer gradient localization `α_k = A_k / A_∞` under a remote
 uniform gradient.  Reduces, for `N = 1`, to the classical formula
 `α_1 = 3 k_0 / (2 k_0 + k_1)` for a sphere inclusion.
 """

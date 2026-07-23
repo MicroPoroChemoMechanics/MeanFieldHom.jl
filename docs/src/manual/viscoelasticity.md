@@ -78,7 +78,7 @@ end
 law_aging = ViscoLaw(R_aging, :relaxation)
 ```
 
-## 2. Trapezoidal discretisation
+## 2. Trapezoidal discretization
 
 Given a time grid `times = (t₁, …, tₙ)`, the Stieltjes integral becomes
 a `(B·n × B·n)` lower-block-triangular matrix (`B = 6` for a 4-tensor
@@ -213,7 +213,7 @@ the Sevostianov spring identity
 
 where `b = semi_minor(crack)` is the in-plane semi-axis. Limits :
 
-| Interface | Behaviour                                  |
+| Interface | Behavior                                  |
 |-----------|--------------------------------------------|
 | `Rn = Rt = nothing`   | traction-free penny — `B̃` unchanged |
 | `Rn, Rt → 0`          | recovers traction-free                |
@@ -418,7 +418,7 @@ schemes on a penny-crack RVE.
 `scripts/36_rabotnov_mittag_leffler.jl` validates the **Rabotnov /
 Mittag-Leffler** closed-form benchmark of @barthelemyIJES2019 §5,
 overlaying the analytical curves and reaching `rtol ≤ 1.3e-3` at
-`n_times = 200` (trapezoidal-rule discretisation accuracy).
+`n_times = 200` (trapezoidal-rule discretization accuracy).
 
 The ECHOES Python module is callable from Julia via PyCall :
 

@@ -15,7 +15,7 @@
 #      as in the Python original.
 #
 #  Water and air keep the exact-zero echoes stiffness here (this variant is
-#  robust without the percolating-branch TINY regularisation because the ISO
+#  robust without the percolating-branch TINY regularization because the ISO
 #  hydrate foam does not sit exactly at the SC percolation threshold).
 # =============================================================================
 

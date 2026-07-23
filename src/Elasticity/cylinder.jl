@@ -200,7 +200,7 @@ of `cyl`.
 MFH_Core.newton_potential_3d_cylinder(cyl::Cylinder) =
     MFH_Core.newton_potential_3d_cylinder(cyl.semi_axes[1], cyl.semi_axes[2])
 
-# ── Dispatch rules (specialised for Cylinder) ────────────────────────────────
+# ── Dispatch rules (specialized for Cylinder) ────────────────────────────────
 # Isotropic matrix → closed-form `Analytical` (Mura 1987 §11.22).  These
 # explicit rules disambiguate against the generic
 # `AbstractEllipsoidalInclusion + TensISO` rule in Core/dispatch.jl.

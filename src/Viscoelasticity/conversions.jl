@@ -237,7 +237,7 @@ end
 #  in Mandel form (factors of 2 absorb the engineering-strain
 #  convention).
 #
-#  In ALV the Volterra closure is therefore parametrised by 12 scalar
+#  In ALV the Volterra closure is therefore parametrized by 12 scalar
 #  Volterra `n × n` matrices :
 #    * 9 entries of the full unsymmetric normal block `(o[1..9])` —
 #      laid out row-major in a `(3 × 3)` array `(o₁₁, o₁₂, o₁₃,

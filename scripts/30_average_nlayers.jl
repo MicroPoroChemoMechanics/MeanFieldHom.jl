@@ -1,11 +1,11 @@
 # =============================================================================
 #  30_average_nlayers.jl
 #
-#  Volume-averaged strain and stress localisation tensors of an isotropic
+#  Volume-averaged strain and stress localization tensors of an isotropic
 #  n-layer composite sphere.  Mirrors the verification idea of
 #  `tests/python/echoes_tests/average_nlayers.py` (random per-layer
 #  moduli, random reference matrix) and adds a per-layer bar chart of
-#  the bulk and shear localisation factors `(α_k, β_k)`.
+#  the bulk and shear localization factors `(α_k, β_k)`.
 #
 #  The MeanFieldHom.jl API used here:
 #   * `LayeredSphere(radii, moduli)` — geometry + per-layer stiffness;
@@ -61,7 +61,7 @@ Random.seed!(20260426)
 const n = 10
 const R = 5.0
 
-# Random layer fractions (Dirichlet-ish: independent uniforms re-normalised).
+# Random layer fractions (Dirichlet-ish: independent uniforms re-normalized).
 const fractions = rand(n) .+ 0.05
 const fractions_n = fractions ./ sum(fractions)
 
@@ -103,14 +103,14 @@ println(
 )
 println()
 
-# ─── Per-layer localisation tensors A_k (iso 4-tensor) ───────────────────────
+# ─── Per-layer localization tensors A_k (iso 4-tensor) ───────────────────────
 
 A_per_layer = ntuple(k -> strain_strain_loc(sphere, C_ref; layer = k), n)
 αβ = ntuple(k -> TensND.get_data(A_per_layer[k]), n)
-α_k = [αβ[k][1] for k in 1:n]   # bulk localisation
-β_k = [αβ[k][2] for k in 1:n]   # shear localisation
+α_k = [αβ[k][1] for k in 1:n]   # bulk localization
+β_k = [αβ[k][2] for k in 1:n]   # shear localization
 
-println("Per-layer localisation factors :")
+println("Per-layer localization factors :")
 @printf "  %-4s  %-12s  %-12s\n" "k" "α_k (bulk)" "β_k (shear)"
 for k in 1:n
     @printf "  %2d    %+10.6f    %+10.6f\n" k α_k[k] β_k[k]
@@ -156,7 +156,7 @@ isdir(figdir) || mkdir(figdir)
 p1 = bar(
     1:n, α_k;
     xlabel = "layer k", ylabel = "α_k (bulk)",
-    title = "Bulk localisation per layer",
+    title = "Bulk localization per layer",
     legend = false, color = :steelblue
 )
 hline!(
@@ -168,7 +168,7 @@ p1 = plot!(p1; legend = :topright)
 p2 = bar(
     1:n, β_k;
     xlabel = "layer k", ylabel = "β_k (shear)",
-    title = "Shear localisation per layer",
+    title = "Shear localization per layer",
     legend = false, color = :darkorange
 )
 hline!(
@@ -186,7 +186,7 @@ p3 = bar(
 
 p_full = plot(
     p1, p2, p3; layout = (1, 3), size = (1500, 450),
-    plot_title = "n-layer sphere ($n layers, R=$R) — average localisations"
+    plot_title = "n-layer sphere ($n layers, R=$R) — average localizations"
 )
 
 figpath = joinpath(figdir, "30_average_nlayers.png")

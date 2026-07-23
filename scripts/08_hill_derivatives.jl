@@ -8,7 +8,7 @@
 #  echoes hand-codes an analytical `hill_derivative(ell, C, index, sym)` for
 #  each material-symmetry class (ISO, TI, ORTHO).  MeanFieldHom gets the SAME
 #  derivative for free by ForwardDiff through the `hill_tensor` kernel — for
-#  ANY parametrisation, including fully triclinic references that echoes'
+#  ANY parametrization, including fully triclinic references that echoes'
 #  symmetry-typed routine cannot handle.
 #
 #  This demo (main environment, no PyCall) :

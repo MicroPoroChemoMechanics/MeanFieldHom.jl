@@ -38,7 +38,7 @@ include("api.jl")
 include("param_conversions.jl")
 
 # ── TI-coaxial dispatch refinement ──────────────────────────────────────────
-# Inject specialised resolution for TI matrix + coaxial spheroid; falls back
+# Inject specialized resolution for TI matrix + coaxial spheroid; falls back
 # to the generic residue/DECUHR branch otherwise.  Defined here (after the
 # inclusion types and `_ti_coaxial` are visible) to avoid Core→Elasticity
 # circular dependency.

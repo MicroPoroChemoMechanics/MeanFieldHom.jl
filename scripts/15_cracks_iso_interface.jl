@@ -11,7 +11,7 @@
 #              random orientation distribution (`symmetrize=[ISO]`).
 #    * **Elastic side**  : *traction-free* crack (`prop["C"] = 0` in
 #      ECHOES) — no interface stiffness.
-#    * **Conduction side** : the crack is modelled as a thin highly-
+#    * **Conduction side** : the crack is modeled as a thin highly-
 #      conductive inclusion `K_crack = (kt, kt, kn) · 𝟏 = K_t · 𝟏`,
 #      ECHOES uses `prop={"K": tensor(kt,kt,kn)}` on the `crack()`
 #      factory.  In MeanFieldHom we use a `Spheroid(1e-3)` with a
@@ -52,7 +52,7 @@ const K_s = TensISO{3}(k_o)
 
 const DENS = collect(range(0.0, 1.0; length = 30))
 const SCHEME_NAMES = ("MT", "SC", "ASC", "DIFF", "PCW", "MAX")
-const SCHEME_COLOURS = Dict(
+const SCHEME_COLORS = Dict(
     "MT" => :black, "SC" => :red, "ASC" => :orange,
     "DIFF" => :blue, "PCW" => :green, "MAX" => :purple
 )
@@ -201,7 +201,7 @@ p_perm = plot(
 )
 
 for name in SCHEME_NAMES
-    col = SCHEME_COLOURS[name]
+    col = SCHEME_COLORS[name]
     e = echoes_results[name]
     j = julia_results[name]
     plot!(

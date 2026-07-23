@@ -16,7 +16,7 @@
 #  The helpers `delta_stiffness` and `delta_compliance` apply the
 #  volume fraction `f` (analogous to Budiansky density for cracks).
 #
-#  Conductivity analogues are implemented with 2-tensor algebra.
+#  Conductivity analogs are implemented with 2-tensor algebra.
 # =============================================================================
 
 """

@@ -139,7 +139,7 @@ end
     compare(A, B) -> (maxabs, maxrel)
 
 Componentwise max absolute / max relative error between two arrays of
-identical shape.  Relative error is normalised by
+identical shape.  Relative error is normalized by
 `max(|A|, |B|, 1e-300)`.
 """
 function compare(A::AbstractArray, B::AbstractArray)
@@ -630,7 +630,7 @@ bench_hill_order2(
 #  § 4  HILL DERIVATIVE ∂P/∂θ  (elasticity only)
 #
 #  Echoes' hill_derivative requires a concrete material-symmetry class
-#  (ISO, TI, ORTHO, …) and segfaults on UNDEFSYM/triclinic parameterisation.
+#  (ISO, TI, ORTHO, …) and segfaults on UNDEFSYM/triclinic parameterization.
 #  We therefore compare against Echoes on the *natural* parameter set of
 #  each symmetry class:
 #
