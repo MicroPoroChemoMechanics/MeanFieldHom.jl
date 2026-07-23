@@ -70,8 +70,10 @@ end
     Ragg, eITZ = 5.0e3, 50.0
     Diso(d) = TensISO{3}(d)
     function Dhom_dd(f, α)
-        agg = LayeredSphere((Ragg,), (Diso(0.0),);
-            interfaces = (SurfaceConductiveInterface(α),))
+        agg = LayeredSphere(
+            (Ragg,), (Diso(0.0),);
+            interfaces = (SurfaceConductiveInterface(α),)
+        )
         r = RVE(:CEMENT)
         add_matrix!(r, Ellipsoid(1.0), Dict(:D => Diso(1.0)))
         add_phase!(r, :AGG, agg, Dict(:D => Diso(1.0)); fraction = f)
@@ -88,8 +90,10 @@ end
     end
 
     # An interior surface-conductive interface (2-layer sphere) also matches.
-    s = LayeredSphere((1.0, 1.5), (Diso(0.0), Diso(3.0));
-        interfaces = (SurfaceConductiveInterface(2.0), PerfectInterface()))
+    s = LayeredSphere(
+        (1.0, 1.5), (Diso(0.0), Diso(3.0));
+        interfaces = (SurfaceConductiveInterface(2.0), PerfectInterface())
+    )
     r = RVE(:M)
     add_matrix!(r, Ellipsoid(1.0), Dict(:D => Diso(1.0)))
     add_phase!(r, :AGG, s, Dict(:D => Diso(1.0)); fraction = 0.3)

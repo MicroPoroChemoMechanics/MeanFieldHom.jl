@@ -264,8 +264,10 @@ end
     n = length(times)
     spheres = (
         LayeredSphere((1.0,), (Cagg,); interfaces = (MembraneInterface(5.0, 3.0),)),
-        LayeredSphere((1.0, 1.5), (Cagg, C_2);
-            interfaces = (MembraneInterface(4.0, 2.0), PerfectInterface())),
+        LayeredSphere(
+            (1.0, 1.5), (Cagg, C_2);
+            interfaces = (MembraneInterface(4.0, 2.0), PerfectInterface())
+        ),
     )
     for sphere in spheres
         N_alv = stiffness_contribution_alv(sphere, heaviside_law(C_M), times)

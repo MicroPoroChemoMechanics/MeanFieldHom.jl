@@ -134,7 +134,7 @@ function Core.conductivity_contribution(
     k_layers = _cond_layer_moduli(sphere)
     f = ntuple(k -> layer_volume_fraction(sphere, k), Val(N))
     N_K = sum(f[k] * (k_layers[k] - k₀) * α[k] for k in 1:N) +
-          _cond_surface_flux(sphere, k₀)
+        _cond_surface_flux(sphere, k₀)
     return TensISO{3}(N_K)
 end
 
