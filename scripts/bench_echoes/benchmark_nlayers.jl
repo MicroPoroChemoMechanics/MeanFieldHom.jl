@@ -46,7 +46,7 @@ using Plots
 
 # Internal helpers reused for the local-bulk profile (mirrors script 32).
 import MeanFieldHom.LayeredSpheres: _iso_bulk_shear, _bulk_state_seq,
-    _bulk_extract_AB, _shear_M_matrix
+    _bulk_extract_AB, _shear_M_matrix, _layer_avg_dev_shear_factor
 
 # ─── Python-side wrappers ────────────────────────────────────────────────────
 
@@ -183,6 +183,14 @@ println("="^78)
 # Direct 8×8 solver for the 2-layer Y₂-harmonic shear problem.
 # Unknowns x = (a₁, b₁, a₂, b₂, c₂, d₂, c_∞, d_∞);  c₁ = d₁ = 0 enforced.
 # BC at r = ∞ : matrix mode-1 amplitude = 1, mode-2 amplitude = 0.
+#
+# β_layer1 is the layer-VOLUME-AVERAGED deviatoric strain localisation, not
+# the bare mode-1 amplitude a₁: the core carries both the uniform mode 1 (a₁)
+# and the r³-varying mode 2 (b₁), whose Y₂-projected volume average adds
+# `b₁ · F₁` with the Christensen-Lo factor F₁ = _layer_avg_dev_shear_factor.
+# (Earlier this returned a₁ alone — correct only in the degenerate limits
+# where b₁ → 0, so it agreed with §3 but disagreed with the recurrence by a
+# few % on general configs.)
 function direct_2layer_β_layer1(r1, r2, κc, μc, κs, μs, κm, μm)
     Mc_r1 = _shear_M_matrix(r1, κc, μc)
     Ms_r1 = _shear_M_matrix(r1, κs, μs)
@@ -194,7 +202,9 @@ function direct_2layer_β_layer1(r1, r2, κc, μc, κs, μs, κm, μm)
     A[5:8, 3:6] = Ms_r2
     A[5:8, 7:8] = -Mm_r2[:, 3:4]
     b[5:8] = Mm_r2[:, 1]
-    return (A \ b)[1]   # core mode-1 amplitude = β_layer1.
+    x = A \ b
+    a₁, b₁ = x[1], x[2]
+    return a₁ + b₁ * _layer_avg_dev_shear_factor(0.0, r1, κc, μc)
 end
 
 n_pass_self = 0; worst_self_err = 0.0

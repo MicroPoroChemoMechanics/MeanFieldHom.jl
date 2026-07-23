@@ -165,6 +165,55 @@ function self_consistent_alv(
     return select_best ? C_best : C_m
 end
 
+# ── Shared per-phase dilute concentration for the SC-ALV bodies ─────────────
+#
+# `Ã^dil = (𝟙 + P̃_α ∘ ΔC̃)^{-vol}` with the phase Hill kernel
+# `P̃_α[i,j] = J_long[i,j]·U_M + J_shear[i,j]·D_M` (geometry tensors `U_M`,
+# `D_M = V_M − U_M` against the iso-decoupled running estimate, whose scalar
+# Volterra inverses are `J_long`, `J_shear`).
+#
+# FAST PATH — when the running estimate, the phase stiffness and the geometry
+# tensors are all iso-block (spherical inclusions in an iso ALV estimate), the
+# whole thing reduces to two scalar n×n Volterra problems via
+# `dilute_concentration_alv_iso`, avoiding the dense 6n×6n `P_α * ΔC` gemm
+# (O((6n)³)) and the `block_size = 6` Volterra inverse.  This is the SAME fast
+# path `_inclusion_alv_quantities` uses per-inclusion (homogenize_alv.jl);
+# here it is applied inside the SC Picard loop.  The iso params of the
+# constant 6×6 geometry tensors combine linearly with the scalar `J_long`,
+# `J_shear`, so `P_α`'s iso params are `α_P = α_U·J_long + α_D·J_shear`,
+# `β_P = β_U·J_long + β_D·J_shear`.  Because iso blocks are closed under the
+# Volterra product and inverse (they block-diagonalise into the {𝕁,𝕂}
+# channels), the fast path is numerically identical to the dense path (a
+# direct comparison confirms `< 1e-12`); it FALLS BACK to the exact dense
+# computation for any non-iso operand.
+function _sc_alv_dilute_conc(
+        C_phase::AbstractMatrix, C_m::AbstractMatrix,
+        U_M::AbstractMatrix, D_M::AbstractMatrix,
+        J_long::AbstractMatrix, J_shear::AbstractMatrix,
+        α_m::AbstractMatrix, β_m::AbstractMatrix,
+        n::Int, sz::Int, Id::AbstractMatrix, ::Type{T}
+    ) where {T}
+    if _is_iso_block(C_m) && _is_iso_block(C_phase) &&
+            _is_iso_block(U_M) && _is_iso_block(D_M)
+        α_U = U_M[1, 1] + 2 * U_M[1, 2]; β_U = U_M[4, 4]
+        α_D = D_M[1, 1] + 2 * D_M[1, 2]; β_D = D_M[4, 4]
+        α_P = α_U .* J_long .+ α_D .* J_shear
+        β_P = β_U .* J_long .+ β_D .* J_shear
+        α_E, β_E = _iso_pair(C_phase)
+        αβ_A = dilute_concentration_alv_iso((α_E, β_E), (α_m, β_m), (α_P, β_P))
+        return _iso_blocks(αβ_A)
+    end
+    P_α = zeros(T, sz, sz)
+    @inbounds for i in 1:n, j in 1:i
+        block = J_long[i, j] .* U_M .+ J_shear[i, j] .* D_M
+        rows = (6 * (i - 1) + 1):(6 * i)
+        cols = (6 * (j - 1) + 1):(6 * j)
+        P_α[rows, cols] = block
+    end
+    ΔC = C_phase - C_m
+    return volterra_inverse(Id + P_α * ΔC; block_size = 6)
+end
+
 # ── ECHOES SC body for ALV with cracks ─────────────────────────────────────
 #
 # Mirrors the elastic ECHOES SC body (cf.
@@ -204,15 +253,9 @@ function _sc_alv_step_echoes_form(
         U_M = U_M_phases[α]
         V_M = V_M_phases[α]
         D_M = V_M .- U_M
-        P_α = zeros(T, sz, sz)
-        for i in 1:n, j in 1:i
-            block = J_long[i, j] .* U_M .+ J_shear[i, j] .* D_M
-            rows = (6 * (i - 1) + 1):(6 * i)
-            cols = (6 * (j - 1) + 1):(6 * j)
-            P_α[rows, cols] = block
-        end
-        ΔC = C_phases[α] - C_m
-        A_dil = volterra_inverse(Id + P_α * ΔC; block_size = 6)
+        A_dil = _sc_alv_dilute_conc(
+            C_phases[α], C_m, U_M, D_M, J_long, J_shear, α_m, β_m, n, sz, Id, T
+        )
         sym = symmetrizes[α]
         A_dil_sym = _maybe_symmetrize_alv(A_dil, sym)
         CA_sym = _maybe_symmetrize_alv(C_phases[α] * A_dil, sym)
@@ -317,15 +360,9 @@ function _sc_alv_mt_body_against(
         U_M = U_M_phases[s]
         V_M = V_M_phases[s]
         D_M = V_M .- U_M
-        P_s = zeros(T, sz, sz)
-        for i in 1:n, j in 1:i
-            block = J_long[i, j] .* U_M .+ J_shear[i, j] .* D_M
-            rows = (6 * (i - 1) + 1):(6 * i)
-            cols = (6 * (j - 1) + 1):(6 * j)
-            P_s[rows, cols] = block
-        end
-        ΔC = C_phases[s] - C_m
-        A_dil = volterra_inverse(Id + P_s * ΔC; block_size = 6)
+        A_dil = _sc_alv_dilute_conc(
+            C_phases[s], C_m, U_M, D_M, J_long, J_shear, α_m, β_m, n, sz, Id, T
+        )
         sym = symmetrizes[s]
         AC = A_dil * C_m
         AC = _maybe_symmetrize_alv(AC, sym)
@@ -404,16 +441,11 @@ function _sc_alv_step(
         U_M = U_M_phases[α]
         V_M = V_M_phases[α]
         D_M = V_M .- U_M
-        P_α = zeros(T, sz, sz)
-        for i in 1:n, j in 1:i
-            block = J_long[i, j] .* U_M .+ J_shear[i, j] .* D_M
-            rows = (6 * (i - 1) + 1):(6 * i)
-            cols = (6 * (j - 1) + 1):(6 * j)
-            P_α[rows, cols] = block
-        end
-        # Dilute concentration & scaled contribution.
-        ΔC = C_phases[α] - C_m
-        A_dil = volterra_inverse(Id + P_α * ΔC; block_size = 6)
+        # Dilute concentration & scaled contribution (iso fast path when
+        # every operand is iso-block; exact dense fallback otherwise).
+        A_dil = _sc_alv_dilute_conc(
+            C_phases[α], C_m, U_M, D_M, J_long, J_shear, α_m, β_m, n, sz, Id, T
+        )
         CA = C_phases[α] * A_dil
         # Apply orientation-averaging projection (`symmetrize=[ISO]` for
         # ECHOES) to both the dilute concentration and its scaled
