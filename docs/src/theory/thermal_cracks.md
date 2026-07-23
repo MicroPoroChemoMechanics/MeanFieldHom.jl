@@ -57,7 +57,7 @@ computed via the formula
 ``\mathbf P(\mathbf A,\mathbf K_0)
 = \mathbf K_0^{-1/2}\cdot\mathbf I^{\mathbf A\cdot\mathbf K_0^{-1/2}}
   \cdot\mathbf K_0^{-1/2}``
-([Giraud & Gruescu 2019](@cite giraudMOM2019)), where
+([Giraud et al. 2019](@cite giraudMOM2019)), where
 ``\mathbf I^{\mathbf B}`` is assembled in the eigenbasis of
 ``\mathbf B^T\mathbf B`` (right singular vectors of
 ``\mathbf B = \mathbf A\cdot\mathbf K_0^{-1/2}``).  As ``\omega\to 0``:

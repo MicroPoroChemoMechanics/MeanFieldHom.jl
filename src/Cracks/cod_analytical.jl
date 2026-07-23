@@ -94,7 +94,7 @@ isotropic matrix whose TI axis is aligned with the crack normal
 parameterisation ``(E,\\nu_{1},\\nu_{2},H,\\Gamma)`` of
 [Hoenig 1978](@cite hoenig1978),
 [Kanaun & Levin 2009](@cite kanaun2009),
-[Barthélémy 2021](@cite barthelemyIJES2021); the auxiliary scalar
+[Barthélémy et al. 2021](@cite barthelemyIJES2021); the auxiliary scalar
 ``\\sigma_\\gamma`` is defined in `_ti_sigma_gamma`. Reduces to the
 isotropic case for ``\\nu_{1}=\\nu_{2}=\\nu``, ``H=\\Gamma=1``.
 """
@@ -124,7 +124,7 @@ end
 Closed-form COD tensor of a ribbon crack in an aligned TI matrix,
 ribbon limit of the elliptic TI closed form
 ([Hoenig 1978](@cite hoenig1978),
- [Barthélémy 2021](@cite barthelemyIJES2021)).
+ [Barthélémy et al. 2021](@cite barthelemyIJES2021)).
 """
 function _cod_ti_ribbon(c::RibbonCrack, E::Number, H::Number, ν₁::Number, ν₂::Number, Γ::Number)
     T = promote_type(typeof(E), typeof(H), typeof(ν₁), typeof(ν₂), typeof(Γ))

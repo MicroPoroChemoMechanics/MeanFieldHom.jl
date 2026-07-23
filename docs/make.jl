@@ -63,6 +63,9 @@ makedocs(;
             "manual/sensitivities.md",
             "manual/elliptic_examples.md",
         ],
+        "Applications" => [
+            "applications/transport.md",
+        ],
         "Developer" => [
             "developer/architecture.md",
             "developer/adding_inclusion.md",

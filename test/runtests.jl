@@ -26,6 +26,7 @@ Random.seed!(20260723)
 
     @testset "Elasticity" begin
         include("Elasticity/test_hill.jl")
+        include("Elasticity/test_hill_2d.jl")
         include("Elasticity/test_hill_cylinder.jl")
         include("Elasticity/test_shape_tensor.jl")
         include("Elasticity/test_eshelby.jl")
@@ -33,6 +34,7 @@ Random.seed!(20260723)
         include("Elasticity/test_contribution.jl")
         include("Elasticity/test_hill_nestedquadgk_oblate.jl")
         include("Elasticity/test_hill_ti_coaxial.jl")
+        include("Elasticity/test_param_conversions.jl")
     end
 
     @testset "Cracks" begin
@@ -63,6 +65,7 @@ Random.seed!(20260723)
         include("Schemes/test_parameters.jl")
         include("Schemes/test_sensitivities.jl")
         include("Schemes/test_symmetrize.jl")
+        include("Schemes/test_orientation.jl")
     end
 
     @testset "LayeredSpheres" begin
@@ -82,9 +85,11 @@ Random.seed!(20260723)
         include("Viscoelasticity/test_hill_alv_iso.jl")
         include("Viscoelasticity/test_schemes_alv.jl")
         include("Viscoelasticity/test_sc_alv.jl")
+        include("Viscoelasticity/test_sc_alv_newton.jl")
         include("Viscoelasticity/test_layered_alv.jl")
         include("Viscoelasticity/test_ti_alv.jl")
         include("Viscoelasticity/test_ortho_alv.jl")
+        include("Viscoelasticity/test_ortho_dispatch_alv.jl")
         include("Viscoelasticity/test_alv_kernel_types.jl")
         include("Viscoelasticity/test_sensitivities_alv.jl")
         include("Viscoelasticity/test_order2_alv.jl")

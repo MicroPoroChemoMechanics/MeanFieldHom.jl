@@ -24,6 +24,19 @@ jobs:
       - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
+      # Same reason as in CI.yml: building the docs loads MeanFieldHom →
+      # TensND → SymPy, which needs the Python `sympy` module that the
+      # runner's /usr/bin/python3 lacks.
+      - name: Install dependencies (PyCall/SymPy)
+        run: |
+          julia -e '
+            using Pkg
+            ENV["PYTHON"] = ""
+            Pkg.add("PyCall")
+            Pkg.add("SymPy")
+            Pkg.build("PyCall")
+            using PyCall
+            pyimport_conda("sympy", "sympy")'
       - name: Install dependencies
         shell: julia --project=docs/ --color=yes {0}
         run: |

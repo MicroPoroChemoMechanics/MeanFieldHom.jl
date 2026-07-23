@@ -38,6 +38,21 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v3
+      # MeanFieldHom loads TensND, which does an unconditional `using SymPy`,
+      # which in turn needs the Python `sympy` module.  The runner's
+      # /usr/bin/python3 does not have it, so point PyCall at the private
+      # Conda.jl Python and install sympy there.  Without this the whole test
+      # run dies at `using MeanFieldHom` with `ModuleNotFoundError: sympy`.
+      - name: Install dependencies (PyCall/SymPy)
+        run: |
+          julia -e '
+            using Pkg
+            ENV["PYTHON"] = ""
+            Pkg.add("PyCall")
+            Pkg.add("SymPy")
+            Pkg.build("PyCall")
+            using PyCall
+            pyimport_conda("sympy", "sympy")'
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
@@ -53,7 +68,10 @@ jobs:
           using Pkg
           Pkg.activate(; temp = true)
           Pkg.add("Coverage")
-          include(joinpath(".github", "scripts", "coverage.jl"))
+          # `pwd()` is the workspace root.  An absolute path is required: the
+          # `run:` block is written to a temp file by the runner, and `include`
+          # resolves relative to THAT file's directory, not the cwd.
+          include(joinpath(pwd(), ".github", "scripts", "coverage.jl"))
       - uses: codecov/codecov-action@v5
         if: matrix.version == '1.12'
         with:

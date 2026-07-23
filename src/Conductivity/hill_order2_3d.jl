@@ -38,7 +38,7 @@ end
 
 2nd-order Hill polarisation tensor of an ellipsoid in an arbitrarily
 anisotropic conductor, via the closed-form square-root
-change-of-variable of [Giraud & Gruescu 2019](@cite giraudMOM2019)
+change-of-variable of [Giraud et al. 2019](@cite giraudMOM2019)
 (equivalent derivation by Green's function in
 [Barthélémy 2009](@cite barthelemyTIPM2009)):
 
@@ -115,7 +115,7 @@ end
 arbitrarily anisotropic conductor.  The transverse plane
 ``(\\hat{\\mathbf e}_2,\\hat{\\mathbf e}_3)`` carries the full 2-D
 Hill problem: the ``\\mathbf K^{-1/2}`` transformation of
-[Giraud & Gruescu 2019](@cite giraudMOM2019) is applied to the
+[Giraud et al. 2019](@cite giraudMOM2019) is applied to the
 transverse 2×2 sub-matrix of ``\\mathbf K_0`` in the cylinder frame;
 the 2-D Newton potentials produce the transverse block, and the axial
 row/column is re-embedded as zero (``P_{1j}=0``).

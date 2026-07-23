@@ -38,7 +38,7 @@ compliance correction ``\\Delta\\mathbb S``:
 
 See [Kachanov 1992](@cite kachanov1992),
 [Sevostianov & Kachanov 2002](@cite sevostianov2002),
-[Barthélémy 2021](@cite barthelemyIJES2021).
+[Barthélémy et al. 2021](@cite barthelemyIJES2021).
 """
 function compliance_contribution(
         crack::MFH_Core.AbstractCrack,

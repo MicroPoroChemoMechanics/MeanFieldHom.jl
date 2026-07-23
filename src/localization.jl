@@ -1,6 +1,6 @@
 # =============================================================================
 #  localization.jl — generic localization tensors of the dilute Eshelby
-#  problem (Kachanov-Sevostianov / Barthélémy 2021).
+#  problem (Kachanov-Sevostianov / Barthélémy et al. 2021).
 #
 #  Four tensors relate the fields within an inclusion of stiffness `C₁`
 #  (or conductivity `K₁`) embedded in an infinite matrix `C₀` (`K₀`) to

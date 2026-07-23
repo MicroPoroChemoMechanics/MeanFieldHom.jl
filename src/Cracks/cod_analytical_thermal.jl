@@ -60,7 +60,7 @@ function _cod_iso_ribbon_thermal(c::RibbonCrack{T}, k₀) where {T <: Number}
 end
 
 # -----------------------------------------------------------------------------
-#  Anisotropic matrix — elliptic crack (K⁻¹ᐟ² transform, Giraud-Gruescu 2019)
+#  Anisotropic matrix — elliptic crack (K⁻¹ᐟ² transform, Giraud et al. 2019)
 # -----------------------------------------------------------------------------
 
 """
@@ -68,7 +68,7 @@ end
 
 Closed-form thermal COD scalar of an elliptic crack in an arbitrarily
 anisotropic conductor, via the square-root change-of-variable of
-[Giraud & Gruescu 2019](@cite giraudMOM2019). Let
+[Giraud et al. 2019](@cite giraudMOM2019). Let
 ``\\mathbf A = \\mathbf R_c \\cdot \\mathrm{diag}(a,b,0) \\cdot
 \\mathbf R_c^{T}`` be the (flat) crack shape tensor and
 ``\\tilde{\\mathbf A} = \\mathbf A \\cdot \\mathbf K_0^{-1/2}``.  Its
@@ -132,9 +132,9 @@ b = 2 / (π · √det(K₀|_{(m̂,n̂)})) .
 ```
 
 For an isotropic conductor this reduces to ``b = 2/(\\pi k_0)``.
-Derivation via the 2-D Giraud-Gruescu square-root transform on the
+Derivation via the 2-D Giraud et al. square-root transform on the
 transverse plane of the cylinder
-([Giraud & Gruescu 2019](@cite giraudMOM2019)).
+([Giraud et al. 2019](@cite giraudMOM2019)).
 """
 function _cod_aniso_ribbon_thermal(c::RibbonCrack, K₀)
     T_mat = eltype(K₀)

@@ -94,7 +94,7 @@ In the iso ALV case the correction collapses to two **scalar Volterra
 problems** on `B̃_n`, `B̃_t` (normal / tangential COD scalars) — same
 fast-path as the traction-free penny crack, with one extra Volterra
 inverse per direction. Reference :
-[@sevostianovIJSS2002], [@barthelemyIJES2019, §3].
+[@sevostianovIJSS2007], [@barthelemyIJES2019, §3].
 
 Schemes integrate cracks as follows:
 
