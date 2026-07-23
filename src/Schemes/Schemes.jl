@@ -28,6 +28,8 @@ const MFH_Core = Core
 # (loaded earlier than Schemes by `MeanFieldHom.jl`).
 import ..Elasticity: Ellipsoid, hill_tensor
 import ..Cracks: compliance_contribution, delta_compliance, delta_resistivity
+import ..LayeredSpheres: layer_stiffness_average, layer_compliance_average,
+    layer_conductivity_average, layer_resistivity_average
 
 include("rve.jl")
 include("symmetrize.jl")

@@ -28,7 +28,7 @@ function _evaluate(rve::RVE, ::Reuss, ::Val{p}; kw...) where {p}
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
         if a isa VolumeFraction
-            Seff += amount_value(a) * inv(phase_property(rve, name, p))
+            Seff += amount_value(a) * _phase_reuss_property(rve, name, p, Seff)
         end
     end
     return inv(Seff)

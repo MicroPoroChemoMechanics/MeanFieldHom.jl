@@ -218,18 +218,24 @@ function _diff_dilute_correction(
         rve::RVE, name::Symbol, prop::Symbol,
         P_curr::TensND.AbstractTens{4, 3}; kw...
     )
+    geom = rve.phases[name].geometry
     P_i = phase_property(rve, name, prop)
-    A = _phase_dilute_concentration(rve, name, prop, P_curr; kw...)
-    return (P_i - P_curr) ⊡ A
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P_curr, sym)
+    N = MFH_Core.stiffness_contribution(geom, P_i, P₀_proj; kw...)
+    return _apply_symmetrize(N, sym)
 end
 
 function _diff_dilute_correction(
         rve::RVE, name::Symbol, prop::Symbol,
         P_curr::TensND.AbstractTens{2, 3}; kw...
     )
+    geom = rve.phases[name].geometry
     P_i = phase_property(rve, name, prop)
-    A = _phase_dilute_concentration(rve, name, prop, P_curr; kw...)
-    return (P_i - P_curr) ⋅ A
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P_curr, sym)
+    N = MFH_Core.conductivity_contribution(geom, P_i, P₀_proj; kw...)
+    return _apply_symmetrize(N, sym)
 end
 
 # Crack contribution kernel **per unit density** : returns

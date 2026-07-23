@@ -6,7 +6,7 @@ homogenized with exactly the same machinery as 4th-order elastic properties:
 only the property key passed to [`homogenize`](@ref) changes.
 
 This page is the `MeanFieldHom` counterpart of the *Transport properties*
-tutorial of the [Echoes](https://echoes.barthelemy.xyz/) book.
+tutorial of the Echoes book [echoes](@cite).
 
 ## Homogenizing a 2nd-order property
 

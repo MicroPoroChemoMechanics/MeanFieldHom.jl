@@ -175,6 +175,27 @@ function eshelby_tensor end
 # =============================================================================
 
 """
+    is_homogeneous_inclusion(incl) -> Bool
+
+Whether the inclusion carries a **single uniform property**, so that the
+mean-field identities of a homogeneous inhomogeneity apply:
+
+```
+⟨C:ε⟩_r = C_r : A_r ,      N_r = (C_r - C₀) : A_r .
+```
+
+`true` for every ellipsoid, cylinder and crack. `false` for internally
+heterogeneous inclusions such as `LayeredSphere`, whose average stress must be
+assembled layer by layer — no single `C_r` represents them, and feeding the
+phase property into the formulas above gives a wrong answer (it can even come
+out with the opposite sign).
+
+Scheme kernels must branch on this trait rather than inlining the homogeneous
+formula.
+"""
+is_homogeneous_inclusion(::AbstractInclusion) = true
+
+"""
     strain_strain_loc(incl, C₁, C₀; kw...)  -> Tens{4,3}
 
 Dilute strain-strain localization tensor `A_εε` (Eshelby).

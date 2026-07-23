@@ -2,6 +2,10 @@ using Documenter
 using DocumenterCitations
 using MeanFieldHom
 
+# GR needs a headless display driver on CI runners; without this the figures in
+# the Applications pages fail to render.
+ENV["GKSwstype"] = "100"
+
 bib = CitationBibliography(
     joinpath(@__DIR__, "src", "references.bib");
     style = :numeric,
@@ -65,6 +69,7 @@ makedocs(;
         ],
         "Applications" => [
             "applications/transport.md",
+            "applications/cement_paste.md",
         ],
         "Developer" => [
             "developer/architecture.md",

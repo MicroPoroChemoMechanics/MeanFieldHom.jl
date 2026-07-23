@@ -24,7 +24,7 @@ import ..Core: strain_strain_loc, stress_strain_loc, strain_stress_loc,
     stress_stress_loc, gradient_gradient_loc, flux_gradient_loc,
     gradient_flux_loc, flux_flux_loc,
     stiffness_contribution, conductivity_contribution,
-    resistivity_contribution
+    resistivity_contribution, is_homogeneous_inclusion
 
 include("interfaces.jl")
 include("geometry.jl")
@@ -33,6 +33,7 @@ include("bulk_recurrence.jl")    # bulk state-vector transfer + localisation
 include("shear_recurrence.jl")   # multi-layer shear stub
 include("conductivity.jl")       # Y₁-harmonic conductivity state-vector
 include("averages.jl")
+include("scheme_integration.jl") # concentration tensors → mean-field schemes
 
 # ── Localisation / contribution overrides for LayeredSphere ─────────────────
 
@@ -139,5 +140,7 @@ export KapitzaInterface, SurfaceConductiveInterface
 export layer_count, layer_radius, layer_modulus, layer_interface,
     layer_volume_fraction, outer_radius
 export layer_strain_average, sphere_strain_average, cumulative_strain_average
+export layer_stiffness_average, layer_compliance_average,
+    layer_conductivity_average, layer_resistivity_average
 
 end # module

@@ -121,10 +121,9 @@ function _sc_step_dispatch(
             a isa VolumeFraction || continue
             f = amount_value(a)
         end
-        P_α = phase_property(rve, name, prop)
         A_dil = _phase_dilute_concentration(rve, name, prop, C_n; kw...)
         A_avg += f * A_dil
-        CA_avg += f * (P_α ⊡ A_dil)
+        CA_avg += f * _phase_stress_strain_average(rve, name, prop, C_n, A_dil; kw...)
     end
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
@@ -163,10 +162,9 @@ function _sc_step_dispatch(
             a isa VolumeFraction || continue
             f = amount_value(a)
         end
-        P_α = phase_property(rve, name, prop)
         A_dil = _phase_dilute_concentration(rve, name, prop, K_n; kw...)
         A_avg += f * A_dil
-        KA_avg += f * (P_α ⋅ A_dil)
+        KA_avg += f * _phase_stress_strain_average(rve, name, prop, K_n, A_dil; kw...)
     end
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
@@ -587,9 +585,15 @@ function _asc_step_stiffness_dispatch(
         a = rve.amounts[name]
         a isa VolumeFraction || continue   # cracks not supported in stiffness form
         f = amount_value(a)
-        C_i = phase_property(rve, name, prop)
+        # Asymétrie propre à l'ASC : la localisation se calcule dans le milieu
+        # de référence courant `C_n`, mais la contribution se mesure contre la
+        # MATRICE `C_m`.  On ne peut donc pas appeler
+        # `_phase_stiffness_contribution`, qui utilise la même référence pour
+        # les deux.  Le tenseur B (⟨C:A⟩) traite les inclusions hétérogènes et
+        # symétrise le produit ; le terme en C_m réutilise ⟨A⟩.
         A_dil = _phase_dilute_concentration(rve, name, prop, C_n; kw...)
-        Δ += f * ((C_i - C_m) ⊡ A_dil)
+        CA = _phase_stress_strain_average(rve, name, prop, C_n, A_dil; kw...)
+        Δ += f * (CA - C_m ⊡ A_dil)
     end
     return C_m + Δ
 end
@@ -604,9 +608,9 @@ function _asc_step_stiffness_dispatch(
         a = rve.amounts[name]
         a isa VolumeFraction || continue
         f = amount_value(a)
-        K_i = phase_property(rve, name, prop)
         A_dil = _phase_dilute_concentration(rve, name, prop, K_n; kw...)
-        Δ += f * ((K_i - K_m) ⋅ A_dil)
+        KA = _phase_stress_strain_average(rve, name, prop, K_n, A_dil; kw...)
+        Δ += f * (KA - K_m ⋅ A_dil)
     end
     return K_m + Δ
 end

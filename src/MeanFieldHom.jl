@@ -112,6 +112,7 @@ export sif, dif
 export strain_strain_loc, stress_strain_loc, strain_stress_loc, stress_stress_loc
 export gradient_gradient_loc, flux_gradient_loc, gradient_flux_loc, flux_flux_loc
 export stiffness_contribution, conductivity_contribution, resistivity_contribution
+export is_homogeneous_inclusion
 export delta_stiffness, delta_conductivity
 
 # ── LayeredSphere (Hervé-Zaoui / Hervé-Luanco / Gurtin-Murdoch / Kapitza) ────

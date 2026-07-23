@@ -45,11 +45,16 @@ function _mt_4(rve, C₀::TensND.AbstractTens{4, 3}, ::Val{p}; kw...) where {p}
         a = rve.amounts[name]
         if a isa VolumeFraction
             f = amount_value(a)
-            P_i = phase_property(rve, name, p)
             # Apply per-phase orientation symmetrize via _phase_dilute_concentration.
             A_dil = _phase_dilute_concentration(rve, name, p, C₀; kw...)
             A_avg += f * A_dil
-            Nsum += f * ((P_i - C₀) ⊡ A_dil)
+            # ⟨C:ε⟩_r - C₀:A_r.  Goes through the trait so that internally
+            # heterogeneous inclusions (LayeredSphere) sum over their layers
+            # instead of using a phase property that does not represent them.
+            # Le helper symétrise le PRODUIT (C_i − C₀):A, pas seulement A,
+            # et branche sur `is_homogeneous_inclusion` pour les inclusions
+            # hétérogènes.  Même chemin que la branche fissures ci-dessous.
+            Nsum += _phase_stiffness_contribution(rve, name, p, C₀; kw...)
         else  # CrackDensity — ECHOES `B · A^{-1}` form.
             # Strain-Stress contribution: A_crack = ε·sym(H_c)·C₀.
             # Stress-Stress contribution: 0 (traction-free).
@@ -75,10 +80,9 @@ function _mt_2(rve, K₀::TensND.AbstractTens{2, 3}, ::Val{p}; kw...) where {p}
         a = rve.amounts[name]
         if a isa VolumeFraction
             f = amount_value(a)
-            P_i = phase_property(rve, name, p)
             A_dil = _phase_dilute_concentration(rve, name, p, K₀; kw...)
             A_avg += f * A_dil
-            Nsum += f * ((P_i - K₀) ⋅ A_dil)
+            Nsum += _phase_stiffness_contribution(rve, name, p, K₀; kw...)
         else  # CrackDensity — ECHOES `B · A^{-1}` form.
             R = _phase_compliance_contribution(rve, name, p, K₀; kw...)
             A_avg += R ⋅ K₀

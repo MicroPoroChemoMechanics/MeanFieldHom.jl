@@ -46,6 +46,7 @@ export AbstractInclusion, AbstractEllipsoidalInclusion,
     AbstractCrack, AbstractLayeredInclusion
 export dimension, element_type, inclusion_basis, shape_trait, shape_tensor
 export eshelby_tensor
+export is_homogeneous_inclusion
 
 # Traits — algorithms
 export AbstractAlgorithm, Analytical, Residue, DECUHR, NestedQuadGK,

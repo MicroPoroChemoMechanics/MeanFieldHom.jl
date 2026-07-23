@@ -22,6 +22,67 @@
 #  picks the right `stiffness_contribution` / `conductivity_contribution`.
 
 """
+    _phase_stress_strain_average(rve, name, prop, P₀, A_dil; kw...)
+
+Average stress per unit remote strain of phase `name`, `⟨C:ε⟩_r` — the **B**
+concentration tensor of [Barthélémy (2022)](@cite echoes), as opposed to the
+strain concentration tensor **A** (`A_dil`).
+
+The two must be kept distinct. `⟨C:ε⟩_r = C_r : ⟨ε⟩_r` requires **both**:
+
+  * `C_r` uniform inside the phase — false for a `LayeredSphere`, where the
+    average is assembled layer by layer through `stress_strain_loc`
+    (`Σ_k f_k C_k : A_k`);
+  * the orientation average to commute with `C_r` — false for an anisotropic
+    `C_r` carrying an ISO/TI orientation distribution, since
+    `⟨R(C_r : A_r)⟩ ≠ C_r : ⟨R(A_r)⟩`.  The product must then be formed on the
+    **un-symmetrized** `A_r` and averaged afterwards.
+
+The shortcut `P_i ⊡ A_dil` is therefore taken only when the orientation average
+is trivial or `C_r` is isotropic (an isotropic tensor commutes with every
+rotation, so the two orders coincide exactly).
+"""
+function _phase_stress_strain_average(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P₀::TensND.AbstractTens{4, 3},
+        A_dil::TensND.AbstractTens{4, 3}; kw...
+    )
+    geom = rve.phases[name].geometry
+    P_i = phase_property(rve, name, prop)
+    sym = phase_symmetrize(rve, name)
+    if MFH_Core.is_homogeneous_inclusion(geom)
+        (sym isa NoSymmetrize || P_i isa TensND.TensISO) && return P_i ⊡ A_dil
+        P₀_proj = _project_matrix(P₀, sym)
+        A_raw = MFH_Core.strain_strain_loc(geom, P_i, P₀_proj; kw...)
+        return _apply_symmetrize(P_i ⊡ A_raw, sym)
+    end
+    P₀_proj = _project_matrix(P₀, sym)
+    return _apply_symmetrize(
+        MFH_Core.stress_strain_loc(geom, P_i, P₀_proj; kw...), sym
+    )
+end
+
+function _phase_stress_strain_average(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P₀::TensND.AbstractTens{2, 3},
+        A_dil::TensND.AbstractTens{2, 3}; kw...
+    )
+    geom = rve.phases[name].geometry
+    P_i = phase_property(rve, name, prop)
+    sym = phase_symmetrize(rve, name)
+    if MFH_Core.is_homogeneous_inclusion(geom)
+        (sym isa NoSymmetrize || P_i isa TensND.TensISO) && return P_i ⋅ A_dil
+        P₀_proj = _project_matrix(P₀, sym)
+        A_raw = MFH_Core.gradient_gradient_loc(geom, P_i, P₀_proj; kw...)
+        return _apply_symmetrize(P_i ⋅ A_raw, sym)
+    end
+    P₀_proj = _project_matrix(P₀, sym)
+    return _apply_symmetrize(
+        MFH_Core.flux_gradient_loc(geom, P_i, P₀_proj; kw...), sym
+    )
+end
+
+"""
     _phase_stiffness_contribution(rve, name, prop::Symbol, P₀; kw...)
 
 Aggregate contribution of phase `name` to the dilute *stiffness*
@@ -174,4 +235,47 @@ function _phase_dilute_concentration(
     P₀_proj = _project_matrix(P₀, sym)
     A = MFH_Core.gradient_gradient_loc(geom, P_i, P₀_proj; kw...)
     return _apply_symmetrize(A, sym)
+end
+
+# ── Voigt / Reuss phase averages ────────────────────────────────────────────
+#
+# The bounds average the phase property directly.  Two corrections are needed
+# for the general case:
+#   * an internally heterogeneous inclusion has no single property — the Voigt
+#     (resp. Reuss) average must run over its layers;
+#   * a phase declaring an orientation distribution must have its property
+#     averaged over that distribution.
+
+_layer_voigt(sphere, ::TensND.AbstractTens{4, 3}) =
+    layer_stiffness_average(sphere)
+_layer_voigt(sphere, ::TensND.AbstractTens{2, 3}) =
+    layer_conductivity_average(sphere)
+_layer_reuss(sphere, ::TensND.AbstractTens{4, 3}) =
+    layer_compliance_average(sphere)
+_layer_reuss(sphere, ::TensND.AbstractTens{2, 3}) =
+    layer_resistivity_average(sphere)
+
+"""
+    _phase_voigt_property(rve, name, prop, ref) -> AbstractTens
+
+Phase property entering the Voigt bound: `⟨C_r⟩` over the layers when the
+inclusion is heterogeneous, then over the orientation distribution.
+"""
+function _phase_voigt_property(rve::RVE, name::Symbol, prop::Symbol, ref)
+    geom = rve.phases[name].geometry
+    P = MFH_Core.is_homogeneous_inclusion(geom) ?
+        phase_property(rve, name, prop) : _layer_voigt(geom, ref)
+    return _apply_symmetrize(P, phase_symmetrize(rve, name))
+end
+
+"""
+    _phase_reuss_property(rve, name, prop, ref) -> AbstractTens
+
+Phase compliance entering the Reuss bound, layer- then orientation-averaged.
+"""
+function _phase_reuss_property(rve::RVE, name::Symbol, prop::Symbol, ref)
+    geom = rve.phases[name].geometry
+    S = MFH_Core.is_homogeneous_inclusion(geom) ?
+        inv(phase_property(rve, name, prop)) : _layer_reuss(geom, ref)
+    return _apply_symmetrize(S, phase_symmetrize(rve, name))
 end
