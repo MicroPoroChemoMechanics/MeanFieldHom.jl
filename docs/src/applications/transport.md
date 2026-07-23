@@ -17,6 +17,8 @@ A property is stored in each phase under a symbol key — `:C` for stiffness,
 using MeanFieldHom
 using TensND
 using LinearAlgebra
+using Plots
+gr()  # headless backend; GKSwstype is set to "100" in make.jl
 
 # Isotropic diffusivities: 2nd-order isotropic tensors.
 D_solid = TensISO{3}(0.1)
@@ -76,6 +78,27 @@ for φ in φs
 end
 ```
 
+The same sweep, plotted as effective diffusivity against porosity for a range
+of pore aspect ratios ``\omega``:
+
+```@example transport
+φ_plot = 0.0:0.02:0.6
+plt = plot(;
+    xlabel = "porosity φ", ylabel = "effective diffusivity D_eff",
+    legend = :topleft, framestyle = :box, size = (760, 480),
+)
+for ω in (0.01, 0.1, 1.0, 10.0)
+    plot!(plt, φ_plot, [D_eff_porous(φ, ω) for φ in φ_plot]; label = "ω = $ω", lw = 2)
+end
+plt
+```
+
+Flatter pores (``\omega \ll 1``) lift the effective diffusivity far more per
+unit porosity than spheres (``\omega = 1``) or prolate pores (``\omega > 1``):
+at a given ``\varphi`` the oblate curve sits well above the others, because a
+thin disc bridges a larger span of the microstructure than a compact inclusion
+of the same volume.
+
 Two limits are worth checking. At zero porosity every curve must return the
 solid diffusivity, and at ``\omega = 1`` (spherical pores) the self-consistent
 estimate must reproduce the classical Bruggeman result — the root of
@@ -131,6 +154,33 @@ D_aniso = Array(homogenize(r, MoriTanaka(), :K))
 The oblate pores lie in the ``(e_1, e_2)`` plane, so they short-circuit
 in-plane transport (``D_{11}`` large) while barely helping through-thickness
 transport (``D_{33}`` close to the solid value).
+
+Sweeping the porosity makes the induced anisotropy explicit — the in-plane and
+through-thickness diagonal components fan apart as ``\varphi`` grows:
+
+```@example transport
+function D_aniso_components(φ; ω = 0.05)
+    r = RVE(:SOLID)
+    add_matrix!(r, Ellipsoid(1.0, 1.0, 1.0), Dict(:K => TensISO{3}(0.1)))
+    add_phase!(
+        r, :PORE, Ellipsoid(1.0, 1.0, ω), Dict(:K => TensISO{3}(1.0));
+        fraction = φ
+    )
+    D = Array(homogenize(r, MoriTanaka(), :K))
+    return D[1, 1], D[3, 3]
+end
+
+φ_plot = 0.0:0.01:0.3
+D11 = [D_aniso_components(φ)[1] for φ in φ_plot]
+D33 = [D_aniso_components(φ)[2] for φ in φ_plot]
+plt2 = plot(;
+    xlabel = "porosity φ", ylabel = "effective diffusivity",
+    legend = :topleft, framestyle = :box, size = (760, 480),
+)
+plot!(plt2, φ_plot, D11; label = "D₁₁ (in-plane)", lw = 2)
+plot!(plt2, φ_plot, D33; label = "D₃₃ (through-thickness)", lw = 2, ls = :dash)
+plt2
+```
 
 ## Cross-property coupling
 

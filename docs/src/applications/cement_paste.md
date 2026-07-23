@@ -36,6 +36,8 @@ Two C-S-H types coexist at the paste scale:
 using MeanFieldHom
 using TensND
 using LinearAlgebra
+using Plots
+gr()  # headless backend; GKSwstype is set to "100" in make.jl
 
 const ω_i, ω_o, φ_i = 0.12, 0.033, 0.30
 
@@ -175,6 +177,31 @@ The three predictions of [sanahuja2007](@cite) are reproduced:
 - a **lower asymptotic stiffness for higher ``w/c``**, reflecting the larger
   residual porosity at full hydration.
 
+Plotting the Young's modulus against the hydration degree makes all three
+visible at once — the flat zero-stiffness plateau before percolation, the rise,
+and the ``w/c``-ordered asymptotes:
+
+```@example paste
+α_plot = 0.0:0.01:1.0
+plt = plot(;
+    xlabel = "hydration degree α", ylabel = "Young's modulus E (GPa)",
+    legend = :topleft, framestyle = :box, size = (760, 480),
+)
+for wc in (0.25, 0.35, 0.45, 0.55)
+    αs = Float64[]
+    Es = Float64[]
+    for a in α_plot
+        a > amax(wc) && continue
+        C = C_paste(wc, a)
+        C === nothing && continue
+        push!(αs, a)
+        push!(Es, E_nu(C)[1])
+    end
+    plot!(plt, αs, Es; label = "w/c = $wc", lw = 2)
+end
+plt
+```
+
 ## Undrained moduli
 
 Ultrasonic measurements probe the **undrained** moduli of a saturated paste.
@@ -266,6 +293,7 @@ function C_paste_composite(wc, α)
     f_inc = v.fa + v.fi
     f_inc < 1.0e-12 && return C_out
     Ra = (v.fa / f_inc)^(1 / 3)
+    Ra < 1.0e-6 && return nothing      # no anhydrous core left (α → 1)
 
     sphere = LayeredSphere((Ra, 1.0), (C_anhyd, C_inner))
     r = RVE(:OUTER)
@@ -292,3 +320,29 @@ Each cell shows *composite sphere / two-step*. The two agree closely at low
 inclusion fraction and diverge as it grows, the composite sphere being the
 morphologically faithful one: the two-step form loses the geometric constraint
 that the anhydrous core sits *inside* the inner-hydrate shell.
+
+The same comparison over the whole hydration range, for two water-to-cement
+ratios:
+
+```@example paste
+α_plot = 0.0:0.01:1.0
+plt = plot(;
+    xlabel = "hydration degree α", ylabel = "Young's modulus E (GPa)",
+    legend = :topleft, framestyle = :box, size = (760, 480),
+)
+for (wc, col) in ((0.35, 1), (0.55, 2))
+    αs, Ecs, Ets = Float64[], Float64[], Float64[]
+    for a in α_plot
+        a > amax(wc) && continue
+        C2 = C_paste_composite(wc, a)
+        Cs = C_paste(wc, a)
+        (C2 === nothing || Cs === nothing) && continue
+        push!(αs, a)
+        push!(Ecs, E_nu(C2)[1])
+        push!(Ets, E_nu(Cs)[1])
+    end
+    plot!(plt, αs, Ecs; label = "composite sphere, w/c=$wc", lw = 2, color = col)
+    plot!(plt, αs, Ets; label = "two-step, w/c=$wc", lw = 2, ls = :dash, color = col)
+end
+plt
+```

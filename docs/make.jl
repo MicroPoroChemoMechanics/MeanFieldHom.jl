@@ -70,6 +70,10 @@ makedocs(;
         "Applications" => [
             "applications/transport.md",
             "applications/cement_paste.md",
+            "applications/cement_paste_diffusion.md",
+            "applications/strength.md",
+            "applications/bituminous.md",
+            "applications/ageing_creep.md",
         ],
         "Developer" => [
             "developer/architecture.md",
