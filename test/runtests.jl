@@ -1,10 +1,16 @@
 using Test
 using MeanFieldHom
+using Random
 
 # Load DECUHR + Integrals so the `MeanFieldHomDECUHRExt` extension activates:
 # several tests cross-validate the `method = :decuhr` path against the residue
 # and nested-QuadGK backends. (DECUHR is a weak dependency of MeanFieldHom.)
 import DECUHR, Integrals
+
+# Several test files draw random operators (`test_ti_alv.jl`, `test_ortho_alv.jl`,
+# `test_volterra_inverse.jl`, …).  Seed once here so a CI failure is always
+# reproducible locally instead of depending on the draw.
+Random.seed!(20260723)
 
 @testset "MeanFieldHom" begin
     @testset "Elliptic" begin

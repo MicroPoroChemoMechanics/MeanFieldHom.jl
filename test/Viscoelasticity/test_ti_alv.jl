@@ -30,7 +30,6 @@ function _rand_ti_lt(n)
 end
 
 @testset "ti_alv — round-trip extract / reassemble" begin
-    Random_seed = 1234
     for n in (1, 3, 7)
         ℓ = ntuple(_ -> randn(n, n), 6)
         M = ti_blocks_from_params(ℓ)
@@ -84,14 +83,18 @@ end
         rtol = 1.0e-10, atol = 1.0e-12
     )
 
-    # Sanity: a · a⁻¹ = block-diag identity (this product is well-
-    # conditioned by construction so a tight tol holds).
+    # Sanity: a · a⁻¹ = block-diag identity.  The residual of a numerically
+    # formed inverse is bounded by ‖M_a‖·‖M_a⁻¹‖·eps, NOT by an absolute
+    # constant: random TI draws reach ‖M_a⁻¹‖ ∼ 10⁶, and a fixed `atol = 1e-10`
+    # made this assertion fail on unlucky draws.  Scale the tolerance the same
+    # way as the inverse comparison above.
     H_id = zeros(6n, 6n)
     @inbounds for i in 1:n
         rows = (6 * (i - 1) + 1):(6 * i)
         H_id[rows, rows] = Matrix{Float64}(I, 6, 6)
     end
-    @test isapprox(M_a * M_a_inv_via_ti, H_id; atol = 1.0e-10)
+    atol_id = max(1.0e-12, 1.0e-15 * opnorm(M_a, 1) * opnorm(M_a_inv_via_ti, 1))
+    @test isapprox(M_a * M_a_inv_via_ti, H_id; atol = atol_id)
 
     # Left divide — same conditioning concern as the inverse path.
     ainvb_ti = _ti_left_divide(a, b)
