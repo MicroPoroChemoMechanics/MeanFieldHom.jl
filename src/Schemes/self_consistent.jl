@@ -63,8 +63,7 @@ function _evaluate(rve::RVE, sc::SelfConsistent, ::Val{p}; kw...) where {p}
     # `H_c(C_n)` to the denominator A_avg via `_phase_compliance_contribution`,
     # and their stiffness contribution `ΔC_c(C_n)` to the numerator
     # CA_avg (traction-free → no stress contribution from solid side).
-    # The eigenvalue guard `_sc_pd_guard` mirrors ECHOES
-    # `homogenization_scheme.h::evaluate` and prevents the iteration
+    # The eigenvalue guard `_sc_pd_guard` prevents the iteration
     # from collapsing to the trivial percolated fixed point at moderate
     # density.
     P_init = matrix_property(rve, p)
@@ -109,8 +108,8 @@ function _sc_step_dispatch(
         rve::RVE, C_n::TensND.AbstractTens{4, 3}, prop::Symbol;
         kw...
     )
-    # ECHOES `homogenization_scheme.h::evaluate` body :
-    #   strain_Stress_α  = A_α(C_n) · S_n   (solid) [`compute_strain_Stress`]
+    # Self-consistent body :
+    #   strain_Stress_α  = A_α(C_n) · S_n   (solid)
     #   strain_Stress_c  = sym(H_c(C_n))    (void crack — NO trailing S_n!)
     #   stress_Stress_α  = C_α · strain_Stress_α
     #   stress_Stress_c  = 0                 (traction-free)
@@ -415,8 +414,8 @@ end
 # moderate density), the SC iteration map can have a stable fixed point
 # at the trivial null tensor (`C = 0`).  A Picard iteration starting
 # from `C_M` may drift into this percolation fixed point even when a
-# physically meaningful finite fixed point exists nearby.  The ECHOES
-# `homogenization_scheme.h::evaluate` mitigates this by detecting a
+# physically meaningful finite fixed point exists nearby.  The reference
+# implementation mitigates this by detecting a
 # negative-definite running estimate and resetting it to a tiny
 # positive identity (`mX = EPSILON · I`) before each step — this
 # prevents the iteration from collapsing to zero and lets it find the

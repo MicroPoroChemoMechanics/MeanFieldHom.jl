@@ -1,7 +1,7 @@
 # =============================================================================
 #  53_ageing_creep_solid.jl
 #
-#  Reproduction of `tests/python/creep/fluage_echoes_solid.py`
+#  Reproduction of the solidifying ageing-creep benchmark
 #  (both the **whole-pores** and the **layers** topologies) and the
 #  manual chapter `ch09_applications.typ` § "Ageing creep of solidifying
 #  cementitious materials".
@@ -39,7 +39,7 @@ using LinearAlgebra
 using Printf
 using Plots
 
-# ─── Phase moduli (same as `fluage_echoes_solid.py`) ────────────────────────
+# ─── Phase moduli ──────────────────────────────────────────────────────────
 
 # Matrix
 const E0 = 1.0

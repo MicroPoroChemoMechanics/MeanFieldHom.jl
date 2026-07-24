@@ -13,7 +13,7 @@
 #       J̃_{ii} = R̃_{ii}^{-1}
 #       J̃_{ij} = -R̃_{ii}^{-1} * Σ_{k = j+1}^{i} R̃_{ik} * J̃_{kj}     (j < i)
 #
-#  This is the Julia counterpart of `get_inv_mat()` from `visco_law.h:61`,
+#  This is the Julia counterpart of a reference `get_inv_mat()`,
 #  but uses forward-substitution instead of a generic LU and is therefore
 #  ~2× faster on the lower-triangular structure.
 # =============================================================================

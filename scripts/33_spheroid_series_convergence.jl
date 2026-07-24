@@ -5,12 +5,10 @@
 # coupling-integral summation `Iᵢⱼ = Σₖ γ₂ₖ Wₖ(q)` needs a working
 # precision of `≳ 0.8·(2𝒩-1)` decimal digits — the coefficients `γ₂ₖ`
 # grow like `10^{0.8n}` while `Iᵢⱼ` itself is `O(1/n)`, so plain
-# `Float64` (16 digits) silently loses accuracy once `𝒩 ≳ 10`. Their
-# reference implementation therefore evaluates the coupling matrices
-# with `mpmath` at a precision set from `𝒩` (see
-# `echoes_cpp/interface/python/py_inclusions/spheroid_nlayers.py`, and
-# `spheroid_nlayers_converge_series.py` for the convergence figure
-# reproduced below).
+# `Float64` (16 digits) silently loses accuracy once `𝒩 ≳ 10`. The
+# original approach therefore evaluates the coupling matrices with
+# multi-precision arithmetic (`mpmath`) at a precision set from `𝒩`; the
+# convergence figure reproduced below follows that study.
 #
 # `MeanFieldHom.jl` sidesteps the issue rather than reproducing it: the
 # default [`coupling_matrices`](@ref MeanFieldHom.LayeredSpheroids.coupling_matrices)
@@ -37,7 +35,7 @@ gr()
 
 # ## Convergence of `b_{N+1,1}` vs. truncation order 𝒩
 #
-# Mirrors `spheroid_nlayers_converge_series.py`: a single-layer
+# The convergence study uses a single-layer
 # prolate spheroid with an INSULATING core (`k₁ = 0`) and a unit
 # surface-conductive (HC) interface, matrix `kₘ = 1`. For each aspect
 # ratio `ω`, the relative change of `(b/a)ₐ` and `(b/a)ₜ` between

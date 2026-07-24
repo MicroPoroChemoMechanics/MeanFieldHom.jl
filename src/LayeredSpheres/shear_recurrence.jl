@@ -256,8 +256,7 @@ integrate to zero.  The returned per-layer `β_k` is therefore
 `a_k + b_k · F_k` with `F_k = (21/5) (3κ_k + μ_k)/μ_k
 (r_k⁵ - r_{k-1}⁵)/(r_k³ - r_{k-1}³)`.
 
-Reference: Hervé-Zaoui 1993, Christensen-Lo 1979, ECHOES C++
-`inclusion_sphere_nlayers.h::get_visco_layer_average_strain_Strain`.
+Reference: Hervé-Zaoui 1993, Christensen-Lo 1979.
 """
 function _shear_localization_multi(
         sphere::LayeredSphere{T, N}, C₀::TensND.TensISO{4, 3}

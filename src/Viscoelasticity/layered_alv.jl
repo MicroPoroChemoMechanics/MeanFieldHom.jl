@@ -624,8 +624,8 @@ end
     _shear_M_inverse_alv(r, M_κ, M_μ, n) -> Matrix{T}    (4n × 4n)
 
 Closed-form `M(r; κ, μ)^{-1}` for the σ-form deviatoric (Y₂)
-fundamental matrix.  Mirrors the C++ `set_visco_inv_matrix_dev`
-formula in [`inclusion_sphere_nlayers.h`].  The only `n × n` Volterra
+fundamental matrix.  Mirrors the reference C++ `set_visco_inv_matrix_dev`
+formula.  The only `n × n` Volterra
 inverses required are `U = (3κ + 4μ)^{-vol}` and `μ^{-vol}` — both
 guaranteed regular for any non-vacuum modulus.  This avoids inverting
 the full `4 × 4` diagonal block of `M(r)`, whose `det` collapses with

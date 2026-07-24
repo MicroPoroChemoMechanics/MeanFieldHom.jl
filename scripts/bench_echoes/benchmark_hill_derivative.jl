@@ -1,15 +1,12 @@
 # =============================================================================
 #  benchmark_hill_derivative.jl — cross-validation of Hill-tensor derivatives
-#  ∂P/∂C between echoes (analytical `hill_derivative`) and MeanFieldHom
+#  ∂P/∂C between an analytical `hill_derivative` reference and MeanFieldHom
 #  (ForwardDiff through `hill_tensor`).
 #
-#  Focused, standalone counterpart of echoes'
-#  `echoes_cpp/tests/python/echoes_tests/derive_eshelby.py`.
-#
-#  echoes hand-codes `hill_derivative(ell, C, index, sym[, algo])` per
+#  The reference hand-codes `hill_derivative(ell, C, index, sym[, algo])` per
 #  material-symmetry class ; MeanFieldHom obtains the SAME derivative by
 #  automatic differentiation of the Hill kernel — for any reference type,
-#  including the fully triclinic case echoes' symmetry-typed routine cannot
+#  including the fully triclinic case a symmetry-typed routine cannot
 #  represent.
 #
 #  Cases (per ellipsoid shape) :

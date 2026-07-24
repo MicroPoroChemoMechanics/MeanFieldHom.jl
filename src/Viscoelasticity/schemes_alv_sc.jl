@@ -119,9 +119,7 @@ function self_consistent_alv(
     C_best = C_m
 
     for iter in 1:maxiters
-        # ECHOES SC body (cf. `homogenization_scheme.h::evaluate` and
-        # `inclusion_ellipsoid::compute_strain_Stress`,
-        # `inclusion_crack::compute_strain_Stress_void_crack`):
+        # Self-consistent SC body:
         #   strain_Stress_α  = A_α(C_m) · J_m   (solid, J_m = inv(C_m))
         #   strain_Stress_c  = sym(H_c(C_m))    (void crack — no J_m)
         #   stress_Stress_α  = C_α · strain_Stress_α
@@ -216,9 +214,7 @@ end
 
 # ── ECHOES SC body for ALV with cracks ─────────────────────────────────────
 #
-# Mirrors the elastic ECHOES SC body (cf.
-# `homogenization_scheme.h::evaluate` and the C++
-# `inclusion_*::compute_strain_Stress` family) :
+# Mirrors the elastic self-consistent SC body :
 #   strain_Stress_α  = A_α(C_m) · J_m   (solid, J_m = volterra-inv(C_m))
 #   strain_Stress_c  = sym(H_c(C_m))    (void crack — NO trailing J_m)
 #   stress_Stress_α  = C_α · strain_Stress_α
@@ -461,8 +457,7 @@ function _sc_alv_step(
     return CA_avg * volterra_inverse(A_avg; block_size = 6)
 end
 
-# ECHOES-form SC step: matches `homogenization_scheme.h::evaluate`
-# (lines 866-901) verbatim.
+# Self-consistent SC step.
 #
 #   A_E = f_M · 𝟙 + Σ_solids f_s · strain_Strain_s + Σ_cracks ε_c · strain_Strain_c
 #   B_E = f_M · X + Σ_solids f_s · stress_Strain_s + Σ_cracks 0 (TF)

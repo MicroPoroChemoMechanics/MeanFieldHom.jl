@@ -63,8 +63,7 @@ Two conventions worth flagging for a smooth transition:
 
 The classic porous benchmark — a solid matrix with spherical pores,
 porosity ``\varphi \in [0, 1]`` — makes the translation concrete. In
-Echoes (adapted from `5_cracked_porous/porous_media.py` of the Echoes
-book):
+Echoes (the classic porous benchmark from the Echoes book):
 
 ```python
 from echoes import *

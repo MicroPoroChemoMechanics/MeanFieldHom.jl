@@ -1,9 +1,8 @@
 # # n-layer sphere: volume-averaged localization tensors
 #
 # Volume-averaged strain and stress localization tensors of an isotropic
-# n-layer composite sphere. Mirrors the verification idea of
-# `tests/python/echoes_tests/average_nlayers.py` (random per-layer moduli,
-# random reference matrix) and adds a per-layer bar chart of the bulk and
+# n-layer composite sphere. Uses random per-layer moduli and a random
+# reference matrix, and adds a per-layer bar chart of the bulk and
 # shear localization factors ``(\alpha_k, \beta_k)``.
 #
 # The `MeanFieldHom.jl` API used here:

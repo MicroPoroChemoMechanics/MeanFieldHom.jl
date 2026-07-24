@@ -1,7 +1,7 @@
 # =============================================================================
 #  57_ageing_creep_cracks.jl
 #
-#  Julia reproduction of `tests/python/creep/fluage_echoes_cracks.py` —
+#  Julia reproduction of the ageing-creep penny-crack benchmark —
 #  pure penny crack (no interface stiffness) in an iso ALV matrix,
 #  using all the crack-aware homogenization schemes available in
 #  `MeanFieldHom`:  Dilute, Mori-Tanaka, Maxwell, Self-Consistent,

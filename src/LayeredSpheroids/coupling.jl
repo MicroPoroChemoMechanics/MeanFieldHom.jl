@@ -100,8 +100,8 @@ end
 #  Optional path: BigFloat monomial-coefficient series (validation oracle)
 # =============================================================================
 #
-#  Faithful port of `coefP/coefPP/coefdPP/coefdPdP/intJ/matI/matJ/matL1/
-#  matL2` in `spheroid_nlayers.py`, using the paper's recursive
+#  Faithful implementation of the paper's monomial-coefficient series,
+#  using its recursive
 #  algorithms for the polynomial coefficients (eq:cij/eq:eij/eq:dij) and
 #  the hypergeometric closed form for `Wₖ(q)` (eq:Wk2), summed directly
 #  as a series (converges since `|1/q²| < 1` for `|q| > 1`).
@@ -110,8 +110,8 @@ end
 #  expansions of `Pᵢ Pⱼ`, `Pᵢ′ Pⱼ`, `Pᵢ′ Pⱼ′` (index `l ↔` power `xˡ`,
 #  1-indexed as `[l+1]`); `_gam[i+1,j+1]` stores `γ^{i,j}` for `i,j = 0,…,Nmax-1`.
 
-# The valid-index bound is the EXPLICIT degree formula `i+j-d` (matching
-# `sc`/`sc1` in `spheroid_nlayers.py`), NOT the actual array length: `d`
+# The valid-index bound is the EXPLICIT degree formula `i+j-d`,
+# NOT the actual array length: `d`
 # is a fixed constant per table (`γ`: 0, `η`: 1, `δ`: 2), reflecting that
 # `γ^{i,j}`, `η^{i,j}`, `δ^{i,j}` are the coefficients of `Pᵢ Pⱼ`,
 # `Pᵢ′ Pⱼ`, `Pᵢ′ Pⱼ′` — polynomials of degree `i+j`, `i+j-1`, `i+j-2`
@@ -252,9 +252,8 @@ end
 """
     _coupling_matrices_series(q, Nseries) -> (I, J, K, L)
 
-BigFloat monomial-coefficient computation of the coupling matrices,
-faithful to `spheroid_nlayers.py` (`matI/matJ/matL1/matL2` on the
-odd-degree, i.e. "chess-filtered", submatrix). Precision is set from
+BigFloat monomial-coefficient computation of the coupling matrices, on
+the odd-degree, i.e. "chess-filtered", submatrix. Precision is set from
 `Nseries` following the paper's rule `dps ≳ 0.8(2·Nseries-1)`.
 """
 function _coupling_matrices_series(q, Nseries::Int)

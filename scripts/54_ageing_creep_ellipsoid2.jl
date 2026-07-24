@@ -1,8 +1,7 @@
 # =============================================================================
 #  54_ageing_creep_ellipsoid2.jl
 #
-#  Julia reproduction of
-#  `tests/python/creep/fluage_echoes_ellipsoid2.py`.
+#  Julia reproduction of the order-2 ellipsoid ageing-creep benchmark.
 #
 #  Setup :
 #    * iso ALV matrix : isotropic stiffness `(E, ν) = (1, 0.2)`,

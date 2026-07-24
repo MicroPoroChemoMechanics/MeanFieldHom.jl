@@ -5,8 +5,7 @@
 #  benchmark : a single solid phase (k_s, μ_s) with spherical pores (k≈0,
 #  μ≈0) varying in volume fraction φ ∈ [0, 1]. Every implemented scheme
 #  is plotted side-by-side, mirroring the reference benchmark figure for
-#  the same problem set up in `tests/python/echoes_tests/porous.py` of the
-#  C++ source.
+#  the same canonical porous problem.
 #
 #  Schemes covered : Voigt, Reuss, Dilute, DiluteDual, Mori-Tanaka,
 #  Maxwell, PCW, Self-Consistent, Asymmetric Self-Consistent, Differential.
@@ -29,8 +28,8 @@ const C_p = TensISO{3}(3 * k_p, 2 * μ_p)
 
 # ── 2-phase porous RVE — solid matrix + pore inclusions.
 #
-# All schemes use the SOLID phase as the matrix (mirrors the C++
-# reference `porous.py`). For the iterative SC/ASC schemes, the
+# All schemes use the SOLID phase as the matrix. For the iterative
+# SC/ASC schemes, the
 # Picard iteration started from the solid bulk traces the matrix-stiff
 # branch and crosses to the lower (percolating) branch through Picard
 # noise around φ ≈ 0.5 for spheres ; the `select_best = true` mode

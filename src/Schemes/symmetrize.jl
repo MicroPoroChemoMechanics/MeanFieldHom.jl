@@ -1,7 +1,7 @@
 # =============================================================================
 #  symmetrize.jl — orientation-distribution treatment of a phase's tensors.
 #
-#  TWO distinct mechanisms, mirroring echoes (tensor_symmetry.h vs tensor_ti.h);
+#  TWO distinct mechanisms (exact rotation average vs best-fit projection);
 #  they must never be conflated :
 #
 #  1. EXACT rotation-group averaging (runtime, inside scheme kernels) —
@@ -21,7 +21,7 @@
 #     non-major-symmetric content of concentration tensors.
 #
 #  References : Walpole (1981) for the TI basis ; echoes
-#  `tensor_symmetry.h` for the exact azimuthal-average closed form.
+#  the exact azimuthal-average closed form.
 # =============================================================================
 
 """

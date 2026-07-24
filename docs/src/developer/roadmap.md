@@ -6,7 +6,7 @@
   Ponte-Castañeda–Willis, self-consistent (Anderson + Newton),
   asymmetric self-consistent, differential.
 - Representative volume element (RVE) assembly and effective-property
-  pipelines mirroring the C++ ECHOES `rve.h`.
+  pipelines mirroring the reference C++ RVE assembly.
 - Concentric multi-layer sphere (`LayeredSphere` via
   [`AbstractLayeredInclusion`](@ref)): Hervé-Zaoui bulk / shear /
   conductivity recurrences, five interface types (perfect, spring,

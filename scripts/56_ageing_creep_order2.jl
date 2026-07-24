@@ -1,8 +1,7 @@
 # =============================================================================
 #  56_ageing_creep_order2.jl
 #
-#  Julia reproduction of
-#  `tests/python/creep/fluage_echoes_maxwell_ordre2.py`.
+#  Julia reproduction of the order-2 Maxwell ageing-creep benchmark.
 #
 #  Order-2 (vector-tensor) ageing linear viscoelasticity:
 #    * iso ALV matrix with Dirichlet 2-element chain + ageing prefactor

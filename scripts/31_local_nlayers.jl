@@ -3,8 +3,7 @@
 #
 #  Radial stress profile σ_rr(r), σ_θθ(r) inside a 2-layer composite
 #  sphere (matrix–core–shell) under a remote hydrostatic far-field
-#  σ∞ = -p₀ · 𝟙.  Mirrors the spirit of the first plot of
-#  `tests/python/echoes_tests/local_nlayers.py` but with hydrostatic
+#  σ∞ = -p₀ · 𝟙, with hydrostatic
 #  rather than uniaxial loading: the displacement field is purely
 #  radial `u_r = A_k r + B_k / r²`, every quantity is axisymmetric and
 #  reduces to a single 2×2 state-vector recurrence already implemented

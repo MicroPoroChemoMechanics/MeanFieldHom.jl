@@ -1,10 +1,6 @@
 # =============================================================================
 #  cracks_alv.jl — pure penny crack in an iso ALV matrix.
 #
-#  ECHOES C++ exposes ALV cracks via the `crack(shape, interf_visco_prop, …)`
-#  Python interface, see
-#  `c:/Users/jf.barthelemy/VSCode_workspace/Echoes/echoes_cpp/tests/python/creep/fluage_echoes_cracks.py`.
-#
 #  This first implementation covers **pure penny cracks (η = 1)** in an
 #  **isotropic ALV matrix** (no interface stiffness yet — the
 #  `(Rn(t,t'), Rt(t,t'))` interface laws will be added in a follow-up).

@@ -1,6 +1,6 @@
 """
 bench_layered_alv_step.py — cross-check layered-sphere ALV with the
-step-activation pattern of `fluage_echoes_solid.py`.
+step-activation pattern of the solidifying-creep benchmark.
 
 Setup mirrors script 37 but with a small N (3 layers) and 5 time steps
 so the (n×n) Volterra matrices are printable.  At t₀ = 0.5, layer 1

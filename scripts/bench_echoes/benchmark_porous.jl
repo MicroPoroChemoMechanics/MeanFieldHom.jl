@@ -2,7 +2,7 @@
 #  benchmark_porous.jl
 #
 #  Cross-validation of every MeanFieldHom porous scheme against the C++
-#  reference (`echoes_tests/porous.py`) called via PyCall. Two geometric
+#  porous reference called via PyCall. Two geometric
 #  cases:
 #
 #   1) Spherical pores in a solid matrix.

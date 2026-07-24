@@ -2,8 +2,8 @@
 #  40_porous_strength_criterion.jl
 #
 #  Strength criterion ellipses for an isotropic porous medium under macroscopic
-#  hydrostatic + deviatoric loading. Reproduces the simple verification script
-#  `tests/python/echoes_tests/criterion_porous.py` of the C++ reference.
+#  hydrostatic + deviatoric loading. Reproduces a simple porous-criterion
+#  verification benchmark.
 #
 #  Setup: oblate spheroid solid (ω = 0.1, K_s = 1e6, μ_s = 1) at fraction 1-φ
 #         + oblate spheroid pore (ω = 0.1, C_pore ≈ 0) at fraction φ. Both
@@ -98,7 +98,7 @@ const SCHEMES = [
 ]
 
 # ── Compute and plot ─────────────────────────────────────────────────────────
-println("Strength-ellipse criterion (criterion_porous.py port)")
+println("Strength-ellipse criterion")
 println("ks = $ks_value, μs = $μs_value, ω = $ω_aspect, φ = $φ_value")
 println("─"^78)
 

@@ -1,5 +1,5 @@
 # Cross-check `homogenize_alv_order2` (Julia) vs ECHOES `homogenize_visco`
-# on the `fluage_echoes_maxwell_ordre2.py` setup:
+# on the order-2 Maxwell ageing-creep setup:
 #   - iso ALV matrix with Dirichlet 2-element chain + ageing prefactor
 #   - iso inhomogeneity with similar law, fraction φ = 0.2
 #   - spherical (ω=1) and prolate spheroidal (ω=0.1) shapes

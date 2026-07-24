@@ -2,14 +2,13 @@
 #  08_hill_derivatives.jl
 #
 #  Derivatives of the Hill polarisation tensor P with respect to the reference
-#  medium — the MeanFieldHom counterpart of echoes' `hill_derivative`
-#  (`echoes_cpp/tests/python/echoes_tests/derive_eshelby.py`).
+#  medium — the MeanFieldHom counterpart of a hand-coded `hill_derivative`.
 #
-#  echoes hand-codes an analytical `hill_derivative(ell, C, index, sym)` for
-#  each material-symmetry class (ISO, TI, ORTHO).  MeanFieldHom gets the SAME
-#  derivative for free by ForwardDiff through the `hill_tensor` kernel — for
-#  ANY parametrization, including fully triclinic references that echoes'
-#  symmetry-typed routine cannot handle.
+#  The classical approach hand-codes an analytical `hill_derivative(ell, C,
+#  index, sym)` for each material-symmetry class (ISO, TI, ORTHO).
+#  MeanFieldHom gets the SAME derivative for free by ForwardDiff through the
+#  `hill_tensor` kernel — for ANY parametrization, including fully triclinic
+#  references that a symmetry-typed routine cannot handle.
 #
 #  This demo (main environment, no PyCall) :
 #    * computes ∂P/∂κ and ∂P/∂η of an isotropic reference (κ = 3k, η = 2μ)
@@ -40,7 +39,7 @@ using Printf
 P_arr(ell, C) = TensND.get_array(change_tens_canon(hill_tensor(ell, C)))
 maxrel(A, B) = maximum(abs, A .- B) / max(maximum(abs, A), maximum(abs, B), 1.0e-300)
 
-# Triaxial ellipsoid with Euler angles — same shape as derive_eshelby.py's
+# Triaxial ellipsoid with Euler angles — the reference triaxial shape
 # `ellipsoidal([3, 2.5, 1.6, 0.1, 0.2, 0.3])`.
 const ELL = Ellipsoid(3.0, 2.5, 1.6; euler_angles = (0.1, 0.2, 0.3))
 const k0, μ0 = 10.0, 10.0
@@ -48,7 +47,7 @@ const α0, β0 = 3k0, 2μ0            # 𝕁 and 𝕂 coefficients of the iso re
 
 println("="^74)
 println("  Hill tensor derivatives ∂P/∂C — MeanFieldHom (ForwardDiff)")
-println("  echoes counterpart: hill_derivative (derive_eshelby.py)")
+println("  reference: analytical hill_derivative")
 println("="^74)
 @printf "  ellipsoid semi-axes (3, 2.5, 1.6), Euler (0.1, 0.2, 0.3)\n"
 @printf "  isotropic reference k = %.1f, μ = %.1f  (κ = 3k = %.1f, η = 2μ = %.1f)\n\n" k0 μ0 α0 β0
@@ -76,7 +75,7 @@ fd_η = (f_η(β0 + h) - f_η(β0 - h)) / (2h)
 # script for the echoes cross-check.)
 n = (0.0, 0.0, 1.0)
 const SPH = Spheroid(2.0)                  # prolate, revolution axis = ez
-ℓ0 = (5.0, 3.0, 4.0, 8.0, 3.0)            # (ℓ₁, ℓ₂, ℓ₃, ℓ₅, ℓ₆), same as derive_eshelby.py's tensor([5,3,4,8,3])
+ℓ0 = (5.0, 3.0, 4.0, 8.0, 3.0)            # (ℓ₁, ℓ₂, ℓ₃, ℓ₅, ℓ₆) reference Walpole tuple
 ti_from(p) = TensND.TensTI{4}(p[1], p[2], p[3], p[4], p[5], n)
 println("  TI reference tensor([5,3,4,8,3], axis ez), coaxial spheroid ω=2 —")
 println("  ∂P/∂ℓᵢ (ForwardDiff, analytical TI-coaxial Hill):")

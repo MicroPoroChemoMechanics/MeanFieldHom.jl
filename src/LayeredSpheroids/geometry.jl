@@ -41,7 +41,7 @@ Use the keyword constructor
 [`LayeredSpheroid`](@ref MeanFieldHom.LayeredSpheroids.LayeredSpheroid)`(axis_radii,
 disk_radii, moduli; interfaces, Nseries, axis)` for the common case, or
 [`layered_spheroid_from_fractions`](@ref) to specify layers by volume
-fraction (as in `spheroid_nlayers.py`'s `layer_fractions` kwarg).
+fraction.
 """
 struct LayeredSpheroid{T <: Real, N, Q <: Number, Cs, Is} <:
     MFH_Core.AbstractLayeredInclusion{3, T}
@@ -116,8 +116,8 @@ end
     layered_spheroid_from_fractions(ω, outer_axis_radius, layer_fractions, moduli;
                                      interfaces, Nseries = 5, axis = (0., 0., 1.))
 
-Convenience constructor mirroring `spheroid_nlayers.py`'s
-`layer_fractions` kwarg: build an `N`-layer confocal spheroid of given
+Convenience constructor specifying layers by volume fraction: build an
+`N`-layer confocal spheroid of given
 outer aspect ratio `ω` (`> 1` prolate, `< 1` oblate) and outer axis
 semi-axis `outer_axis_radius`, with each layer occupying the prescribed
 fraction of the total volume (`layer_fractions`, normalized to sum 1,
@@ -149,9 +149,7 @@ function layered_spheroid_from_fractions(
     # SAME cubic acquires a sign flip when rewritten in terms of the
     # real `τ`: `φ(τ) = τ(τ²+1)` (matches `|q(q²-1)| = τ(τ²+1)` for
     # `q = iτ`). Bisection on `x³ + C·x + D = 0`
-    # (`C = -1` prolate, `C = +1` oblate), exactly as in the reference
-    # Python implementation (`spheroid_nlayers.py`, lines ~503-520),
-    # replacing `scipy.optimize.bisect` with a dependency-free
+    # (`C = -1` prolate, `C = +1` oblate) with a dependency-free
     # bisection since the root is bracketed and the cubic is monotone
     # there.
     Cbis = prolate ? -one(T) : one(T)

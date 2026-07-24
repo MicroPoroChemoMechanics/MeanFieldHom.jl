@@ -32,7 +32,7 @@ using LinearAlgebra
 using Printf
 using Plots
 
-# ─── Granger compliance kernels (transcribed from `v_granger_fp.py`) ───────
+# ─── Granger compliance kernels ───────────────────────────────────────────
 
 kmu_Enu(E, ν) = (E / (3 * (1 - 2ν)), E / (2 * (1 + ν)))
 

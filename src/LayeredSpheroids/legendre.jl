@@ -3,9 +3,7 @@
 #  (P) and second (Q) kind, by upward three-term recurrence.
 #
 #  Faithful transliteration of the seed values and recurrences used in
-#  Barthélémy & Bignonnet (IJES 2020, eq:Legformc/d, eq:Leg2formc/d) and
-#  in the reference implementation `echoes_cpp/interface/python/
-#  py_inclusions/spheroid_nlayers.py` (`_P0`, `_Q0`, `_P1p`, `_P1`, `_Q1`).
+#  Barthélémy & Bignonnet (IJES 2020, eq:Legformc/d, eq:Leg2formc/d).
 #
 #  Two arguments are used throughout the spheroid solution:
 #    - the "p" argument, real, |p| ≤ 1 (the angular / polar coordinate);

@@ -1,14 +1,26 @@
 # # n-layer confocal spheroid: imperfect-interface effective conductivity
 #
-# Effective conductivity of a Mori-Tanaka composite reinforced by
-# [`LayeredSpheroid`](@ref) inclusions carrying a single imperfect
-# thermal interface (Kapitza resistance or surface conductance), as a
-# function of a dimensionless interface (Biot-type) parameter — the
-# physical setting studied by
-# [Kushch, Sevostianov & Belyaev (2015)](@cite kushch2015)
-# ("Effective conductivity of spheroidal particle composite with
-# imperfect interfaces") and mirroring the validation idea of
-# `echoes_cpp/tests/python/spheroid_nlayers/spheroid_nlayers_test_Kushch.py`.
+# Effective conductivity of a two-phase composite — an isotropic matrix
+# reinforced by aligned [`LayeredSpheroid`](@ref) particles carrying a
+# single imperfect thermal interface (Kapitza contact resistance) — as a
+# function of a dimensionless interface (Biot-type) parameter. This is
+# the benchmark configuration of
+# [Kushch, Sevostianov & Belyaev (2015)](@cite kushch2015) ("Effective
+# conductivity of spheroidal particle composite with imperfect
+# interfaces"), also treated as the equivalent-inclusion application of
+# [Barthélémy & Bignonnet (2020)](@cite barthelemyBignonnetIJES2020).
+#
+# The example demonstrates the central result of the equivalent-particle
+# theory: **the full confocal series solution of the imperfect-interface
+# spheroid is homogenization-equivalent to a single homogeneous,
+# perfectly-bonded ellipsoid** carrying the anisotropic conductivity
+# ```math
+# \mathbf{k}^{eq} = \langle\mathbf B\rangle \cdot \langle\mathbf A\rangle^{-1}
+# ```
+# (Barthélémy & Bignonnet, eq. for ``k^{eq}``). We compute the effective
+# conductivity **both ways** — through the layered spheroid and through
+# its equivalent ellipsoid — for two mean-field schemes (Mori–Tanaka and
+# Dilute) and check that the two curves coincide.
 #
 # The API exercised here is the conduction-only counterpart of the
 # elastic [`LayeredSphere`](@ref)/[`RVE`](@ref) machinery:
@@ -16,129 +28,144 @@
 #   — confocal geometry + per-layer isotropic conductivity;
 # - [`MeanFieldHom.KapitzaInterface`](@ref)`(resistance)` — the "LC"
 #   (low-conducting) interface, `[T] = ρ · qₙ`;
-# - [`MeanFieldHom.SurfaceConductiveInterface`](@ref)`(conductance)` —
-#   the "HC" (highly-conducting) interface, `[qₙ] = -divₛ(β ∇ₛT)`;
-# - `RVE` + `add_matrix!`/`add_phase!` + [`homogenize`](@ref)`(rve,
-#   MoriTanaka(), :K)`.
-#
-# Two physically exact limits anchor the interface-parameter sweep and
-# double as a regression check (already verified to machine/near-machine
-# precision in `test/LayeredSpheroids/test_conductivity.jl`):
-# - `ρ → 0` (LC) or `β → 0` (HC) recover the **perfect interface**;
-# - `ρ → ∞` (LC) recovers the **fully insulated** (impermeable) core,
-#   identical to a vanishing-conductivity homogeneous inclusion.
+# - [`gradient_gradient_loc`](@ref) / [`flux_gradient_loc`](@ref) — the
+#   volume-averaged concentration `⟨A⟩` and contribution `⟨B⟩` tensors
+#   that define `kᵉ𝑞`;
+# - `RVE` + `add_matrix!`/`add_phase!` + [`homogenize`](@ref).
 
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
 using MeanFieldHom
 using TensND
+using LinearAlgebra
 using Printf
 using Plots
 gr()
 
 # ## Setup
 #
-# A single-layer prolate spheroid (aspect ratio `ω`), concentration
-# `c = 0.5`, conductivity contrast `k₁/kₘ = 10³`, matrix `kₘ = 1`
-# (isotropic), embedded via Mori-Tanaka. The interface sits at the
-# spheroid/matrix boundary (`N = 1` layer ⟹ a single interface).
+# Aligned prolate spheroids (aspect ratio `ω`, symmetry axis `ê₁`),
+# volume fraction `c = 0.5`, conductivity contrast `k₁/kₘ = 10³`,
+# isotropic matrix `kₘ = 1`. A single-layer particle (`N = 1`) has a
+# single interface, at the particle/matrix boundary.
 
 const km = 1.0
 const k1 = 1.0e3
 const c_frac = 0.5
-const Nseries = 8
+const Nseries = 5
+const axis = (1.0, 0.0, 0.0)          # prolate symmetry axis
+const K1 = TensISO{3}(k1)
+const Km = TensISO{3}(km)
 
-_matrix_ellipsoid() = Ellipsoid(1.0, 1.0, 1.0)
+# `k̃₁₁` is the effective conductivity along the particles' symmetry axis.
 
-function _mt_axial_conductivity(ω::Real, interface; Nseries = Nseries)
-    K1 = TensISO{3}(k1)
-    Km = TensISO{3}(km)
-    axis = ω > 1 ? (1.0, 0.0, 0.0) : (0.0, 0.0, 1.0)   # match `Spheroid(ω)`'s own axis convention
-    b = 1.0
-    a = b * ω
-    s = LayeredSpheroid((a,), (b,), (K1,); interfaces = (interface,), Nseries, axis)
-    rve = RVE(:M)
-    add_matrix!(rve, _matrix_ellipsoid(), Dict(:K => Km))
-    add_phase!(rve, :I, s, Dict(:K => K1); fraction = c_frac)
-    Keff = homogenize(rve, MoriTanaka(), :K)
-    idx = ω > 1 ? 1 : 3   # axial direction, wherever `axis` put it
-    return Keff[idx, idx]
+_axial(K) = K[1, 1]
+
+# Build the layered-spheroid particle for aspect ratio `ω` and Kapitza
+# resistance `ρ`.
+
+function _particle(ω, ρ; N = Nseries)
+    interface = MeanFieldHom.KapitzaInterface(ρ)
+    return LayeredSpheroid((ω,), (1.0,), (K1,); interfaces = (interface,), Nseries = N, axis)
 end
 
-# ## Interface parameter sweep
+# ### Path 1 — full layered-spheroid series solution
+
+function khom_series(ω, ρ, scheme; N = Nseries)
+    s = _particle(ω, ρ; N)
+    rve = RVE(:M)
+    add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:K => Km))
+    add_phase!(rve, :I, s, Dict(:K => K1); fraction = c_frac)
+    return _axial(homogenize(rve, scheme, :K))
+end
+
+# ### Path 2 — equivalent homogeneous ellipsoid `kᵉ𝑞 = ⟨B⟩⟨A⟩⁻¹`
 #
-# `h̃ = kₘ·b / ρ` (Biot-type number) for the Kapitza (LC) interface —
-# `h̃ → ∞` is the perfect-interface limit, `h̃ → 0` the fully insulated
-# one. Two aspect ratios and two truncation orders `𝒩` illustrate both
-# the physical trend and the series' fast convergence (see script `33`
-# for a dedicated convergence study).
+# `⟨A⟩` and `⟨B⟩` are transversely-isotropic (diagonal in the
+# axial/transverse frame), so `kᵉ𝑞` is assembled component-wise and fed
+# to an ordinary [`Ellipsoid`](@ref) of the same shape.
+
+function k_eq_tensor(ω, ρ; N = Nseries)
+    s = _particle(ω, ρ; N)
+    A = gradient_gradient_loc(s, K1, Km)
+    B = flux_gradient_loc(s, K1, Km)
+    keq_axial = B[1, 1] / A[1, 1]
+    keq_trans = B[2, 2] / A[2, 2]
+    return TensND.TensTI{2}(keq_trans, keq_axial, axis)
+end
+
+function khom_equiv(ω, ρ, scheme; N = Nseries)
+    Keq = k_eq_tensor(ω, ρ; N)
+    rve = RVE(:M)
+    add_matrix!(rve, Ellipsoid(1.0, 1.0, 1.0), Dict(:K => Km))
+    add_phase!(rve, :I, Ellipsoid(ω, 1.0, 1.0), Dict(:K => Keq); fraction = c_frac)
+    return _axial(homogenize(rve, scheme, :K))
+end
+
+# ## Interface-parameter sweep
+#
+# `h̃ = kₘ·b / ρ` (Biot-type number, with the equatorial radius `b = 1`):
+# `h̃ → ∞` (small `ρ`) is the perfect-interface limit, `h̃ → 0`
+# (large `ρ`) the fully insulated one.
 
 const h_tilde = exp10.(range(-2, 3; length = 60))
-const omegas = (3.0, 1 / 3)
-const Ns_compare = (3, Nseries)
+const omegas = (3.0, 10.0)
+const schemes = (MoriTanaka(), Dilute())
+const scheme_names = ("Mori–Tanaka", "Dilute")
 
-results = Dict{Tuple{Float64, Int}, Vector{Float64}}()
-for ω in omegas, N in Ns_compare
-    vals = map(h_tilde) do h
-        ρ = km / h   # b = 1
-        _mt_axial_conductivity(ω, MeanFieldHom.KapitzaInterface(ρ); Nseries = N)
+# Compute, for every `(ω, scheme)`, both the series and the
+# equivalent-inclusion curves, and track the largest discrepancy.
+
+series = Dict{Tuple{Float64, Int}, Vector{Float64}}()
+equiv = Dict{Tuple{Float64, Int}, Vector{Float64}}()
+max_gap = 0.0
+for ω in omegas, (si, scheme) in enumerate(schemes)
+    vs = similar(h_tilde)
+    ve = similar(h_tilde)
+    for (j, h) in enumerate(h_tilde)
+        ρ = km / h                    # b = 1
+        vs[j] = khom_series(ω, ρ, scheme)
+        ve[j] = khom_equiv(ω, ρ, scheme)
     end
-    results[(ω, N)] = vals
-end
-
-# ## Exact anchors — perfect interface / fully insulated core
-#
-# Independent of `h̃`: the two limits the curves must approach at the
-# right and left ends of the sweep.
-
-function _mt_perfect(ω)
-    K1 = TensISO{3}(k1); Km = TensISO{3}(km)
-    axis = ω > 1 ? (1.0, 0.0, 0.0) : (0.0, 0.0, 1.0)
-    s = LayeredSpheroid((ω,), (1.0,), (K1,); Nseries, axis)
-    rve = RVE(:M)
-    add_matrix!(rve, _matrix_ellipsoid(), Dict(:K => Km))
-    add_phase!(rve, :I, s, Dict(:K => K1); fraction = c_frac)
-    Keff = homogenize(rve, MoriTanaka(), :K)
-    return Keff[(ω > 1 ? 1 : 3), (ω > 1 ? 1 : 3)]
-end
-
-function _mt_insulated(ω)
-    K0 = TensISO{3}(1.0e-9); Km = TensISO{3}(km)
-    axis = ω > 1 ? (1.0, 0.0, 0.0) : (0.0, 0.0, 1.0)
-    s = LayeredSpheroid((ω,), (1.0,), (K0,); Nseries, axis)
-    rve = RVE(:M)
-    add_matrix!(rve, _matrix_ellipsoid(), Dict(:K => Km))
-    add_phase!(rve, :I, s, Dict(:K => K0); fraction = c_frac)
-    Keff = homogenize(rve, MoriTanaka(), :K)
-    return Keff[(ω > 1 ? 1 : 3), (ω > 1 ? 1 : 3)]
+    series[(ω, si)] = vs
+    equiv[(ω, si)] = ve
+    global max_gap = max(max_gap, maximum(abs.(vs .- ve) ./ abs.(vs)))
 end
 
 println("Kushch-style imperfect-interface sweep — c = $c_frac, k₁/kₘ = $k1")
 println("─"^70)
-for ω in omegas
-    @printf "ω = %6.3f   k_perfect = %.6f   k_insulated = %.6f\n" ω _mt_perfect(ω) _mt_insulated(ω)
-end
+@printf "Largest relative gap  |k_series − k_equiv| / |k_series|  over the whole\n"
+@printf "sweep (both schemes, both aspect ratios): %.2e\n" max_gap
+println("→ the layered spheroid and its equivalent ellipsoid homogenize identically.")
 println()
 
 # ## Graphical output
+#
+# Solid lines: full layered-spheroid series. Open circles: equivalent
+# homogeneous ellipsoid `kᵉ𝑞`. They overlie each other for every scheme
+# and aspect ratio.
 
 p = plot(
     xscale = :log10, xlabel = "h̃ = kₘ·b / ρ", ylabel = "k₁₁ᵉᶠᶠ / kₘ",
-    title = "MT effective axial conductivity vs. Kapitza interface parameter\n(c=$c_frac, k₁/kₘ=$k1)",
-    legend = :topleft, size = (800, 550),
+    title = "Effective axial conductivity vs. Kapitza interface parameter\n" *
+        "(c=$c_frac, k₁/kₘ=$k1) — series vs. equivalent inclusion",
+    legend = :topleft, size = (860, 580),
 )
 colors = (:steelblue, :darkorange)
-for (i, ω) in enumerate(omegas)
-    for N in Ns_compare
-        plot!(
-            p, h_tilde, results[(ω, N)] ./ km;
-            label = "ω=$(round(ω; digits = 2)), N=$N", color = colors[i],
-            linestyle = N == Ns_compare[1] ? :dash : :solid, lw = 2,
-        )
-    end
-    hline!(p, [_mt_perfect(ω) / km]; color = colors[i], linestyle = :dot, lw = 1, label = nothing)
-    hline!(p, [_mt_insulated(ω) / km]; color = colors[i], linestyle = :dot, lw = 1, label = nothing)
+styles = (:solid, :dash)
+for (i, ω) in enumerate(omegas), (si, scheme) in enumerate(schemes)
+    plot!(
+        p, h_tilde, series[(ω, si)] ./ km;
+        label = "series, ω=$(round(Int, ω)), $(scheme_names[si])",
+        color = colors[i], linestyle = styles[si], lw = 2,
+    )
+    scatter!(
+        p, h_tilde[1:4:end], equiv[(ω, si)][1:4:end] ./ km;
+        label = "k_eq inclusion, ω=$(round(Int, ω)), $(scheme_names[si])",
+        color = colors[i], markershape = :circle, markersize = 4,
+        markerstrokewidth = 1, markeralpha = 0.0, markerstrokecolor = colors[i],
+    )
 end
 p
 

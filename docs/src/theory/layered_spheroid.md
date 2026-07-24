@@ -147,8 +147,8 @@ exact oracle used to validate the general series solution in
 
 ## Numerical precision: quadrature vs. the original monomial series
 
-The reference implementation
-(`echoes_cpp/interface/python/py_inclusions/spheroid_nlayers.py`)
+The original approach (used in Barthélémy & Bignonnet's `mpmath`
+implementation)
 computes `I, J, K, L` by expanding `Pᵢ(x)Pⱼ(x)` etc. into monomials
 (coefficients `γ, η, δ`, built by the recursions of the paper's
 Appendix) and summing against `W_k(q) = ∫_{-1}^1 x^{2k}/\sqrt{q^2-x^2}\,dx`

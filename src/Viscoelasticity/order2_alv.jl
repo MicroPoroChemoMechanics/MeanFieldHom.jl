@@ -7,8 +7,8 @@
 #  matrices with 3×3 blocks (no Mandel scaling — the order-2 algebra is
 #  matrix-direct).
 #
-#  Reproduces the ECHOES `homogenize_visco(prop="Y", unitsize=3, …)`
-#  workflow (cf. `tests/python/creep/fluage_echoes_maxwell_ordre2.py`).
+#  Reproduces the order-2 `homogenize_visco(prop="Y", unitsize=3, …)`
+#  workflow.
 # =============================================================================
 
 # ── Trapezoidal fillers for order-2 (3×3 block) kernels ─────────────────────

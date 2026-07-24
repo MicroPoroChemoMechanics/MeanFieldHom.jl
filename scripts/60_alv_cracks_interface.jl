@@ -2,9 +2,8 @@
 #  60_alv_cracks_interface.jl
 #
 #  Cross-check **ALV penny cracks with finite interface stiffness
-#  `(Rn(t,t'), Rt(t,t'))`** between MeanFieldHom.jl and ECHOES C++.
-#  Reference Python script :
-#  `tests/python/creep/fluage_echoes_cracks.py` of ECHOES.
+#  `(Rn(t,t'), Rt(t,t'))`** between MeanFieldHom.jl and the ECHOES
+#  reference implementation.
 #
 #  Same parameters on both sides (matrix V, interface laws Rn / Rt,
 #  spheroidal crack with η → 0, density 0.10 — a value below the
@@ -45,7 +44,7 @@ const echoes = pyimport("echoes")
 const np = pyimport("numpy")
 println("ECHOES imported : MT=$(echoes.MT), SC=$(echoes.SC), PCW=$(echoes.PCW)")
 
-# ─── Common parameters (mirror `fluage_echoes_cracks.py` §10–14) ───────────
+# ─── Common parameters ────────────────────────────────────────────────────
 
 const k₀ = 5.0;  const μ₀ = 2.0
 const k∞ = 3.0;  const μ∞ = 1.0

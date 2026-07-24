@@ -1,8 +1,8 @@
-# `scripts/` — MeanFieldHom.jl demos & echoes cross-checks
+# `scripts/` — MeanFieldHom.jl demos & validation
 
 Numbered demonstration / validation scripts, grouped in blocks by theme.
 Each is self-contained (`Pkg.activate(joinpath(@__DIR__, ".."))`) and, where
-relevant, states the echoes (C++/Python) counterpart it mirrors.
+relevant, states the reference benchmark it reproduces.
 
 Shared code lives in [`common/`](common/) — currently the Pichler-Hellmich
 three-scale model (`common/pichler_model.jl`), used by both the demo script
@@ -22,13 +22,12 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | 60–69 | ALV cracks / interfaces |
 | 70+   | Symmetrization showcases |
 
-## Coverage map (script ↔ echoes)
+## Coverage map
 
-Paths under `echoes_cpp/tests/python/` unless noted; `—` = no direct echoes
-counterpart (native demonstration).
+`—` = no direct reference benchmark (native demonstration).
 
 ### 01–09 Tensor toolbox
-| Script | echoes counterpart | Notes |
+| Script | reference / topic | Notes |
 |---|---|---|
 | `01_auxiliary_tensors.jl` | — | geometric tensors `tens_IA/UA/VA` |
 | `02_hill_elasticity.jl` | `eshelby`/`hill` API | Hill P, elasticity |
@@ -37,20 +36,20 @@ counterpart (native demonstration).
 | `05_symbolic.jl` | — | SymPy genericity |
 | `06_cylinder.jl` | cylinder Hill | transverse-plane quadrature |
 | `07_hill_ti_coaxial.jl` | `hill(...,TI)` | Barthélémy 2020 TI-coaxial closed form |
-| `08_hill_derivatives.jl` | `hill_derivative` / `derive_eshelby.py` | ∂P/∂C by ForwardDiff (ISO, TI), validated vs finite differences |
+| `08_hill_derivatives.jl` | `hill_derivative` | ∂P/∂C by ForwardDiff (ISO, TI), validated vs finite differences |
 
 ### 10–19 Cracks & COD
-| Script | echoes counterpart | Notes |
+| Script | reference / topic | Notes |
 |---|---|---|
 | `10_cod_isotropic.jl` | `crack_compliance` (iso) | COD / H tensor |
 | `11_cod_TI.jl` | `crack_compliance` (TI) | Hoenig / Kanaun-Levin |
 | `12_cod_aniso_residue.jl` | `crack_compliance(...,RESIDUES)` | general anisotropy |
 | `13_cod_ribbon.jl` | ribbon crack | 2D ribbon COD |
 | `14_sif_computation.jl` | — | stress/displacement intensity factors |
-| `15_cracks_iso_interface.jl` | `cracksiso.py` | Sevostianov spring interface |
+| `15_cracks_iso_interface.jl` | iso cracks + spring interface | Sevostianov spring interface |
 
 ### 20–29 Elastic schemes
-| Script | echoes counterpart | Notes |
+| Script | reference / topic | Notes |
 |---|---|---|
 | `20_voigt_reuss_bounds.jl` | VOIGT/REUSS | bounds |
 | `21_dilute_vs_mori_tanaka.jl` | DIL/MT | dilute vs MT |
@@ -60,44 +59,44 @@ counterpart (native demonstration).
 | `25_echoes_crosscheck.jl` | Christensen 1990 | cross-check |
 | `26_sensitivities.jl` | `homogenize_derivative` | AD sensitivities tour |
 | `27_user_inclusion_sensitivity.jl` | — | user-defined inclusion + AD |
-| `28_porous_schemes.jl` | `echoes_tests/porous.py` | porous scheme comparison |
+| `28_porous_schemes.jl` | porous benchmark | porous scheme comparison |
 | `29_symbolic_schemes.jl` | — | SymPy/Symbolics closed forms: Eshelby/Hill, dilute, MT, porous/rigid limits, hand-derived self-consistent |
 
 ### 30–39 Layered n-layer sphere / spheroid
-| Script | echoes counterpart | Notes |
+| Script | reference / topic | Notes |
 |---|---|---|
-| `30_average_nlayers.jl` | `spheroid_nlayers/` | volume-average concentration (sphere) |
-| `31_local_nlayers.jl` | `spheroid_nlayers/` | pointwise localization fields (sphere) |
-| `32_spheroid_nlayers_conductivity.jl` | `spheroid_nlayers_test_Kushch.py` | imperfect-interface MT effective conductivity (Kushch 2015 setting) |
-| `33_spheroid_series_convergence.jl` | `spheroid_nlayers_converge_series.py` | harmonic-series truncation convergence; quadrature vs. BigFloat cross-check |
-| `34_spheroid_equivalent_conductivity.jl` | `spheroid_nlayers_keq.py` | exact equivalent-particle conductivity (eq:defkeqAB) |
-| `35_spheroid_local_fields.jl` | `spheroid_nlayers_test.py` | pointwise temperature/flux fields (spheroid) |
+| `30_average_nlayers.jl` | n-layer sphere | volume-average concentration (sphere) |
+| `31_local_nlayers.jl` | n-layer sphere | pointwise localization fields (sphere) |
+| `32_spheroid_nlayers_conductivity.jl` | Kushch 2015 setting | imperfect-interface MT effective conductivity (Kushch 2015 setting) |
+| `33_spheroid_series_convergence.jl` | series convergence | harmonic-series truncation convergence; quadrature vs. BigFloat cross-check |
+| `34_spheroid_equivalent_conductivity.jl` | equivalent particle | exact equivalent-particle conductivity (eq:defkeqAB) |
+| `35_spheroid_local_fields.jl` | local fields (spheroid) | pointwise temperature/flux fields (spheroid) |
 
 ### 40–49 Strength & multiscale
-| Script | echoes counterpart | Notes |
+| Script | reference / topic | Notes |
 |---|---|---|
 | `40_porous_strength_criterion.jl` | — | porous strength criterion |
-| `41_multiscale_strength.jl` | `cementpaste_mortar_Pichler_CCR2011.py` | full 3-scale + strength (ω=1e4). Cross-checked in `bench_echoes/benchmark_pichler.jl` (moduli 1 %, fc 2 %) |
-| `42_cementpaste_iso.jl` | `cementpaste_mortar_iso_Pichler_CCR2011.py` | elasticity-only ISO variant (**ω=100**, αmax·(1−1e-3)) |
+| `41_multiscale_strength.jl` | Pichler et al. (CCR 2011) | full 3-scale + strength (ω=1e4). Cross-checked in `bench_echoes/benchmark_pichler.jl` (moduli 1 %, fc 2 %) |
+| `42_cementpaste_iso.jl` | Pichler et al. (CCR 2011), ISO | elasticity-only ISO variant (**ω=100**, αmax·(1−1e-3)) |
 
 ### 50–59 Viscoelasticity & ALV
-| Script | echoes counterpart | Notes |
+| Script | reference / topic | Notes |
 |---|---|---|
 | `50_visco_law_basics.jl` | `visco_law` | Maxwell/Kelvin kernels |
 | `51_frequency_sweep_viscoelastic.jl` | complex moduli | frequency sweep |
-| `52_rabotnov_mittag_leffler.jl` | `mittag_leffler/` | Rabotnov closed form |
-| `53_ageing_creep_solid.jl` | `creep/` solid layers | ALV creep |
-| `54_ageing_creep_ellipsoid2.jl` | `creep/` ellipsoid2 | ALV creep |
-| `55_ageing_creep_dirichlet_chains.jl` | `creep/` Granger | ageing creep (Granger–Bažant 1995 law) |
-| `56_ageing_creep_order2.jl` | `creep/` order-2 | order-2 ALV |
-| `57_ageing_creep_cracks.jl` | `creep/` cracks | ALV crack creep |
+| `52_rabotnov_mittag_leffler.jl` | Rabotnov / Mittag-Leffler | Rabotnov closed form |
+| `53_ageing_creep_solid.jl` | solidifying creep | ALV creep |
+| `54_ageing_creep_ellipsoid2.jl` | ellipsoid-2 creep | ALV creep |
+| `55_ageing_creep_dirichlet_chains.jl` | Granger creep | ageing creep (Granger–Bažant 1995 law) |
+| `56_ageing_creep_order2.jl` | order-2 creep | order-2 ALV |
+| `57_ageing_creep_cracks.jl` | crack creep | ALV crack creep |
 | `58_alv_kernel_types.jl` | — | structured ALV kernel types |
 | `59_alv_sensitivities.jl` | — | AD through the ALV pipeline |
 
 ### 60+ ALV cracks / symmetrization
-| Script | echoes counterpart | Notes |
+| Script | reference / topic | Notes |
 |---|---|---|
-| `60_alv_cracks_interface.jl` | `creep/` cracks + interface | finite interface stiffness |
+| `60_alv_cracks_interface.jl` | crack + interface creep | finite interface stiffness |
 | `70_symmetrization_showcase.jl` | `symmetrize` / `.paramsym` | **exact rotation average vs best-fit projection** on a non-major-symmetric concentration tensor |
 
 ## Conventions worth knowing
@@ -115,9 +114,9 @@ counterpart (native demonstration).
 - **Needle aspect ratio.** The full CCR2011 model uses ω = 1e4; the companion
   iso variant uses ω = 100 (both faithful to their echoes originals).
 
-## Not yet ported (echoes side)
-`cementpaste_mortar_Pichler_biax_CCR2013.py` (biaxial strength envelope) and
-`cementpaste.py` (multi-model `E(w/c)` comparison) — future ports.
+## Not yet ported
+Biaxial strength envelope (Pichler et al., CCR 2013) and the multi-model
+`E(w/c)` comparison — future ports.
 
 ## Literate.jl convention (pilot, 2026-07-24)
 

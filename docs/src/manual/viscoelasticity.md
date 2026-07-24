@@ -420,17 +420,18 @@ Mittag-Leffler** closed-form benchmark of @barthelemyIJES2019 §5,
 overlaying the analytical curves and reaching `rtol ≤ 1.3e-3` at
 `n_times = 200` (trapezoidal-rule discretization accuracy).
 
-The ECHOES Python module is callable from Julia via PyCall :
+An external Python module exposing a Mittag-Leffler / Rabotnov kernel is
+callable from Julia via PyCall :
 
 ```julia
 using PyCall
-ml_dir = raw"<ECHOES_root>\tests\python\creep\mittag_leffler"
+ml_dir = raw"/path/to/mittag_leffler"   # directory of the Python module
 pushfirst!(PyVector(pyimport("sys")."path"), ml_dir)
 ml_mod = pyimport("mittag_leffler")
 I_Rabotnov(t, α, β) = Float64(ml_mod.I_Rabotnov(t, α, β)[])
 # … then use `I_Rabotnov` inside a Julia `ViscoLaw` closure
 ```
 
-Random-RVE cross-checks vs the C++ reference live in
+Random-RVE cross-checks vs the reference implementation live in
 `scripts/bench_echoes/benchmark.jl` (relative error `≤ 1e-8` on the
 Mandel `(1, 1)` block, `≤ 1e-6` on the full matrix).

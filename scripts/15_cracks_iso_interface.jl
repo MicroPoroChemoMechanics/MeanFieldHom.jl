@@ -2,9 +2,9 @@
 #  15_cracks_iso_interface.jl
 #
 #  Cross-check **elastic + conductivity homogenization with cracks** vs
-#  the ECHOES Python reference `tests/python/echoes_tests/cracksiso.py`.
+#  a reference implementation.
 #
-#  Setup (mirrors cracksiso.py) :
+#  Setup :
 #    * Iso solid matrix : `C_s = stiff_Enu(E = 1, ν = 0.25)`,
 #                          `K_s = k_o · 𝟏` (small background conductivity)
 #    * Crack : penny / very-thin spheroid with `aspect_ratio = 1e-3`,
@@ -109,7 +109,7 @@ end
 # ─── Julia side ────────────────────────────────────────────────────────────
 #
 # Elastic : traction-free penny crack, density = d.
-# Conduction : the cracksiso.py model treats the crack as a high-K thin
+# Conduction : the reference model treats the crack as a high-K thin
 #              spheroid inclusion (NOT a free crack with interface
 #              conductance).  In MFH the equivalent is a
 #              `Spheroid(ω)` with `K = TensISO{3}(K_t)` and a volume

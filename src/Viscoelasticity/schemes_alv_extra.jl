@@ -11,7 +11,7 @@
 #  References:
 #    * PCW : Ponte-Castañeda & Willis 1995 — coincides with Maxwell in
 #      the single-shape case.
-#    * ASC : C++ ECHOES `homogenization_asc.h` ; same fixed point as
+#    * ASC : same fixed point as
 #      `self_consistent_alv` but the iteration update is anchored on
 #      the matrix property `C_M` rather than on the running estimate.
 #    * DIFF : Norris 1985 ; user's hand-written DEM N-component note.
@@ -57,7 +57,7 @@ iteration update reads
 
     `C^{n+1} = C_M + Σ_i f_i (C_i − C_M) ∘ A^{dil,i}(C^n)`,
 
-mirroring the C++ ECHOES `homogenization_asc.h` form.  Returns the
+mirroring the reference ASC form.  Returns the
 `(6n × 6n)` effective relaxation matrix once the residual
 `‖C^{n+1} − C^n‖_F` falls below `abstol + reltol · ‖C^n‖_F` (or after
 `maxiters` Picard steps).

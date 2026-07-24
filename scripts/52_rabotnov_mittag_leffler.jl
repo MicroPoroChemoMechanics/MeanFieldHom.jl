@@ -41,12 +41,13 @@ using Printf
 using PyCall
 using Plots
 
-# ─── Mittag-Leffler from the ECHOES Python test suite ──────────────────────
+# ─── Mittag-Leffler from an external Python reference module ────────────────
+#  Point `MITTAG_LEFFLER_DIR` at a directory containing a `mittag_leffler`
+#  Python module exposing `ml(z, alpha, beta)`.
 
-const ECHOES_ML_DIR =
-    raw"C:\Users\jf.barthelemy\VSCode_workspace\Echoes\echoes_cpp\tests\python\creep\mittag_leffler"
+const ECHOES_ML_DIR = get(ENV, "MITTAG_LEFFLER_DIR", "")
 
-pushfirst!(PyVector(pyimport("sys")."path"), ECHOES_ML_DIR)
+isempty(ECHOES_ML_DIR) || pushfirst!(PyVector(pyimport("sys")."path"), ECHOES_ML_DIR)
 const _ml_mod = pyimport("mittag_leffler")
 
 # PyCall returns a numpy 0-d array (`fill(value)`-like) for the scalar
@@ -73,8 +74,8 @@ const law_matrix = ViscoLaw(R_matrix, :relaxation)
 
 # ─── Closed-form effective shear (eqs. (35)–(43) of [@barthelemyIJES2019]) ──
 #
-#  Same formulas as `fluage_echoes_maxwell_papier_rabotnov.py` lines
-#  34–116, transcribed in Julia.  `Lmu_*` is the shear creep compliance,
+#  Rabotnov / Mittag-Leffler creep formulas transcribed in Julia.
+#  `Lmu_*` is the shear creep compliance,
 #  `mu_*` is the shear relaxation modulus.
 
 function Lmu_sph_rig_DIL(t, f)

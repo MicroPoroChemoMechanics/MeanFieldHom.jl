@@ -4,9 +4,8 @@
 #  Cross-validation of MeanFieldHom.Schemes against:
 #   * the Christensen 1990 closed form for the iso 2-phase Mori-Tanaka bulk
 #     modulus (analytical reference);
-#   * the iso-porous self-consistent test from the C++ ECHOES
-#     `tests/python/echoes_tests/porous.py` family (Echoes is the
-#     reference implementation this Julia port is benchmarked against).
+#   * the iso-porous self-consistent benchmark from the ECHOES reference
+#     implementation this Julia port is validated against.
 #
 #  Closes the loop on the same kind of cross-validation we did for the
 #  Hill TI coaxial analytical kernel (script 07).
@@ -59,8 +58,8 @@ for f in (0.05, 0.1, 0.2, 0.3, 0.4)
 end
 println()
 
-# ── Self-consistent on iso porous (à la Echoes simpleporous.py) ────────────
-println("=== Self-consistent — iso porous (Echoes simpleporous.py style) ===")
+# ── Self-consistent on iso porous ─────────────────────────────────────────
+println("=== Self-consistent — iso porous ===")
 println()
 println("Inputs : matrix (E, ν) = (1, 0) ⇒ (k_m, μ_m) = (1/3, 0.5);")
 println("         spherical pores with vanishingly small moduli (≈0).")

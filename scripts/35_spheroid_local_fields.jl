@@ -2,10 +2,9 @@
 #
 # Pointwise reconstruction of the temperature and heat-flux fields
 # in/around a 2-layer confocal prolate spheroid under a remote axial
-# gradient, mirroring the local-field maps of
-# `echoes_cpp/tests/python/spheroid_nlayers/spheroid_nlayers_test.py`
-# (there cross-checked against a GetFEM finite-element solution). The
-# analogous script for the composite SPHERE is `31_local_nlayers.jl`.
+# gradient. The reference local-field maps were cross-checked against a
+# finite-element solution. The analogous script for the composite SPHERE
+# is `31_local_nlayers.jl`.
 #
 # The API exercised here:
 # - [`local_temperature`](@ref MeanFieldHom.LayeredSpheroids.local_temperature)`(s,

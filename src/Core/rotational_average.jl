@@ -2,8 +2,7 @@
 #  rotational_average.jl — EXACT rotation-group averages of 2nd/4th-order
 #  tensors with minor symmetry only (no major symmetry assumed).
 #
-#  Two operations, mirroring the runtime symmetrization of echoes
-#  (`echoes_cpp/src/echoes/tensors/tensor_symmetry.h`):
+#  Two operations, mirroring a runtime tensor symmetrization:
 #
 #  * `isotropify(t)`            — exact average over SO(3):
 #        4th order → TensISO{4} (the isotropic subspace of minor-symmetric

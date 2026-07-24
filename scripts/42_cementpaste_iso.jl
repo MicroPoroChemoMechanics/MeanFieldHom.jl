@@ -2,8 +2,7 @@
 #  42_cementpaste_iso.jl
 #
 #  Simplified ELASTICITY-ONLY variant of the Pichler & Hellmich (2011)
-#  cement-paste / mortar model — the Julia port of echoes'
-#  `echoes_concrete/cementpaste_mortar_iso_Pichler_CCR2011.py`.
+#  cement-paste / mortar model.
 #
 #  Differences from the full strength model (`41_multiscale_strength.jl`) :
 #    * the hydrate needle is symmetrized FULLY ISOTROPIC (`:iso`), i.e. a

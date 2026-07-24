@@ -150,12 +150,12 @@ the 1-D integral of the Green kernel back onto the real axis.
     return -(2.0 * t9 - im * π)
 end
 
-# ─── Multiplicity detection (port of polynoms.h::gather_almost_multiple_roots)
+# ─── Multiplicity detection
 #
 # The Bairstow / Durand-Kerner root finder splits a true multiplicity-k root
 # into k clustered numerical roots, each at a relative distance ε^(1/k) from
 # the true location. Distance-based clustering would need a per-mult
-# tolerance schedule; instead we follow the polynoms.h approach and verify
+# tolerance schedule; instead we verify
 # the multiplicity directly via the polynomial-derivative criterion:
 #
 #       Q^(k-1)(z) ≈ 0 in a SCALE-RELATIVE sense  ⇔  mult(z) ≥ k.
@@ -288,7 +288,7 @@ function _gather_almost_multiple_roots(
     return z_list, mults, refidx
 end
 
-# ─── Multiplicity-aware residue formulas (port of polynoms.h)
+# ─── Multiplicity-aware residue formulas
 #
 # Two families of formulas are needed, both derived analytically (Maple) for
 # the Hill residue algorithm:

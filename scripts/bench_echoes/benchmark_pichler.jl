@@ -1,7 +1,7 @@
 # =============================================================================
 #  benchmark_pichler.jl — cross-validation of the Pichler & Hellmich (2011)
 #  three-scale cement-paste / mortar strength model against the echoes C++
-#  reference (`echoes_concrete/cementpaste_mortar_Pichler_CCR2011.py`).
+#  Pichler & Hellmich (CCR 2011) reference.
 #
 #  The Julia model is the SHARED implementation `scripts/common/pichler_model.jl`,
 #  built entirely on the public MeanFieldHom API : the multi-bin

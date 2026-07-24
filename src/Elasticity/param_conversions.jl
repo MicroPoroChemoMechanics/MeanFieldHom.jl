@@ -68,12 +68,11 @@ end
 
 # ── Transversely isotropic: Hoenig (1978) parameters ─────────────────────────
 #
-# Walpole ↔ Hoenig, verified against echoes' `tensor(array([c1..c5]))`
-# constructor (`echoes_cpp/tests/python/echoes_tests/crack_Hoenig.py`):
-# echoes' Hoenig array [c1,c2,c3,c4,c5] IS the Walpole (ℓ1,ℓ2,ℓ3,ℓ5,ℓ6)
-# tuple directly (same ordering, no re-indexing) — cross-checked by
-# building the 6×6 Kelvin-Mandel matrix both ways and comparing to echoes'
-# `tensor(...).array`, entry by entry.
+# Walpole ↔ Hoenig, verified against the reference `tensor(array([c1..c5]))`
+# constructor: the Hoenig array [c1,c2,c3,c4,c5] IS the Walpole
+# (ℓ1,ℓ2,ℓ3,ℓ5,ℓ6) tuple directly (same ordering, no re-indexing) —
+# cross-checked by building the 6×6 Kelvin-Mandel matrix both ways and
+# comparing entry by entry.
 #
 #   d  = 1 - ν₁ - 2h·ν₂²
 #   ℓ₁ = h·E₁·(1-ν₁)/d          ℓ₂ = E₁/d              ℓ₃ = √2·h·ν₂·E₁/d

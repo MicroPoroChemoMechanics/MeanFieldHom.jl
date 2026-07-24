@@ -95,8 +95,7 @@ layer_volume_fraction(s2, 1), layer_volume_fraction(s2, 2)
 The convenience constructor
 [`layered_spheroid_from_fractions`](@ref) builds the confocal
 parameters for you from an outer aspect ratio, an outer size, and
-target volume fractions (mirroring `spheroid_nlayers.py`'s
-`layer_fractions` kwarg):
+target volume fractions:
 
 ```@example spheroid
 s3 = layered_spheroid_from_fractions(3.0, 3.0, (0.3, 0.7), (TensISO{3}(5.0), K1))

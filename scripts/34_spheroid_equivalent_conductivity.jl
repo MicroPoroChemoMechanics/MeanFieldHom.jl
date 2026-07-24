@@ -16,9 +16,8 @@
 # where the interface becomes negligible) and the fully-decoupled limit
 # (small particles / strong interface resistance).
 #
-# `echoes_cpp/tests/python/spheroid_nlayers/spheroid_nlayers_keq.py`
-# goes on to translate `kᵉ𝑞` into an "equivalent RADIUS" under several
-# geometric conventions (confocal / similar-shape / equal-surface
+# The paper goes on to translate `kᵉ𝑞` into an "equivalent RADIUS" under
+# several geometric conventions (confocal / similar-shape / equal-surface
 # rescaling of a reference perfect-interface particle) via a separate
 # closed-form APPROXIMATE model (Bonfoh-type). This script reproduces
 # the foundational, EXACT quantity `kᵉ𝑞` itself directly from
