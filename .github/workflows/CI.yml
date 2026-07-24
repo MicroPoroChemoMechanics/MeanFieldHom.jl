@@ -72,7 +72,7 @@ jobs:
           # `run:` block is written to a temp file by the runner, and `include`
           # resolves relative to THAT file's directory, not the cwd.
           include(joinpath(pwd(), ".github", "scripts", "coverage.jl"))
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v7
         if: matrix.version == '1.12'
         with:
           files: lcov.info
