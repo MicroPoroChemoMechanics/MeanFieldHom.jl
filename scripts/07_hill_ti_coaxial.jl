@@ -82,7 +82,7 @@ println()
 
 # ── Cross-validation block needs a fixed config — use the canonical e₃ ------
 n_axis = [0.0, 0.0, 1.0]
-C_TI = tens_TI(C1111, C1122, C1133, C3333, C2323, n_axis)
+C_TI = tens_TI(C1111, C1122, C1133, C3333, C2323, Tens(n_axis))
 
 # ── Cross-validation: analytical vs. numerical paths --------------------------
 println("Cross-validation on a moderate oblate spheroid (1, 1, 0.3):")
