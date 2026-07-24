@@ -1,25 +1,28 @@
-# =============================================================================
-#  30_average_nlayers.jl
+# # n-layer sphere: volume-averaged localization tensors
 #
-#  Volume-averaged strain and stress localization tensors of an isotropic
-#  n-layer composite sphere.  Mirrors the verification idea of
-#  `tests/python/echoes_tests/average_nlayers.py` (random per-layer
-#  moduli, random reference matrix) and adds a per-layer bar chart of
-#  the bulk and shear localization factors `(α_k, β_k)`.
+# Volume-averaged strain and stress localization tensors of an isotropic
+# n-layer composite sphere. Mirrors the verification idea of
+# `tests/python/echoes_tests/average_nlayers.py` (random per-layer moduli,
+# random reference matrix) and adds a per-layer bar chart of the bulk and
+# shear localization factors ``(\alpha_k, \beta_k)``.
 #
-#  The MeanFieldHom.jl API used here:
-#   * `LayeredSphere(radii, moduli)` — geometry + per-layer stiffness;
-#   * `strain_strain_loc(sphere, C₀; layer=k)` — per-layer iso A_k;
-#   * `stiffness_contribution(sphere, C₀)`    — size-independent N;
-#   * `layer_volume_fraction(sphere, k)`      — f_k.
+# The `MeanFieldHom.jl` API used here:
+# - [`LayeredSphere`](@ref)`(radii, moduli)` — geometry + per-layer stiffness;
+# - [`strain_strain_loc`](@ref)`(sphere, C₀; layer=k)` — per-layer iso ``A_k``;
+# - [`stiffness_contribution`](@ref)`(sphere, C₀)` — size-independent ``N``;
+# - [`layer_volume_fraction`](@ref)`(sphere, k)` — ``f_k``.
 #
-#  The whole-inclusion average <A_εε>_Ω = Σ_k f_k A_k (perfect
-#  interfaces) is reconstructed and cross-checked against the dilute-
-#  scheme identity  C_eff = C₀ + f·N  ⇔  N = <(C_k − C₀) : A_εε>.
-# =============================================================================
+# The whole-inclusion average
+# ```math
+# \langle\mathbb{A}_{\varepsilon\varepsilon}\rangle_\Omega = \sum_k f_k\,\mathbb{A}_k
+# \qquad \text{(perfect interfaces)}
+# ```
+# is reconstructed and cross-checked against the dilute-scheme identity
+# ``\mathbb{C}_{\text{eff}} = \mathbb{C}_0 + f\,\mathbb{N} \iff
+# \mathbb{N} = \langle(\mathbb{C}_k - \mathbb{C}_0) : \mathbb{A}_{\varepsilon\varepsilon}\rangle``.
 
-import Pkg
-Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
+import Pkg                                                          #jl
+Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
 using MeanFieldHom
 using TensND
@@ -27,10 +30,11 @@ using Random
 using Printf
 using LinearAlgebra
 using Plots
+gr()  # headless backend; GKSwstype is set to "100" before Literate runs
 
-# ─── Helpers ─────────────────────────────────────────────────────────────────
+# ## Helpers
 
-# (E, ν) → (3K, 2μ) for direct TensISO{3} construction.
+# ``(E, \nu) \to (3K, 2\mu)`` for direct `TensISO{3}` construction.
 function _stiff_Enu(E::Real, ν::Real)
     K = E / (3 * (1 - 2ν))
     μ = E / (2 * (1 + ν))
@@ -40,8 +44,8 @@ end
 _iso_Kμ(C::TensISO{4, 3}) = (TensND.get_data(C)[1] / 3, TensND.get_data(C)[2] / 2)
 
 # Convert layer fractions (positive, sum = 1 expected) to ascending radii
-# given a target outer radius `R`.  Layer k occupies r_{k-1}..r_k with
-# (r_k³ - r_{k-1}³) / R³ = f_k.
+# given a target outer radius `R`. Layer `k` occupies `r_{k-1}..r_k` with
+# ``(r_k^3 - r_{k-1}^3) / R^3 = f_k``.
 function _radii_from_fractions(f::AbstractVector{<:Real}, R::Real)
     @assert all(>(0), f) "layer fractions must be > 0"
     f_norm = f ./ sum(f)
@@ -54,7 +58,10 @@ function _radii_from_fractions(f::AbstractVector{<:Real}, R::Real)
     return Tuple(radii)
 end
 
-# ─── Setup — random n-layer sphere + random reference ────────────────────────
+# ## Setup — random n-layer sphere + random reference
+#
+# The seed is fixed so this page (and the standalone script) render
+# identical numbers every time.
 
 Random.seed!(20260426)
 
@@ -76,7 +83,7 @@ const C_ref = _stiff_Enu(1.0 + 9.0 * rand(), 0.05 + 0.4 * rand())
 const radii = _radii_from_fractions(fractions_n, R)
 const sphere = LayeredSphere(radii, C_layers)
 
-# ─── Print summary ───────────────────────────────────────────────────────────
+# ## Summary
 
 println("Random n-layer sphere — n = $n, R = $R")
 println("─"^78)
@@ -103,7 +110,7 @@ println(
 )
 println()
 
-# ─── Per-layer localization tensors A_k (iso 4-tensor) ───────────────────────
+# ## Per-layer localization tensors ``A_k`` (iso 4-tensor)
 
 A_per_layer = ntuple(k -> strain_strain_loc(sphere, C_ref; layer = k), n)
 αβ = ntuple(k -> TensND.get_data(A_per_layer[k]), n)
@@ -117,12 +124,14 @@ for k in 1:n
 end
 println()
 
-# Whole-inclusion average <A_εε>_Ω = Σ_k f_k A_k  (perfect interfaces).
+# Whole-inclusion average ``\langle A_{\varepsilon\varepsilon}\rangle_\Omega =
+# \sum_k f_k A_k`` (perfect interfaces).
 A_whole_α = sum(layer_volume_fraction(sphere, k) * α_k[k] for k in 1:n)
 A_whole_β = sum(layer_volume_fraction(sphere, k) * β_k[k] for k in 1:n)
 @printf "Whole-inclusion average :  α = %+12.8f   β = %+12.8f\n" A_whole_α A_whole_β
 
-# Cross-check: stiffness_contribution N satisfies  N = <(C_k − C₀) : A_k>.
+# Cross-check: `stiffness_contribution` ``N`` satisfies
+# ``N = \langle(C_k - C_0) : A_k\rangle``.
 N_tensor = stiffness_contribution(sphere, C_ref)
 N_α, N_β = TensND.get_data(N_tensor)
 N_α_check = sum(
@@ -139,7 +148,7 @@ N_β_check = sum(
 @printf "                         N_β = %+12.6f  (rec. %+12.6f, diff=%.2e)\n" N_β N_β_check abs(N_β - N_β_check)
 println()
 
-# ─── Reset reference to last-layer modulus (mirror Python l. 59-60) ──────────
+# ## Reset reference to last-layer modulus (mirror Python l. 59-60)
 println("Resetting reference to C_layers[end] :")
 C_ref2 = C_layers[end]
 A_layer_last = strain_strain_loc(sphere, C_ref2; layer = n)
@@ -148,10 +157,10 @@ A_layer_last = strain_strain_loc(sphere, C_ref2; layer = n)
 println("  (when reference = layer modulus, the layer is invisible to itself.)")
 println()
 
-# ─── Graphical output ────────────────────────────────────────────────────────
-
-const figdir = joinpath(@__DIR__, "figures")
-isdir(figdir) || mkdir(figdir)
+# ## Graphical output
+#
+# Per-layer bulk/shear localization factors and volume fractions, bar-charted
+# side by side.
 
 p1 = bar(
     1:n, α_k;
@@ -188,8 +197,13 @@ p_full = plot(
     p1, p2, p3; layout = (1, 3), size = (1500, 450),
     plot_title = "n-layer sphere ($n layers, R=$R) — average localizations"
 )
+p_full
 
-figpath = joinpath(figdir, "30_average_nlayers.png")
-savefig(p_full, figpath)
-display(p_full)
-@printf "\nSaved : %s\n" figpath
+# Standalone run also saves the figure to `scripts/figures/`:
+
+const figdir = joinpath(@__DIR__, "figures")                        #jl
+isdir(figdir) || mkdir(figdir)                                       #jl
+figpath = joinpath(figdir, "30_average_nlayers.png")                  #jl
+savefig(p_full, figpath)                                              #jl
+display(p_full)                                                       #jl
+@printf "\nSaved : %s\n" figpath                                      #jl

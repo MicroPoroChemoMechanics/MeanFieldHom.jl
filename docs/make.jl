@@ -6,6 +6,13 @@ using MeanFieldHom
 # the Applications pages fail to render.
 ENV["GKSwstype"] = "100"
 
+# Generates the Gallery pages (+ companion notebooks/scripts) from the
+# curated `scripts/` demos before `makedocs` runs, so the generated markdown
+# exists when `pages` below references it. Must run after the GKSwstype
+# assignment above — the Literate notebook pass actually executes the
+# scripts, including their Plots/GR calls.
+include("literate.jl")
+
 bib = CitationBibliography(
     joinpath(@__DIR__, "src", "references.bib");
     style = :numeric,
@@ -96,6 +103,11 @@ makedocs(;
             "applications/strength.md",
             "applications/bituminous.md",
             "applications/ageing_creep.md",
+        ],
+        "Gallery" => [
+            "gallery/index.md",
+            "gallery/generated/30_average_nlayers.md",
+            "gallery/generated/70_symmetrization_showcase.md",
         ],
         "Developer" => [
             "developer/architecture.md",

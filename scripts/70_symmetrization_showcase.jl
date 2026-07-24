@@ -1,32 +1,37 @@
-# =============================================================================
-#  70_symmetrization_showcase.jl
+# # Symmetrization showcase: exact average vs best-fit projection
 #
-#  The didactic centerpiece of the symmetrization overhaul : the DIFFERENCE
-#  between the two mechanisms echoes (and now MeanFieldHom) provide, on a
-#  NON-major-symmetric strain-concentration tensor.
+# The didactic centerpiece of the symmetrization overhaul: the difference
+# between the two mechanisms `echoes` (and now `MeanFieldHom`) provide, on a
+# **non-major-symmetric** strain-concentration tensor.
 #
-#    (B) EXACT rotation-group average  — `transverse_isotropify(t, n)` /
-#        `IsoSymmetrize` / `TISymmetrize` inside scheme kernels.  Preserves
-#        the full axially-invariant content (`TensTI{4,T,8}`) : ℓ₃ ≠ ℓ₄ and
-#        the antisymmetric azimuthal couplings ℓ₇, ℓ₈.
-#    (A) BEST-FIT projection — `best_fit_ti(t, n)`.  Forces major symmetry
-#        (`TensTI{4,T,5}`), the echoes `.paramsym(sym=TI)` reporting form.
+# - **(B) exact rotation-group average** — [`transverse_isotropify`](@ref) /
+#   `IsoSymmetrize` / `TISymmetrize` inside scheme kernels. Preserves the
+#   full axially-invariant content (`TensTI{4,T,8}`): ``\ell_3 \neq \ell_4``
+#   and the antisymmetric azimuthal couplings ``\ell_7``, ``\ell_8``.
+# - **(A) best-fit projection** — [`best_fit_ti`](@ref). Forces major
+#   symmetry (`TensTI{4,T,5}`), the `echoes` `.paramsym(sym=TI)` reporting
+#   form.
 #
-#  A concentration tensor A = (I + P:(C₁−C₀))⁻¹ generally LACKS major
-#  symmetry; using (A) where (B) is required silently discards physical
-#  couplings.  This script quantifies the gap.
-# =============================================================================
+# A concentration tensor
+# ```math
+# \mathbb{A} = \big[\mathbb{I} + \mathbb{P}:(\mathbb{C}_1-\mathbb{C}_0)\big]^{-1}
+# ```
+# generally lacks major symmetry; using (A) where (B) is required silently
+# discards physical couplings. This script quantifies the gap.
 
-import Pkg
-Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
+import Pkg                                                          #jl
+Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
 using MeanFieldHom
 using TensND
 using Printf
 using LinearAlgebra
 
-# ── A genuinely non-major-symmetric tensor : the dilute strain concentration
-#    of a stiff prolate spheroid in a softer isotropic matrix ──────────────
+# ## A genuinely non-major-symmetric tensor
+#
+# The dilute strain concentration of a stiff prolate spheroid in a softer
+# isotropic matrix:
+
 C₀ = TensISO{3}(3 * 20.0, 2 * 12.0)          # matrix
 C₁ = TensISO{3}(3 * 90.0, 2 * 60.0)          # stiff inclusion
 incl = Spheroid(6.0; euler_angles = (deg2rad(35.0), 0.0, 0.0))   # tilted needle
@@ -38,7 +43,8 @@ ismaj = maximum(abs, arrA .- permutedims(arrA, (3, 4, 1, 2)))
 
 n = (0.0, 0.0, 1.0)
 
-# ── (B) exact azimuthal average about ez ────────────────────────────────────
+# ## (B) Exact azimuthal average about ``e_z``
+
 A_exact = transverse_isotropify(A, n)         # TensTI{4,T,8}
 ℓ = get_ℓ8(A_exact)
 @printf "(B) exact TI average → TensTI{4,T,8}\n"
@@ -46,19 +52,23 @@ A_exact = transverse_isotropify(A, n)         # TensTI{4,T,8}
 @printf "    ℓ₃ − ℓ₄ (major-asymmetry) = %.4e\n" (ℓ[3] - ℓ[4])
 @printf "    ℓ₇, ℓ₈  (antisym. couplings) = %.4e, %.4e\n\n" ℓ[7] ℓ[8]
 
-# ── (A) best-fit major-symmetric projection ─────────────────────────────────
+# ## (A) Best-fit major-symmetric projection
+
 A_fit = best_fit_ti(A, n)                     # TensTI{4,T,5}
 @printf "(A) best-fit TI projection → TensTI{4,T,5}\n"
 @printf "    (ℓ₁, ℓ₂, ℓ₃, ℓ₅, ℓ₆) = %s\n\n" join((@sprintf("%.4f", x) for x in get_data(A_fit)), ", ")
 
-# ── The gap : what best-fit discards ────────────────────────────────────────
+# ## The gap: what best-fit discards
+
 gap = maximum(abs, get_array(A_exact) .- get_array(A_fit))
 @printf "‖exact − best-fit‖∞ = %.4e  (content dropped by the projection)\n" gap
 @printf "  → components lost : ℓ₃≠ℓ₄ split + the ℓ₇/ℓ₈ azimuthal couplings.\n\n"
 
-# ── Consequence at scheme level : Mori-Tanaka homogenised stiffness ─────────
+# ## Consequence at scheme level: Mori–Tanaka homogenised stiffness
+#
 # Two RVEs identical except for the symmetrization mechanism applied to the
-# tilted-needle phase.  The exact average is what the scheme kernels use.
+# tilted-needle phase. The exact average is what the scheme kernels use.
+
 function homogenise_with(symmode)
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C₀))

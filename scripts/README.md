@@ -114,3 +114,46 @@ counterpart (native demonstration).
 ## Not yet ported (echoes side)
 `cementpaste_mortar_Pichler_biax_CCR2013.py` (biaxial strength envelope) and
 `cementpaste.py` (multi-model `E(w/c)` comparison) — future ports.
+
+## Literate.jl convention (pilot, 2026-07-24)
+
+A script converted to this contract stays runnable exactly as before
+(`julia scripts/NN_*.jl`) **and** becomes a source for
+[Literate.jl](https://github.com/fredrikekre/Literate.jl), which generates a
+Documenter markdown page, a Jupyter notebook, and a cleaned standalone
+script from the same file (`julia --project=docs docs/literate.jl`).
+
+**Coexistence policy** — this is additive to the tutorials, not a
+replacement. A script is only *promoted into the doc site* (added to
+`GALLERY_SCRIPTS` in `docs/literate.jl` and to `docs/src/gallery/index.md`)
+if no tutorial or application already covers its topic. Scripts that
+duplicate a tutorial (the majority — see
+`Assets/plans/MFH_LITERATE_SCRIPTS.md` for the full classification) keep
+the plain banner style and are never regenerated into a competing page.
+
+Converting a script to the contract, whether or not it ends up promoted:
+
+- **Title & prose.** Replace the `# ===...===` banner with a Literate
+  header: `# # Title`, then prose paragraphs as plain `# ` lines, math as
+  ```` # ```math ... ``` ````, section dividers as `# ## §N Title`.
+- **`Pkg.activate`.** Suffix both the `import Pkg` and `Pkg.activate(...)`
+  lines with `#jl` — kept in the standalone script and the generated
+  "cleaned script", stripped from the generated markdown/notebook (which
+  run inside the `docs` environment, where `MeanFieldHom` is already
+  available via `[sources] path=".."`).
+- **Figures.** End the plotting code with the plot object as a bare,
+  unmarked final expression (captured inline by `@example`/notebook
+  execution). Suffix `figdir`/`mkdir`/`savefig`/`display`/the "Saved:"
+  `@printf` with `#jl` — the standalone run still writes the PNG to
+  `scripts/figures/`, the doc page shows the figure inline instead.
+- **Determinism.** Any script using `Random` needs `Random.seed!(<const>)`
+  near the top, so the generated doc page (and notebook) render identical
+  numbers on every rebuild.
+- **Don't combine `#md #nb` on one line** — Literate's marker matching only
+  recognizes a single trailing tag; a line with two strips it from *all*
+  three outputs. `gr()` needs no marker at all — leave it plain, exactly as
+  the hand-written tutorials already do.
+
+See `docs/literate.jl` for the generator entry point and
+`Assets/plans/MFH_LITERATE_SCRIPTS.md` for the gap-filler vs. duplicate
+classification of all 41 scripts.

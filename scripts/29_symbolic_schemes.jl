@@ -1,42 +1,27 @@
-# =============================================================================
-#  29_symbolic_schemes.jl
+# # Symbolic homogenization schemes: sphere in an isotropic matrix
 #
-#  Symbolic (closed-form) homogenization schemes for a sphere embedded in an
-#  isotropic matrix, using SymPy.jl through TensND's generic tensor algebra.
+# Symbolic (closed-form) homogenization schemes for a sphere embedded in an
+# isotropic matrix, using SymPy.jl through TensND's generic tensor algebra.
 #
-#  This is the "schemes" companion of `05_symbolic.jl` (which stops at the
-#  Hill/Eshelby tensors): here the same symbolic genericity is pushed through
-#  the Dilute and Mori–Tanaka estimates, and — since the self-consistent
-#  scheme is an intrinsically numerical fixed-point iteration — through a
-#  hand-derived self-consistent equation solved with SymPy's `solve`.
+# This is the "schemes" companion of `05_symbolic.jl` (which stops at the
+# Hill/Eshelby tensors): here the same symbolic genericity is pushed through
+# the Dilute and Mori–Tanaka estimates, and — since the self-consistent
+# scheme is an intrinsically numerical fixed-point iteration — through a
+# hand-derived self-consistent equation solved with SymPy's `solve`.
 #
-#  Three physically important limits are illustrated throughout:
-#    * general two-phase sphere-in-matrix  (k_i, μ_i free)
-#    * porous limit   (k_i, μ_i → 0)   — "pore", regularized to exactly 0
-#    * rigid  limit   (k_i, μ_i → ∞)   — "rigid inclusion"
+# Three physically important limits are illustrated throughout:
+# - general two-phase sphere-in-matrix (``k_i``, ``\mu_i`` free)
+# - porous limit (``k_i, \mu_i \to 0``) — "pore", regularized to exactly 0
+# - rigid limit (``k_i, \mu_i \to \infty``) — "rigid inclusion"
 #
-#  Run from the MeanFieldHom.jl root:
-#    julia --project=. scripts/29_symbolic_schemes.jl
+# Prerequisites: `Pkg.add("SymPy")`, `Pkg.add("Symbolics")`.
 #
-#  Prerequisites:
-#    julia> using Pkg; Pkg.add("SymPy"); Pkg.add("Symbolics")
-#
-#  Sections:
-#   § 0  Setup — symbolic matrix/inclusion moduli and volume fraction
-#   § 1  Hill tensor P and Eshelby tensor S for the sphere (recap, in ν₀ form)
-#   § 2  Dilute estimate — explicit concentration-tensor algebra + API check
-#   § 3  Mori–Tanaka estimate — API + closed form
-#   § 4  Porous limit  (k_i, μ_i → 0)
-#   § 5  Rigid  limit  (k_i, μ_i → ∞)
-#   § 6  Self-consistent — hand-derived equation, solved symbolically in the
-#        porous/rigid limits; the general two-phase case is a coupled
-#        polynomial system (no compact closed form)
-#   § 7  Symbolics.jl bonus — same P, S computed with the Num backend, to
-#        show TensND is agnostic to the symbolic engine
-# =============================================================================
+# **§0** Setup · **§1** Hill/Eshelby tensors · **§2** Dilute · **§3**
+# Mori–Tanaka · **§4** Porous limit · **§5** Rigid limit · **§6**
+# Self-consistent (hand-derived) · **§7** Symbolics.jl bonus.
 
-import Pkg
-Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
+import Pkg                                                          #jl
+Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                  #jl
 
 using MeanFieldHom
 using TensND
@@ -46,10 +31,11 @@ using Printf
 println("=== Symbolic homogenization schemes — sphere in an isotropic matrix ===")
 println()
 
-# ═══════════════════════════════════════════════════════════════════════════
-println("="^78)
-println("  § 0  SETUP — symbolic matrix (k₀,μ₀), inclusion (kᵢ,μᵢ), fraction f")
-println("="^78)
+# ## §0 Setup — symbolic matrix (k₀,μ₀), inclusion (kᵢ,μᵢ), fraction f
+
+println("="^78)                                                                    #jl
+println("  § 0  SETUP — symbolic matrix (k₀,μ₀), inclusion (kᵢ,μᵢ), fraction f")    #jl
+println("="^78)                                                                    #jl
 
 @syms k0::positive μ0::positive ki::positive μi::positive f::positive ν0::real
 
@@ -67,10 +53,11 @@ println("  Inclusion moduli: kᵢ, μᵢ  (symbolic, positive)")
 println("  Volume fraction : f       (symbolic, positive)")
 println()
 
-# ═══════════════════════════════════════════════════════════════════════════
-println("="^78)
-println("  § 1  HILL TENSOR P AND ESHELBY TENSOR S  (sphere, isotropic matrix)")
-println("="^78)
+# ## §1 Hill tensor P and Eshelby tensor S (sphere, isotropic matrix)
+
+println("="^78)                                                                          #jl
+println("  § 1  HILL TENSOR P AND ESHELBY TENSOR S  (sphere, isotropic matrix)")          #jl
+println("="^78)                                                                          #jl
 
 P = hill_tensor(sphere, C0)
 S = P ⊡ C0
@@ -99,10 +86,11 @@ println("    S_𝕁 = ", SJ, "   (expected (1+ν₀)/(3(1-ν₀)))")
 println("    S_𝕂 = ", SK, "   (expected 2(4-5ν₀)/(15(1-ν₀)))")
 println()
 
-# ═══════════════════════════════════════════════════════════════════════════
-println("="^78)
-println("  § 2  DILUTE ESTIMATE — explicit concentration tensor, then API check")
-println("="^78)
+# ## §2 Dilute estimate — explicit concentration tensor, then API check
+
+println("="^78)                                                                         #jl
+println("  § 2  DILUTE ESTIMATE — explicit concentration tensor, then API check")        #jl
+println("="^78)                                                                         #jl
 
 # Master formula, written out so the algebra is visible:
 #   A_dil = (𝕀 + P:(Cᵢ-C₀))⁻¹          (strain concentration tensor)
@@ -131,10 +119,11 @@ println("    simplify(k_dil - kD) = ", simplify(k_dil - kD), "   (expected 0)")
 println("    simplify(μ_dil - μD) = ", simplify(μ_dil - μD), "   (expected 0)")
 println()
 
-# ═══════════════════════════════════════════════════════════════════════════
-println("="^78)
-println("  § 3  MORI–TANAKA ESTIMATE")
-println("="^78)
+# ## §3 Mori–Tanaka estimate
+
+println("="^78)                       #jl
+println("  § 3  MORI–TANAKA ESTIMATE")  #jl
+println("="^78)                       #jl
 
 kMT, μMT = k_mu(homogenize(rve, MoriTanaka(), :C))
 kMT = simplify(kMT)
@@ -146,10 +135,11 @@ println("    μ_MT = ", μMT)
 println("\n  (closed form: k_MT = k₀ + f(kᵢ-k₀)Aₖ / ((1-f)+fAₖ), Aₖ = A_dil's 𝕁-part)")
 println()
 
-# ═══════════════════════════════════════════════════════════════════════════
-println("="^78)
-println("  § 4  POROUS LIMIT  (kᵢ, μᵢ → 0)")
-println("="^78)
+# ## §4 Porous limit (kᵢ, μᵢ → 0)
+
+println("="^78)                                #jl
+println("  § 4  POROUS LIMIT  (kᵢ, μᵢ → 0)")     #jl
+println("="^78)                                #jl
 
 k_dil_por = simplify(subs(k_dil, ki => 0, μi => 0))
 μ_dil_por = simplify(subs(μ_dil, ki => 0, μi => 0))
@@ -164,10 +154,11 @@ println("    k_MT(pore)  = ", kMT_por)
 println("    μ_MT(pore)  = ", μMT_por)
 println()
 
-# ═══════════════════════════════════════════════════════════════════════════
-println("="^78)
-println("  § 5  RIGID LIMIT  (kᵢ, μᵢ → ∞)")
-println("="^78)
+# ## §5 Rigid limit (kᵢ, μᵢ → ∞)
+
+println("="^78)                                #jl
+println("  § 5  RIGID LIMIT  (kᵢ, μᵢ → ∞)")      #jl
+println("="^78)                                #jl
 
 k_dil_rig = simplify(limit(limit(k_dil, ki => oo), μi => oo))
 kMT_rig   = simplify(limit(limit(kMT, ki => oo), μi => oo))
@@ -178,10 +169,11 @@ println("\n  Mori–Tanaka, rigid inclusion:")
 println("    k_MT(rigid)  = ", kMT_rig)
 println()
 
-# ═══════════════════════════════════════════════════════════════════════════
-println("="^78)
-println("  § 6  SELF-CONSISTENT — hand-derived equation (never symbolic via API)")
-println("="^78)
+# ## §6 Self-consistent — hand-derived equation (never symbolic via API)
+
+println("="^78)                                                                    #jl
+println("  § 6  SELF-CONSISTENT — hand-derived equation (never symbolic via API)")  #jl
+println("="^78)                                                                    #jl
 println("""
   The self-consistent scheme is intrinsically a numerical fixed-point
   iteration in MeanFieldHom (Anderson/Picard, convergence tests, positive-
@@ -263,10 +255,11 @@ if !isempty(sol_por)
 end
 println()
 
-# ═══════════════════════════════════════════════════════════════════════════
-println("="^78)
-println("  § 7  SYMBOLICS.JL BONUS — same computation, the Num backend")
-println("="^78)
+# ## §7 Symbolics.jl bonus — same computation, the Num backend
+
+println("="^78)                                                    #jl
+println("  § 7  SYMBOLICS.JL BONUS — same computation, the Num backend")  #jl
+println("="^78)                                                    #jl
 println("""
   TensND does not care which symbolic engine produced the scalars: the same
   tensor algebra (⊡, inv, tens_Id4, ...) dispatches identically on SymPy's
@@ -292,6 +285,6 @@ println("    αS = ", Symbolics.simplify(αSs))
 println("    βS = ", Symbolics.simplify(βSs))
 println()
 
-println("="^78)
-println("  Done.")
-println("="^78)
+println("="^78)   #jl
+println("  Done.") #jl
+println("="^78)   #jl
