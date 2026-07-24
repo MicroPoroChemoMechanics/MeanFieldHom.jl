@@ -52,6 +52,7 @@ include("Elasticity/Elasticity.jl")
 include("Cracks/Cracks.jl")
 include("Conductivity/Conductivity.jl")
 include("LayeredSpheres/LayeredSpheres.jl")
+include("LayeredSpheroids/LayeredSpheroids.jl")
 include("Schemes/Schemes.jl")
 include("Viscoelasticity/Viscoelasticity.jl")
 
@@ -61,6 +62,7 @@ using .Elasticity
 using .Cracks
 using .Conductivity
 using .LayeredSpheres
+using .LayeredSpheroids
 using .Schemes
 using .Viscoelasticity
 
@@ -122,6 +124,12 @@ export KapitzaInterface, SurfaceConductiveInterface
 export layer_count, layer_radius, layer_modulus, layer_interface,
     layer_volume_fraction, outer_radius
 export layer_strain_average, sphere_strain_average, cumulative_strain_average
+
+# ── LayeredSpheroid (Barthélémy-Bignonnet confocal spheroid, conduction) ─────
+export LayeredSpheroid, layered_spheroid_from_fractions
+export layer_q, layer_semiaxes, outer_semiaxes
+export local_temperature, local_gradient, local_flux
+export spheroid_state_sequence, spheroid_ba_ratios, get_layer
 
 # ── Elliptic integrals (type-generic) ────────────────────────────────────────
 export ell_K, ell_E, ell_F, ell_RF, ell_RD

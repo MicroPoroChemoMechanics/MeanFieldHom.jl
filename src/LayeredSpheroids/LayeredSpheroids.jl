@@ -1,0 +1,55 @@
+"""
+    MeanFieldHom.LayeredSpheroids
+
+Isotropic `n`-layer confocal spheroidal composite inclusion (core +
+concentric confocal shells), **conduction only** (thermal / electric /
+Darcy — no elastic counterpart: the harmonic solution of
+Barthélémy & Bignonnet, IJES 2020, is specific to the scalar Laplace
+equation and does not carry over to the vector elastic problem). Public
+entry points: [`LayeredSpheroid`](@ref),
+[`layered_spheroid_from_fractions`](@ref).
+
+Like [`LayeredSphere`](@ref MeanFieldHom.LayeredSpheres.LayeredSphere),
+a composite spheroid has **no Hill tensor** — it plugs into the
+mean-field schemes through its volume-averaged concentration
+(gradient/flux) tensors, assembled layer by layer via a confocal
+spheroidal-harmonic transfer-matrix recurrence (`conductivity.jl`)
+instead of the sphere's simple 2×2 state-vector propagation. Perfect
+(`PerfectInterface`), Kapitza (`KapitzaInterface`, resistance) and
+surface-conductive (`SurfaceConductiveInterface`, conductance)
+interfaces — reused from [`LayeredSpheres`](@ref
+MeanFieldHom.LayeredSpheres) — couple different harmonic degrees, unlike
+the sphere, requiring the truncated series machinery of
+`legendre.jl` / `coupling.jl`.
+"""
+module LayeredSpheroids
+
+using LinearAlgebra
+using TensND
+
+import ..Core
+using ..Core
+const MFH_Core = Core
+
+import ..LayeredSpheres: PerfectInterface, KapitzaInterface, SurfaceConductiveInterface,
+    AbstractInterface, layer_conductivity_average, layer_resistivity_average,
+    layer_count, layer_modulus, layer_interface, layer_volume_fraction
+
+import ..Core: gradient_gradient_loc, flux_gradient_loc, gradient_flux_loc, flux_flux_loc,
+    conductivity_contribution, resistivity_contribution, is_homogeneous_inclusion
+
+include("legendre.jl")
+include("coupling.jl")
+include("geometry.jl")
+include("conductivity.jl")       # confocal-harmonic transfer-matrix recurrence
+include("localfields.jl")        # pointwise T, ∇T, flux reconstruction
+include("scheme_integration.jl") # concentration tensors → mean-field schemes
+
+# ── Exports ─────────────────────────────────────────────────────────────────
+export LayeredSpheroid, layered_spheroid_from_fractions
+export layer_count, layer_q, layer_modulus, layer_interface, layer_semiaxes,
+    layer_volume_fraction, outer_semiaxes
+export local_temperature, local_gradient, local_flux
+export spheroid_state_sequence, spheroid_ba_ratios, get_layer
+
+end # module

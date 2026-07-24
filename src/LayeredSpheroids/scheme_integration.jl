@@ -1,0 +1,139 @@
+# =============================================================================
+#  scheme_integration.jl — plug a `LayeredSpheroid` into the mean-field
+#  schemes (conduction only — see the module docstring).
+#
+#  Exactly as for `LayeredSphere` (see `LayeredSpheres/scheme_integration.jl`),
+#  a composite spheroid has NO Hill tensor: what the schemes need is its
+#  whole-inclusion volume-averaged concentration tensors
+#
+#      ⟨∇T⟩_Ω = A_Ω · ∇T∞ ,       ⟨K∇T⟩_Ω = B_Ω · ∇T∞ ,
+#
+#  obtained here from the confocal transfer-matrix recurrence of
+#  `conductivity.jl` (`spheroid_gradient_gradient` / `spheroid_flux_gradient`)
+#  rather than a layer-by-layer sum — the imperfect interfaces couple
+#  harmonic degrees, so there is no simple per-layer partition of the
+#  average as there is for the sphere. `A_Ω`, `B_Ω` are transversely
+#  isotropic about the spheroid's own axis (`TensND.TensTI{2,3}`),
+#  `axis`-aligned unless the geometry was built with a tilted `axis`.
+#
+#  The declared phase property (`K₁` in the scheme dispatch) is
+#  accepted for signature compatibility but IGNORED: the layer moduli
+#  live in `sphere.moduli`, exactly as for `LayeredSphere`.
+#
+#  Resistivity-based (compliance-formulation) scheme kernels are, as
+#  for `LayeredSphere`, not supported (no `resistivity_contribution`
+#  override) — only Voigt/Reuss (via `layer_conductivity_average` /
+#  `layer_resistivity_average`, volume averages of the LOCAL isotropic
+#  layer conductivities, direction-independent) and the dilute/MT/SC/
+#  Maxwell/differential kernels that route through
+#  `gradient_gradient_loc` / `flux_gradient_loc` / `conductivity_contribution`.
+# =============================================================================
+
+"""
+    is_homogeneous_inclusion(::LayeredSpheroid) -> false
+
+A composite spheroid has no single representative conductivity: its
+average flux must be obtained from the transfer-matrix recurrence, not
+from `(K₁ - K₀)·A`. See [`flux_gradient_loc`](@ref).
+"""
+Core.is_homogeneous_inclusion(::LayeredSpheroid) = false
+
+"""
+    _spheroid_concentration(s, k₀) -> (αt, αa, βt, βa)
+
+The four real scalars parametrizing the transversely isotropic
+gradient (`α`) and flux (`β`) whole-inclusion concentration tensors,
+`t`/`a` for transverse/axial, computed once from the shared
+`(b/a)` ratios ([`spheroid_ba_ratios`](@ref)).
+"""
+function _spheroid_concentration(s::LayeredSpheroid{T, N}, k₀) where {T, N}
+    qN = s.q[N]
+    ba_a, ba_t = spheroid_ba_ratios(s, k₀)
+    αa = real(1 + ba_a * _shape_Ta(qN))
+    αt = real(1 + ba_t * _shape_Tt(qN))
+    βa = real(1 + ba_a * _shape_Ua(qN))
+    βt = real(1 + ba_t * _shape_Ut(qN))
+    return αt, αa, βt, βa
+end
+
+"""
+    gradient_gradient_loc(s::LayeredSpheroid, K₁, K₀; kw...) -> TensTI{2,3}
+
+Whole-inclusion **gradient concentration tensor**
+`A_Ω = αₜ·(𝟙 - n⊗n) + αₐ·n⊗n` (`n` the spheroid's axis), such that
+`⟨∇T⟩_Ω = A_Ω · ∇T∞`. `K₁` is ignored (see the module docstring).
+"""
+function gradient_gradient_loc(
+        s::LayeredSpheroid{T, N},
+        ::TensND.AbstractTens{2, 3},
+        K₀::TensND.TensISO{2, 3};
+        kw...,
+    ) where {T, N}
+    k₀ = MFH_Core.extract_iso_conductivity(K₀)
+    αt, αa, _, _ = _spheroid_concentration(s, k₀)
+    return TensND.TensTI{2}(αt, αa, s.axis)
+end
+
+"""
+    flux_gradient_loc(s::LayeredSpheroid, K₁, K₀; kw...) -> TensTI{2,3}
+
+Whole-inclusion **average flux** per unit remote gradient,
+`⟨K∇T⟩_Ω = k₀·(βₜ·(𝟙 - n⊗n) + βₐ·n⊗n)`, `K₁` ignored.
+
+Consistency: `conductivity_contribution = flux_gradient_loc - K₀ ⋅
+gradient_gradient_loc`, verified in the test suite (`N = ⟨B⟩ - K₀:A`,
+the same invariant as `LayeredSphere`'s).
+"""
+function flux_gradient_loc(
+        s::LayeredSpheroid{T, N},
+        ::TensND.AbstractTens{2, 3},
+        K₀::TensND.TensISO{2, 3};
+        kw...,
+    ) where {T, N}
+    k₀ = MFH_Core.extract_iso_conductivity(K₀)
+    _, _, βt, βa = _spheroid_concentration(s, k₀)
+    return k₀ * TensND.TensTI{2}(βt, βa, s.axis)
+end
+
+"""
+    conductivity_contribution(s::LayeredSpheroid, K₁, K₀; kw...) -> TensTI{2,3}
+
+Size-independent **conductivity contribution tensor**
+`N_K = ⟨K∇T⟩_Ω - K₀ · ⟨∇T⟩_Ω`, assembled from the whole-inclusion
+average (the spheroid is heterogeneous, so `(K₁ - K₀)·A` does not
+apply). `K₁` is ignored (see [`gradient_gradient_loc`](@ref)).
+"""
+function Core.conductivity_contribution(
+        s::LayeredSpheroid{T, N},
+        K₁::TensND.AbstractTens{2, 3},
+        K₀::TensND.TensISO{2, 3};
+        kw...,
+    ) where {T, N}
+    B = flux_gradient_loc(s, K₁, K₀; kw...)
+    A = gradient_gradient_loc(s, K₁, K₀; kw...)
+    return B - K₀ ⋅ A
+end
+
+"""
+    layer_conductivity_average(spheroid) -> TensISO{2,3}
+
+Voigt (volume) average of the layer conductivities, `Σ_k f_k k_k`
+(scalar, direction-independent — the Voigt/Reuss bounds only ever need
+the phase's volume-averaged property, not its shape).
+"""
+function layer_conductivity_average(s::LayeredSpheroid{T, N}) where {T, N}
+    k_layers = _spheroid_layer_moduli(s)
+    f = ntuple(k -> layer_volume_fraction(s, k), Val(N))
+    return TensND.TensISO{3}(sum(f[k] * k_layers[k] for k in 1:N))
+end
+
+"""
+    layer_resistivity_average(spheroid) -> TensISO{2,3}
+
+Reuss (volume) average of the layer resistivities, `Σ_k f_k / k_k`.
+"""
+function layer_resistivity_average(s::LayeredSpheroid{T, N}) where {T, N}
+    k_layers = _spheroid_layer_moduli(s)
+    f = ntuple(k -> layer_volume_fraction(s, k), Val(N))
+    return TensND.TensISO{3}(sum(f[k] / k_layers[k] for k in 1:N))
+end

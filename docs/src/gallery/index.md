@@ -20,3 +20,17 @@ a cleaned standalone `.jl` file, generated alongside this page — see
 - [Symmetrization showcase](generated/70_symmetrization_showcase.md) — exact
   rotation-group average vs. best-fit projection on a non-major-symmetric
   tensor.
+- [n-layer confocal spheroid: imperfect-interface conductivity](generated/32_spheroid_nlayers_conductivity.md)
+  — Mori-Tanaka effective conductivity vs. Kapitza interface parameter, the
+  [Kushch, Sevostianov & Belyaev (2015)](@cite kushch2015) setting.
+- [n-layer confocal spheroid: series truncation](generated/33_spheroid_series_convergence.md)
+  — harmonic-series convergence vs. `𝒩`, and why the default `QuadGK`
+  backend stays accurate in `Float64` where the original monomial series
+  needs BigFloat.
+- [n-layer confocal spheroid: equivalent conductivity](generated/34_spheroid_equivalent_conductivity.md)
+  — the exact equivalent-particle conductivity `kᵉ𝑞 = ⟨B⟩·⟨A⟩⁻¹`
+  ([Barthélémy & Bignonnet 2020](@cite barthelemyBignonnetIJES2020), §4)
+  vs. aspect ratio.
+- [n-layer confocal spheroid: local fields](generated/35_spheroid_local_fields.md)
+  — pointwise temperature and flux maps across a 2-layer spheroid with an
+  imperfect interface.

@@ -37,6 +37,11 @@ const GALLERY_SCRIPT_DIR = joinpath(@__DIR__, "generated_scripts")
 const GALLERY_SCRIPTS = [
     "70_symmetrization_showcase.jl",
     "30_average_nlayers.jl",
+    # LayeredSpheroid (2026-07): gap-fillers, no tutorial/application overlap.
+    "32_spheroid_nlayers_conductivity.jl",
+    "33_spheroid_series_convergence.jl",
+    "34_spheroid_equivalent_conductivity.jl",
+    "35_spheroid_local_fields.jl",
 ]
 
 function build_gallery()

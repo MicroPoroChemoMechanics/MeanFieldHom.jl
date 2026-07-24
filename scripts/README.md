@@ -16,7 +16,7 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | 01–09 | Tensor / Hill / Eshelby toolbox |
 | 10–19 | Cracks & COD (16–19 reserved for future conductive / resistive conduction cracks) |
 | 20–29 | Elastic homogenization schemes |
-| 30–39 | Layered n-layer sphere |
+| 30–39 | Layered n-layer sphere / spheroid |
 | 40–49 | Strength & multiscale (Pichler-Hellmich) |
 | 50–59 | Viscoelasticity & ALV |
 | 60–69 | ALV cracks / interfaces |
@@ -63,11 +63,15 @@ counterpart (native demonstration).
 | `28_porous_schemes.jl` | `echoes_tests/porous.py` | porous scheme comparison |
 | `29_symbolic_schemes.jl` | — | SymPy/Symbolics closed forms: Eshelby/Hill, dilute, MT, porous/rigid limits, hand-derived self-consistent |
 
-### 30–39 Layered n-layer sphere
+### 30–39 Layered n-layer sphere / spheroid
 | Script | echoes counterpart | Notes |
 |---|---|---|
-| `30_average_nlayers.jl` | `spheroid_nlayers/` | volume-average concentration |
-| `31_local_nlayers.jl` | `spheroid_nlayers/` | pointwise localization fields |
+| `30_average_nlayers.jl` | `spheroid_nlayers/` | volume-average concentration (sphere) |
+| `31_local_nlayers.jl` | `spheroid_nlayers/` | pointwise localization fields (sphere) |
+| `32_spheroid_nlayers_conductivity.jl` | `spheroid_nlayers_test_Kushch.py` | imperfect-interface MT effective conductivity (Kushch 2015 setting) |
+| `33_spheroid_series_convergence.jl` | `spheroid_nlayers_converge_series.py` | harmonic-series truncation convergence; quadrature vs. BigFloat cross-check |
+| `34_spheroid_equivalent_conductivity.jl` | `spheroid_nlayers_keq.py` | exact equivalent-particle conductivity (eq:defkeqAB) |
+| `35_spheroid_local_fields.jl` | `spheroid_nlayers_test.py` | pointwise temperature/flux fields (spheroid) |
 
 ### 40–49 Strength & multiscale
 | Script | echoes counterpart | Notes |

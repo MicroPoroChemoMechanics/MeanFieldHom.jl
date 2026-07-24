@@ -85,6 +85,14 @@ Random.seed!(20260723)
         include("LayeredSpheres/test_scheme_integration.jl")
     end
 
+    @testset "LayeredSpheroids" begin
+        include("LayeredSpheroids/test_legendre.jl")
+        include("LayeredSpheroids/test_coupling.jl")
+        include("LayeredSpheroids/test_conductivity.jl")
+        include("LayeredSpheroids/test_scheme_integration.jl")
+        include("LayeredSpheroids/test_local_fields.jl")
+    end
+
     @testset "Viscoelasticity" begin
         include("Viscoelasticity/test_symmetrize_alv.jl")
         include("Viscoelasticity/test_visco_law.jl")

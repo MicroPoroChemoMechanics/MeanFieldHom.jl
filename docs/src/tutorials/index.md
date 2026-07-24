@@ -49,6 +49,9 @@ where the choice of scheme matters most.
     `NonlinearSolve.jl` instead of the built-in Picard iteration,
     benchmark the two, and check that `ForwardDiff` sensitivities agree
     exactly regardless of which solver computed the fixed point.
+13. [The n-layer confocal spheroid (conduction)](13_layered_spheroid.md) —
+    `LayeredSpheroid`, imperfect interfaces, multi-layer geometries, and
+    pointwise local fields.
 
 ## Prerequisites
 
