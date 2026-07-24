@@ -7,6 +7,8 @@ Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"
 LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
 MeanFieldHom = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 TensND = "474b5345-2588-4284-8a58-2430a1a40cb0"
 
 [sources]

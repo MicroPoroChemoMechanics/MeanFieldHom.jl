@@ -86,6 +86,7 @@ makedocs(;
             "tutorials/08_sensitivities.md",
             "tutorials/09_strength_criteria.md",
             "tutorials/10_from_echoes.md",
+            "tutorials/11_symbolic_spheres.md",
         ],
         "Applications" => [
             "applications/transport.md",

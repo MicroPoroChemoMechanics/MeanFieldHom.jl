@@ -61,6 +61,7 @@ counterpart (native demonstration).
 | `26_sensitivities.jl` | `homogenize_derivative` | AD sensitivities tour |
 | `27_user_inclusion_sensitivity.jl` | — | user-defined inclusion + AD |
 | `28_porous_schemes.jl` | `echoes_tests/porous.py` | porous scheme comparison |
+| `29_symbolic_schemes.jl` | — | SymPy/Symbolics closed forms: Eshelby/Hill, dilute, MT, porous/rigid limits, hand-derived self-consistent |
 
 ### 30–39 Layered n-layer sphere
 | Script | echoes counterpart | Notes |

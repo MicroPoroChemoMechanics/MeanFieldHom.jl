@@ -40,6 +40,10 @@ where the choice of scheme matters most.
 10. [From Echoes to MeanFieldHom](10_from_echoes.md) — translate your
     Echoes (C++/Python) scripts, and cross-check with Echoes live via
     PyCall.
+11. [Symbolic spheres: closed forms with SymPy and Symbolics.jl](11_symbolic_spheres.md)
+    — derive the Eshelby/Hill tensors and the dilute, Mori–Tanaka, and
+    self-consistent estimates for a sphere in closed form, in the porous
+    and rigid limits, then substitute numbers at the very end.
 
 ## Prerequisites
 

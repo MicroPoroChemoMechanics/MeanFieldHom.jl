@@ -85,12 +85,14 @@ println("\n  S = P ⊡ C₀ = TensISO{3}(αS, βS) with:")
 println("    αS = ", simplify(αS))
 println("    βS = ", simplify(βS))
 
-# Rewrite in terms of the matrix Poisson ratio ν₀ via 3k₀ = 2μ₀(1+ν₀)/(1-2ν₀),
-# to recover the classical Eshelby (1957) sphere eigenvalues S_J and S_K on
-# the isotropic projectors 𝕁 (spherical) / 𝕂 (deviatoric).
+# Rewrite in terms of the matrix Poisson ratio ν₀ via k₀ = 2μ₀(1+ν₀)/(3(1-2ν₀)),
+# to recover the classical Eshelby (1957) sphere eigenvalues S_J and S_K.
+# Any isotropic 4th-order tensor decomposes as A = α·𝕁 + β·𝕂 (tens_J4/tens_K4
+# convention, see TensND docstrings) — so get_data(S) = (αS, βS) ARE directly
+# the two eigenvalues S_𝕁, S_𝕂, no extra rescaling needed.
 k0_of_ν0 = 2 * μ0 * (1 + ν0) / (3 * (1 - 2 * ν0))
-SJ = simplify(subs(αS / 3, k0 => k0_of_ν0))   # αS = 3·S_J  (𝕁-eigenvalue of S)
-SK = simplify(subs(βS / 2, k0 => k0_of_ν0))   # βS = 2·S_K  (𝕂-eigenvalue of S)
+SJ = simplify(subs(αS, k0 => k0_of_ν0))   # S_𝕁 = spherical (𝕁) eigenvalue of S
+SK = simplify(subs(βS, k0 => k0_of_ν0))   # S_𝕂 = deviatoric (𝕂) eigenvalue of S
 
 println("\n  In terms of the matrix Poisson ratio ν₀ (classical Eshelby form):")
 println("    S_𝕁 = ", SJ, "   (expected (1+ν₀)/(3(1-ν₀)))")
@@ -217,11 +219,21 @@ for s in sol_por
 end
 
 # Physically meaningful sanity check: the load-bearing (percolating) branch
-# should vanish exactly at the percolation threshold f = 1/2 for spheres.
+# should vanish exactly at the percolation threshold f = 1/2 for spheres,
+# for ANY matrix moduli (k₀,μ₀). SymPy's simplify does not, by itself,
+# collapse the nested sqrt(perfect square) left by `solve` at a substituted
+# f = 1/2 (a known limitation), so the check is done numerically instead —
+# itself a very "symbolic → substitute numbers" pedagogical moment.
 if !isempty(sol_por)
     ksc_por, μsc_por = sol_por[1]
-    at_half = simplify(subs(ksc_por, f => Sym(1) // 2))
-    println("\n  Percolation check — ksc(f=1/2) = ", at_half, "   (expected 0)")
+    println("\n  Percolation check — ksc(f=1/2), μsc(f=1/2) for a few matrix moduli:")
+    for (k0v, μ0v) in ((30.0, 15.0), (90.0, 30.0), (5.0, 50.0))
+        kval = N(subs(ksc_por, k0 => k0v, μ0 => μ0v, f => Sym(1) // 2))
+        μval = N(subs(μsc_por, k0 => k0v, μ0 => μ0v, f => Sym(1) // 2))
+        @printf("    k₀=%5.1f  μ₀=%5.1f  ->  ksc(1/2) = %.3e   μsc(1/2) = %.3e\n", k0v, μ0v, kval, μval)
+    end
+    println("  (both vanish identically at f=1/2, independent of k₀,μ₀ — the classic")
+    println("   sphere percolation threshold, see tutorials/03_porous_materials.md)")
 end
 
 # ── Rigid SC: kᵢ, μᵢ → ∞ ─────────────────────────────────────────────────
