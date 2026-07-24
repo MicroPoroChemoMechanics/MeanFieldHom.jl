@@ -5,8 +5,8 @@
 # the homogeneous, perfectly-bonded spheroid carrying the same
 # volume-averaged concentration tensors:
 # ```math
-# \uu k^{eq} = \langle\uu B\rangle_{\cal E} \cdot
-#              \langle\uu A\rangle_{\cal E}^{-1}
+# \mathbf k^{eq} = \langle\mathbf B\rangle_{\mathcal E} \cdot
+#                  \langle\mathbf A\rangle_{\mathcal E}^{-1}
 # \qquad\text{(eq:defkeqAB)}
 # ```
 # — a genuinely SIZE-dependent quantity (unlike a perfect-interface
