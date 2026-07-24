@@ -191,4 +191,5 @@ p_full = plot(
 
 figpath = joinpath(figdir, "30_average_nlayers.png")
 savefig(p_full, figpath)
+display(p_full)
 @printf "\nSaved : %s\n" figpath

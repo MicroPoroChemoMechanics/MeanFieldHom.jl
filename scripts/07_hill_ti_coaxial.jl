@@ -27,6 +27,7 @@ using TensND
 using LinearAlgebra
 using Printf
 using Plots
+import DECUHR, Integrals
 
 println("=== Hill polarisation tensor — TI matrix coaxial with spheroid ===")
 println()
@@ -182,10 +183,11 @@ plot!(p, ξs, S1133; label = raw"$S_{1133}$", color = :green, marker = :x, marke
 plot!(p, ξs, S3311; label = raw"$S_{3311}$", color = :brown, marker = :rect, markevery = 10, lw = 1.5)
 plot!(p, ξs, S1313; label = raw"$S_{1313}$", color = :cyan, marker = :hexagon, markevery = 10, lw = 1.5)
 
-# figdir = joinpath(@__DIR__, "figures")
-# isdir(figdir) || mkdir(figdir)
-# figpath = joinpath(figdir, "hill_ti_coaxial.png")
-# savefig(p, figpath)
-# println("  Figure saved to: ", figpath)
-# println()
-# println("Done.")
+figdir = joinpath(@__DIR__, "figures")
+isdir(figdir) || mkdir(figdir)
+figpath = joinpath(figdir, "07_hill_ti_coaxial.png")
+savefig(p, figpath)
+display(p)
+println("  Figure saved to: ", figpath)
+println()
+println("Done.")

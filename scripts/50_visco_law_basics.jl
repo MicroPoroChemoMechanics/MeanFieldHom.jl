@@ -109,4 +109,5 @@ const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "50_visco_law_basics.png")
 savefig(p1, figpath)
+display(p1)
 @printf "\nSaved : %s\n" figpath

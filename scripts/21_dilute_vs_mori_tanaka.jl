@@ -39,6 +39,7 @@ figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "dilute_vs_mt.png")
 savefig(p, figpath)
+display(p)
 println("Saved : ", figpath)
 
 @printf("\n  f       Dilute      MT          Δ(MT-Dil)\n")

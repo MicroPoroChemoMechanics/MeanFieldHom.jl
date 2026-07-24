@@ -134,9 +134,9 @@ C_eff = homogenize_alv(rve, MoriTanaka(), :C; times = times)
 ```
 
 A worked end-to-end example (multi-phase Maxwell + solidifying gel +
-pore) lives in `scripts/37_fluage_echoes_solid.jl`. Closed-form
+pore) lives in `scripts/53_ageing_creep_solid.jl`. Closed-form
 validation against the Rabotnov / Mittag-Leffler benchmark of
-[@barthelemyIJES2019, §5] is in `scripts/36_rabotnov_mittag_leffler.jl`.
+[@barthelemyIJES2019, §5] is in `scripts/52_rabotnov_mittag_leffler.jl`.
 
 ## Symmetry-class fast paths — runnable comparison
 
@@ -153,7 +153,7 @@ K_inv = volterra_inverse(K_iso)        # stays ALVKernelISO
 Matrix(K_inv) ≈ volterra_inverse(C_eff; block_size = 6)   # cross-check
 ```
 
-`scripts/42_alv_kernel_types.jl` walks through `ALVKernelISO` /
+`scripts/58_alv_kernel_types.jl` walks through `ALVKernelISO` /
 `ALVKernelTI` / `ALVKernelOrtho` with the algebra ladder iso ⊂ TI ⊂
 ortho.
 

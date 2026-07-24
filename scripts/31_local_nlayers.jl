@@ -193,4 +193,5 @@ const figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "31_local_nlayers.png")
 savefig(p_full, figpath)
+display(p_full)
 @printf "Saved : %s\n" figpath

@@ -255,6 +255,7 @@ fig = plot(
 mkpath(joinpath(@__DIR__, "figures"))
 out = joinpath(@__DIR__, "figures", "52_rabotnov_mittag_leffler.png")
 savefig(fig, out)
+display(fig)
 println("Saved : $out")
 
 println()

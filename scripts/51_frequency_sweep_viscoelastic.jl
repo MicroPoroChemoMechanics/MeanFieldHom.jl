@@ -60,6 +60,7 @@ figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "frequency_sweep_viscoelastic.png")
 savefig(p1, figpath)
+display(p1)
 println("Saved : ", figpath)
 
 @printf("\nω        Re(MT)    Im(MT)    Re(SC)    Im(SC)\n")

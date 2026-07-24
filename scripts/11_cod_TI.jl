@@ -52,4 +52,10 @@ plt = plot(
 )
 plot!(plt, ηrange, Bmm, label = "B_mm", lw = 2)
 plot!(plt, ηrange, Bnn, label = "B_nn", lw = 2)
+
+figdir = joinpath(@__DIR__, "figures")
+isdir(figdir) || mkdir(figdir)
+figpath = joinpath(figdir, "11_cod_TI.png")
+savefig(plt, figpath)
 display(plt)
+println("Saved : ", figpath)

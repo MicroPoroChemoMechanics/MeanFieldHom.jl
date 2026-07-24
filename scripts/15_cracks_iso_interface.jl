@@ -238,6 +238,7 @@ fig = plot(p_elastic, p_perm; layout = (1, 2), size = (1500, 700))
 mkpath(joinpath(@__DIR__, "figures"))
 out = joinpath(@__DIR__, "figures", "15_cracks_iso_interface.png")
 savefig(fig, out)
+display(fig)
 println("Saved : $out")
 
 # ─── Numeric report ────────────────────────────────────────────────────────

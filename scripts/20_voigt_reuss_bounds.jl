@@ -61,6 +61,7 @@ figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "voigt_reuss_bounds.png")
 savefig(p, figpath)
+display(p)
 println("Saved : ", figpath)
 
 @printf("\nf = 0.30 :\n")

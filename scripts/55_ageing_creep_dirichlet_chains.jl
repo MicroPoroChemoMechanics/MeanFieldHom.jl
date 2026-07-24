@@ -1,18 +1,17 @@
 # =============================================================================
-#  55_fluage_echoes_maxwell_papier_granger.jl
+#  55_ageing_creep_dirichlet_chains.jl
 #
-#  Julia reproduction of
-#  `tests/python/creep/fluage_echoes_maxwell_papier_granger.py`
-#  (which itself uses the `v_granger_fp.py` Granger / Code_Aster creep
-#  parametrization).
+#  Ageing linear-viscoelastic (ALV) creep with a 2-term Dirichlet
+#  (Kelvin-chain) relaxation law, of the type used for concrete in EDF's
+#  Code_Aster (the Granger ageing-creep model, @granger1995), applied here
+#  to the matrix-inclusion worked example of @barthelemyIJES2019.
 #
 #  Setup :
-#    * iso ALV matrix : Granger creep law with `(E, ν) = (1, 0.25)`, 2
-#      Dirichlet chains `(j₁,τ₁) = (2, 2)` and `(j₂,τ₂) = (3, 10)`,
-#      ageing prefactor `exp(-(tp/30)²)` on the transient part.
-#    * iso inhomogeneity : Granger with `(E, ν) = (10, 0.15)`,
-#      `(j₁,τ₁) = (0.5, 0.1)`, `(j₂,τ₂) = (0.7, 7)`, ageing
-#      `exp(-(tp/15)²)`.
+#    * iso ALV matrix : `(E, ν) = (1, 0.25)`, 2 Dirichlet chains
+#      `(j₁,τ₁) = (2, 2)` and `(j₂,τ₂) = (3, 10)`, ageing prefactor
+#      `exp(-(tp/30)²)` on the transient part.
+#    * iso inhomogeneity : `(E, ν) = (10, 0.15)`, `(j₁,τ₁) = (0.5, 0.1)`,
+#      `(j₂,τ₂) = (0.7, 7)`, ageing `exp(-(tp/15)²)`.
 #    * spheroidal inclusions, ω ∈ {1, 0.1}, fractions φ ∈ {0.05, 0.1, 0.2}.
 #    * schemes : Maxwell, Dilute, Mori-Tanaka.
 #
@@ -20,8 +19,8 @@
 #    (1) `ω = 0.1`, several fractions.
 #    (2) `φ = 0.2`, several aspect ratios.
 #
-#  Usage  : julia --project scripts/55_fluage_echoes_maxwell_papier_granger.jl
-#  Output : scripts/figures/55_fluage_echoes_maxwell_papier_granger_{frac,omega}.png
+#  Usage  : julia --project scripts/55_ageing_creep_dirichlet_chains.jl
+#  Output : scripts/figures/55_ageing_creep_dirichlet_chains_{frac,omega}.png
 # =============================================================================
 
 import Pkg
@@ -165,9 +164,10 @@ mkpath(joinpath(@__DIR__, "figures"))
 savefig(
     plt1, joinpath(
         @__DIR__, "figures",
-        "55_fluage_echoes_maxwell_papier_granger_frac.png"
+        "55_ageing_creep_dirichlet_chains_frac.png"
     )
 )
+display(plt1)
 
 # Figure 2: ω effect at φ = 0.2
 const OMEGAS_2 = (0.1, 1.0)
@@ -211,8 +211,9 @@ end
 savefig(
     plt2, joinpath(
         @__DIR__, "figures",
-        "55_fluage_echoes_maxwell_papier_granger_omega.png"
+        "55_ageing_creep_dirichlet_chains_omega.png"
     )
 )
+display(plt2)
 
-println("Saved : 55_fluage_echoes_maxwell_papier_granger_{frac,omega}.png")
+println("Saved : 55_ageing_creep_dirichlet_chains_{frac,omega}.png")

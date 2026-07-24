@@ -209,4 +209,5 @@ end
 mkpath(joinpath(@__DIR__, "figures"))
 out = joinpath(@__DIR__, "figures", "60_alv_cracks_interface.png")
 savefig(plt, out)
+display(plt)
 println("Saved : $out")

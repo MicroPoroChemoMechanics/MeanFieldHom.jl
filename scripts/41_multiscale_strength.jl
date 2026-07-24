@@ -68,6 +68,7 @@ figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "41_multiscale_strength.png")
 savefig(p_full, figpath)
+display(p_full)
 @printf "\nSaved : %s\n" figpath
 
 println("\n[Tabular] wc = 0.50")

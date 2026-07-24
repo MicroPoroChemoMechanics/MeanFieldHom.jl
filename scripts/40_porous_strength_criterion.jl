@@ -123,4 +123,5 @@ figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "40_porous_strength_criterion.png")
 savefig(p, figpath)
+display(p)
 @printf "\nSaved : %s\n" figpath

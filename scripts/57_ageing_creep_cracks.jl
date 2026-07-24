@@ -1,5 +1,5 @@
 # =============================================================================
-#  57_fluage_echoes_cracks.jl
+#  57_ageing_creep_cracks.jl
 #
 #  Julia reproduction of `tests/python/creep/fluage_echoes_cracks.py` —
 #  pure penny crack (no interface stiffness) in an iso ALV matrix,
@@ -23,8 +23,8 @@
 #  homogenised relaxation matrix R̃, as the strain field of a unit
 #  longitudinal stress step (cf. the Python `linalg.inv(V).dot(S)`).
 #
-#  Usage  : julia --project scripts/57_fluage_echoes_cracks.jl
-#  Output : scripts/figures/57_fluage_echoes_cracks.png
+#  Usage  : julia --project scripts/57_ageing_creep_cracks.jl
+#  Output : scripts/figures/57_ageing_creep_cracks.png
 # =============================================================================
 
 import Pkg
@@ -134,8 +134,9 @@ for t0 in t0_v
 end
 
 mkpath(joinpath(@__DIR__, "figures"))
-out = joinpath(@__DIR__, "figures", "57_fluage_echoes_cracks.png")
+out = joinpath(@__DIR__, "figures", "57_ageing_creep_cracks.png")
 savefig(plt, out)
+display(plt)
 
 println("Saved : $out")
 println()

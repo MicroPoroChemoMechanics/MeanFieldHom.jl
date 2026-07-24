@@ -81,11 +81,11 @@ counterpart (native demonstration).
 | `50_visco_law_basics.jl` | `visco_law` | Maxwell/Kelvin kernels |
 | `51_frequency_sweep_viscoelastic.jl` | complex moduli | frequency sweep |
 | `52_rabotnov_mittag_leffler.jl` | `mittag_leffler/` | Rabotnov closed form |
-| `53_fluage_echoes_solid.jl` | `creep/` solid layers | ALV creep |
-| `54_fluage_echoes_ellipsoid2.jl` | `creep/` ellipsoid2 | ALV creep |
-| `55_fluage_echoes_maxwell_papier_granger.jl` | `creep/` Granger | ageing creep |
-| `56_fluage_echoes_maxwell_ordre2.jl` | `creep/` order-2 | order-2 ALV |
-| `57_fluage_echoes_cracks.jl` | `creep/` cracks | ALV crack creep |
+| `53_ageing_creep_solid.jl` | `creep/` solid layers | ALV creep |
+| `54_ageing_creep_ellipsoid2.jl` | `creep/` ellipsoid2 | ALV creep |
+| `55_ageing_creep_dirichlet_chains.jl` | `creep/` Granger | ageing creep (Granger–Bažant 1995 law) |
+| `56_ageing_creep_order2.jl` | `creep/` order-2 | order-2 ALV |
+| `57_ageing_creep_cracks.jl` | `creep/` cracks | ALV crack creep |
 | `58_alv_kernel_types.jl` | — | structured ALV kernel types |
 | `59_alv_sensitivities.jl` | — | AD through the ALV pipeline |
 

@@ -8,7 +8,7 @@ essentially a matter of replacing each phase property by a
 
 This manual walks through eight use cases, each runnable as is.
 A more elaborate version of every example exists under
-`scripts/33_visco_law_basics.jl` … `scripts/43_alv_sensitivities.jl`.
+`scripts/50_visco_law_basics.jl` … `scripts/59_alv_sensitivities.jl`.
 
 ## 1. Defining a constitutive law
 
@@ -241,7 +241,7 @@ the dilute limit `ε → 0`).  At `d = 0.30, traction-free` for example,
 MFH MT gives `ε_xx(t→∞) ≈ 0.481` while ECHOES MT gives `0.559`.
 PCW happens to coincide between the two implementations (at least
 numerically through the configurations exercised by
-`scripts/44_alv_cracks_interface.jl`).
+`scripts/60_alv_cracks_interface.jl`).
 
 The MFH MT and SC additive forms are kept for internal consistency
 with the (also-additive) MFH elastic MT.  Switching all four MFH
@@ -249,7 +249,7 @@ schemes (elastic, conduction, ALV, ALV-cracks) to the multiplicative
 ECHOES form simultaneously is left to a follow-up PR — it requires a
 coordinated refactor of `Schemes/contribution_helpers.jl`.
 
-ECHOES C++ cross-check : `scripts/44_alv_cracks_interface.jl` runs the
+ECHOES C++ cross-check : `scripts/60_alv_cracks_interface.jl` runs the
 same configuration through both implementations.  At low density the
 two MT and SC variants agree numerically with PCW (`rtol ≤ 1e-3`);
 at moderate density (`d ≥ 0.20`) the additive vs multiplicative
@@ -257,7 +257,7 @@ discrepancy becomes visible (a few % to ~14% depending on density).
 
 A static (non-ageing) elastic + conductivity crack benchmark with
 matrix-only interface stiffness is in
-`scripts/45_cracks_iso_interface.jl`.
+`scripts/15_cracks_iso_interface.jl`.
 
 | Scheme                         | Crack treatment                                     |
 |--------------------------------|-----------------------------------------------------|
@@ -267,7 +267,7 @@ matrix-only interface stiffness is in
 | `SC`, `ASC`                    | re-evaluated against the running effective estimate |
 
 A complete demo with **all seven** crack-aware ALV schemes lives in
-`scripts/41_fluage_echoes_cracks.jl`.
+`scripts/57_ageing_creep_cracks.jl`.
 
 ## 6. Order-2 ALV — conductivity / diffusion
 
@@ -291,7 +291,7 @@ K_eff = homogenize_alv(rve_κ, MoriTanaka(), :K; times = times)   # 150 × 150 (
 The dispatcher sees the 2-tensor sample and routes via the
 order-2 pipeline ([`homogenize_alv_order2`](@ref) under the hood).
 Result is a `(3n × 3n)` block matrix. See
-`scripts/40_fluage_echoes_maxwell_ordre2.jl`.
+`scripts/56_ageing_creep_order2.jl`.
 
 ## 7. Symmetry-class fast paths
 
@@ -334,7 +334,7 @@ Matrix(K_iso)                      # back to dense (6n × 6n) on demand
 These types are a **prototype**: they are fully usable for hand-rolled
 ALV pipelines but `homogenize_alv` does not yet accept them as inputs
 (use `Matrix(K)` to cross the boundary). See
-`scripts/42_alv_kernel_types.jl` for a runnable demo.
+`scripts/58_alv_kernel_types.jl` for a runnable demo.
 
 ## 8. Sensitivities (autodiff via ForwardDiff)
 
@@ -406,16 +406,16 @@ end
 ```
 
 The complete suite of sensitivity patterns lives in
-`scripts/43_alv_sensitivities.jl`. Each derivative is validated against
+`scripts/59_alv_sensitivities.jl`. Each derivative is validated against
 a central finite difference at `rtol ≤ 1e-7`.
 
 ## 9. Validation against ECHOES C++
 
-`scripts/37_fluage_echoes_solid.jl` reproduces the multi-phase Maxwell +
+`scripts/53_ageing_creep_solid.jl` reproduces the multi-phase Maxwell +
 solidifying Maxwell + pore benchmark from the ECHOES C++ manual.
-`scripts/41_fluage_echoes_cracks.jl` covers all seven crack-aware ALV
+`scripts/57_ageing_creep_cracks.jl` covers all seven crack-aware ALV
 schemes on a penny-crack RVE.
-`scripts/36_rabotnov_mittag_leffler.jl` validates the **Rabotnov /
+`scripts/52_rabotnov_mittag_leffler.jl` validates the **Rabotnov /
 Mittag-Leffler** closed-form benchmark of @barthelemyIJES2019 §5,
 overlaying the analytical curves and reaching `rtol ≤ 1.3e-3` at
 `n_times = 200` (trapezoidal-rule discretization accuracy).

@@ -82,6 +82,7 @@ figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "differential_trajectories.png")
 savefig(p, figpath)
+display(p)
 println("Saved : ", figpath)
 
 @printf("\nf_total      Prop          Stiff→Soft     Soft→Stiff\n")

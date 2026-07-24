@@ -12,7 +12,7 @@ Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 using MeanFieldHom
 using TensND
 using LinearAlgebra
-using Plots, LaTeXStrings
+using Plots
 
 # TI matrix parameters
 E_, H_, ν₁, ν₂, Γ_ = 1.0, 2.0, 0.4, 0.3, 3.0
@@ -42,8 +42,14 @@ for (i, θʸ) in enumerate(lθʸ)
     lθˣ[i] = atan(b * sin(θʸ), a * cos(θʸ))
 end
 
-plt = plot(lθˣ, lKᴵ, label = L"K_I", xlabel = L"θ_x", lw = 2)
-plot!(plt, lθˣ, lKᴵᴵ, label = L"K_{II}", lw = 2)
-plot!(plt, lθˣ, lKᴵᴵᴵ, label = L"K_{III}", lw = 2)
+plt = plot(lθˣ, lKᴵ, label = "Kᴵ", xlabel = "θₓ", lw = 2)
+plot!(plt, lθˣ, lKᴵᴵ, label = "Kᴵᴵ", lw = 2)
+plot!(plt, lθˣ, lKᴵᴵᴵ, label = "Kᴵᴵᴵ", lw = 2)
 title!(plt, "Elliptic crack in TI matrix, η = $(b / a)")
+
+figdir = joinpath(@__DIR__, "figures")
+isdir(figdir) || mkdir(figdir)
+figpath = joinpath(figdir, "14_sif_computation.png")
+savefig(plt, figpath)
 display(plt)
+println("Saved : ", figpath)

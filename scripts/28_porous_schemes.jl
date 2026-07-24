@@ -139,6 +139,7 @@ figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "28_porous_schemes.png")
 savefig(p_full, figpath)
+display(p_full)
 @printf "\nSaved : %s\n" figpath
 
 # ── Non-spherical case : oblate spheroids with iso symmetrize on every phase ─
@@ -179,6 +180,7 @@ p_full2 = plot(
 )
 figpath2 = joinpath(figdir, "28_porous_schemes_oblate.png")
 savefig(p_full2, figpath2)
+display(p_full2)
 @printf "Saved : %s\n" figpath2
 
 # ── Tabular output at selected φ for visual validation ────────────────────

@@ -138,6 +138,7 @@ fig = plot(p_k, p_μ; layout = (1, 2), size = (1400, 600))
 mkpath(joinpath(@__DIR__, "figures"))
 out = joinpath(@__DIR__, "figures", "24_differential_loading_paths.png")
 savefig(fig, out)
+display(fig)
 println("\nSaved : $out")
 
 # ─── Numeric report ────────────────────────────────────────────────────────

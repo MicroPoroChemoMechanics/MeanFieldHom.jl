@@ -115,5 +115,6 @@ figdir = joinpath(@__DIR__, "figures")
 isdir(figdir) || mkdir(figdir)
 figpath = joinpath(figdir, "42_cementpaste_iso.png")
 savefig(p, figpath)
+display(p)
 @printf "\nSaved : %s\n" figpath
 println("Done.")
