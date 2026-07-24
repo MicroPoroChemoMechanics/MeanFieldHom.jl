@@ -142,8 +142,10 @@ function _gamma_table(Nmax::Int, ::Type{Tb}) where {Tb}
             for l in 0:(i + j + 1)
                 push!(
                     co,
-                    ((2i + 1) * _γget(γ, i, j, l - 1, Tb) -
-                     i * _γget(γ, i - 1, j, l, Tb)) / (i + 1)
+                    (
+                        (2i + 1) * _γget(γ, i, j, l - 1, Tb) -
+                            i * _γget(γ, i - 1, j, l, Tb)
+                    ) / (i + 1)
                 )
             end
             γ[i + 2, j + 1] = co
@@ -166,9 +168,11 @@ function _eta_table(Nmax::Int, γ, ::Type{Tb}) where {Tb}
             for l in 0:(i + j)
                 push!(
                     eo,
-                    ((2i + 1) * _γget(γ, i, j, l, Tb) +
-                     (2i + 1) * _ηget(η, i, j, l - 1, Tb) -
-                     i * _ηget(η, i - 1, j, l, Tb)) / (i + 1)
+                    (
+                        (2i + 1) * _γget(γ, i, j, l, Tb) +
+                            (2i + 1) * _ηget(η, i, j, l - 1, Tb) -
+                            i * _ηget(η, i - 1, j, l, Tb)
+                    ) / (i + 1)
                 )
             end
             η[i + 2, j + 1] = eo
@@ -177,8 +181,10 @@ function _eta_table(Nmax::Int, γ, ::Type{Tb}) where {Tb}
                 for l in 0:(i + j)
                     push!(
                         eo2,
-                        ((2i + 1) * _ηget(η, j, i, l - 1, Tb) -
-                         i * _ηget(η, j, i - 1, l, Tb)) / (i + 1)
+                        (
+                            (2i + 1) * _ηget(η, j, i, l - 1, Tb) -
+                                i * _ηget(η, j, i - 1, l, Tb)
+                        ) / (i + 1)
                     )
                 end
                 η[j + 1, i + 2] = eo2
@@ -201,9 +207,11 @@ function _delta_table(Nmax::Int, η, ::Type{Tb}) where {Tb}
             for l in 0:(i + j - 1)
                 push!(
                     d,
-                    ((2i + 1) * _ηget(η, j, i, l, Tb) +
-                     (2i + 1) * _δget(δ, i, j, l - 1, Tb) -
-                     i * _δget(δ, i - 1, j, l, Tb)) / (i + 1)
+                    (
+                        (2i + 1) * _ηget(η, j, i, l, Tb) +
+                            (2i + 1) * _δget(δ, i, j, l - 1, Tb) -
+                            i * _δget(δ, i - 1, j, l, Tb)
+                    ) / (i + 1)
                 )
             end
             δ[i + 2, j + 1] = d
@@ -283,9 +291,9 @@ function _coupling_matrices_series_impl(q::Tq, Nseries::Int, Nmax::Int, ::Type{T
         for k in 1:kmax_ij
             Kv += (
                 _δget(δ, i, j, 2k - 2, Tb) -
-                j * (j + 1) * _ηget(η, i, j, 2k - 1, Tb) -
-                i * (i + 1) * _ηget(η, j, i, 2k - 1, Tb) +
-                i * (i + 1) * j * (j + 1) * _γget(γ, i, j, 2k, Tb)
+                    j * (j + 1) * _ηget(η, i, j, 2k - 1, Tb) -
+                    i * (i + 1) * _ηget(η, j, i, 2k - 1, Tb) +
+                    i * (i + 1) * j * (j + 1) * _γget(γ, i, j, 2k, Tb)
             ) * W[k + 1]
         end
         # Lᵢⱼ = Σ δ_{2k} (q² Wₖ - Wₖ₊₁)

@@ -44,7 +44,7 @@ disk_radii, moduli; interfaces, Nseries, axis)` for the common case, or
 fraction (as in `spheroid_nlayers.py`'s `layer_fractions` kwarg).
 """
 struct LayeredSpheroid{T <: Real, N, Q <: Number, Cs, Is} <:
-       MFH_Core.AbstractLayeredInclusion{3, T}
+    MFH_Core.AbstractLayeredInclusion{3, T}
     prolate::Bool
     focal::T                # real focal distance |c| > 0
     c::Q                    # focal distance: T (prolate) or -i·focal (oblate)
