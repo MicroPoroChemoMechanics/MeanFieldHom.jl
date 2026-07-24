@@ -7,6 +7,12 @@ using Random
 # and nested-QuadGK backends. (DECUHR is a weak dependency of MeanFieldHom.)
 import DECUHR, Integrals
 
+# Load NonlinearSolve so the `MeanFieldHomNonlinearSolveExt` extension
+# activates: `test_self_consistent_nls.jl` exercises SC / ASC through
+# SciML algorithms (NewtonRaphson, TrustRegion) and `AutoNonlinear`.
+# (NonlinearSolve is a weak dependency of MeanFieldHom.)
+import NonlinearSolve
+
 # Several test files draw random operators (`test_ti_alv.jl`, `test_ortho_alv.jl`,
 # `test_volterra_inverse.jl`, …).  Seed once here so a CI failure is always
 # reproducible locally instead of depending on the draw.
@@ -59,6 +65,7 @@ Random.seed!(20260723)
         include("Schemes/test_one_shot.jl")
         include("Schemes/test_maxwell_pcw.jl")
         include("Schemes/test_self_consistent.jl")
+        include("Schemes/test_self_consistent_nls.jl")
         include("Schemes/test_differential.jl")
         include("Schemes/test_complex_moduli.jl")
         include("Schemes/test_dual_compat.jl")

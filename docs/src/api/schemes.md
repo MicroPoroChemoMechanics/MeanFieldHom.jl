@@ -50,6 +50,7 @@ CustomPath
 Path
 AndersonDefault
 NewtonDefault
+AutoNonlinear
 ```
 
 ## Entry point

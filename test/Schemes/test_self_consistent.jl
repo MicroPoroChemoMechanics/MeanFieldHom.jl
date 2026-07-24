@@ -9,8 +9,12 @@
 #   5. ASC handles inclusion-soft RVE through the compliance-form path.
 #   6. Conductivity (`property = :K`) — same recipes via gradient_gradient_loc.
 #   7. ForwardDiff sensitivity through the volume fraction.
-#   8. NewtonDefault errors with a clear message when NonlinearSolve isn't loaded.
+#   8. NewtonDefault (built-in, dependency-free) agrees with AndersonDefault.
 #   9. Symbol shortcuts.
+#
+#  NonlinearSolve.jl-backed algorithms (NewtonRaphson, TrustRegion, …)
+#  and AutoNonlinear are covered separately in
+#  `test_self_consistent_nls.jl`.
 # =============================================================================
 
 using Test
@@ -114,7 +118,7 @@ end
     @test df > 0
 end
 
-@testset "SelfConsistent — NewtonDefault works out of the box (ForwardDiff)" begin
+@testset "SelfConsistent — NewtonDefault works out of the box" begin
     # Since v0.7.0 ForwardDiff is a strong dependency and the built-in
     # `NewtonDefault` SC solver ships with the package — quadratic
     # convergence on iso / TI / ortho canonical components.
@@ -127,6 +131,51 @@ end
     C_anderson = homogenize(rve, SelfConsistent(; algorithm = AndersonDefault()))
     C_newton = homogenize(rve, SelfConsistent(; algorithm = NewtonDefault()))
     @test isapprox(C_anderson, C_newton; atol = 1.0e-6, rtol = 1.0e-6)
+end
+
+@testset "SelfConsistent — NewtonDefault ForwardDiff sensitivity (non-matrix phase)" begin
+    # Regression test: `x0 = matrix_property(rve, p)` can stay `Float64`
+    # while `step(x0)` promotes to `Dual` internally, whenever the
+    # differentiated parameter lives on a phase OTHER than the one `x0`
+    # is built from (an inclusion modulus, or any volume fraction). This
+    # used to crash `_solve_sc(::NewtonDefault, …)` (`Tref` was derived
+    # from `eltype(p0)` alone); it must now match a central finite
+    # difference for every such parameter.
+    rve = RVE(:M)
+    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
+    add_phase!(
+        rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
+        fraction = 0.3
+    )
+    idxC = C -> get_array(C)[1, 1, 1, 1]
+
+    d_incl_modulus = derivative(
+        rve, SelfConsistent(; algorithm = NewtonDefault()),
+        property(:I, :C, :bulk); indexer = idxC
+    )
+    d_fraction = derivative(
+        rve, SelfConsistent(; algorithm = NewtonDefault()),
+        amount(:I); indexer = idxC
+    )
+
+    function f_modulus(K_I)
+        r = RVE(:M)
+        add_matrix!(r, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
+        add_phase!(r, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(K_I, 20.0)); fraction = 0.3)
+        return idxC(homogenize(r, SelfConsistent(; algorithm = NewtonDefault())))
+    end
+    function f_fraction(f)
+        r = RVE(:M)
+        add_matrix!(r, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
+        add_phase!(r, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0)); fraction = f)
+        return idxC(homogenize(r, SelfConsistent(; algorithm = NewtonDefault())))
+    end
+    h = 1.0e-5
+    d_fd_modulus = (f_modulus(60.0 + h) - f_modulus(60.0 - h)) / (2h)
+    d_fd_fraction = (f_fraction(0.3 + h) - f_fraction(0.3 - h)) / (2h)
+
+    @test isapprox(d_incl_modulus, d_fd_modulus; rtol = 1.0e-5)
+    @test isapprox(d_fraction, d_fd_fraction; rtol = 1.0e-5)
 end
 
 @testset "SelfConsistent / ASC — Symbol shortcuts" begin

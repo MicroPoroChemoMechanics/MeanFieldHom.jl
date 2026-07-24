@@ -778,10 +778,19 @@ from C++ ECHOES, with a few Julia-idiomatic improvements.
 - **Differential trajectories**: `Proportional` (default), `Sequential`
   (phase-by-phase), `CustomPath` (per-phase explicit trajectory) — all
   validated for monotonicity and boundary conditions.
-- **SciML weak extension** `MeanFieldHomNonlinearSolveExt` (activated by
-  `using NonlinearSolve`) makes every algorithm of `NonlinearSolve.jl`
-  available to `SelfConsistent` / `AsymmetricSelfConsistent` via the
-  `algorithm` keyword.
+- **SciML weak extension** `MeanFieldHomNonlinearSolveExt` (active once
+  `NonlinearSolve.jl` is loaded into the session) makes every algorithm
+  of `NonlinearSolve.jl` available to `SelfConsistent` /
+  `AsymmetricSelfConsistent` via the `algorithm` keyword, through a
+  `ForwardDiff`-safe implicit-function-theorem lift (no nested `Dual`s,
+  regardless of the chosen algorithm). The auto-resolving
+  `AutoNonlinear` marker selects a globalized SciML algorithm
+  (`TrustRegion`) when the extension is active and falls back to the
+  built-in `NewtonDefault` otherwise — it is not the default of
+  `SelfConsistent` / `AsymmetricSelfConsistent` (which remains
+  `AndersonDefault`, more robust through the porous-percolation
+  bifurcation). See the
+  [nonlinear solvers tutorial](docs/src/tutorials/12_nonlinear_solvers.md).
 - **Conductivity (`property = :K`)** is supported by every scheme
   through 2nd-order tensor algebra (gradient-gradient localisation,
   resistivity contributions for cracks).

@@ -146,7 +146,7 @@ export validate_rve
 export HomogenizationScheme
 export Voigt, Reuss, Dilute, DiluteDual, MoriTanaka, Maxwell, PonteCastanedaWillis
 export SelfConsistent, AsymmetricSelfConsistent
-export AndersonDefault, NewtonDefault
+export AndersonDefault, NewtonDefault, AutoNonlinear
 export DifferentialTrajectory, Proportional, Sequential, CustomPath, Path, DifferentialScheme
 export homogenize
 

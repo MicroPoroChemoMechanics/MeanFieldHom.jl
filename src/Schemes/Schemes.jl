@@ -69,7 +69,7 @@ export polar_orientation_bins
 export HomogenizationScheme
 export Voigt, Reuss, Dilute, DiluteDual, MoriTanaka, Maxwell, PonteCastanedaWillis
 export SelfConsistent, AsymmetricSelfConsistent
-export AndersonDefault, NewtonDefault
+export AndersonDefault, NewtonDefault, AutoNonlinear
 export DifferentialTrajectory, Proportional, Sequential, CustomPath, Path, DifferentialScheme
 
 # Entry point

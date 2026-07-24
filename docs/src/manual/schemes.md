@@ -68,17 +68,46 @@ breaking the public API — see
 ## Iterative solvers
 
 ```julia
-homogenize(rve, SelfConsistent())                            # built-in damped Picard
+homogenize(rve, SelfConsistent())                            # built-in damped Picard (default)
+homogenize(rve, SelfConsistent(; algorithm = NewtonDefault()))  # built-in Newton-Raphson (dependency-free)
 
-# With NonlinearSolve.jl loaded:
+# With NonlinearSolve.jl loaded, any SciML algorithm can be selected:
 using NonlinearSolve
 homogenize(rve, SelfConsistent(; algorithm = NewtonRaphson(),
                                 abstol = 1e-12, maxiters = 200))
+homogenize(rve, SelfConsistent(; algorithm = TrustRegion()))
+
+# Auto-resolving: uses NonlinearSolve.TrustRegion() when the extension
+# is active, falls back to the built-in NewtonDefault otherwise:
+homogenize(rve, SelfConsistent(; algorithm = AutoNonlinear()))
 ```
 
-`NewtonDefault()` reuses the SciML default Newton-Raphson once
-`NonlinearSolve.jl` is loaded; without that load, it raises an explicit
-error.
+Three solver families are available for [`SelfConsistent`](@ref) /
+[`AsymmetricSelfConsistent`](@ref):
+
+- [`AndersonDefault`](@ref) (default) — damped Picard, with a
+  positive-definite guard and `select_best` to track the physical branch
+  through the porous-percolation bifurcation. Recommended for porosity
+  sweeps and other high-contrast problems near a bifurcation.
+- [`NewtonDefault`](@ref) — built-in, dependency-free Newton-Raphson
+  with a `ForwardDiff` Jacobian on the canonical symmetry components.
+  Ships with the package; no `NonlinearSolve.jl` needed.
+- Any `NonlinearSolve.jl` algorithm (`NewtonRaphson()`, `TrustRegion()`,
+  `LevenbergMarquardt()`, …), or [`AutoNonlinear`](@ref) to
+  auto-resolve to a SciML algorithm when available and the built-in
+  Newton otherwise — handled by the weak extension
+  `MeanFieldHomNonlinearSolveExt` (activated once `NonlinearSolve.jl` is
+  loaded into the session, whether explicitly or transitively). All
+  three families are fully `ForwardDiff`-compatible: differentiating
+  `homogenize` through a `NonlinearSolve` algorithm uses an
+  implicit-function-theorem lift internally so no nested `Dual`s ever
+  form — see [`derivative`](@ref) and the
+  [Nonlinear solvers tutorial](../tutorials/12_nonlinear_solvers.md).
+
+`AutoNonlinear` is **not** the default: a root-finder is not guaranteed
+to track the physical branch through the SC bifurcation the way the
+Picard positive-definite guard does, so `AndersonDefault` remains the
+safer default for arbitrary porosity/contrast sweeps.
 
 ## Differential trajectories
 

@@ -21,6 +21,16 @@
 - User-defined inclusions / algorithms via the open `_kernel` table.
 - ForwardDiff sensitivities across all elastic and ALV schemes (fractions,
   moduli, and inclusion geometry).
+- NonlinearSolve.jl backend for the self-consistent fixed point
+  (`MeanFieldHomNonlinearSolveExt`): any SciML algorithm
+  (`NewtonRaphson`, `TrustRegion`, …) can solve `SelfConsistent` /
+  `AsymmetricSelfConsistent`, through an implicit-function-theorem lift
+  that keeps `derivative`/`gradient`/`jacobian` exact and free of nested
+  `ForwardDiff.Dual`s regardless of algorithm. The auto-resolving
+  `AutoNonlinear` marker uses a SciML algorithm when available and
+  falls back to the built-in `NewtonDefault` otherwise; `AndersonDefault`
+  (Picard) remains the scheme default for its robustness through the
+  porous-percolation bifurcation.
 
 ## Open
 
@@ -30,7 +40,7 @@
 - Multi-layer extensions: coated cylinders, anisotropic per-layer moduli,
   excentered spheres.
 - `PairwiseDistribution` (Willis 1982) envelope for the PCW scheme.
-- NonlinearSolve.jl backend for the self-consistent fixed point (weak
-  extension is currently a documented no-op placeholder).
+- Native Anderson acceleration with memory > 1, replacing the current
+  `AndersonDefault` (currently Picard with relaxation, memory = 1).
 - Optional structured `TensTI{4,T,8}` fast path for the ALV TI schemes.
 - Viscoelastic constitutive laws in the Laplace–Carson domain.

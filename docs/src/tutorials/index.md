@@ -44,6 +44,11 @@ where the choice of scheme matters most.
     — derive the Eshelby/Hill tensors and the dilute, Mori–Tanaka, and
     self-consistent estimates for a sphere in closed form, in the porous
     and rigid limits, then substitute numbers at the very end.
+12. [Nonlinear solvers for the self-consistent fixed point](12_nonlinear_solvers.md)
+    — solve `SelfConsistent`/`AsymmetricSelfConsistent` with
+    `NonlinearSolve.jl` instead of the built-in Picard iteration,
+    benchmark the two, and check that `ForwardDiff` sensitivities agree
+    exactly regardless of which solver computed the fixed point.
 
 ## Prerequisites
 

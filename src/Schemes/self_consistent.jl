@@ -7,12 +7,25 @@
 #
 #   * `AndersonDefault`            — built-in damped Picard fixed point.
 #                                    Pure Julia, Dual-safe. Default.
-#   * `NewtonDefault`              — placeholder for the SciML weak
-#                                    extension (`MeanFieldHomNonlinearSolveExt`).
-#                                    Triggers an explicit error if invoked
-#                                    without `using NonlinearSolve`.
+#   * `NewtonDefault`              — built-in Newton-Raphson with a
+#                                    ForwardDiff Jacobian on the canonical
+#                                    symmetry components. Dependency-free;
+#                                    ships with the package (no
+#                                    NonlinearSolve.jl needed).
+#   * `AutoNonlinear`              — auto-resolving marker: dispatches to
+#                                    a globalized `NonlinearSolve.jl`
+#                                    algorithm (`TrustRegion`) when the
+#                                    weak extension
+#                                    `MeanFieldHomNonlinearSolveExt` is
+#                                    loaded, else falls back to
+#                                    `NewtonDefault`. Not the default of
+#                                    `SelfConsistent` — opt in explicitly.
 #   * any algorithm from
-#     `NonlinearSolve.jl`          — handled by the weak extension.
+#     `NonlinearSolve.jl`          — handled by the weak extension
+#                                    (`MeanFieldHomNonlinearSolveExt`),
+#                                    ForwardDiff-safe via an
+#                                    implicit-function-theorem lift (see
+#                                    the extension source for details).
 #
 #  A future native Anderson with memory > 1 will replace the current
 #  `AndersonDefault` (currently Picard with relaxation, equivalent to
@@ -200,12 +213,20 @@ Generic solver dispatcher for SC fixed points. Built-in:
   `select_best = true` to return the best iterate observed during the
   loop, or load `NonlinearSolve.jl` and switch to Newton/Anderson via
   the `algorithm` keyword.
-- [`NewtonDefault`](@ref) — SciML Newton-Raphson, available only when
-  the weak extension `MeanFieldHomNonlinearSolveExt` is loaded
-  (`using NonlinearSolve`).
+- [`NewtonDefault`](@ref) — built-in Newton-Raphson with a ForwardDiff
+  Jacobian on the canonical symmetry components and an Armijo line
+  search. Dependency-free; ships with the package.
+- [`AutoNonlinear`](@ref) — auto-resolving marker: uses a globalized
+  `NonlinearSolve.jl` algorithm (`TrustRegion`) when the weak extension
+  `MeanFieldHomNonlinearSolveExt` is loaded (`using NonlinearSolve`),
+  else falls back to `NewtonDefault`.
 
-Other algorithms from `NonlinearSolve.jl` are supported through the
-same weak extension.
+Any algorithm from `NonlinearSolve.jl` (`NewtonRaphson()`,
+`TrustRegion()`, `LevenbergMarquardt()`, …) can also be passed directly
+as `algorithm`; it is handled by the same weak extension, through a
+ForwardDiff-safe implicit-function-theorem lift so that
+`derivative`/`gradient`/`jacobian` (see `sensitivities.jl`) work
+transparently regardless of which solver is selected.
 
 Convergence is declared when `‖x_new − x_old‖ ≤ abstol + reltol · ‖x_old‖`
 (absolute *and* relative tolerance, additive convention; pass
@@ -299,7 +320,6 @@ function _solve_sc(
     )
     p0 = _tens_to_param_vec(x0)
     L = length(p0)
-    Tref = float(eltype(p0))
     rebuild = p -> _tens_from_param_vec(x0, p)
     ε_pos = _sc_pd_eps(x0)
     residual_vec = function (p)
@@ -307,6 +327,15 @@ function _solve_sc(
         x_out = step(x_in)
         return _tens_to_param_vec(x_out) .- _tens_to_param_vec(x_in)
     end
+    # `eltype(p0)` alone is not always enough to know whether `Dual`s are
+    # in play: when the differentiated parameter lives on a phase other
+    # than the one `x0` is built from (e.g. differentiating w.r.t. an
+    # *inclusion* modulus or a volume fraction while `x0 = matrix
+    # property`), `step` promotes to `Dual` internally even though `p0`
+    # itself is plain `Float64`. Promote `Tref` against the residual's
+    # own eltype too — evaluated once, no cost beyond the iteration the
+    # loop would run anyway.
+    Tref = float(promote_type(eltype(p0), eltype(residual_vec(p0))))
     p = collect(Tref, p0)
     p_best = copy(p); resid_best = Inf
     for iter in 1:maxiters
@@ -353,6 +382,31 @@ function _solve_sc(
     end
     @debug "SC-Newton: maxiters reached without convergence" maxiters
     return rebuild(select_best ? p_best : p)
+end
+
+# ── Auto-resolving nonlinear solver ─────────────────────────────────────────
+
+"""
+    _solve_sc(::AutoNonlinear, step, x0::AbstractTens; kw...) -> AbstractTens
+
+Resolver for [`AutoNonlinear`](@ref): checks at runtime whether the weak
+extension `MeanFieldHomNonlinearSolveExt` is loaded
+(`Base.get_extension`) and, if so, delegates to
+`ext.default_solve_sc(step, x0; kw...)` — a globalized SciML algorithm
+(`NonlinearSolve.TrustRegion()`) run through the same
+ForwardDiff-safe (implicit-function-theorem) path as any other
+`NonlinearSolve.jl` algorithm. Falls back to the built-in
+[`NewtonDefault`](@ref) solver when the extension is not loaded, so
+`SelfConsistent(algorithm = AutoNonlinear())` always works — with or
+without `using NonlinearSolve`.
+"""
+function _solve_sc(::AutoNonlinear, step, x0::TensND.AbstractTens; kw...)
+    ext = Base.get_extension(parentmodule(@__MODULE__), :MeanFieldHomNonlinearSolveExt)
+    if ext === nothing
+        return _solve_sc(NewtonDefault(), step, x0; kw...)
+    else
+        return ext.default_solve_sc(step, x0; kw...)
+    end
 end
 
 # ── Positive-definite guard for the SC running estimate ───────────────────

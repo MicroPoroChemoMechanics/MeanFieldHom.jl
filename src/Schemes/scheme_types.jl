@@ -104,6 +104,41 @@ Jacobian (alternative to [`AndersonDefault`](@ref)).
 struct NewtonDefault end
 
 """
+    AutoNonlinear()
+
+Marker selecting an **auto-resolving** nonlinear solver: at each call it
+checks, at runtime, whether the weak extension
+`MeanFieldHomNonlinearSolveExt` is active (`Base.get_extension`) — i.e.
+whether `NonlinearSolve.jl` has been loaded into the session, whether by
+an explicit `using NonlinearSolve` or transitively through some other
+dependency (empirically, on a typical installation today the extension
+is already active as soon as `MeanFieldHom` itself is loaded — the
+exact transitive path depends on the resolved dependency graph and is
+not guaranteed across versions).
+
+- If active, it dispatches to a globalized SciML algorithm
+  (`NonlinearSolve.TrustRegion()` — chosen over a plain `NewtonRaphson()`
+  for its better robustness near the self-consistent bifurcation),
+  through the same ForwardDiff-safe path (implicit-function-theorem
+  lift) as any other `NonlinearSolve.jl` algorithm passed explicitly.
+- Otherwise (a slimmed-down dependency set, or a future `OrdinaryDiffEq`
+  that no longer needs `NonlinearSolve.jl` internally) it falls back to
+  the dependency-free built-in [`NewtonDefault`](@ref).
+
+This gives a solver choice that always works, with or without
+`NonlinearSolve.jl` explicitly requested.
+
+`AutoNonlinear` is **not** the default of [`SelfConsistent`](@ref) /
+[`AsymmetricSelfConsistent`](@ref) (which remains
+[`AndersonDefault`](@ref)): this is a *numerical-robustness* choice, not
+a dependency-cost one — the porous-percolation regime relies on the
+Picard positive-definite guard and `select_best` to track the physical
+branch through the bifurcation, a property a root-finder does not share.
+Pass `algorithm = AutoNonlinear()` explicitly to opt in.
+"""
+struct AutoNonlinear end
+
+"""
     SelfConsistent(; algorithm = AndersonDefault(), kwargs...) <: HomogenizationScheme
 
 Self-consistent scheme. The `algorithm` selects the non-linear solver;
