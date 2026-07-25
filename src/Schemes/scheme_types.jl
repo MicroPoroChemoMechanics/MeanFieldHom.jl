@@ -73,7 +73,7 @@ struct MoriTanaka <: HomogenizationScheme end
     Maxwell() <: HomogenizationScheme
 
 Maxwell homogenization, using the RVE's distribution shape as the
-reference for the Hill polarisation tensor.
+reference for the Hill polarization tensor.
 """
 struct Maxwell <: HomogenizationScheme end
 

@@ -70,7 +70,7 @@ For a general anisotropic matrix the call
 QuadGK quadrature over the transverse plane.  The `method=:residues`
 option is remapped to the same routine (the residue algorithm is not
 applicable to a cylinder — see
-[theory / cylindrical limits](../theory/cylindrical_limits.md)).
+[theory / Hill polarization tensors](../theory/hill_tensors.md)).
 
 ## Conductivity
 

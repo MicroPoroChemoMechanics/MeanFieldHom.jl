@@ -24,3 +24,15 @@ MeanFieldHom.Core.inclusion_basis
 MeanFieldHom.Core.shape_trait
 MeanFieldHom.Core.shape_tensor
 ```
+
+## Exact rotation-group averages
+
+Exact averages of a tensor over a rotation group — the *exact* counterpart of the
+best-fit projections in [API — Schemes](schemes.md). See the gallery page
+[Symmetrization showcase](../gallery/generated/70_symmetrization_showcase.md) for
+the comparison between the two.
+
+```@docs
+MeanFieldHom.Core.isotropify
+MeanFieldHom.Core.transverse_isotropify
+```

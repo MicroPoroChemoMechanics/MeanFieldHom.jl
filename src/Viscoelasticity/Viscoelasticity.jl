@@ -15,7 +15,7 @@ Ageing linear viscoelastic (ALV) homogenization.  Provides:
   * [`visco_param`](@ref) / [`visco_assemble`](@ref) — conversions
     between symmetry-structured per-component scalar matrices and the
     full `6n×6n` block matrix.
-  * `hill_kernel` — discrete ALV Hill polarisation tensor for an
+  * `hill_kernel` — discrete ALV Hill polarization tensor for an
     ellipsoidal inclusion, isotropic-matrix branch using the
     time-space decoupling formula
     [@barthelemyIJSS2016, App. *ALV Hill kernel*].

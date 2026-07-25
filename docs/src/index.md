@@ -1,7 +1,7 @@
 # MeanFieldHom.jl
 
 Julia framework for mean-field homogenization of heterogeneous
-materials. Provides Hill polarisation tensors for ellipsoidal
+materials. Provides Hill polarization tensors for ellipsoidal
 inclusions, crack-opening-displacement tensors and intensity factors
 for flat cracks, and second-order Hill tensors for transport problems.
 Paves the way for a full homogenization stack (schemes, RVEs,
@@ -10,7 +10,7 @@ viscoelastic laws, user-defined inclusions).
 ## Sub-modules
 
 - [`MeanFieldHom.Core`](@ref) — abstractions, traits, shared numerics.
-- [`MeanFieldHom.Elasticity`](@ref) — Hill polarisation (2D / 3D).
+- [`MeanFieldHom.Elasticity`](@ref) — Hill polarization (2D / 3D).
 - [`MeanFieldHom.Cracks`](@ref) — COD, SIF, DIF for flat cracks.
 - [`MeanFieldHom.Conductivity`](@ref) — 2nd-order Hill tensor.
 - `MeanFieldHom.LayeredSpheres` — n-coated-sphere assemblages

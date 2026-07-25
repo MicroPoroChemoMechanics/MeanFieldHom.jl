@@ -31,18 +31,22 @@ R  = compliance_contribution(pc, K₀)     # R = (3/4) b (ŵ⊗ŵ)
 
 ## Cracks with finite interface stiffness (Sevostianov)
 
-A flat crack carrying a **spring-like interface elasticity** with
-stiffness 2-tensor ``\\mathbf K`` (3 × 3 symmetric, e.g. iso with
-``K_n`` normal + ``K_t`` tangential) modifies the COD via
+A flat crack carrying a **spring-like interface elasticity** with stiffness
+tensor ``\boldsymbol{K}`` (order 2, ``3\times 3`` symmetric — e.g. isotropic with
+a normal stiffness ``K_n`` and a tangential one ``K_t``) modifies the COD tensor
+``\boldsymbol{B}`` via
 
 ```math
-\\mathbf B_{\\text{eff}} = (b\\mathbf K + \\mathbf B^{-1})^{-1}
-                          = \\mathbf B \\cdot (\\mathbf I + b\\mathbf K\\mathbf B)^{-1}
+\boldsymbol{B}_{\text{eff}}
+= \bigl(b\,\boldsymbol{K} + \boldsymbol{B}^{-1}\bigr)^{-1}
+= \boldsymbol{B}\cdot\bigl(\boldsymbol{1} + b\,\boldsymbol{K}\cdot\boldsymbol{B}\bigr)^{-1},
 ```
 
-with `b` = `semi_minor(crack)`. Limits : ``\\mathbf K = 0`` →
-traction-free (recovers ``\\mathbf B``); ``\\mathbf K \\to \\infty`` →
-rigid bond (``\\mathbf B_{\\text{eff}} \\to 0``).
+where ``b`` is the in-plane half-width, `semi_minor(crack)`. The two limits are
+the familiar ones: ``\boldsymbol{K} = \boldsymbol{0}`` gives a traction-free
+crack (recovering ``\boldsymbol{B}``), and
+``\boldsymbol{K}\to\infty`` a rigid bond
+(``\boldsymbol{B}_{\text{eff}}\to\boldsymbol{0}``, i.e. no crack at all).
 
 ```julia
 # Elasticity : iso interface stiffness K = 5·𝟏

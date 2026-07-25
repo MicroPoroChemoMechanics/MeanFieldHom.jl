@@ -98,9 +98,9 @@ end
     best_fit_iso(t::AbstractTens{2,3}) -> TensND.TensISO{2}
 
 Orthogonal (Frobenius) projection of `t` onto the isotropic basis — thin
-wrapper over [`TensND.proj_tens`](@ref)`(Val(:ISO), t)`, TensND's canonical
+wrapper over `TensND.proj_tens``(Val(:ISO), t)`, TensND's canonical
 "paramsym"-style extraction. For minor-symmetric tensors this coincides with
-the exact SO(3) average [`Core.isotropify`](@ref) (the isotropic subspace is
+the exact SO(3) average [`MeanFieldHom.Core.isotropify`](@ref) (the isotropic subspace is
 `{𝕁, 𝕂}` either way).
 """
 best_fit_iso(t::TensND.AbstractTens) = TensND.proj_tens(Val(:ISO), t)[1]
@@ -110,7 +110,7 @@ best_fit_iso(t::TensND.AbstractTens) = TensND.proj_tens(Val(:ISO), t)[1]
     best_fit_ti(t::AbstractTens{2,3}, axis) -> TensND.TensTI{2,T,2}
 
 Orthogonal (Frobenius) projection of `t` onto the **major-symmetric** TI
-(Walpole) span about `axis` — thin wrapper over [`TensND.proj_tens`](@ref)`(
+(Walpole) span about `axis` — thin wrapper over `TensND.proj_tens``(
 Val(:TI), t, axis)`, the analog of echoes' `.paramsym(sym=TI)` parameter
 extraction. Numerically identical to the previous in-house implementation
 (exact azimuthal average then forced major symmetry), verified to ~1e-11.
@@ -119,7 +119,7 @@ extraction. Numerically identical to the previous in-house implementation
     This is a reporting utility, NOT the orientation average : it forces
     major symmetry (ℓ₃+ℓ₄)/2 and drops the antisymmetric azimuthal
     couplings.  Inside scheme kernels use `_apply_symmetrize` /
-    [`Core.transverse_isotropify`](@ref) instead.
+    [`MeanFieldHom.Core.transverse_isotropify`](@ref) instead.
 """
 best_fit_ti(t::TensND.AbstractTens{4, 3}, axis) = TensND.proj_tens(Val(:TI), t, axis)[1]
 best_fit_ti(t::TensND.AbstractTens{2, 3}, axis) = TensND.proj_tens(Val(:TI), t, axis)[1]
@@ -129,7 +129,7 @@ best_fit_ti(t::TensND.AbstractTens{2, 3}, axis) = TensND.proj_tens(Val(:TI), t, 
     best_fit_ortho(t::AbstractTens{2,3}, frame) -> Matrix
 
 Orthogonal (Frobenius) projection of `t` onto the orthotropic span in the
-given material `frame` — thin wrapper over [`TensND.proj_tens`](@ref)`(
+given material `frame` — thin wrapper over `TensND.proj_tens``(
 Val(:ORTHO), t, frame)`, the analog of echoes' `.paramsym(sym=ORTHO)`.
 There was previously no orthotropic parameter extraction in MeanFieldHom.jl;
 this closes that gap using the TI/ORTHO projection machinery already tested

@@ -42,6 +42,11 @@ const GALLERY_SCRIPTS = [
     "33_spheroid_series_convergence.jl",
     "34_spheroid_equivalent_conductivity.jl",
     "35_spheroid_local_fields.jl",
+    # Imperfect interfaces (2026-07): the pedagogical "what does an interface
+    # actually do" page and the highly-conducting counterpart of script 32.
+    # Neither topic is covered by a tutorial or an application.
+    "36_spheroid_interface_effect.jl",
+    "37_spheroid_hc_conductivity.jl",
 ]
 
 function build_gallery()

@@ -3,7 +3,7 @@
 
 Julia package for mean-field homogenization of heterogeneous materials.
 
-`MeanFieldHom` unifies the computation of Hill polarisation tensors for
+`MeanFieldHom` unifies the computation of Hill polarization tensors for
 ellipsoidal inhomogeneities, crack opening displacement (COD) tensors, stress
 and displacement intensity factors, and — in the near future — full
 homogenization schemes, representative volume elements (RVEs), and
@@ -16,7 +16,7 @@ inclusions, algorithms, and material symmetry classes.
   `AbstractAlgorithm`, `MaterialSymmetry`), shared numerics
   (Green / Newton kernels, Masson-style residue, DECUHR integrand), modulus
   extractors, and central dispatch.
-- `MeanFieldHom.Elasticity`   — Hill polarisation for ellipsoidal inclusions
+- `MeanFieldHom.Elasticity`   — Hill polarization for ellipsoidal inclusions
   (2D / 3D, isotropic and anisotropic matrix).
 - `MeanFieldHom.Cracks`       — COD tensors, compliance contributions, SIF
   and DIF for elliptic and ribbon cracks.

@@ -22,7 +22,7 @@ matrix products / forward-substitutions.
 
 ## Time-space decoupling for an isotropic matrix
 
-For an **isotropic** ALV matrix the Hill polarisation tensor admits a
+For an **isotropic** ALV matrix the Hill polarization tensor admits a
 particularly clean factorization [@barthelemyIJSS2016, App.] :
 
 ```math
@@ -83,8 +83,8 @@ the algebraic identity
      (\mathbb 1 + b\,\mathbb K \circ \widetilde{\mathbf B})^{-\text{vol}},
 ```
 
-where `b = semi_minor(crack)` is the in-plane semi-axis and
-`b\,\mathbb K + \widetilde{\mathbf B}^{-1}` is dimensionally consistent
+where ``b`` is the in-plane half-width, `semi_minor(crack)`, and
+``b\,\mathbb{K} + \widetilde{\boldsymbol{B}}^{-1}`` is dimensionally consistent
 (both terms have stress units). Limits :
 
 * traction-free crack `Rn = Rt = 0`  →  `B̃_eff = B̃`

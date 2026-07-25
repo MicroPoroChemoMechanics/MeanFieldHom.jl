@@ -180,7 +180,7 @@ end
 # constant 6×6 geometry tensors combine linearly with the scalar `J_long`,
 # `J_shear`, so `P_α`'s iso params are `α_P = α_U·J_long + α_D·J_shear`,
 # `β_P = β_U·J_long + β_D·J_shear`.  Because iso blocks are closed under the
-# Volterra product and inverse (they block-diagonalise into the {𝕁,𝕂}
+# Volterra product and inverse (they block-diagonalize into the {𝕁,𝕂}
 # channels), the fast path is numerically identical to the dense path (a
 # direct comparison confirms `< 1e-12`); it FALLS BACK to the exact dense
 # computation for any non-iso operand.

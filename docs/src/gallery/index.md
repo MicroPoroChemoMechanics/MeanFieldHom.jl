@@ -28,9 +28,20 @@ a cleaned standalone `.jl` file, generated alongside this page — see
   backend stays accurate in `Float64` where the original monomial series
   needs BigFloat.
 - [n-layer confocal spheroid: equivalent conductivity](generated/34_spheroid_equivalent_conductivity.md)
-  — the exact equivalent-particle conductivity `kᵉ𝑞 = ⟨B⟩·⟨A⟩⁻¹`
+  — the exact equivalent-particle conductivity
+  ``\boldsymbol{k}^{eq} = \boldsymbol{B}_\Omega\cdot\boldsymbol{A}_\Omega^{-1}``,
+  built from the volume-averaged gradient and flux concentration tensors
+  ``\boldsymbol{A}_\Omega``, ``\boldsymbol{B}_\Omega`` of the particle
   ([Barthélémy & Bignonnet 2020](@cite barthelemyBignonnetIJES2020), §4)
   vs. aspect ratio.
 - [n-layer confocal spheroid: local fields](generated/35_spheroid_local_fields.md)
-  — pointwise temperature and flux maps across a 2-layer spheroid with an
-  imperfect interface.
+  — pointwise temperature map and flux **streamlines** across a 2-layer
+  spheroid with an imperfect interface.
+- [What an imperfect interface does to the flux](generated/36_spheroid_interface_effect.md)
+  — the pedagogical one: streamlines around an insulating particle with a
+  highly-conducting skin, animated over the surface conductance ``\beta``,
+  plus an interactive 3-D view. Shows *why* an insulating particle can end up
+  more conductive than the matrix.
+- [Highly conducting interfaces: equivalent conductivity](generated/37_spheroid_hc_conductivity.md)
+  — the HC counterpart of page 32: ``\boldsymbol{k}^{eq}`` vs. aspect ratio over
+  the oblate and prolate ranges, and the effect on a Mori–Tanaka estimate.

@@ -14,7 +14,7 @@
 """
     _hill_3d_aniso_residue(ell, C₀; abstol, reltol, maxiters) -> AbstractTens{4,3}
 
-Hill polarisation tensor of a 3-D ellipsoid in an arbitrarily
+Hill polarization tensor of a 3-D ellipsoid in an arbitrarily
 anisotropic matrix, evaluated by reducing the 2-D surface integral of
 [Willis 1977](@cite willis1977) to a 1-D line quadrature via the
 Cauchy residue theorem of [Masson 2008](@cite masson2008). The inner

@@ -6,7 +6,7 @@
 """
     _hill_2d_aniso(ell::Ellipsoid{2}, C₀; abstol, reltol, maxiters) -> AbstractTens{4,2}
 
-Hill polarisation tensor of a 2-D ellipse in an arbitrarily
+Hill polarization tensor of a 2-D ellipse in an arbitrarily
 anisotropic plane-strain matrix.  The 1-D integral on the unit circle
 ``S^{1}`` — the 2-D specialization of the [Willis 1977](@cite
 willis1977) form — is evaluated in closed form through a Cauchy

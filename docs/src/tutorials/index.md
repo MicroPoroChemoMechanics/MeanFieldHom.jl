@@ -61,7 +61,7 @@ scheme and computation is used, not on restating the API. For a terse
 reference — the full scheme list, aliases, and keyword arguments — see
 [Homogenization schemes](../manual/schemes.md) and the other
 [Manual](../manual/ellipsoidal_inclusions.md) pages. For the underlying
-derivations, see [Theory](../theory/overview.md). Once comfortable
+derivations, see [Theory](../theory/index.md). Once comfortable
 here, the [Applications](../applications/transport.md) section walks
 through full case studies (cement paste, transport properties,
 strength, bituminous binders, ageing creep).

@@ -30,7 +30,7 @@ end
 """
     _hill_2d_iso(ell::Ellipsoid{2}, C₀::TensISO{4,2}) -> AbstractTens{4,2}
 
-Analytical Hill polarisation tensor of a 2-D ellipse in an isotropic
+Analytical Hill polarization tensor of a 2-D ellipse in an isotropic
 plane-strain matrix ``\\mathbb C_0 = 3k\\,\\mathbb J + 2\\mu\\,\\mathbb K``,
 obtained from the elliptic-cylinder Eshelby tensor of
 [Mura 1987](@cite mura1987) through ``\\mathbb P = \\mathbb S : \\mathbb C_0^{-1}``.

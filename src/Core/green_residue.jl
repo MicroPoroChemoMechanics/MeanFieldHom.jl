@@ -2,7 +2,7 @@
 #  green_residue.jl
 #
 #  Factored Masson / Cauchy residue algorithm used by both `Elasticity`
-#  (Hill polarisation tensor — Masson 2008) and `Cracks` (line-integrated
+#  (Hill polarization tensor — Masson 2008) and `Cracks` (line-integrated
 #  Green kernel ``\\hat{\\mathbf Q}^{\\star}_{nn}`` — Cauchy residue).
 #
 #  Strategy

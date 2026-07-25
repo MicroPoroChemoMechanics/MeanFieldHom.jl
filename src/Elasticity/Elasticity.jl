@@ -1,7 +1,7 @@
 """
     MeanFieldHom.Elasticity
 
-Hill polarisation tensors for ellipsoidal inclusions (2D / 3D,
+Hill polarization tensors for ellipsoidal inclusions (2D / 3D,
 isotropic / anisotropic matrix).  Public entry point:
 [`hill_tensor`](@ref).
 """

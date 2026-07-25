@@ -136,7 +136,7 @@ function shape_tensor end
     eshelby_tensor(incl, C₀; method=:auto, abstol, reltol, maxiters) -> AbstractTens
 
 Eshelby tensor of the inclusion `incl` embedded in a matrix of
-stiffness / conductivity `C₀`, derived from the Hill polarisation
+stiffness / conductivity `C₀`, derived from the Hill polarization
 tensor ``\\mathbb P`` (or ``\\mathbf P``) by the relations
 
 ```math

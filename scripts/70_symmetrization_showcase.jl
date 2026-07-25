@@ -4,7 +4,7 @@
 # between the two mechanisms `echoes` (and now `MeanFieldHom`) provide, on a
 # **non-major-symmetric** strain-concentration tensor.
 #
-# - **(B) exact rotation-group average** — [`transverse_isotropify`](@ref) /
+# - **(B) exact rotation-group average** — [`MeanFieldHom.Core.transverse_isotropify`](@ref) /
 #   `IsoSymmetrize` / `TISymmetrize` inside scheme kernels. Preserves the
 #   full axially-invariant content (`TensTI{4,T,8}`): ``\ell_3 \neq \ell_4``
 #   and the antisymmetric azimuthal couplings ``\ell_7``, ``\ell_8``.

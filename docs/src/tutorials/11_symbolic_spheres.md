@@ -56,7 +56,7 @@ simplify(αP), simplify(βP)
 
 Every isotropic 4th-order tensor decomposes as ``\mathbb A = \alpha\,\mathbb
 J + \beta\,\mathbb K`` on the spherical (``\mathbb J``) and deviatoric
-(``\mathbb K``) projectors, and [`get_data`](@ref) returns exactly that pair
+(``\mathbb K``) projectors, and `TensND.get_data` returns exactly that pair
 `(α, β)` — no further rescaling. For the sphere:
 
 ```math

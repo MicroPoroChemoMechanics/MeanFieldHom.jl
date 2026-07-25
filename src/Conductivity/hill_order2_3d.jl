@@ -5,7 +5,7 @@
 """
     _hill_order2_3d_iso(ell::Ellipsoid{3}, K₀) -> AbstractTens{2,3}
 
-2nd-order Hill polarisation tensor of an ellipsoid in an isotropic
+2nd-order Hill polarization tensor of an ellipsoid in an isotropic
 conductor ``\\mathbf K_0 = K\\,\\mathbf 1``:
 
 ```
@@ -36,7 +36,7 @@ end
 """
     _hill_order2_3d_aniso(ell::Ellipsoid{3}, K₀) -> AbstractTens{2,3}
 
-2nd-order Hill polarisation tensor of an ellipsoid in an arbitrarily
+2nd-order Hill polarization tensor of an ellipsoid in an arbitrarily
 anisotropic conductor, via the closed-form square-root
 change-of-variable of [Giraud et al. 2019](@cite giraudMOM2019)
 (equivalent derivation by Green's function in
@@ -49,7 +49,7 @@ P(A, K) = K⁻¹ᐟ² · I^(A·K⁻¹ᐟ²) · K⁻¹ᐟ² ,
 where ``\\mathbf I^{\\mathbf A\\cdot\\mathbf K^{-1/2}}`` is the Newton
 potential of the fictitious ellipsoid whose shape tensor is
 ``\\mathbf A\\cdot\\mathbf K^{-1/2}`` (semi-axes obtained by
-diagonalising ``\\mathbf K^{-1/2}\\cdot\\mathbf A^{\\!T}\\!\\cdot
+diagonalizing ``\\mathbf K^{-1/2}\\cdot\\mathbf A^{\\!T}\\!\\cdot
 \\mathbf A\\cdot\\mathbf K^{-1/2}``).
 """
 function _hill_order2_3d_aniso(ell::Ellipsoid{3}, K₀)
@@ -84,7 +84,7 @@ end
 """
     _hill_order2_3d_iso(cyl::Cylinder, K₀) -> AbstractTens{2,3}
 
-2nd-order Hill polarisation tensor of an infinite cylinder (axis
+2nd-order Hill polarization tensor of an infinite cylinder (axis
 ``\\hat{\\mathbf e}_1``, transverse semi-axes ``b\\ge c>0``) in an
 isotropic conductor ``\\mathbf K_0 = K\\,\\mathbf 1``, obtained from the
 cylinder Newton-potential coefficients
@@ -94,7 +94,7 @@ cylinder Newton-potential coefficients
 P = I^cyl / K ,   with   I₁^cyl = 0,   I₂^cyl = c/(b+c),   I₃^cyl = b/(b+c) .
 ```
 
-``P_{11} = 0`` expresses that no polarisation is transmitted along the
+``P_{11} = 0`` expresses that no polarization is transmitted along the
 cylinder axis.
 """
 function _hill_order2_3d_iso(cyl::Cylinder, K₀)
@@ -111,7 +111,7 @@ end
 """
     _hill_order2_3d_aniso(cyl::Cylinder, K₀) -> AbstractTens{2,3}
 
-2nd-order Hill polarisation tensor of an infinite cylinder in an
+2nd-order Hill polarization tensor of an infinite cylinder in an
 arbitrarily anisotropic conductor.  The transverse plane
 ``(\\hat{\\mathbf e}_2,\\hat{\\mathbf e}_3)`` carries the full 2-D
 Hill problem: the ``\\mathbf K^{-1/2}`` transformation of

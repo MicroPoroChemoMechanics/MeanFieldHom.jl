@@ -1,458 +1,472 @@
-# Hill polarisation tensors
+# Hill polarization tensors
 
-This page reproduces the Hill-tensor framework of the
-[Echoes manual](https://github.com/jeanfrancoisbarthelemy/echoes) —
-chapter *Eshelby and Hill polarization tensors* and appendix
-*Hill polarization tensors* — and points to the corresponding
-MeanFieldHom implementation. All expressions, conventions and
-references are aligned verbatim on the Echoes Quarto book; MFH
-adds a cylinder extension and a 2-D isotropic analytical path that are
-flagged as such.
+The [Eshelby problem](eshelby_problem.md) reduces to computing one object, the
+Hill polarization tensor ``\mathbb{P}(\boldsymbol{A},\mathbb{C})``. This page
+gives its closed forms.
 
-## The Eshelby inclusion problem
+The structure to keep in mind: ``\mathbb{P}`` factors into a purely **geometric**
+part, which depends on the ellipsoid alone, and a purely **material** part,
+which depends on the reference moduli alone. The geometric part is a set of
+Newton-potential integrals; every shape — triaxial ellipsoid, spheroid, sphere,
+infinite cylinder — is one column of the same two tables.
 
-Let ``\mathbb R^3`` be filled with a homogeneous linear elastic medium
-of stiffness ``\mathbb C``. An ellipsoid ``\mathcal E_{\mathbf A}``
-centered at the origin is described by a second-order invertible
-tensor ``\mathbf A`` such that ``\mathbf A^{\!T}\!\cdot\mathbf A`` is
-symmetric positive-definite, with eigenvalues
-``\rho_1=a\ge\rho_2=b\ge\rho_3=c`` (semi-axes) and orthonormal
-eigenvectors ``(\hat{\mathbf e}_i^{\mathbf A})``:
-
-```math
-\mathbf x\in\mathcal E_{\mathbf A}
-\;\Longleftrightarrow\;
-\mathbf x\cdot(\mathbf A^{\!T}\!\cdot\mathbf A)^{-1}\!\cdot\mathbf x\le 1,
-\qquad
-\mathbf A^{\!T}\!\cdot\mathbf A
-=\sum_{i=1}^{3}\rho_i^{2}\,\hat{\mathbf e}_i^{\mathbf A}\otimes\hat{\mathbf e}_i^{\mathbf A}.
-```
-
-A uniform polarisation stress ``\boldsymbol\tau`` prescribed inside
-``\mathcal E_{\mathbf A}`` (and zero outside) drives the boundary
-value problem. Following [eshelby1957](@cite), the strain solution is
-uniform inside the ellipsoid and reads
-
-```math
-\forall\mathbf x\in\mathcal E_{\mathbf A},\qquad
-\boldsymbol\varepsilon(\mathbf x) = -\mathbb P:\boldsymbol\tau,
-```
-
-where ``\mathbb P=\mathbb P(\mathbf A,\mathbb C)`` is the **Hill
-polarisation tensor**. Introducing the equivalent eigenstrain
-``\boldsymbol\varepsilon^\star = -\mathbb C^{-1}:\boldsymbol\tau``
-gives
-
-```math
-\boldsymbol\varepsilon(\mathbf x)=\mathbb S:\boldsymbol\varepsilon^\star,
-\qquad
-\mathbb S = \mathbb P:\mathbb C,
-```
-
-the classical **Eshelby tensor** form. A dual statement involves the
-**second Hill tensor** ``\mathbb Q``:
-
-```math
-\boldsymbol\sigma(\mathbf x) = -\mathbb Q:\boldsymbol\varepsilon^\star,
-\qquad
-\mathbb Q = \mathbb C - \mathbb C:\mathbb P:\mathbb C.
-```
+This page follows the appendix *Hill polarization tensors* of the
+[Echoes manual](https://github.com/jeanfrancoisbarthelemy/echoes); expressions,
+conventions and bibliography are aligned on it. Extensions specific to
+`MeanFieldHom` are flagged as such.
 
 ## Newton-potential integrals
 
-Three geometric integrals — depending only on ``\mathbf A`` — factor
-every analytical Hill formula:
+Three integrals over the unit sphere, depending on ``\boldsymbol{A}`` only,
+factor every analytical Hill formula:
 
 ```math
-\mathbf I^{\mathbf A}
-= \frac{\det\mathbf A}{4\pi}\!\int_{\|\hat{\boldsymbol\xi}\|=1}
-\frac{\hat{\boldsymbol\xi}\otimes\hat{\boldsymbol\xi}}
-     {\|\mathbf A\cdot\hat{\boldsymbol\xi}\|^{3}}\,\mathrm dS_{\xi}
+\boldsymbol{I}^{\boldsymbol{A}}
+= \frac{\det\boldsymbol{A}}{4\pi}
+\int_{\|\underline{\xi}\|=1}
+\frac{\underline{\xi}\otimes\underline{\xi}}
+     {\|\boldsymbol{A}\cdot\underline{\xi}\|^{3}}\,\mathrm{d}S_{\xi}
+= \frac{1}{4\pi}
+\int_{\|\underline{\zeta}\|=1}
+\frac{(\boldsymbol{A}^{-1}\!\cdot\underline{\zeta})\otimes
+      (\boldsymbol{A}^{-1}\!\cdot\underline{\zeta})}
+     {\|\boldsymbol{A}^{-1}\!\cdot\underline{\zeta}\|^{2}}\,\mathrm{d}S_{\zeta}
 ```
 
 ```math
-\mathbb U^{\mathbf A}
-= \frac{\det\mathbf A}{4\pi}\!\int_{\|\hat{\boldsymbol\xi}\|=1}
-\frac{\hat{\boldsymbol\xi}\otimes\hat{\boldsymbol\xi}\otimes
-      \hat{\boldsymbol\xi}\otimes\hat{\boldsymbol\xi}}
-     {\|\mathbf A\cdot\hat{\boldsymbol\xi}\|^{3}}\,\mathrm dS_{\xi}
+\mathbb{U}^{\boldsymbol{A}}
+= \frac{\det\boldsymbol{A}}{4\pi}
+\int_{\|\underline{\xi}\|=1}
+\frac{\underline{\xi}\otimes\underline{\xi}\otimes
+      \underline{\xi}\otimes\underline{\xi}}
+     {\|\boldsymbol{A}\cdot\underline{\xi}\|^{3}}\,\mathrm{d}S_{\xi}
 ```
 
 ```math
-\mathbb V^{\mathbf A}
-= \frac{\det\mathbf A}{4\pi}\!\int_{\|\hat{\boldsymbol\xi}\|=1}
-\frac{\hat{\boldsymbol\xi}\stackrel{s}{\otimes}\mathbf 1
-      \stackrel{s}{\otimes}\hat{\boldsymbol\xi}}
-     {\|\mathbf A\cdot\hat{\boldsymbol\xi}\|^{3}}\,\mathrm dS_{\xi}
-\;=\;
-\tfrac{1}{2}\bigl(\mathbf 1\,\underline{\boxtimes}\,\mathbf I^{\mathbf A}
-                 +\mathbf I^{\mathbf A}\,\underline{\boxtimes}\,\mathbf 1\bigr).
+\mathbb{V}^{\boldsymbol{A}}
+= \frac{\det\boldsymbol{A}}{4\pi}
+\int_{\|\underline{\xi}\|=1}
+\frac{\underline{\xi}\stackrel{s}{\otimes}\boldsymbol{1}
+      \stackrel{s}{\otimes}\underline{\xi}}
+     {\|\boldsymbol{A}\cdot\underline{\xi}\|^{3}}\,\mathrm{d}S_{\xi}
+= \frac{\boldsymbol{1}\stackrel{s}{\boxtimes}\boldsymbol{I}^{\boldsymbol{A}}
+      + \boldsymbol{I}^{\boldsymbol{A}}\stackrel{s}{\boxtimes}\boldsymbol{1}}{2}
 ```
 
-They are exposed through [`tens_IA`](@ref), [`tens_UA`](@ref) and
-[`tens_VA`](@ref). The intrinsic change-of-variable linking the
-``\hat{\boldsymbol\xi}`` and
-``\hat{\boldsymbol\zeta}=\mathbf A\cdot\hat{\boldsymbol\xi}/\|\cdot\|``
-parameterizations is detailed in [barthelemyIJSS2016](@cite).
-
-### Diagonal coefficients ``I_i^{\mathbf A}``, ``I_{ij}^{\mathbf A}``
-
-By symmetry, ``\mathbf A`` and ``\mathbf I^{\mathbf A}`` share their
-eigenvectors:
+The two parametrizations of ``\boldsymbol{I}^{\boldsymbol{A}}`` are related by
+the bijection of the unit sphere onto itself
+``\underline{\zeta}\mapsto\underline{\xi} =
+\boldsymbol{A}^{-1}\!\cdot\underline{\zeta}/
+\|\boldsymbol{A}^{-1}\!\cdot\underline{\zeta}\|``, whose surface-element
+identity is
 
 ```math
-\mathbf I^{\mathbf A}
-= \sum_{i=1}^{3} I_i^{\mathbf A}\,
-  \hat{\mathbf e}_i^{\mathbf A}\otimes\hat{\mathbf e}_i^{\mathbf A}.
+\mathrm{d}S_{\zeta}
+= \frac{\det\boldsymbol{A}}{\|\boldsymbol{A}\cdot\underline{\xi}\|^{3}}\,
+  \mathrm{d}S_{\xi}.
 ```
 
-The coefficients ``I_i^{\mathbf A}`` and the secondary coefficients
-``I_{ij}^{\mathbf A}`` — identified with Newton-potential integrals
-[kellogg1929](@cite), [eshelby1957](@cite), [parnell2016](@cite) and
-re-written in the generic form of [barthelemyIJSS2016](@cite),
-[barthelemyIJES2020_hilltrans](@cite) — admit closed forms in each
-symmetry class (triaxial, prolate, oblate, sphere, cylinder). They are
-tabulated in the Echoes appendix; for the triaxial case they involve
-the complete elliptic integrals ``\mathcal F(\theta,\kappa)`` and
-``\mathcal E(\theta,\kappa)`` of first and second kind
-[abramowitz1972](@cite), with
+An intrinsic proof is given in [barthelemyIJSS2016](@cite), as an alternative to
+the component reasoning of [mura1987](@cite). Both forms are useful: the
+``\underline{\xi}`` form makes the geometry explicit, the ``\underline{\zeta}``
+form is the one that degenerates cleanly in the cylinder limit below.
+
+In `MeanFieldHom` these are [`tens_IA`](@ref), [`tens_UA`](@ref) and
+[`tens_VA`](@ref).
+
+### Principal coefficients
+
+``\boldsymbol{A}`` and ``\boldsymbol{I}^{\boldsymbol{A}}`` share their
+eigenvectors, so
 
 ```math
-\theta = \arcsin\sqrt{1-\tfrac{c^{2}}{a^{2}}},
+\boldsymbol{I}^{\boldsymbol{A}}
+= \sum_{i=1}^{3} I_i^{\boldsymbol{A}}\,
+  \underline{e}^{\boldsymbol{A}}_i\otimes\underline{e}^{\boldsymbol{A}}_i .
+```
+
+The coefficients ``I_i^{\boldsymbol{A}}``, identified with Newton-potential
+integrals [kellogg1929](@cite), [eshelby1957](@cite), [parnell2016](@cite), and
+the secondary coefficients ``I_{ij}^{\boldsymbol{A}}`` admit closed forms in
+every symmetry class:
+
+| | ellipsoid | prolate spheroid | oblate spheroid | sphere | cylinder |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| | ``a>b>c`` | ``a>b=c`` | ``a=b>c`` | ``a=b=c`` | ``a\to\infty,\ b\ge c`` |
+| ``I_1^{\boldsymbol{A}}`` | ``\dfrac{a\,b\,c\,(\mathcal{F}-\mathcal{E})}{(a^2-b^2)\sqrt{a^2-c^2}}`` | ``1-2\,I_3^{\boldsymbol{A}}`` | ``c\,\dfrac{a^2\arccos(c/a)-c\sqrt{a^2-c^2}}{2(a^2-c^2)^{3/2}}`` | ``\tfrac{1}{3}`` | ``0`` |
+| ``I_2^{\boldsymbol{A}}`` | ``1-I_1^{\boldsymbol{A}}-I_3^{\boldsymbol{A}}`` | ``I_3^{\boldsymbol{A}}`` | ``I_1^{\boldsymbol{A}}`` | ``\tfrac{1}{3}`` | ``\dfrac{c}{b+c}`` |
+| ``I_3^{\boldsymbol{A}}`` | ``\dfrac{a\,b\,c}{(b^2-c^2)\sqrt{a^2-c^2}}\left(\dfrac{b\sqrt{a^2-c^2}}{a\,c}-\mathcal{E}\right)`` | ``a\,\dfrac{a\sqrt{a^2-c^2}-c^2\operatorname{arcosh}(a/c)}{2(a^2-c^2)^{3/2}}`` | ``1-2\,I_1^{\boldsymbol{A}}`` | ``\tfrac{1}{3}`` | ``\dfrac{b}{b+c}`` |
+
+Here ``\mathcal{F} = \mathcal{F}(\theta,\kappa)`` and
+``\mathcal{E} = \mathcal{E}(\theta,\kappa)`` are the incomplete elliptic
+integrals of the first and second kind [abramowitz1972](@cite), of amplitude and
+parameter
+
+```math
+\theta = \arcsin\sqrt{1-\frac{c^{2}}{a^{2}}},
 \qquad
-\kappa = \sqrt{\tfrac{a^{2}-b^{2}}{a^{2}-c^{2}}}.
+\kappa = \sqrt{\frac{a^{2}-b^{2}}{a^{2}-c^{2}}}.
 ```
 
-The following identities are always satisfied [eshelby1957](@cite):
+The secondary coefficients follow from the ``I_i^{\boldsymbol{A}}`` by
 
 ```math
-\sum_i I_i^{\mathbf A} = 1,
-\qquad
-3\,I_{ii}^{\mathbf A} + \sum_{j\ne i} I_{ij}^{\mathbf A}
-= \frac{1}{\rho_i^{2}},
-\qquad
-3\,\rho_i^{2}\,I_{ii}^{\mathbf A} + \sum_{j\ne i}\rho_j^{2}\,I_{ij}^{\mathbf A}
-= 3\,I_i^{\mathbf A}.
-```
-
-In MFH, the closed forms are evaluated by
-[`MeanFieldHom.Core.newton_potential_3d`](@ref) and
-[`MeanFieldHom.Core.newton_potential_2d`](@ref), with the elliptic
-integrals [`ell_K`](@ref) / [`ell_E`](@ref) provided by the
-`MeanFieldHom.Elliptic` submodule (Carlson symmetric forms
-[carlson1995](@cite)).
-
-### Kelvin–Mandel components of ``\mathbb U^{\mathbf A}``, ``\mathbb V^{\mathbf A}``
-
-In the principal frame the generic expressions read
-
-```math
-U^{\mathbf A}_{iiii} = \tfrac{3}{2}\bigl(I_i^{\mathbf A}-\rho_i^{2}\,I_{ii}^{\mathbf A}\bigr),
-```
-
-```math
-U^{\mathbf A}_{iijj} = U^{\mathbf A}_{ijij} = U^{\mathbf A}_{ijji}
-= \tfrac{1}{2}\bigl(I_j^{\mathbf A}-\rho_i^{2}\,I_{ij}^{\mathbf A}\bigr)
-= \tfrac{1}{2}\bigl(I_i^{\mathbf A}-\rho_j^{2}\,I_{ij}^{\mathbf A}\bigr)
+I_{ij}^{\boldsymbol{A}} = \frac{I_j^{\boldsymbol{A}}-I_i^{\boldsymbol{A}}}
+                               {\rho_i^{2}-\rho_j^{2}}
 \quad (i\ne j),
+\qquad
+I_{ii}^{\boldsymbol{A}} = \frac{1}{3}\left(\frac{1}{\rho_i^{2}}
+                        - \sum_{j\ne i} I_{ij}^{\boldsymbol{A}}\right),
+```
+
+except where the denominator degenerates — each symmetry class then has its own
+regular expression:
+
+| | ellipsoid | prolate spheroid | oblate spheroid | sphere | cylinder |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| ``I_{11}^{\boldsymbol{A}}`` | ``\tfrac{1}{3}\left(\tfrac{1}{a^2}-I_{31}^{\boldsymbol{A}}-I_{12}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{3}\left(\tfrac{1}{a^2}-2I_{31}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{4}\left(\tfrac{1}{a^2}-I_{31}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{5a^2}`` | ``0`` |
+| ``I_{22}^{\boldsymbol{A}}`` | ``\tfrac{1}{3}\left(\tfrac{1}{b^2}-I_{12}^{\boldsymbol{A}}-I_{23}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{4}\left(\tfrac{1}{c^2}-I_{31}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{4}\left(\tfrac{1}{a^2}-I_{31}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{5a^2}`` | ``\dfrac{c(2b+c)}{3b^{2}(b+c)^{2}}`` |
+| ``I_{33}^{\boldsymbol{A}}`` | ``\tfrac{1}{3}\left(\tfrac{1}{c^2}-I_{23}^{\boldsymbol{A}}-I_{31}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{4}\left(\tfrac{1}{c^2}-I_{31}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{3}\left(\tfrac{1}{c^2}-2I_{31}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{5a^2}`` | ``\dfrac{b(b+2c)}{3c^{2}(b+c)^{2}}`` |
+| ``I_{23}^{\boldsymbol{A}}`` | ``\dfrac{I_3^{\boldsymbol{A}}-I_2^{\boldsymbol{A}}}{b^2-c^2}`` | ``\tfrac{1}{4}\left(\tfrac{1}{c^2}-I_{31}^{\boldsymbol{A}}\right)`` | ``\dfrac{I_3^{\boldsymbol{A}}-I_2^{\boldsymbol{A}}}{b^2-c^2}`` | ``\tfrac{1}{5a^2}`` | ``\dfrac{1}{(b+c)^{2}}`` |
+| ``I_{31}^{\boldsymbol{A}}`` | ``\dfrac{I_3^{\boldsymbol{A}}-I_1^{\boldsymbol{A}}}{a^2-c^2}`` | ``\dfrac{I_3^{\boldsymbol{A}}-I_1^{\boldsymbol{A}}}{a^2-c^2}`` | ``\dfrac{I_3^{\boldsymbol{A}}-I_1^{\boldsymbol{A}}}{a^2-c^2}`` | ``\tfrac{1}{5a^2}`` | ``0`` |
+| ``I_{12}^{\boldsymbol{A}}`` | ``\dfrac{I_2^{\boldsymbol{A}}-I_1^{\boldsymbol{A}}}{a^2-b^2}`` | ``\dfrac{I_2^{\boldsymbol{A}}-I_1^{\boldsymbol{A}}}{a^2-b^2}`` | ``\tfrac{1}{4}\left(\tfrac{1}{a^2}-I_{31}^{\boldsymbol{A}}\right)`` | ``\tfrac{1}{5a^2}`` | ``0`` |
+
+with ``I_{ij}^{\boldsymbol{A}} = I_{ji}^{\boldsymbol{A}}``. The circular
+cylinder ``b=c`` gives ``I_2^{\boldsymbol{A}}=I_3^{\boldsymbol{A}}=\tfrac{1}{2}``
+and ``I_{22}^{\boldsymbol{A}}=I_{33}^{\boldsymbol{A}}=I_{23}^{\boldsymbol{A}}
+=\tfrac{1}{4c^{2}}``.
+
+!!! warning "Normalization differs from the classical references"
+    For writing convenience the coefficients tabulated above are **rescaled**
+    relative to [kellogg1929](@cite) and [eshelby1957](@cite): they differ by a
+    factor ``4\pi/3`` for ``I_{ij}^{\boldsymbol{A}}`` with ``i\ne j``, and by
+    ``4\pi`` for all the others. The normalization used here is the one that
+    makes ``\sum_i I_i^{\boldsymbol{A}} = 1``.
+
+    Internally, `newton_potential_3d` and `newton_potential_3d_cylinder` return
+    the **raw** kernel — the values above multiplied by ``4\pi`` — and the
+    division is applied at the [`tens_IA`](@ref) call site.
+
+!!! note "Why the cylinder column has zeros that still matter"
+    The cylinder column is the limit ``a\to\infty`` of the triaxial one. Three
+    entries vanish, but they carry *finite products* that survive:
+
+    ```math
+    a^{2}\,I_{12}^{\boldsymbol{A}} \xrightarrow[a\to\infty]{} I_2^{\boldsymbol{A}} = \frac{c}{b+c},
+    \qquad
+    a^{2}\,I_{31}^{\boldsymbol{A}} \xrightarrow[a\to\infty]{} I_3^{\boldsymbol{A}} = \frac{b}{b+c}.
+    ```
+
+    These products appear only through ``\rho_j^{2}I_{ij}^{\boldsymbol{A}}``
+    terms (with ``\rho_1=a``) in ``\mathbb{U}^{\boldsymbol{A}}``, where they
+    produce the vanishing first row and column of
+    ``\mathrm{Mat}(\mathbb{U}^{\mathrm{cyl}})`` below. They are also what keeps
+    the third Eshelby identity valid at the cylinder endpoint. In
+    `MeanFieldHom` the circular sub-case ``b=c`` is evaluated on a separate
+    branch, to avoid forming the ``(b^2-c^2)^{-1}`` intermediates of the
+    triaxial formulas.
+
+### Identities
+
+Always satisfied, and useful as numerical checks [eshelby1957](@cite):
+
+```math
+\sum_i I_i^{\boldsymbol{A}} = 1,
+\qquad
+3\,I_{ii}^{\boldsymbol{A}} + \sum_{j\ne i} I_{ij}^{\boldsymbol{A}} = \frac{1}{\rho_i^{2}},
+\qquad
+3\,\rho_i^{2}\,I_{ii}^{\boldsymbol{A}} + \sum_{j\ne i}\rho_j^{2}\,I_{ij}^{\boldsymbol{A}} = 3\,I_i^{\boldsymbol{A}}.
+```
+
+### Components of ``\mathbb{U}^{\boldsymbol{A}}`` and ``\mathbb{V}^{\boldsymbol{A}}``
+
+Both are orthotropic along the ellipsoid axes. In the principal frame
+[barthelemyIJSS2016](@cite), [barthelemyIJES2020_hilltrans](@cite):
+
+```math
+U^{\boldsymbol{A}}_{iiii} = \tfrac{3}{2}\bigl(I_i^{\boldsymbol{A}}-\rho_i^{2}I_{ii}^{\boldsymbol{A}}\bigr),
+\qquad
+U^{\boldsymbol{A}}_{iijj} = U^{\boldsymbol{A}}_{ijij} = U^{\boldsymbol{A}}_{ijji}
+= \tfrac{1}{2}\bigl(I_j^{\boldsymbol{A}}-\rho_i^{2}I_{ij}^{\boldsymbol{A}}\bigr)
+= \tfrac{1}{2}\bigl(I_i^{\boldsymbol{A}}-\rho_j^{2}I_{ij}^{\boldsymbol{A}}\bigr)
 ```
 
 ```math
-V^{\mathbf A}_{iiii} = I_i^{\mathbf A},
+V^{\boldsymbol{A}}_{iiii} = I_i^{\boldsymbol{A}},
 \qquad
-V^{\mathbf A}_{ijij} = V^{\mathbf A}_{ijji}
-= \tfrac{1}{4}\bigl(I_i^{\mathbf A}+I_j^{\mathbf A}\bigr)
-\quad (i\ne j).
+V^{\boldsymbol{A}}_{ijij} = V^{\boldsymbol{A}}_{ijji}
+= \tfrac{1}{4}\bigl(I_i^{\boldsymbol{A}}+I_j^{\boldsymbol{A}}\bigr)
+\qquad (i\ne j).
 ```
 
-Spherical limit ``\mathbf A = \mathbf 1``:
+**Sphere** ``\boldsymbol{A}=\boldsymbol{1}``:
 
 ```math
-\mathbb U^{\mathbf 1} = \tfrac{1}{3}\mathbb J + \tfrac{2}{15}\mathbb K,
+\mathbb{U}^{\boldsymbol{1}} = \tfrac{1}{3}\mathbb{J} + \tfrac{2}{15}\mathbb{K},
 \qquad
-\mathbb V^{\mathbf 1} = \tfrac{1}{3}\mathbb I.
+\mathbb{V}^{\boldsymbol{1}} = \tfrac{1}{3}\mathbb{I}.
 ```
+
+**Infinite elliptic cylinder** ``a\to\infty``, axis
+``\underline{e}^{\boldsymbol{A}}_1``, transverse semi-axes ``b\ge c``
+([mura1987](@cite), §11.22) — substituting the cylinder column above:
+
+```math
+\mathrm{Mat}\bigl(\mathbb{U}^{\mathrm{cyl}}\bigr) =
+\begin{pmatrix}
+0 & 0 & 0 & 0 & 0 & 0\\
+0 & \frac{c(b+2c)}{2(b+c)^{2}} & \frac{bc}{2(b+c)^{2}} & 0 & 0 & 0\\
+0 & \frac{bc}{2(b+c)^{2}} & \frac{b(2b+c)}{2(b+c)^{2}} & 0 & 0 & 0\\
+0 & 0 & 0 & \frac{bc}{(b+c)^{2}} & 0 & 0\\
+0 & 0 & 0 & 0 & 0 & 0\\
+0 & 0 & 0 & 0 & 0 & 0
+\end{pmatrix},
+\quad
+\mathrm{Mat}\bigl(\mathbb{V}^{\mathrm{cyl}}\bigr) =
+\begin{pmatrix}
+0 & 0 & 0 & 0 & 0 & 0\\
+0 & \frac{c}{b+c} & 0 & 0 & 0 & 0\\
+0 & 0 & \frac{b}{b+c} & 0 & 0 & 0\\
+0 & 0 & 0 & \frac{1}{2} & 0 & 0\\
+0 & 0 & 0 & 0 & \frac{b}{2(b+c)} & 0\\
+0 & 0 & 0 & 0 & 0 & \frac{c}{2(b+c)}
+\end{pmatrix}
+```
+
+in Kelvin–Mandel storage and in the frame
+``(\underline{e}^{\boldsymbol{A}}_i)``. The vanishing first row and column is
+the signature of the infinite cylinder: **no polarization is transmitted along
+its axis**. For the circular cylinder ``b=c`` the non-zero entries reduce to
+``U^{\mathrm{cyl}}_{2222}=U^{\mathrm{cyl}}_{3333}=\tfrac{3}{8}``,
+``U^{\mathrm{cyl}}_{2233}=\tfrac{1}{8}``,
+``\bigl[\mathrm{Mat}(\mathbb{U}^{\mathrm{cyl}})\bigr]_{44}=\tfrac{1}{4}``, and
+``\mathrm{Mat}(\mathbb{V}^{\mathrm{cyl}})`` to the diagonal
+``\bigl(0,\tfrac{1}{2},\tfrac{1}{2},\tfrac{1}{2},\tfrac{1}{4},\tfrac{1}{4}\bigr)``.
 
 ## Hill tensor in elasticity
 
-### General expression (Willis 1977 / Mura 1987)
-
-For an arbitrary matrix stiffness ``\mathbb C``, the elastic Hill
-polarisation tensor is [willis1977](@cite), [mura1987](@cite)
+### Arbitrary anisotropy
 
 ```math
-\mathbb P(\mathbf A,\mathbb C)
-= \frac{\det\mathbf A}{4\pi}\!\int_{\|\hat{\boldsymbol\xi}\|=1}
-\frac{\hat{\boldsymbol\xi}\stackrel{s}{\otimes}
-      \bigl(\hat{\boldsymbol\xi}\cdot\mathbb C\cdot\hat{\boldsymbol\xi}\bigr)^{-1}
-      \stackrel{s}{\otimes}\hat{\boldsymbol\xi}}
-     {\|\mathbf A\cdot\hat{\boldsymbol\xi}\|^{3}}\,\mathrm dS_{\xi}.
+\mathbb{P}(\boldsymbol{A},\mathbb{C})
+= \frac{1}{4\pi}
+\int_{\|\underline{\zeta}\|=1}
+(\boldsymbol{A}^{-1}\!\cdot\underline{\zeta})\stackrel{s}{\otimes}
+\Bigl((\boldsymbol{A}^{-1}\!\cdot\underline{\zeta})\cdot\mathbb{C}
+      \cdot(\boldsymbol{A}^{-1}\!\cdot\underline{\zeta})\Bigr)^{-1}
+\stackrel{s}{\otimes}(\boldsymbol{A}^{-1}\!\cdot\underline{\zeta})
+\,\mathrm{d}S_{\zeta}
 ```
-
-Inverting the acoustic tensor
-``\hat{\boldsymbol\xi}\cdot\mathbb C\cdot\hat{\boldsymbol\xi}`` is the
-source of all computational work.
-
-### Isotropic matrix
-
-With a bulk modulus ``k=E/(3(1-2\nu))``, shear modulus
-``\mu=E/(2(1+\nu))`` and Lamé first parameter ``\lambda=k-2\mu/3``, the
-isotropic stiffness reads
 
 ```math
-\mathbb C = 3k\,\mathbb J + 2\mu\,\mathbb K = 3\lambda\,\mathbb I + 2\mu\,\mathbb K.
+= \frac{\det\boldsymbol{A}}{4\pi}
+\int_{\|\underline{\xi}\|=1}
+\frac{\underline{\xi}\stackrel{s}{\otimes}
+      \bigl(\underline{\xi}\cdot\mathbb{C}\cdot\underline{\xi}\bigr)^{-1}
+      \stackrel{s}{\otimes}\underline{\xi}}
+     {\|\boldsymbol{A}\cdot\underline{\xi}\|^{3}}\,\mathrm{d}S_{\xi}
 ```
 
-Substituting in the general expression gives [willis1977](@cite)
-
-```math
-\mathbb P\bigl(\mathbf A,\,3\lambda\,\mathbb I + 2\mu\,\mathbb K\bigr)
-= \frac{1}{\lambda+2\mu}\,\mathbb U^{\mathbf A}
-+ \frac{1}{\mu}\,\bigl(\mathbb V^{\mathbf A}-\mathbb U^{\mathbf A}\bigr).
-```
-
-For a **sphere** ``\mathbf A = \mathbf 1`` this collapses to the
-classical Eshelby closed form:
-
-```math
-\mathbb P\bigl(\mathbf 1,\,3k\,\mathbb J + 2\mu\,\mathbb K\bigr)
-= \frac{1}{3k+4\mu}\,
-\left(\mathbb J + \frac{3(k+2\mu)}{5\mu}\,\mathbb K\right).
-```
-
-Implementation:
-[`src/Elasticity/hill_3d_iso.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Elasticity/hill_3d_iso.jl),
-triggered by `method = :auto` when `C₀::TensISO`.
-
-### Anisotropic matrix
-
-When ``\mathbb C`` is arbitrarily anisotropic, no closed form of the
-above integral is available in general and one must resort to
+[willis1977](@cite), see also [mura1987](@cite). Inverting the acoustic tensor
+``\underline{\xi}\cdot\mathbb{C}\cdot\underline{\xi}`` pointwise is the source of
+all the computational work: in general no closed form exists and one resorts to
 numerical cubature [ghahremani1977](@cite), [gavazzi1990](@cite),
-[masson2008](@cite). MFH implements two algorithm traits that mirror
-the Echoes `NUMINT` / `RESIDUES` options:
+[masson2008](@cite). `MeanFieldHom` offers two algorithm traits, mirroring the
+Echoes `NUMINT` / `RESIDUES` options:
 
-- `DECUHR` — the 2-D surface integral is handled by the adaptive
-  cubature of [espelid1994](@cite). ForwardDiff-safe.
-- `Residue` — the 2-D cubature is reduced to a 1-D quadrature by the
-  Cauchy residue theorem applied to the inner ``\varphi`` loop, as
-  derived in [masson2008](@cite). Float64 only (the polynomial root
-  finder used for the inner sum is not ForwardDiff-compatible).
+- **`DECUHR`** — the surface integral is evaluated by the adaptive cubature for
+  singular integrands of [espelid1994](@cite). ForwardDiff-safe.
+- **`Residue`** — the inner ``\varphi`` integral is reduced to a sum of residues
+  by the Cauchy theorem, leaving a single 1-D quadrature [masson2008](@cite).
+  Faster, but `Float64` only: the polynomial root finder it needs is not
+  differentiable by ForwardDiff.
 
-#### Transversely isotropic matrix coaxial with a spheroid (analytical)
-
-For the special case of a TI matrix whose symmetry axis is parallel to
-the spheroid axis, MFH provides a fully analytical closed-form path
-based on [barthelemyIJES2020_hilltrans](@cite). The Hill tensor
-admits the Walpole-basis decomposition
-``\mathbb P = P_1 W_1 + P_2 W_2 + P_3 (W_3+W_4) + P_5 W_5 + P_6 W_6``
-whose six coefficients depend on the aspect ratio
-``\omega = (\text{axial})/(\text{transverse})`` and the five
-independent TI elastic constants
-``(C_{1111}, C_{1122}, C_{1133}, C_{3333}, C_{2323})`` through six
-elementary integrals (closed-form combinations of `acosh` and complex
-square roots).
-
-**Selection** — the dispatcher
-`MeanFieldHom.Core._resolve_algo` routes a `TensTI{4}` matrix
-combined with a coaxial `Ellipsoid{3, Spherical|Prolate|Oblate}` to the
-`Analytical` algorithm trait by default. Coaxiality is detected via
-the helper `_ti_coaxial(C₀, ell)`. Non-coaxial spheroids and triaxial
-ellipsoids fall back to `Residue` (the default for general
-anisotropy).
-
-| Algorithm     | Symbol            | Use case                                            | Speed        | ForwardDiff |
-|---------------|-------------------|-----------------------------------------------------|--------------|-------------|
-| `Analytical`  | `:auto` (default) | TI matrix coaxial with spheroid                     | O(1)         | Yes         |
-| `Residue`     | `:residues`       | Anisotropic, default fallback                       | ~ µs         | No          |
-| `DECUHR`      | `:decuhr`         | Anisotropic, ForwardDiff-friendly numerical         | ~ ms         | Yes         |
-| `NestedQuadGK`| `:nestedquadgk`   | Historical nested-1D-QuadGK, kept for benchmarking | ~ ms         | Yes         |
-
-For other symmetry classes (orthotropic matrix, non-coaxial TI,
-generic anisotropic), analytical paths exist in the literature
+Analytical paths exist in the literature for further anisotropy classes
 ([withers1989](@cite), [pouya2000](@cite), [pouya2006](@cite),
-[suvorov2002](@cite)) but are not yet implemented in MFH.
+[suvorov2002](@cite)) and are not all implemented yet.
 
-### Cylinder (MFH extension)
+### Isotropic matrix — the shape/moduli factorization
+
+With bulk modulus ``k``, shear modulus ``\mu`` and first Lamé parameter
+``\lambda = k-2\mu/3``, so that
+``\mathbb{C} = 3k\,\mathbb{J}+2\mu\,\mathbb{K} = 3\lambda\,\mathbb{I}+2\mu\,\mathbb{K}``,
+the general expression collapses to [willis1977](@cite)
+
+```math
+\boxed{\;
+\mathbb{P}\bigl(\boldsymbol{A},\,3\lambda\,\mathbb{I}+2\mu\,\mathbb{K}\bigr)
+= \frac{1}{\lambda+2\mu}\,\mathbb{U}^{\boldsymbol{A}}
++ \frac{1}{\mu}\,\bigl(\mathbb{V}^{\boldsymbol{A}}-\mathbb{U}^{\boldsymbol{A}}\bigr).
+\;}
+```
+
+This is the factorization announced at the top of the page: **shape and
+orientation on one side** (``\mathbb{U}^{\boldsymbol{A}}``,
+``\mathbb{V}^{\boldsymbol{A}}``), **reference moduli on the other**. Each shape
+column of the tables above therefore yields a closed-form ``\mathbb{P}`` at once.
+
+For a **sphere**, substituting ``\mathbb{U}^{\boldsymbol{1}}`` and
+``\mathbb{V}^{\boldsymbol{1}}`` gives the classical Eshelby result
+
+```math
+\mathbb{P}\bigl(\boldsymbol{1},\,3k\,\mathbb{J}+2\mu\,\mathbb{K}\bigr)
+= \frac{1}{3k+4\mu}\left(\mathbb{J} + \frac{3(k+2\mu)}{5\mu}\,\mathbb{K}\right).
+```
+
+For an **infinite cylinder**, substituting
+``\mathrm{Mat}(\mathbb{U}^{\mathrm{cyl}})`` and
+``\mathrm{Mat}(\mathbb{V}^{\mathrm{cyl}})`` gives a closed form with
+``P^{\mathrm{cyl}}_{1jkl}\equiv 0``, i.e. no polarization along the axis
+([mura1987](@cite), §11.22).
+
+Implementation: `src/Elasticity/hill_3d_iso.jl` and
+`src/Elasticity/hill_3d_cylinder_iso.jl`, selected by `method = :auto` when
+``\mathbb{C}_0`` is a `TensISO`.
+
+### Transversely isotropic matrix coaxial with a spheroid
+
+When the matrix is transversely isotropic and its symmetry axis is **parallel to
+the spheroid axis**, a fully analytical path exists
+[barthelemyIJES2020_hilltrans](@cite). The Hill tensor is transversely isotropic
+too, hence five Walpole coefficients (see
+[Notation](notation.md#Isotropic-and-transversely-isotropic-bases) — there is no
+``P_4`` because ``\mathbb{P}`` is major-symmetric):
+
+```math
+\mathbb{P} = P_1\,\mathbb{W}_1 + P_2\,\mathbb{W}_2
+           + P_3\,(\mathbb{W}_3+\mathbb{W}_4)
+           + P_5\,\mathbb{W}_5 + P_6\,\mathbb{W}_6 .
+```
+
+The five coefficients are closed-form combinations of `acosh` and complex square
+roots (equations 53–58 of [barthelemyIJES2020_hilltrans](@cite)), depending on
+the aspect ratio ``\omega`` (axial / transverse) and the five independent
+constants ``(C_{1111}, C_{1122}, C_{1133}, C_{3333}, C_{2323})``.
+
+The dispatcher routes a `TensTI{4}` matrix combined with a coaxial
+`Ellipsoid{3, Spherical|Prolate|Oblate}` to this path by default; coaxiality is
+detected by `_ti_coaxial(C₀, ell)`. Non-coaxial spheroids and triaxial
+ellipsoids fall back to `Residue`.
+Implementation: `src/Elasticity/hill_3d_ti_coaxial.jl`.
+
+### Anisotropic matrix, cylinder limit
 
 !!! note "Extension over Echoes"
-    MFH exposes an explicit `Cylinder` inclusion type corresponding to
-    the limit ``a\to\infty`` of a prolate spheroid with transverse
-    semi-axes ``b\ge c>0`` and axis ``\hat{\mathbf e}_1``. The
-    expressions below are obtained by passing to that limit in the
-    generic triaxial formulas [mura1987](@cite), §11.22.
+    `MeanFieldHom` exposes `Cylinder` as a first-class inclusion type. For an
+    arbitrarily anisotropic matrix the Masson residue algorithm is **not
+    applicable**: it rests on the six complex roots of the acoustic polynomial
+    along ``\underline{\xi}_3``, and at the cylinder limit one root escapes to
+    infinity, degenerating the polynomial.
 
-The Newton-potential coefficients become
-
-```math
-I_1^{\text{cyl}} = 0,\qquad
-I_2^{\text{cyl}} = \frac{c}{b+c},\qquad
-I_3^{\text{cyl}} = \frac{b}{b+c},
-```
+The ``\underline{\zeta}`` form of the Willis integral degenerates cleanly
+instead. The axial component of ``\underline{\zeta}`` vanishes identically, so
+the surface integral collapses to a single quadrature over the transverse unit
+circle:
 
 ```math
-I_{22}^{\text{cyl}} = \frac{c(2b+c)}{3\,b^{2}(b+c)^{2}},\quad
-I_{33}^{\text{cyl}} = \frac{b(b+2c)}{3\,c^{2}(b+c)^{2}},\quad
-I_{23}^{\text{cyl}} = \frac{1}{(b+c)^{2}},
-```
-
-```math
-I_{11}^{\text{cyl}} = I_{12}^{\text{cyl}} = I_{13}^{\text{cyl}} = 0
-\quad\text{(with }a^{2} I_{12}^{\text{cyl}}\to I_2^{\text{cyl}},\;
-a^{2} I_{13}^{\text{cyl}}\to I_3^{\text{cyl}}\text{ as }a\to\infty).
-```
-
-Substituting in the Kelvin–Mandel formulas gives a block-diagonal
-``\mathbb U^{\text{cyl}}`` and ``\mathbb V^{\text{cyl}}`` whose first
-row and column vanish (``U^{\text{cyl}}_{1ikl} = V^{\text{cyl}}_{1ikl} = 0``).
-In the isotropic case
-
-```math
-\mathbb P^{\text{cyl}}
-= \frac{1}{\lambda+2\mu}\,\mathbb U^{\text{cyl}}
-+ \frac{1}{\mu}\,\bigl(\mathbb V^{\text{cyl}}-\mathbb U^{\text{cyl}}\bigr),
+\mathbb{P}^{\mathrm{cyl}}
+= \frac{1}{2\pi}\int_{0}^{2\pi}
+\underline{\zeta}\stackrel{s}{\otimes}
+\bigl(\underline{\zeta}\cdot\mathbb{C}\cdot\underline{\zeta}\bigr)^{-1}
+\stackrel{s}{\otimes}\underline{\zeta}
+\,\mathrm{d}\varphi,
 \qquad
-P^{\text{cyl}}_{1jkl}\equiv 0,
+\underline{\zeta}(\varphi) = \Bigl(0,\ \frac{\cos\varphi}{b},\ \frac{\sin\varphi}{c}\Bigr).
 ```
 
-— no polarisation is transmitted along the cylinder axis.
+This is a one-dimensional `QuadGK` integral, and it stays
+ForwardDiff-compatible. Calling
+`hill_tensor(Cylinder(…), C₀; method = :residues)` falls back to it silently.
+Implementation: `src/Elasticity/hill_3d_cylinder_aniso.jl` (`CylinderQuadrature`
+trait). The in-plane components coincide with the solution of the 2-D
+plane-strain problem — the cylinder is the 3-D realization of the 2-D ellipse.
 
-For the circular cylinder ``b=c`` the non-zero ``\mathbb V`` components
-reduce to
-
-```math
-V^{\text{cyl},\circ}_{2222} = V^{\text{cyl},\circ}_{3333}
-= V^{\text{cyl},\circ}_{2323} = \tfrac{1}{2},
-\qquad
-V^{\text{cyl},\circ}_{1313} = V^{\text{cyl},\circ}_{1212} = \tfrac{1}{4}.
-```
-
-Implementation:
-[`hill_3d_cylinder_iso.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Elasticity/hill_3d_cylinder_iso.jl).
-For arbitrarily anisotropic matrices the Masson polynomial degenerates
-at the cylinder limit (one root at infinity); MFH therefore routes
-`Cylinder` + `AbstractTens{4,3}` through a dedicated 1-D quadrature
-(`CylinderQuadrature` trait,
-[`hill_3d_cylinder_aniso.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Elasticity/hill_3d_cylinder_aniso.jl)).
-
-### 2-D plane strain (MFH extension)
+### 2-D plane strain
 
 !!! note "Extension over Echoes"
-    MFH also handles the plane-strain limit ``\hat{\boldsymbol\xi}\in S^{1}``
-    with a ``1/(2\pi)`` prefactor in place of ``1/(4\pi)``. The
-    isotropic version is analytical; the anisotropic one uses the
-    Masson residue reduction on the inner line integral.
+    `MeanFieldHom` also handles the plane-strain problem directly, integrating
+    over the unit circle ``\underline{\xi}\in S^{1}`` with a ``1/(2\pi)``
+    prefactor in place of ``1/(4\pi)``. The isotropic case is analytical; the
+    anisotropic one uses the Masson residue reduction on the line integral.
 
 ## Hill tensor in conductivity
 
-The Eshelby framework extends verbatim to transport problems (heat
-conduction, mass diffusion, electric conduction, ...): a uniform
-polarisation flux inside the ellipsoid produces a uniform temperature
-gradient, and a **2nd-order** Hill polarisation tensor
-``\mathbf P(\mathbf A,\mathbf K)`` plays the role of ``\mathbb P``
-[willis1977](@cite).
+### Arbitrary anisotropy — closed form
 
-### General expression
-
-For a conductivity tensor ``\mathbf K`` [willis1977](@cite):
+For a conductivity tensor ``\boldsymbol{K}`` [willis1977](@cite):
 
 ```math
-\mathbf P(\mathbf A,\mathbf K)
-= \frac{\det\mathbf A}{4\pi}\!\int_{\|\hat{\boldsymbol\xi}\|=1}
-\frac{\hat{\boldsymbol\xi}\otimes\hat{\boldsymbol\xi}}
-     {(\hat{\boldsymbol\xi}\cdot\mathbf K\cdot\hat{\boldsymbol\xi})\,
-      \|\mathbf A\cdot\hat{\boldsymbol\xi}\|^{3}}\,\mathrm dS_{\xi}.
+\boldsymbol{P}(\boldsymbol{A},\boldsymbol{K})
+= \frac{\det\boldsymbol{A}}{4\pi}
+\int_{\|\underline{\xi}\|=1}
+\frac{\underline{\xi}\otimes\underline{\xi}}
+     {(\underline{\xi}\cdot\boldsymbol{K}\cdot\underline{\xi})\,
+      \|\boldsymbol{A}\cdot\underline{\xi}\|^{3}}\,\mathrm{d}S_{\xi}.
 ```
 
-The 2nd-order Eshelby tensor is ``\mathbf s = \mathbf P\cdot\mathbf K``.
-
-### Isotropic matrix
-
-If ``\mathbf K = K\,\mathbf 1``:
+Unlike the order-4 case, **this integral has a closed form for any matrix
+anisotropy**. Since ``\boldsymbol{K}`` is symmetric positive definite it has a
+square root, ``\boldsymbol{K}^{1/2} = \sum_i\sqrt{K_i}\,
+\underline{e}^{\boldsymbol{K}}_i\otimes\underline{e}^{\boldsymbol{K}}_i``, and the
+denominator can be absorbed into the change of variable
+``\underline{\zeta}\mapsto\boldsymbol{K}^{1/2}\!\cdot\boldsymbol{A}^{-1}\!\cdot
+\underline{\zeta}``, which turns the anisotropic problem into an isotropic one
+for a **fictitious ellipsoid** of shape tensor
+``\boldsymbol{A}\cdot\boldsymbol{K}^{-1/2}``:
 
 ```math
-\mathbf P(\mathbf A, K\,\mathbf 1) = \frac{\mathbf I^{\mathbf A}}{K}.
+\boxed{\;
+\boldsymbol{P}(\boldsymbol{A},\boldsymbol{K})
+= \boldsymbol{K}^{-1/2}\cdot
+  \boldsymbol{P}(\boldsymbol{A}\cdot\boldsymbol{K}^{-1/2},\boldsymbol{1})\cdot
+  \boldsymbol{K}^{-1/2}
+= \boldsymbol{K}^{-1/2}\cdot
+  \boldsymbol{I}^{\boldsymbol{A}\cdot\boldsymbol{K}^{-1/2}}\cdot
+  \boldsymbol{K}^{-1/2}.
+\;}
 ```
 
-For a sphere, ``\mathbf I^{\mathbf 1} = \tfrac{1}{3}\mathbf 1`` gives
-``\mathbf P(\mathbf 1, K\,\mathbf 1) = \tfrac{1}{3K}\mathbf 1``,
-``\mathbf s(\mathbf 1, K\,\mathbf 1) = \tfrac{1}{3}\mathbf 1``
-(Eshelby sphere, independent of ``K``).
+This is the transformation derivation of [giraudMOM2019](@cite); an equivalent
+Green's-function derivation is given in [barthelemyTIPM2009](@cite). Since
+``\boldsymbol{A}\cdot\boldsymbol{K}^{-1/2}`` need not be symmetric, the
+fictitious semi-axes and principal directions are obtained by diagonalizing
+``\boldsymbol{K}^{-1/2}\cdot\boldsymbol{A}^{\!T}\!\cdot\boldsymbol{A}\cdot
+\boldsymbol{K}^{-1/2}``.
 
-### Anisotropic matrix — square-root transformation
+### Isotropic matrix — immediate
 
-Unlike the 4th-order elastic case, the 2nd-order Hill tensor admits a
-**closed-form** expression for any matrix anisotropy. Following
-[giraudMOM2019](@cite) (equivalent derivation by Green's function in
-[barthelemyTIPM2009](@cite)), the square-root ``\mathbf K^{1/2}`` of
-``\mathbf K = \sum_i K_i\,\hat{\mathbf e}_i^{\mathbf K}\otimes\hat{\mathbf e}_i^{\mathbf K}``
-is introduced:
+If ``\boldsymbol{K} = K\,\boldsymbol{1}`` the prefactor comes straight out:
 
 ```math
-\mathbf K^{1/2}
-= \sum_i\sqrt{K_i}\,\hat{\mathbf e}_i^{\mathbf K}\otimes\hat{\mathbf e}_i^{\mathbf K},
-\qquad
-\mathbf K^{-1/2} = (\mathbf K^{1/2})^{-1}.
+\boldsymbol{P}(\boldsymbol{A}, K\,\boldsymbol{1})
+= \frac{\boldsymbol{I}^{\boldsymbol{A}}}{K}.
 ```
 
-The change of variable
-``\hat{\boldsymbol\zeta}\to\mathbf K^{1/2}\cdot\mathbf A^{-1}\cdot\hat{\boldsymbol\zeta}/\|\cdot\|``
-reduces the general expression to the Newton-potential integral of a
-**fictitious ellipsoid** of shape tensor
-``\mathbf A\cdot\mathbf K^{-1/2}``:
+For a sphere, ``\boldsymbol{I}^{\boldsymbol{1}} = \tfrac{1}{3}\boldsymbol{1}``
+gives ``\boldsymbol{P} = \tfrac{1}{3K}\boldsymbol{1}`` and
+``\boldsymbol{s} = \tfrac{1}{3}\boldsymbol{1}`` — independent of ``K``.
+Implementation: `src/Conductivity/hill_order2_3d.jl`.
 
-```math
-\mathbf P(\mathbf A,\mathbf K)
-= \mathbf K^{-1/2}\cdot\mathbf I^{\mathbf A\cdot\mathbf K^{-1/2}}\cdot\mathbf K^{-1/2}.
-```
+## Dispatch
 
-The semi-axes and principal directions of the fictitious ellipsoid are
-obtained by diagonalising
-``\mathbf K^{-1/2}\cdot\mathbf A^{\!T}\!\cdot\mathbf A\cdot\mathbf K^{-1/2}``.
-Implementation:
-[`src/Conductivity/hill_order2_3d.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Conductivity/hill_order2_3d.jl).
+Entry point [`hill_tensor`](@ref); shape tensor via [`shape_tensor`](@ref);
+geometric auxiliaries via [`tens_IA`](@ref), [`tens_UA`](@ref),
+[`tens_VA`](@ref).
 
-## Eshelby tensor
+| `(inclusion, C₀)` | `:auto` selects | alternatives | ForwardDiff |
+| :---------------- | :-------------- | :----------- | :---------: |
+| `Ellipsoid{3}, TensISO` | `Analytical` | — | ✓ |
+| `Ellipsoid{3}, TensTI` (coaxial) | `Analytical` (MFH) | `:residues`, `:decuhr` | ✓ |
+| `Ellipsoid{3}, AbstractTens{4,3}` | `Residue` (Float64) | `:decuhr` | ✓ (decuhr) |
+| `Cylinder, TensISO` | `Analytical` | — | ✓ |
+| `Cylinder, AbstractTens{4,3}` | `CylinderQuadrature` | (residue degenerates) | ✓ |
+| `Ellipsoid{2}, TensISO` | `Analytical` | — | ✓ |
+| `Ellipsoid{2}, AbstractTens{4,2}` | `Analytical` (residue) | — | (Float64) |
+| `Ellipsoid{3}, AbstractTens{2,3}` | `Analytical` (``\boldsymbol{K}^{-1/2}``) | — | ✓ |
+| `Cylinder, AbstractTens{2,3}` | `Analytical` | — | ✓ |
 
-The **Eshelby tensor** is the contraction of the Hill polarisation
-tensor with the reference-medium stiffness or conductivity:
-
-```math
-\mathbb S(\mathbf A,\mathbb C_{0}) = \mathbb P(\mathbf A,\mathbb C_{0}) : \mathbb C_{0}
-\qquad\text{(order 4, elasticity)},
-```
-
-```math
-\mathbf s(\mathbf A,\mathbf K_{0}) = \mathbf P(\mathbf A,\mathbf K_{0})\cdot\mathbf K_{0}
-\qquad\text{(order 2, conductivity / diffusion)}.
-```
-
-Public entry point [`eshelby_tensor`](@ref MeanFieldHom.Core.eshelby_tensor):
-
-```julia
-using MeanFieldHom, TensND
-
-C₀ = TensISO{3}(3k, 2μ)                    # elastic reference
-S  = eshelby_tensor(Ellipsoid(1.0), C₀)    # 4th-order
-
-K₀ = TensISO{3}(1.0)                        # conductivity reference
-s  = eshelby_tensor(Ellipsoid(1.0), K₀)    # 2nd-order
-```
-
-## Dispatch and implementation notes
-
-| `(inclusion, C₀)`                    | `:auto` selects        | alternative(s)             | ForwardDiff |
-| :----------------------------------- | :--------------------- | :------------------------- | :---------: |
-| `Ellipsoid{3}, TensISO`              | `Analytical`           | —                          |     ✓       |
-| `Ellipsoid{3}, TensTI` (aligned)     | `Analytical` (MFH)     | `:residues`, `:decuhr`      |     ✓       |
-| `Ellipsoid{3}, AbstractTens{4,3}`    | `Residue` (Float64)    | `:decuhr`                  |  ✓ (decuhr) |
-| `Cylinder, TensISO`                  | `Analytical`           | —                          |     ✓       |
-| `Cylinder, AbstractTens{4,3}`        | `CylinderQuadrature`   | (residue degenerates)      |     ✓       |
-| `Ellipsoid{2}, TensISO`              | `Analytical`           | —                          |     ✓       |
-| `Ellipsoid{2}, AbstractTens{4,2}`    | `Analytical` (residue) | —                          |  (Float64)  |
-| `Ellipsoid{3}, AbstractTens{2,3}`    | `Analytical` (K⁻¹ᐟ²)   | —                          |     ✓       |
-| `Cylinder, AbstractTens{2,3}`        | `Analytical`           | —                          |     ✓       |
-
-Entry point: [`hill_tensor`](@ref). Shape tensor retrieval:
-[`shape_tensor`](@ref). Builders of geometric auxiliaries:
-[`tens_IA`](@ref), [`tens_UA`](@ref), [`tens_VA`](@ref).
+Cylinder shape traits: `CircularCylindrical` when ``b=c`` (transversely
+isotropic response, returned as `TensTI{4}` with axis
+``\underline{e}^{\boldsymbol{A}}_1``) and `EllipticCylindrical` when ``b>c``
+(orthotropic, returned as `TensOrtho`). Practical usage is covered in the manual
+page [Cylindrical inclusions](../manual/cylindrical_inclusions.md).

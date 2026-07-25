@@ -28,13 +28,13 @@
 
 Isotropic `N`-layer confocal spheroidal composite inclusion (core +
 concentric confocal shells), conduction only (no elastic counterpart —
-see the module docstring of [`LayeredSpheroids`](@ref)). Type
+see the `LayeredSpheroids` module docstring). Type
 parameters:
 
 - `T` — element type of the geometric scalars (radii, focal distance).
 - `N` — number of layers (≥ 1).
 - `Q` — element type of the confocal parameter `q`: `T` for prolate,
-  `Complex{T}` for oblate (the [eq:arabob](@ref) substitution).
+  `Complex{T}` for oblate (the complex substitution `c → -i c̄`, `q → i τ`).
 - `Cs`, `Is` — concrete types of the `moduli` / `interfaces` tuples.
 
 Use the keyword constructor

@@ -22,7 +22,7 @@ passing to the limit ``a\\to\\infty`` of the prolate spheroid
 expressions ([Mura 1987](@cite mura1987), §11.22). In the cylinder
 frame ``(\\hat{\\mathbf e}_1,\\hat{\\mathbf e}_2,\\hat{\\mathbf e}_3)``
 the first row and column of ``\\mathbb P^{\\text{cyl}}`` vanish: no
-polarisation is transmitted along the cylinder axis.
+polarization is transmitted along the cylinder axis.
 """
 function _hill_3d_iso(cyl::Cylinder{CircularCylindrical}, C₀)
     T = promote_type(eltype(cyl.semi_axes), eltype(C₀))

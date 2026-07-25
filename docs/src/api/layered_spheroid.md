@@ -2,7 +2,7 @@
 
 `layer_count`, `layer_modulus`, `layer_interface` and
 `layer_volume_fraction` are shared generics extended from
-[`LayeredSpheres`](@ref) — see [API — LayeredSphere](layered_sphere.md)
+`LayeredSpheres` — see [API — LayeredSphere](layered_sphere.md)
 for their docstrings; they apply unchanged to `LayeredSpheroid`.
 
 ```@docs

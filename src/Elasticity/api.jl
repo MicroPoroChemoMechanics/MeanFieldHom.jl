@@ -11,12 +11,12 @@
     hill_tensor(ell, C₀; method=:auto, abstol=1e-8, reltol=1e-6, maxiters=1_000_000)
         → AbstractTens
 
-Hill polarisation tensor **P** for an ellipsoidal inclusion `ell`
+Hill polarization tensor **P** for an ellipsoidal inclusion `ell`
 embedded in a reference medium `C₀`.  `C₀` can be a 4th-order stiffness
 (elasticity) or a 2nd-order conductivity tensor — dispatch selects
 the appropriate formulation automatically.
 
-The general expression of the elastic polarisation tensor is
+The general expression of the elastic polarization tensor is
 ([Willis 1977](@cite willis1977), [Mura 1987](@cite mura1987)):
 
 ```
@@ -27,7 +27,7 @@ The isotropic case (`C₀::TensISO`) is evaluated analytically; the
 anisotropic case uses the Cauchy-residue reduction of
 [Masson 2008](@cite masson2008) (trait `Residue`) or the DECUHR
 adaptive cubature of [Espelid & Genz 1994](@cite espelid1994)
-(trait `DECUHR`). See the `Hill polarisation tensors` theory page
+(trait `DECUHR`). See the `Hill polarization tensors` theory page
 for the full dispatch table and return types.
 """
 function hill_tensor(

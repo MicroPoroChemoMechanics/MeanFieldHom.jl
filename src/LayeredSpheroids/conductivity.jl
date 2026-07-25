@@ -220,8 +220,8 @@ The two ratios `b^0_{N+1,1}/a^0_{N+1,1}` and `b^1_{N+1,1}/a^1_{N+1,1}`
 tensors. Kept in their native (possibly complex, for the oblate
 substitution `q = iτ`) type — casting to real is only valid on the
 FINAL shape-function product (`ba · 𝒯/𝒰(q_N)`, done in
-[`spheroid_gradient_gradient`](@ref) / [`spheroid_flux_gradient`](@ref)
-/ [`_spheroid_concentration`](@ref)), never on `ba` alone.
+`spheroid_gradient_gradient` / `spheroid_flux_gradient` /
+`_spheroid_concentration`), never on `ba` alone.
 """
 function spheroid_ba_ratios(s::LayeredSpheroid{T, N}, k₀) where {T, N}
     𝒩 = s.Nseries

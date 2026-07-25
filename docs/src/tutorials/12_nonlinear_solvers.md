@@ -125,15 +125,28 @@ implicit-function-theorem (IFT) **lift**: it solves the *primal*
 problem — every input stripped to `Float64` via `ForwardDiff.value`,
 with an *explicit* finite-difference Jacobian so `NonlinearSolve` never
 seeds a `Dual` of its own — and then recovers the caller's partials with
-one linear-algebra correction,
+one linear-algebra correction.
+
+Write the self-consistent scheme as a root-finding problem. Let ``p`` collect the
+unknown effective moduli, ``\theta`` the parameter being differentiated, and
+
+```math
+F(p;\theta) = p - \mathcal{H}(p;\theta)
+```
+
+the **residual** of the self-consistent fixed point, where
+``\mathcal{H}(p;\theta)`` is one application of the scheme — the map that takes a
+trial effective medium ``p``, computes each phase's localization in it, and
+returns the resulting effective moduli. A self-consistent solution is exactly a
+root ``F(p^\star;\theta) = 0``. The IFT correction is then
 
 ```math
 p^\star_{\text{dual}} = p^\star - \Big(\frac{\partial F}{\partial p}\Big)^{-1} F(p^\star; \theta),
 ```
 
-where ``p^\star`` is the primal root and ``\theta`` the differentiated
-parameter — exactly the implicit function theorem applied once, at the
-root. Only the *caller's* `Dual` tag is ever present; nothing is nested.
+evaluated with ``p^\star`` the primal root and the residual re-evaluated on the
+caller's `Dual` inputs — exactly the implicit function theorem applied once, at
+the root. Only the *caller's* `Dual` tag is ever present; nothing is nested.
 The built-in [`NewtonDefault`](@ref) instead differentiates straight
 through its own iterations (safe because it is entirely
 hand-written), so both paths give the same answer by construction —
@@ -185,7 +198,7 @@ d_m_tr     = derivative(rve, SelfConsistent(; algorithm = TrustRegion()), proper
 
 The [capstone tutorial](09_strength_criteria.md) built a macroscopic
 strength ellipse for a porous solid entirely from `ForwardDiff`
-derivatives of `(k_{\mathrm{hom}}, \mu_{\mathrm{hom}})` with respect to
+derivatives of ``(k_{\mathrm{hom}}, \mu_{\mathrm{hom}})`` with respect to
 the solid's own shear modulus — no closed-form derivative written by
 hand. Swapping the underlying SC solve for a SciML algorithm changes
 nothing about that recipe, since `derivative` only ever sees

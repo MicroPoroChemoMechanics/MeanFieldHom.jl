@@ -59,18 +59,24 @@ makedocs(;
     plugins = [bib],
     pages = [
         "Home" => "index.md",
+        # Ordered as a reading path: conventions, then the Eshelby framework,
+        # then the tool it produces (the Hill tensor, with every shape limit
+        # tabulated in place), then what is built on it (localization, schemes),
+        # then the specializations (cracks, layered inclusions, viscoelasticity),
+        # and finally the mathematical appendix.
         "Theory"  => [
-            "theory/overview.md",
+            "theory/index.md",
+            "theory/notation.md",
+            "theory/eshelby_problem.md",
             "theory/hill_tensors.md",
-            "theory/cod_tensors.md",
-            "theory/thermal_cracks.md",
             "theory/localization.md",
             "theory/homogenization.md",
+            "theory/cod_tensors.md",
+            "theory/thermal_cracks.md",
             "theory/layered_sphere.md",
             "theory/layered_spheroid.md",
             "theory/viscoelasticity.md",
             "theory/elliptic_integrals.md",
-            "theory/cylindrical_limits.md",
         ],
         "Manual"  => [
             "manual/installation.md",
@@ -115,6 +121,8 @@ makedocs(;
             "gallery/generated/33_spheroid_series_convergence.md",
             "gallery/generated/34_spheroid_equivalent_conductivity.md",
             "gallery/generated/35_spheroid_local_fields.md",
+            "gallery/generated/36_spheroid_interface_effect.md",
+            "gallery/generated/37_spheroid_hc_conductivity.md",
         ],
         "Developer" => [
             "developer/architecture.md",

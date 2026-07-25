@@ -36,6 +36,13 @@ using BenchmarkTools
 using ForwardDiff
 using PyCall
 
+# `jl_method = :decuhr` is benchmarked below (§ 1), and that backend lives in a
+# package extension: without these two imports the extension never loads and the
+# run dies with "the `:decuhr` backend requires the DECUHR extension". Both are
+# already in this environment's Manifest — they only need to be brought into
+# scope. Same requirement as `test/runtests.jl`.
+import DECUHR, Integrals
+
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 20
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1.0
 
@@ -79,6 +86,20 @@ def py_crack(C, algo, epsroots=1e-6, epsrel=1e-6, epsabs=1e-6, maxnb=200000):
     except Exception:
         return None
 
+def py_crack_ell(C, a, b, c, algo='DEFAULT',
+                 epsroots=1e-6, epsrel=1e-6, epsabs=1e-6, maxnb=200000):
+    # Flat TRIAXIAL ellipsoid (a >= b >> c): the elliptic-crack case, which
+    # discriminates the two H normalization conventions. `spheroidal` cannot
+    # express it — it only has one aspect ratio (the penny).
+    ell = echoes.ellipsoidal(np.array([a, b, c, 0.0, 0.0, 0.0]))
+    try:
+        H = echoes.crack_compliance(ell, C, algo=_ALGO[algo],
+                                    epsrel=epsrel, epsabs=epsabs,
+                                    maxnb=maxnb, epsroots=epsroots)
+        return np.asarray(H)
+    except Exception:
+        return None
+
 def py_hill_derivative(a, b, c, C, index, algo,
                        epsroots=1e-6, epsrel=1e-6, epsabs=1e-6, maxnb=200000):
     ell = echoes.ellipsoidal(np.array([a, b, c, 0.0, 0.0, 0.0]))
@@ -95,6 +116,7 @@ const py_stiffness_tensor = py"py_stiffness_tensor"
 const py_conductivity_tensor = py"py_conductivity_tensor"
 const py_hill = py"py_hill"
 const py_crack = py"py_crack"
+const py_crack_ell = py"py_crack_ell"
 const py_hill_derivative = py"py_hill_derivative"
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -405,9 +427,26 @@ println("="^78)
 println("  § 2  CRACK COMPLIANCE CONTRIBUTION H — penny-crack")
 println("="^78)
 
-# MeanFieldHom and Echoes share the same crack compliance contribution
-# tensor H = (3/4) n̂ ⊗ˢ B ⊗ˢ n̂ (elliptic / 3D), returned directly by
-# `compliance_contribution`.  No rescaling needed.
+# CONVENTION — read before comparing any H across the two libraries.
+#
+# Both libraries build H from the SAME COD tensor B (normalized by the in-plane
+# half-width b), but they normalize the flat limit differently:
+#
+#   MeanFieldHom :  H = lim (c/b) Q⁻¹ = (3/4)  n̂ ⊗ˢ B ⊗ˢ n̂   (ellipse)
+#                                     = (2/π)  n̂ ⊗ˢ B ⊗ˢ n̂   (ribbon)
+#   Echoes       :  H = lim (c/a) Q⁻¹ = (3η/4) n̂ ⊗ˢ B ⊗ˢ n̂   (ellipse)
+#                                     = (2/π)  n̂ ⊗ˢ B ⊗ˢ n̂   (ribbon)
+#
+# so for an elliptic crack of in-plane aspect ratio η = b/a:
+#
+#   H_echoes = η · H_MeanFieldHom        (ellipse)
+#   H_echoes =     H_MeanFieldHom        (ribbon — normalized by b in both)
+#
+# Verified against Echoes on 2026-07-25 at η = 0.7, 0.5, 0.3, 0.1: the ratio is
+# η to four decimals. The two coincide at η = 1, which is why the penny-crack
+# comparison below needs NO rescaling — but any elliptic comparison does. The
+# η ≠ 1 case is benchmarked separately in `bench_crack_elliptic` further down.
+# See docs/src/theory/cod_tensors.md § Conventions.
 
 function bench_crack(
         label, C_jl, C_py; jl_method = :auto, is_iso = false,
@@ -493,6 +532,53 @@ bench_crack(
     echoes_algos = ("NUMINT3D",)
 )
 bench_crack("Penny / triclinic", C_tric, C_tric_py; jl_method = :residues)
+
+# -----------------------------------------------------------------------------
+#  § 2b  ELLIPTIC crack, η ≠ 1 — the case that discriminates the two
+#        normalization conventions (see the note at the top of § 2).
+#
+#  The penny comparisons above cannot detect a wrong η-dependence, because at
+#  η = 1 the MeanFieldHom (uniform-b) and Echoes (a-normalized) conventions
+#  coincide. This sweep applies the documented factor explicitly and checks
+#  that the two libraries then agree:
+#
+#        H_echoes  ==  η · H_MeanFieldHom
+# -----------------------------------------------------------------------------
+
+function bench_crack_elliptic(C_jl, C_py; ωflat = 1.0e-5, ηs = (1.0, 0.7, 0.5, 0.3, 0.1))
+    println()
+    println("─"^78)
+    println("  § 2b  Elliptic crack — convention check  H_echoes = η · H_MFH")
+    println("─"^78)
+    @printf "  %-7s %14s %14s %10s %10s %8s\n" "η" "H_echoes" "H_MFH" "ratio" "expected" "status"
+
+    worst = 0.0
+    for η in ηs
+        H_py = to_jlmat(py_crack_ell(C_py, 1.0, η, ωflat))
+        if H_py === nothing
+            @printf "  %-7.3f %14s %14s %10s %10.4f %8s\n" η "FAIL" "-" "-" η "SKIP"
+            continue
+        end
+
+        H_jl = compliance_contribution(EllipticCrack(1.0, η), C_jl)
+        r = H_py[3, 3] / H_jl[3, 3, 3, 3]
+        err = abs(r - η) / η
+        worst = max(worst, err)
+        @printf "  %-7.3f %14.6e %14.6e %10.4f %10.4f %8s\n" η H_py[3, 3] H_jl[3, 3, 3, 3] r η (
+            err < 1.0e-3 ? "OK" : "MISMATCH"
+        )
+    end
+    println()
+    @printf "  worst relative deviation from the expected η factor: %.2e\n" worst
+    println(
+        worst < 1.0e-3 ?
+            "  → conventions reconcile exactly; see docs/src/theory/cod_tensors.md" :
+            "  → CONVENTION MISMATCH: do not trust elliptic H across the two libraries"
+    )
+    return worst
+end
+
+bench_crack_elliptic(C_iso, C_iso_py)
 
 # =============================================================================
 #  § 3  HILL TENSOR P  (conductivity, 2nd order)

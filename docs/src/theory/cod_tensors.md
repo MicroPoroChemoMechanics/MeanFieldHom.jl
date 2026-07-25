@@ -1,161 +1,275 @@
-# Crack opening displacement and compliance tensors
+# Crack opening displacement and compliance
 
-This page follows the Echoes manual chapter *Crack compliance tensors*
-(and the chapter on stress/displacement intensity factors) and
-points to the MeanFieldHom implementation. All expressions,
-conventions and references are aligned on the Echoes Quarto book.
-
-The computational pipeline is deliberately narrow:
-
-```
-   B   ──►   H = (3/4)·n̂ ⊗ˢ B ⊗ˢ n̂   ──►   K̂, N̂   (SIF / DIF)
- (COD)       (crack compliance)          (fracture quantities)
-```
-
-All quantities reduce to the **COD tensor** ``\mathbf B`` and the
-resolved stress ``\boldsymbol\Sigma\cdot\hat{\mathbf n}`` on the
-crack plane — no linear transformation on ``\mathbf A``, ``\mathbb C``
-is introduced.
-
-## Crack geometry
-
-A flat elliptic crack is the limit of a flat spheroidal inclusion as
-its smallest aspect ratio tends to zero. Keeping the Echoes
-parameterization of the ellipsoid by the shape tensor ``\mathbf A``,
+A crack has no volume, so it cannot be described by a volume fraction and a
+stiffness. It is described instead by **how much it opens** under a given remote
+stress. That is the crack opening displacement tensor ``\boldsymbol{B}``, and
+everything else on this page follows from it.
 
 ```math
-\mathbf A
-= \hat{\boldsymbol\ell}\otimes\hat{\boldsymbol\ell}
-+ \eta\,\hat{\mathbf m}\otimes\hat{\mathbf m}
-+ \omega\,\hat{\mathbf n}\otimes\hat{\mathbf n},
+\boldsymbol{B}
+\;\longrightarrow\;
+\mathbb{H}
+\;\longrightarrow\;
+\Delta\mathbb{S}
+\qquad\text{and}\qquad
+\boldsymbol{B}
+\;\longrightarrow\;
+\underline{K},\ \underline{N}
+```
+
+Read left to right: the **COD tensor** ``\boldsymbol{B}`` (order 2) gives the
+**compliance contribution** ``\mathbb{H}`` (order 4), which gives the dilute
+correction ``\Delta\mathbb{S}`` to the effective compliance; independently,
+``\boldsymbol{B}`` gives the stress and displacement intensity factors
+``\underline{K}``, ``\underline{N}`` at the crack front.
+
+!!! note "This is the reverse of the Echoes pipeline"
+    Echoes computes ``\mathbb{H}`` directly, as a limit of the second Hill
+    tensor, and never forms ``\boldsymbol{B}``. `MeanFieldHom` computes
+    ``\boldsymbol{B}`` first and *reconstructs* ``\mathbb{H}`` from it. The
+    reason is the intensity factors: they need ``\boldsymbol{B}``, not
+    ``\mathbb{H}``, so making ``\boldsymbol{B}`` the primary object avoids
+    inverting a rank-deficient order-4 tensor. The price is that the
+    normalization of ``\boldsymbol{B}`` must be stated explicitly — it is not
+    unique in the literature. The competing conventions are named and compared
+    in the section *Conventions* below.
+
+## Geometry
+
+A flat crack is the limit of a flat spheroidal inclusion. Keeping the shape
+tensor of [Notation](notation.md#Ellipsoid-geometry),
+
+```math
+\boldsymbol{A}
+= \underline{\ell}\otimes\underline{\ell}
++ \eta\,\underline{m}\otimes\underline{m}
++ \omega\,\underline{n}\otimes\underline{n},
 \qquad
-\eta=\frac{b}{a},\quad\omega=\frac{c}{a}\to 0,
+\eta = \frac{b}{a},
+\qquad
+\omega = \frac{c}{a}\to 0,
 ```
 
-with in-plane orthonormal frame
-``(\hat{\boldsymbol\ell},\hat{\mathbf m})`` along the major/minor
-semi-axes ``a\ge b`` and unit normal ``\hat{\mathbf n}``. MFH
-supports:
+with ``(\underline{\ell},\underline{m})`` the in-plane unit vectors along the
+major and minor semi-axes ``a\ge b``, and ``\underline{n}`` the unit normal.
+Two families matter, and they are **genuinely different objects**, not two
+regimes of one:
 
-- **Elliptic cracks** of aspect ratio ``\eta\in(0,1]``
-  ([`EllipticCrack`](@ref)) — including the circular **penny**
-  ``\eta=1`` ([`PennyCrack`](@ref));
-- **Ribbon cracks** (tunnel cracks) infinite along
-  ``\hat{\boldsymbol\ell}`` of half-width ``b`` along
-  ``\hat{\mathbf m}`` ([`RibbonCrack`](@ref)).
+| | geometry | in-plane aspect ratio | `MeanFieldHom` type |
+| :-- | :-- | :-- | :-- |
+| **elliptic** (3-D) | bounded ellipse, semi-axes ``a\ge b`` | ``\eta\in(0,1]`` | [`EllipticCrack`](@ref), [`PennyCrack`](@ref) for ``\eta=1`` |
+| **ribbon** (2-D) | infinite tunnel along ``\underline{\ell}``, half-width ``b`` | ``a\to\infty``, so ``\eta\to 0`` | [`RibbonCrack`](@ref) |
 
-## Crack compliance ``\mathbb H`` and COD tensor ``\mathbf B``
+## The COD tensor ``\boldsymbol{B}``
 
-The **COD tensor** ``\mathbf B`` is the size-independent symmetric
-2-tensor defined from the averaged displacement jump on the crack
-surface:
+Under a remote stress ``\boldsymbol{\Sigma}``, the two crack faces separate by
+the displacement jump ``[\![\underline{u}]\!]``. By linearity and the
+superposition principle, that jump depends on the loading only through the
+resolved traction ``\boldsymbol{\Sigma}\cdot\underline{n}`` on the crack plane.
+Its **average over the crack surface** ``\mathcal{I}`` defines
+``\boldsymbol{B}``:
 
 ```math
-\frac{1}{S}\int_{S}[\![\mathbf u]\!]\,\mathrm dS
-\;=\; b\,\mathbf B\cdot(\boldsymbol\Sigma\cdot\hat{\mathbf n}),
+\boxed{\;
+\frac{\bigl\langle [\![\underline{u}]\!] \bigr\rangle_{\mathcal{I}}}{b}
+= \boldsymbol{B}\cdot\boldsymbol{\Sigma}\cdot\underline{n}
+\;}
 ```
 
-where ``b`` is the semi-minor in-plane semi-axis (``b\ge c\to 0``).
+The normalization is by the **in-plane half-width ``b``** — the minor semi-axis
+of the ellipse, the half-width of the ribbon. This makes ``\boldsymbol{B}``
+**size-independent**: it depends on the crack *shape* (through ``\eta``) and on
+its orientation, never on how big it is. This is the convention of
+[barthelemySifAniso](@cite), following [kachanov1992](@cite),
+[kachanov1993](@cite), and it is the one `MeanFieldHom` implements
+([`cod_tensor`](@ref), alias [`B_tensor`](@ref)).
 
-The **crack compliance contribution tensor** is defined from the
-second Hill tensor ``\mathbb Q = \mathbb C - \mathbb C:\mathbb P:\mathbb C``
-through the limit
-[kachanov1992](@cite), [kachanov1993](@cite), [sevostianov2002](@cite),
-[barthelemyIJES2021](@cite):
+### The shape coefficient ``\chi``
+
+The opening profile is an ellipsoidal cap, so the average jump is a fixed
+fraction of the **maximum** jump ``\underline{\beta}`` at the crack centre:
 
 ```math
-\mathbb H \;=\; \lim_{c/b\to 0}\, \frac{c}{b}\,\mathbb Q^{-1}.
+\bigl\langle [\![\underline{u}]\!] \bigr\rangle_{\mathcal{I}} = \chi\,\underline{\beta},
+\qquad
+\chi^{\mathcal{E}}
+= \frac{1}{\pi a b}\!\!\int_{\frac{x^2}{a^2}+\frac{y^2}{b^2}\le 1}\!\!
+  \sqrt{1-\frac{x^2}{a^2}-\frac{y^2}{b^2}}\;\mathrm{d}x\,\mathrm{d}y
+= \frac{2}{3},
+\qquad
+\chi^{\mathcal{R}}
+= \frac{1}{2b}\!\int_{-b}^{b}\!\sqrt{1-\frac{y^2}{b^2}}\;\mathrm{d}y
+= \frac{\pi}{4}.
 ```
 
-The limit is finite (the divergent components of ``\mathbb Q^{-1}``
-scale as ``b/c`` so that ``(c/b)\mathbb Q^{-1}`` stays bounded). The
-prefactor ``c/b`` – rather than the ``c/a`` used in earlier works –
-ensures a **uniform definition across 2D and 3D geometries**
-(``b`` is the only always-finite semi-axis for both elliptic cracks
-with ``c\to 0`` and ribbon cracks with ``a\to\infty``).
+``\chi`` is worth introducing explicitly, because **every numerical factor on
+this page comes from it**. It is the one quantity that distinguishes the
+elliptic geometry from the ribbon one.
 
-The consistency ``\int\boldsymbol\varepsilon\,\mathrm dV =
-\int[\![\mathbf u]\!]\stackrel{s}{\otimes}\hat{\mathbf n}\,\mathrm dS``
-combined with the COD definition yields a **geometric factorization of
-``\mathbb H``** through ``\mathbf B``:
+### The 3-D → 2-D limit: a trap
+
+A ribbon is the limiting shape of an ellipse as ``\eta\to 0``, so one expects
+``\boldsymbol{B}^{\mathcal{R}}`` to be ``\lim_{\eta\to 0}\boldsymbol{B}^{\mathcal{E}}``.
+**It is not** [barthelemySifAniso](@cite):
 
 ```math
-\mathbb H \;=\; \frac{c\,S}{V}\,
-\hat{\mathbf n}\stackrel{s}{\otimes}\mathbf B\stackrel{s}{\otimes}\hat{\mathbf n},
+\boxed{\;
+\boldsymbol{B}^{\mathcal{R}}(\underline{m},\underline{n})
+= \frac{\chi^{\mathcal{R}}}{\chi^{\mathcal{E}}}\,
+  \lim_{\eta\to 0}\boldsymbol{B}^{\mathcal{E}}(\underline{m},\underline{n},\eta)
+= \frac{3\pi}{8}\,
+  \lim_{\eta\to 0}\boldsymbol{B}^{\mathcal{E}}(\underline{m},\underline{n},\eta).
+\;}
 ```
 
-with ``S`` the crack surface and ``V`` the embedding ellipsoidal
-volume.  Evaluating ``cS/V`` for each geometry:
+The reason is exactly ``\chi``. The *geometry* does converge, and so does the
+pointwise opening profile; what changes is the relation between the **average**
+opening and the maximum one, because averaging over a shrinking ellipse is not
+the same operation as averaging across the width of a strip
+(``2/3 \ne \pi/4``). Since ``\boldsymbol{B}`` is defined from the average, it
+picks up the ratio ``\chi^{\mathcal{R}}/\chi^{\mathcal{E}} = 3\pi/8``.
 
-- **Elliptic 3D crack** (``S=\pi ab``, ``V=\tfrac{4}{3}\pi abc``):
-  ``cS/V = 3/4``, so
+This matters in practice: the intensity factors of an elliptic crack are
+computed from the ribbon tensor of the *tangent* ribbon at each front point
+(see *Intensity factors at the crack front* below), so both objects appear in
+the same formula and must not be confused.
 
-  ```math
-  \mathbb H^{\mathcal E}
-  \;=\; \tfrac{3}{4}\,\hat{\mathbf n}\stackrel{s}{\otimes}\mathbf B
-                                 \stackrel{s}{\otimes}\hat{\mathbf n}.
-  ```
+## From ``\boldsymbol{B}`` to the compliance ``\mathbb{H}``
 
-- **Ribbon 2D crack** (``S=4ab``, ``V=2\pi abc``, ``a\to\infty``):
-  ``cS/V = 2/\pi``, so
-
-  ```math
-  \mathbb H^{\mathcal R}
-  \;=\; \tfrac{2}{\pi}\,\hat{\mathbf n}\stackrel{s}{\otimes}\mathbf B
-                                 \stackrel{s}{\otimes}\hat{\mathbf n}.
-  ```
-
-Consistency of ``\mathbb H`` between the ribbon limit ``\eta\to 0`` of
-the elliptic case and the intrinsic 2D derivation fixes the relation
+The extra strain a crack contributes, per unit volume of the embedding
+ellipsoid, is the average of the displacement jump over the crack surface
+``S``, spread over the volume ``V``:
 
 ```math
-\mathbf B^{\mathcal R} \;=\; \tfrac{3\pi}{8}\,\lim_{\eta\to 0}\mathbf B^{\mathcal E}.
+\boldsymbol{\varepsilon}^{\text{extra}}
+= \frac{1}{V}\int_{S} [\![\underline{u}]\!] \stackrel{s}{\otimes}\underline{n}\,\mathrm{d}S
+= \frac{S}{V}\,
+  \bigl\langle [\![\underline{u}]\!] \bigr\rangle_{\mathcal{I}}
+  \stackrel{s}{\otimes}\underline{n}
+= \frac{S\,b}{V}\;
+  \underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}
+  :\boldsymbol{\Sigma},
 ```
 
-``\mathbf B`` is size-independent (it only depends on ``\eta`` and on
-the orientation of the crack plane). It is the quantity MFH computes
-directly via [`cod_tensor`](@ref) (alias [`B_tensor`](@ref));
-the bridge ``\mathbf B\leftrightarrow\mathbb H`` is handled by
-[`compliance_from_cod`](@ref) / [`cod_from_compliance`](@ref)
-([`src/Cracks/cod_H_bridge.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/cod_H_bridge.jl)),
-which dispatches on the crack type (elliptic or ribbon) to apply the
-correct geometric factor.
-
-## Analytical COD tensor — isotropic matrix
-
-For an isotropic matrix ``\mathbb C = 3k\,\mathbb J + 2\mu\,\mathbb K``
-with Young's modulus ``E`` and Poisson ratio ``\nu``, the Echoes
-closed-form expression of ``\mathbf B`` in the crack-local frame
-``(\hat{\boldsymbol\ell},\hat{\mathbf m},\hat{\mathbf n})`` is
+using the definition of ``\boldsymbol{B}``. Identifying this with
+``\mathbb{Q}^{-1}:\boldsymbol{\Sigma}``, where
+``\mathbb{Q} = \mathbb{C}-\mathbb{C}:\mathbb{P}:\mathbb{C}`` is the
+[second Hill tensor](eshelby_problem.md), gives
+``\mathbb{Q}^{-1} = (Sb/V)\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}
+\stackrel{s}{\otimes}\underline{n}``, and hence
 
 ```math
-\mathbf B
-= B_{nn}\,\hat{\mathbf n}\otimes\hat{\mathbf n}
-+ B_{mm}\,\hat{\mathbf m}\otimes\hat{\mathbf m}
-+ B_{\ell\ell}\,\hat{\boldsymbol\ell}\otimes\hat{\boldsymbol\ell},
+\boxed{\;
+\mathbb{H}
+\;=\; \lim_{c/b\,\to\,0}\ \frac{c}{b}\,\mathbb{Q}^{-1}
+\;=\; \frac{c\,S}{V}\;
+      \underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}.
+\;}
+```
+
+The limit is finite: the components ``(\mathbb{Q}^{-1})_{nijk}`` diverge like
+``b/c``, so ``(c/b)\,\mathbb{Q}^{-1}`` stays bounded. Evaluating the geometric
+factor ``cS/V`` for each family gives the two numbers used in the code:
+
+| | surface ``S`` | volume ``V`` | ``cS/V`` | ``\mathbb{H}`` |
+| :-- | :-- | :-- | :-- | :-- |
+| **elliptic** (3-D) | ``\pi a b`` | ``\tfrac{4}{3}\pi a b c`` | ``\tfrac{3}{4}`` | ``\mathbb{H}^{\mathcal{E}} = \tfrac{3}{4}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}^{\mathcal{E}}\stackrel{s}{\otimes}\underline{n}`` |
+| **ribbon** (2-D) | ``4ab`` | ``2\pi a b c`` | ``\tfrac{2}{\pi}`` | ``\mathbb{H}^{\mathcal{R}} = \tfrac{2}{\pi}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}^{\mathcal{R}}\stackrel{s}{\otimes}\underline{n}`` |
+
+Both factors are **independent of ``\eta``**, which is the point of normalizing
+the limit by ``b``: one definition covers the 2-D and the 3-D geometry, and
+``\mathbb{H}`` inherits ``\boldsymbol{B}``'s size-independence.
+
+The bridge in both directions is [`compliance_from_cod`](@ref) /
+[`cod_from_compliance`](@ref) (`src/Cracks/cod_H_bridge.jl`), dispatching on the
+crack type to apply the correct factor.
+
+### Conventions: what ``\boldsymbol{B}`` and ``\mathbb{H}`` are normalized by
+
+The ``3/4`` above looks like it disagrees with the literature. It does not — the
+three sources normalize the **limit** differently, while agreeing on
+``\boldsymbol{B}``. Naming them once avoids a great deal of confusion:
+
+| convention | elliptic ``\mathbb{H}^{\mathcal{E}}`` | ribbon ``\mathbb{H}^{\mathcal{R}}`` |
+| :--------- | :------------------------------------ | :---------------------------------- |
+| **`MeanFieldHom`** — limit normalized by ``b``, uniformly | ``\lim (c/b)\,\mathbb{Q}^{-1} = \tfrac{3}{4}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` | ``\tfrac{2}{\pi}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` |
+| **Echoes** and [barthelemyMMS2023](@cite) — elliptic normalized by ``a`` | ``\lim \omega\,\mathbb{Q}^{-1} = \tfrac{3\eta}{4}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` | ``\tfrac{2}{\pi}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` |
+
+So the two elliptic compliances differ by exactly ``\eta``:
+
+```math
+\mathbb{H}^{\mathcal{E}}_{\texttt{MeanFieldHom}}
+= \frac{1}{\eta}\;\mathbb{H}^{\mathcal{E}}_{\text{Echoes}},
+\qquad
+\mathbb{H}^{\mathcal{R}}_{\texttt{MeanFieldHom}}
+= \mathbb{H}^{\mathcal{R}}_{\text{Echoes}} .
+```
+
+They coincide for the **penny crack** ``\eta=1``, which is why the discrepancy is
+invisible on the most common test case — and why a penny-only cross-check cannot
+detect a wrong ``\eta``-dependence.
+
+!!! note "Verified against Echoes, not merely asserted"
+    The relation above is measured, not inferred from the papers. Running
+    Echoes' `crack_compliance` on a flat *triaxial* ellipsoid
+    (``a = 1``, ``b = \eta``, ``c = 10^{-5}``) against
+    [`compliance_contribution`](@ref) on the corresponding `EllipticCrack` gives
+    a ratio equal to ``\eta`` to four decimal places at
+    ``\eta = 0.7, 0.5, 0.3, 0.1``, and exactly ``1`` at ``\eta = 1``:
+
+    | ``\eta`` | 1.0 | 0.7 | 0.5 | 0.3 | 0.1 |
+    | :-- | :-- | :-- | :-- | :-- | :-- |
+    | ``\mathbb{H}_{\text{Echoes}}/\mathbb{H}_{\texttt{MFH}}`` | 1.0000 | 0.7000 | 0.5000 | 0.3000 | 0.1000 |
+
+    The check is `bench_crack_elliptic` in
+    `scripts/bench_echoes/benchmark.jl` (§ 2b). On the `MeanFieldHom` side the
+    ``3/4`` is ``\eta``-independent to machine precision
+    (``\mathbb{H}_{3333}/B_{33} = 0.750000`` for every ``\eta``), pinned by the
+    regression test *"B → H factor is η-independent"* in
+    `test/regression/test_crack_cases.jl`.
+
+!!! warning "``\boldsymbol{B}`` is the same, ``\mathbb{H}`` is not"
+    All three sources normalize ``\boldsymbol{B}`` by the half-width ``b``, so
+    the **COD tensors agree**. Only the compliance differs, and only for the
+    elliptic crack. If you compare a ``\boldsymbol{B}`` across papers, expect
+    agreement; if you compare an ``\mathbb{H}``, check the normalization first.
+
+## Closed forms of ``\boldsymbol{B}``
+
+### Isotropic matrix
+
+For ``\mathbb{C} = 3k\,\mathbb{J}+2\mu\,\mathbb{K}`` with Young's modulus ``E``
+and Poisson ratio ``\nu``, in the crack frame
+``(\underline{\ell},\underline{m},\underline{n})``:
+
+```math
+\boldsymbol{B}
+= B_{nn}\,\underline{n}\otimes\underline{n}
++ B_{mm}\,\underline{m}\otimes\underline{m}
++ B_{\ell\ell}\,\underline{\ell}\otimes\underline{\ell},
 ```
 
 ```math
 \begin{aligned}
-B_{nn}       &= \frac{8\,\eta\,(1-\nu^{2})}{3E}\,\frac{1}{\mathcal E_\eta},\\[6pt]
-B_{mm}       &= \frac{8\,\eta\,(1-\nu^{2})}{3E}\,
-                \frac{1-\eta^{2}}
-                     {\bigl(1-(1-\nu)\eta^{2}\bigr)\mathcal E_\eta
-                      - \nu\,\eta^{2}\,\mathcal K_\eta},\\[6pt]
+B_{nn} &= \frac{8\,\eta\,(1-\nu^{2})}{3E}\,\frac{1}{\mathcal{E}_\eta},\\[4pt]
+B_{mm} &= \frac{8\,\eta\,(1-\nu^{2})}{3E}\,
+          \frac{1-\eta^{2}}
+               {\bigl(1-(1-\nu)\eta^{2}\bigr)\mathcal{E}_\eta - \nu\,\eta^{2}\,\mathcal{K}_\eta},\\[4pt]
 B_{\ell\ell} &= \frac{8\,\eta\,(1-\nu^{2})}{3E}\,
-                \frac{1-\eta^{2}}
-                     {\bigl(1-\nu-\eta^{2}\bigr)\mathcal E_\eta
-                      + \nu\,\eta^{2}\,\mathcal K_\eta},
+          \frac{1-\eta^{2}}
+               {\bigl(1-\nu-\eta^{2}\bigr)\mathcal{E}_\eta + \nu\,\eta^{2}\,\mathcal{K}_\eta},
 \end{aligned}
 ```
 
-where ``\mathcal K_\eta=\mathcal K(\sqrt{1-\eta^{2}})`` and
-``\mathcal E_\eta=\mathcal E(\sqrt{1-\eta^{2}})`` are the complete
-elliptic integrals of first and second kind [abramowitz1972](@cite).
-In MFH these are provided by [`ell_K`](@ref) and [`ell_E`](@ref).
+with ``\mathcal{K}_\eta = \mathcal{K}(\sqrt{1-\eta^{2}})`` and
+``\mathcal{E}_\eta = \mathcal{E}(\sqrt{1-\eta^{2}})`` the complete elliptic
+integrals of the first and second kind [abramowitz1972](@cite), provided by
+[`ell_K`](@ref) and [`ell_E`](@ref).
 
-For the **circular penny** ``\eta=1``, ``\mathcal K_1 = \mathcal E_1 = \pi/2``
-and the formulas collapse to
+The three components are the three fracture modes: ``B_{nn}`` opens the crack
+(mode I), ``B_{mm}`` and ``B_{\ell\ell}`` shear it (modes II and III).
+
+**Penny crack** ``\eta=1``, where ``\mathcal{K}_1 = \mathcal{E}_1 = \pi/2``:
 
 ```math
 B_{nn} = \frac{16\,(1-\nu^{2})}{3\pi E},
@@ -163,218 +277,173 @@ B_{nn} = \frac{16\,(1-\nu^{2})}{3\pi E},
 B_{mm} = B_{\ell\ell} = \frac{B_{nn}}{1-\nu/2}.
 ```
 
-Implementation:
-[`src/Cracks/cod_analytical.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/cod_analytical.jl),
-selected by `method = :auto` when `C₀::TensISO{4,3}`.
+Implementation: `src/Cracks/cod_analytical.jl`, selected by `method = :auto`
+when ``\mathbb{C}_0`` is a `TensISO{4,3}`.
 
-## Transversely-isotropic matrix
+### Transversely isotropic matrix
 
-When the matrix is transversely isotropic and the TI axis is
-**aligned with the crack normal** ``\hat{\mathbf n}``, Echoes also
-handles ``\mathbf B`` analytically. The closed-form expressions
-involve the engineering parameters ``(E,\nu_{1},\nu_{2},H,\Gamma)``
-defined on the compliance ``\mathbb S=\mathbb C^{-1}``
-[hoenig1978](@cite), [kanaun2009](@cite), [barthelemyIJES2021](@cite);
-they reduce to the isotropic case for
-``\nu_{1}=\nu_{2}=\nu``, ``H=\Gamma=1``.
+When the matrix is transversely isotropic with its axis **aligned with the crack
+normal** ``\underline{n}``, ``\boldsymbol{B}`` is still analytical. The closed
+forms use the engineering parameters ``(E,\nu_1,\nu_2,H,\Gamma)`` defined on the
+compliance ``\mathbb{S} = \mathbb{C}^{-1}`` [hoenig1978](@cite),
+[kanaun2009](@cite), [barthelemyIJES2021](@cite), and reduce to the isotropic
+case for ``\nu_1=\nu_2=\nu``, ``H=\Gamma=1``. The auxiliary coefficients are
+documented inline in `src/Cracks/cod_analytical.jl`.
 
-MFH exposes the TI closed form in
-[`src/Cracks/cod_analytical.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/cod_analytical.jl);
-the detailed algebraic expressions (auxiliary coefficients
-``R_{ijkl}``, ``\sigma_\gamma``) are documented inline in that file to
-keep the present theory page close to the Echoes manual.
+The more general cases — a TI axis **not** aligned with the crack normal, or an
+elliptic-orthotropic matrix — are treated in [barthelemyMMS2023](@cite) and
+[barthelemySifAniso](@cite) but are not yet exposed here.
 
-!!! note "Misaligned TI / elliptic orthotropy — not yet documented"
-    The more general cases of a TI matrix whose axis is **not** aligned
-    with the crack normal, or of an elliptic-orthotropic matrix, are
-    not covered here. They will be handled in a future extension.
+### Arbitrary anisotropy — numerical
 
-## Anisotropic matrix — numerical paths
+No closed form exists in general. Following [barthelemyIJSS2009](@cite), the
+limit ``\omega\to 0`` is resolved by extracting the **first-order term** of the
+Taylor expansion of ``\mathbb{P}`` in ``\omega``; that term has an integral
+representation on the unit circle of the crack plane, evaluated by either
+algorithm trait:
 
-For an arbitrarily anisotropic matrix there is no closed form of
-``\mathbf B`` in general. Following [barthelemyIJSS2009](@cite), the
-limit ``\omega\to 0`` is resolved by extracting the
-**first-order term** of the Taylor expansion of the Hill polarisation
-tensor in ``\omega``; that term admits an integral representation on
-the unit circle of the crack plane which MFH evaluates via two
-algorithm traits:
+- **`DECUHR`** — adaptive cubature [espelid1994](@cite), ForwardDiff-safe
+  (`src/Cracks/green_decuhr.jl`);
+- **`Residue`** — Cauchy-residue reduction to a 1-D quadrature, as in
+  [masson2008](@cite) adapted to the crack kernel, `Float64` only
+  (`src/Cracks/green_residue.jl`).
 
-- `DECUHR` — adaptive 2-D cubature of [espelid1994](@cite);
-  ForwardDiff-safe. Entry point
-  [`src/Cracks/green_decuhr.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/green_decuhr.jl).
-- `Residue` — Cauchy-residue reduction to a 1-D quadrature, as in
-  [masson2008](@cite) adapted to the crack kernel; Float64 only
-  (PolynomialRoots). Entry point
-  [`src/Cracks/green_residue.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/green_residue.jl).
+`method = :auto` picks `Residue` for anisotropic `Float64` inputs and falls back
+to `DECUHR` for symbolic or `ForwardDiff.Dual` scalars.
 
-`method = :auto` picks `Residue` on anisotropic Float64 inputs and
-falls back to `DECUHR` for symbolic or `ForwardDiff.Dual` scalars.
+## Dilute correction to the effective compliance
 
-## Compliance contribution to the effective stiffness
+[`compliance_contribution`](@ref)`(crack, C₀)` returns ``\mathbb{H}`` itself —
+the *size-independent* contribution, not the dilute correction. Cracks have no
+volume fraction, so the amount of cracking is measured by a **Budiansky crack
+density** [budiansky1976](@cite), [kachanov1993](@cite), and reintroduced by
+[`delta_compliance`](@ref):
 
-The size-independent contribution tensor returned by
-[`compliance_contribution`](@ref)`(crack, C₀)` is ``\mathbb H`` itself
-— not the full dilute correction ``\Delta\mathbb S``.  The dilute
-correction is recovered by applying the Budiansky density
-``\varepsilon`` through [`delta_compliance`](@ref):
+| | density | dilute correction |
+| :-- | :-- | :-- |
+| **elliptic** (3-D) | ``\varepsilon^{3\mathrm{d}} = N\,a\,b^{2}`` (number per unit volume × major × minor²) | ``\Delta\mathbb{S} = \tfrac{4\pi}{3}\,\varepsilon^{3\mathrm{d}}\,\mathbb{H}^{\mathcal{E}}`` |
+| **ribbon** (2-D) | ``\varepsilon^{2\mathrm{d}} = N\,b^{2}`` (number per unit area × half-width²) | ``\Delta\mathbb{S} = \pi\,\varepsilon^{2\mathrm{d}}\,\mathbb{H}^{\mathcal{R}}`` |
 
-- **Elliptic 3D crack**: Budiansky density
-  ``\varepsilon^{3\mathrm d} = N\,a\,b^{2}`` (number density × major ×
-  minor² semi-axes), and
+Implementation: `src/Cracks/compliance.jl`, dispatching on the crack shape.
 
-  ```math
-  \Delta\mathbb S \;=\; \tfrac{4\pi}{3}\,\varepsilon^{3\mathrm d}\,\mathbb H^{\mathcal E}.
-  ```
+## Intensity factors at the crack front
 
-- **Ribbon 2D crack**: Budiansky density
-  ``\varepsilon^{2\mathrm d} = N\,b^{2}`` (number per unit area × minor²
-  semi-axis), and
-
-  ```math
-  \Delta\mathbb S \;=\; \pi\,\varepsilon^{2\mathrm d}\,\mathbb H^{\mathcal R}.
-  ```
-
-Implementation: [`compliance_contribution`](@ref) returns ``\mathbb H``
-directly (convention shared with Echoes); [`delta_compliance`](@ref)
-assembles ``\Delta\mathbb S`` from ``\mathbb H`` and ``\varepsilon``
-with dispatch on the crack shape
-([`src/Cracks/compliance.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/compliance.jl)).
-
-## Conductivity crack resistivity
-
-The transport analog of the elastic crack compliance is the
-**crack resistivity contribution tensor** ``\mathbf R``
-[kachanov2018](@cite), assembled from a scalar thermal COD ``b`` and
-an effective rank-1 direction ``\hat{\mathbf w}``; see
-[Thermal cracks — COD scalar and resistivity contribution](thermal_cracks.md)
-for the full derivation.  The geometric factors ``3/4`` (elliptic) and
-``2/\pi`` (ribbon) coincide with those of the elasticity case.
-
-## Stress and displacement intensity factors
-
-At a point ``\mathbf x^{\star}_{0}`` of the crack front, with outer
-in-plane normal ``\hat{\boldsymbol\nu}`` and tangent
-``\hat{\boldsymbol\tau}=\hat{\mathbf n}\wedge\hat{\boldsymbol\nu}``,
-the asymptotic expansions of the displacement jump and traction read
-[irwin1957](@cite), [kassir1968](@cite), [willis1968](@cite):
+At a point ``\underline{x}^{\star}_{0}`` of the crack front, with in-plane outer
+normal ``\underline{\nu}`` and tangent
+``\underline{\tau} = \underline{n}\wedge\underline{\nu}``, the asymptotic
+expansions of the jump and the traction read [irwin1957](@cite),
+[kassir1968](@cite), [willis1968](@cite):
 
 ```math
-[\![\mathbf u]\!](\mathbf x^{\star}_{0}+r\hat{\boldsymbol\nu})
+[\![\underline{u}]\!](\underline{x}^{\star}_{0}+r\underline{\nu})
 \underset{r\to 0^{-}}{\sim}
-8\,\sqrt{\tfrac{-r}{2\pi}}\,\hat{\mathbf N},
+8\sqrt{\frac{-r}{2\pi}}\;\underline{N},
 \qquad
-\mathbf t(\mathbf x^{\star}_{0}+r\hat{\boldsymbol\nu})
+\underline{t}(\underline{x}^{\star}_{0}+r\underline{\nu})
 \underset{r\to 0^{+}}{\sim}
-\frac{\hat{\mathbf K}}{\sqrt{2\pi r}}.
+\frac{\underline{K}}{\sqrt{2\pi r}} .
 ```
 
-``\hat{\mathbf N}`` is the **displacement intensity factor** (DIF)
-vector, ``\hat{\mathbf K}`` the **stress intensity factor** (SIF)
-vector. Their normalization is chosen so that the local energy release
-rate [barnett1972](@cite), [rice1989](@cite) reads
-``G = \hat{\mathbf K}\cdot\hat{\mathbf N}``.
+``\underline{N}`` is the **displacement intensity factor** (DIF) and
+``\underline{K}`` the **stress intensity factor** (SIF), normalized so that the
+local energy release rate is simply
+``G = \underline{K}\cdot\underline{N}`` [barnett1972](@cite),
+[rice1989](@cite).
 
-A central identity of the general anisotropic theory
-[kanaun1981](@cite), [kunin1983](@cite), [kanaun2009](@cite) is that
-the SIF and DIF are purely local and are exchanged by the COD tensor
-``\mathbf B^{\mathcal R}`` of the **ribbon crack tangent** to the real
+The central result of the anisotropic theory [kanaun1981](@cite),
+[kunin1983](@cite), [kanaun2009](@cite) is that SIF and DIF are **purely local**
+and are exchanged by the COD tensor of the **ribbon crack tangent** to the real
 crack at the observation point:
 
 ```math
-\hat{\mathbf K}
-= \pi\,\bigl(\mathbf B^{\mathcal R}(\hat{\boldsymbol\nu},\hat{\mathbf n})\bigr)^{-1}
-\cdot\hat{\mathbf N}.
+\boxed{\;
+\underline{K}
+= \pi\,\bigl(\boldsymbol{B}^{\mathcal{R}}(\underline{\nu},\underline{n})\bigr)^{-1}
+  \cdot\underline{N}
+\;}
 ```
 
-This relation holds regardless of the matrix anisotropy and of the
-far-field loading.
+This holds whatever the matrix anisotropy and whatever the remote loading — and
+it is why ``\boldsymbol{B}^{\mathcal{R}}``, with its ``3\pi/8`` factor, cannot be
+dispensed with even when studying elliptic cracks.
 
 ### Elliptic crack
 
-The crack-plane parameterization
+Parametrize the front by an angle ``\theta_y``:
 
 ```math
-\hat{\mathbf y}^{\star}_{0}
-= \cos\theta_y\,\hat{\boldsymbol\ell} + \sin\theta_y\,\hat{\mathbf m}
+\underline{y}^{\star}_{0} = \cos\theta_y\,\underline{\ell} + \sin\theta_y\,\underline{m},
+\qquad
+\underline{\nu}
+= \frac{\boldsymbol{S}^{\dagger}\!\cdot\underline{y}^{\star}_{0}}
+       {\|\boldsymbol{S}^{\dagger}\!\cdot\underline{y}^{\star}_{0}\|},
 ```
 
-defines the tip outer normal
+with ``\boldsymbol{S}`` the in-plane semi-axis tensor and
+``\boldsymbol{S}^{\dagger}`` its pseudo-inverse. Then
 
 ```math
-\hat{\boldsymbol\nu}
-= \frac{\mathbf S^{\dagger}\cdot\hat{\mathbf y}^{\star}_{0}}
-       {\|\mathbf S^{\dagger}\cdot\hat{\mathbf y}^{\star}_{0}\|},
+\underline{N}^{\mathcal{E}}
+= \tfrac{3}{8}\sqrt{\pi b}\;\sqrt{\varrho}\;
+  \boldsymbol{B}^{\mathcal{E}}(\underline{m},\underline{n},\eta)
+  \cdot\boldsymbol{\Sigma}\cdot\underline{n},
+\qquad
+\underline{K}^{\mathcal{E}}
+= \tfrac{3}{8}\pi^{3/2}\sqrt{b}\;\sqrt{\varrho}\;
+  \bigl(\boldsymbol{B}^{\mathcal{R}}(\underline{\nu},\underline{n})\bigr)^{-1}
+  \cdot\boldsymbol{B}^{\mathcal{E}}(\underline{m},\underline{n},\eta)
+  \cdot\boldsymbol{\Sigma}\cdot\underline{n},
 ```
 
-where ``\mathbf S`` is the 2-D semi-axis tensor and
-``\mathbf S^{\dagger}`` its pseudo-inverse. The SIF and DIF vectors at
-the front are
+where the dimensionless front factor is
 
 ```math
-\hat{\mathbf N}^{\mathcal E}
-= \tfrac{3}{8}\sqrt{\pi b}\,
-  \sqrt{b\,\|\mathbf S^{\dagger}\cdot\hat{\mathbf y}^{\star}_{0}\|}\,
-  \mathbf B^{\mathcal E}(\hat{\mathbf m},\hat{\mathbf n},\eta)
-  \cdot\boldsymbol\Sigma\cdot\hat{\mathbf n},
-```
-
-```math
-\hat{\mathbf K}^{\mathcal E}
-= \tfrac{3}{8}\pi^{3/2}\sqrt{b}\,
-  \sqrt{b\,\|\mathbf S^{\dagger}\cdot\hat{\mathbf y}^{\star}_{0}\|}\,
-  \bigl(\mathbf B^{\mathcal R}(\hat{\boldsymbol\nu},\hat{\mathbf n})\bigr)^{-1}
-  \cdot\mathbf B^{\mathcal E}(\hat{\mathbf m},\hat{\mathbf n},\eta)
-  \cdot\boldsymbol\Sigma\cdot\hat{\mathbf n},
-```
-
-with the dimensionless prefactor
-
-```math
-b\,\|\mathbf S^{\dagger}\cdot\hat{\mathbf y}^{\star}_{0}\|
+\varrho = b\,\|\boldsymbol{S}^{\dagger}\!\cdot\underline{y}^{\star}_{0}\|
 = \sqrt{\eta^{2}\cos^{2}\theta_y + \sin^{2}\theta_y}.
 ```
 
 ### Ribbon crack
 
-For a ribbon crack with
-``\hat{\boldsymbol\nu}=\pm\hat{\mathbf m}`` the prefactor is unity:
+Here ``\underline{\nu} = \pm\underline{m}`` and ``\varrho = 1``:
 
 ```math
-\hat{\mathbf N}^{\mathcal R}
-= \sqrt{\tfrac{b}{\pi}}\,
-  \mathbf B^{\mathcal R}(\hat{\mathbf m},\hat{\mathbf n})
-  \cdot\boldsymbol\Sigma\cdot\hat{\mathbf n},
+\underline{N}^{\mathcal{R}}
+= \sqrt{\frac{b}{\pi}}\;
+  \boldsymbol{B}^{\mathcal{R}}(\underline{m},\underline{n})
+  \cdot\boldsymbol{\Sigma}\cdot\underline{n},
 \qquad
-\hat{\mathbf K}^{\mathcal R}
-= \sqrt{\pi b}\,\boldsymbol\Sigma\cdot\hat{\mathbf n}.
+\underline{K}^{\mathcal{R}}
+= \sqrt{\pi b}\;\boldsymbol{\Sigma}\cdot\underline{n}.
 ```
 
-The SIF of an infinite ribbon crack is **independent of the matrix
-stiffness**.
+The SIF of an infinite ribbon crack is **independent of the matrix stiffness** —
+the ``\boldsymbol{B}^{\mathcal{R}}`` of the DIF cancels against its inverse in
+the exchange relation.
 
-### Mode decomposition
-
-The classical ``(K_{I},K_{II},K_{III})`` decomposition on
-``(\hat{\mathbf n},\hat{\boldsymbol\nu},\hat{\boldsymbol\tau})`` reads
+### Modes
 
 ```math
-K_{I}   = |\hat{\mathbf K}\cdot\hat{\mathbf n}|,\quad
-K_{II}  = |\hat{\mathbf K}\cdot\hat{\boldsymbol\nu}|,\quad
-K_{III} = |\hat{\mathbf K}\cdot\hat{\boldsymbol\tau}|.
+K_{I} = |\underline{K}\cdot\underline{n}|,
+\qquad
+K_{II} = |\underline{K}\cdot\underline{\nu}|,
+\qquad
+K_{III} = |\underline{K}\cdot\underline{\tau}| .
 ```
 
-Evaluation is handled by [`sif`](@ref) and [`dif`](@ref); see
-[`src/Cracks/sif.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Cracks/sif.jl).
+Evaluation: [`sif`](@ref) and [`dif`](@ref) (`src/Cracks/sif.jl`).
 
-## Dispatch and implementation notes
+## Dispatch
 
-| `(crack, C₀)`                                   | `:auto` selects        | alternative(s)    | ForwardDiff |
-| :---------------------------------------------- | :--------------------- | :---------------- | :---------: |
-| `EllipticCrack / RibbonCrack, TensISO`          | `Analytical`           | —                 |     ✓       |
-| `EllipticCrack / RibbonCrack, TensTI` (aligned) | `Analytical` (MFH)     | —                 |     ✓       |
-| `EllipticCrack / RibbonCrack, AbstractTens{4,3}`| `Residue` (Float64)    | `:decuhr`         |  ✓ (decuhr) |
+| `(crack, C₀)` | `:auto` selects | alternatives | ForwardDiff |
+| :------------ | :-------------- | :----------- | :---------: |
+| `EllipticCrack` / `RibbonCrack`, `TensISO` | `Analytical` | — | ✓ |
+| `EllipticCrack` / `RibbonCrack`, `TensTI` (aligned) | `Analytical` (MFH) | — | ✓ |
+| `EllipticCrack` / `RibbonCrack`, `AbstractTens{4,3}` | `Residue` (Float64) | `:decuhr` | ✓ (decuhr) |
 
-Entry points: [`cod_tensor`](@ref) / [`B_tensor`](@ref) for ``\mathbf B``,
-[`compliance_contribution`](@ref) for ``\mathbb H``,
-[`delta_compliance`](@ref) for ``\Delta\mathbb S``,
-[`sif`](@ref) / [`dif`](@ref) for the front quantities.
+Entry points: [`cod_tensor`](@ref) / [`B_tensor`](@ref) for ``\boldsymbol{B}``,
+[`compliance_contribution`](@ref) for ``\mathbb{H}``,
+[`delta_compliance`](@ref) for ``\Delta\mathbb{S}``, [`sif`](@ref) /
+[`dif`](@ref) for the front quantities. The transport counterpart — a scalar COD
+and a rank-1 resistivity contribution — is treated in
+[Thermal cracks](thermal_cracks.md), with the same geometric factors ``3/4`` and
+``2/\pi``.

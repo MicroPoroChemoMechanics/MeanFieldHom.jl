@@ -1,5 +1,5 @@
 # =============================================================================
-#  hill_alv.jl — discrete ALV Hill polarisation tensor kernel.
+#  hill_alv.jl — discrete ALV Hill polarization tensor kernel.
 #
 #  For an ellipsoidal inclusion in an **isotropic** ALV matrix, the
 #  Hill kernel admits the time-space decoupling formula
@@ -23,7 +23,7 @@
                 C0_law::ViscoLaw,
                 times::AbstractVector{<:Real}) -> Matrix
 
-Discrete ALV Hill polarisation tensor kernel for the inclusion `ell`
+Discrete ALV Hill polarization tensor kernel for the inclusion `ell`
 in an **isotropic** ALV matrix described by `C0_law` (a `ViscoLaw`
 returning a `TensND.TensISO{4,3}` 4-tensor at each `(t, t')`).
 

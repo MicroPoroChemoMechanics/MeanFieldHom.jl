@@ -19,7 +19,7 @@
 """
     _hill_3d_aniso_decuhr(ell, C₀; abstol, reltol, maxiters) -> AbstractTens{4,3}
 
-Hill polarisation tensor of a 3-D ellipsoid in an arbitrarily
+Hill polarization tensor of a 3-D ellipsoid in an arbitrarily
 anisotropic matrix, evaluated by the adaptive 2-D DECUHR cubature of
 [Espelid & Genz 1994](@cite espelid1994) called through `Integrals.jl`
 (`DecuhrAlgorithm`).  ForwardDiff-compatible — `alpha = 0.0` is

@@ -197,6 +197,47 @@ using LinearAlgebra
         @test (3π / 8) * B_e[3, 3] ≈ B_r[3, 3] rtol = 1.0e-2
     end
 
+    # The B → H factor is the one place where MeanFieldHom's convention
+    # deliberately differs from the Echoes / Kachanov one, so it gets its own
+    # test rather than relying on the internal-consistency checks above (which
+    # hold for *any* value of the factor, since it appears on both sides).
+    #
+    # MeanFieldHom normalizes the flat limit by the in-plane half-width b,
+    # uniformly for 3D and 2D:  H = lim (c/b) Q⁻¹ = (cS/V) n ⊗ˢ B ⊗ˢ n,
+    # giving 3/4 for an ellipse and 2/π for a ribbon — both INDEPENDENT of η.
+    # Echoes normalizes the elliptic case by the major semi-axis a instead, so
+    # H_echoes = η · H_MFH (they coincide only for a penny, η = 1). Measured
+    # against Echoes 2026-07-25 at η = 0.7, 0.5, 0.3, 0.1: ratio = η to 4
+    # decimals. See docs/src/theory/cod_tensors.md § Conventions.
+    @testset "B → H factor is η-independent (MFH uniform-b convention)" begin
+        E, ν = 1.0, 0.25
+        k = E / (3 * (1 - 2ν))
+        μ = E / (2 * (1 + ν))
+        C₀ = TensISO{3}(3k, 2μ)
+
+        for η in (1.0, 0.7, 0.5, 0.3, 0.1)
+            ec = EllipticCrack(1.0, η)
+            B = cod_tensor(ec, C₀)
+            H = compliance_contribution(ec, C₀)
+            # H_3333 = (3/4) B_33 for every aspect ratio — this is what pins
+            # the convention. A 3η/4 factor would fail for every η ≠ 1.
+            @test H[3, 3, 3, 3] ≈ 0.75 * B[3, 3] rtol = 1.0e-12
+        end
+
+        # Ribbon: same statement with the 2/π factor.
+        r = RibbonCrack(1.0)
+        B_r = cod_tensor(r, C₀)
+        H_r = compliance_contribution(r, C₀)
+        @test H_r[3, 3, 3, 3] ≈ (2 / π) * B_r[3, 3] rtol = 1.0e-12
+
+        # Round trip through the documented bridge, at η ≠ 1.
+        ec = EllipticCrack(1.0, 0.4)
+        B = cod_tensor(ec, C₀)
+        H = compliance_from_cod(B, ec)
+        @test H[3, 3, 3, 3] ≈ compliance_contribution(ec, C₀)[3, 3, 3, 3] rtol = 1.0e-12
+        @test cod_from_compliance(H, ec)[3, 3] ≈ B[3, 3] rtol = 1.0e-10
+    end
+
     @testset "SIF — ribbon analytical" begin
         E, ν = 210.0, 0.3
         k = E / (3 * (1 - 2ν))

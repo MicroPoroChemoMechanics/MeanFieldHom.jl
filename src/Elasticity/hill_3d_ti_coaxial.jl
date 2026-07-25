@@ -1,5 +1,5 @@
 # =============================================================================
-#  hill_3d_ti_coaxial.jl — Analytical Hill polarisation tensor for a
+#  hill_3d_ti_coaxial.jl — Analytical Hill polarization tensor for a
 #  spheroidal inclusion coaxial with a transversely isotropic matrix.
 #
 #  Implements the closed-form formula derived in
@@ -218,7 +218,7 @@ end
 """
     _hill_3d_ti_coaxial(ell, C₀) -> TensTI{4, Float64, 5}
 
-Hill polarisation tensor for a spheroidal inclusion `ell` coaxial with a
+Hill polarization tensor for a spheroidal inclusion `ell` coaxial with a
 transversely isotropic matrix `C₀::TensTI{4, T, 5}`.  Both must share
 the same symmetry axis; coaxiality is checked by the dispatcher
 ([`_ti_coaxial`](@ref)) and the `Analytical` algorithm is selected when

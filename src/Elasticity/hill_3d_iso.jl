@@ -6,7 +6,7 @@
 """
     _hill_3d_iso(ell::Ellipsoid{3}, C₀::TensISO{4,3}) -> AbstractTens{4,3}
 
-Analytical Hill polarisation tensor ``\\mathbb P`` for a 3-D ellipsoid
+Analytical Hill polarization tensor ``\\mathbb P`` for a 3-D ellipsoid
 in an isotropic matrix ``\\mathbb C_0 = 3k\\,\\mathbb J + 2\\mu\\,\\mathbb K
 = 3\\lambda\\,\\mathbb I + 2\\mu\\,\\mathbb K``:
 

@@ -14,7 +14,7 @@
 """
     _hill_3d_cylinder_aniso(cyl, C₀; abstol, reltol, maxiters) -> AbstractTens{4,3}
 
-Hill polarisation tensor of an infinite cylinder in an arbitrarily
+Hill polarization tensor of an infinite cylinder in an arbitrarily
 anisotropic matrix, evaluated by a single adaptive 1-D quadrature over
 the transverse unit circle. At the cylinder limit ``a\\to\\infty`` the
 Masson polynomial ([Masson 2008](@cite masson2008)) degenerates (one

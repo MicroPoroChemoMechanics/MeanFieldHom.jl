@@ -71,7 +71,7 @@ end
 """
     _hill_3d_aniso_nestedquadgk(ell, C₀; abstol, reltol, maxiters) -> AbstractTens{4,3}
 
-Hill polarisation tensor of a 3-D ellipsoid in an arbitrarily
+Hill polarization tensor of a 3-D ellipsoid in an arbitrarily
 anisotropic matrix, evaluated by **nested 1-D QuadGK cubature** over the
 unit sphere of the general [Willis 1977](@cite willis1977) integrand.
 ForwardDiff-compatible. Includes axis-sort and power change-of-variable for
