@@ -102,7 +102,7 @@ Three solver families are available for [`SelfConsistent`](@ref) /
   `homogenize` through a `NonlinearSolve` algorithm uses an
   implicit-function-theorem lift internally so no nested `Dual`s ever
   form — see [`derivative`](@ref) and the
-  [Nonlinear solvers tutorial](../tutorials/12_nonlinear_solvers.md).
+  [Nonlinear solvers tutorial](../tutorials/nonlinear_solvers.md).
 
 `AutoNonlinear` is **not** the default: a root-finder is not guaranteed
 to track the physical branch through the SC bifurcation the way the

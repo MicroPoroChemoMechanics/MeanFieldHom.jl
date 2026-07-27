@@ -114,12 +114,12 @@ B = flux_gradient_loc(s, TensISO{3}(1e-6), TensISO{3}(1.0))      # ⟨𝐊∇T�
 k_eq = B[1, 1] / A[1, 1]                                          # equivalent particle
 ```
 
-Theory: [Layered sphere](../theory/layered_sphere.md),
-[Layered spheroid](../theory/layered_spheroid.md). Worked examples: gallery
-pages [32](../gallery/generated/32_spheroid_nlayers_conductivity.md) (Kapitza),
-[36](../gallery/generated/36_spheroid_interface_effect.md) (what an interface
-does to the flux) and
-[37](../gallery/generated/37_spheroid_hc_conductivity.md) (highly conducting).
+Theory: [Layered sphere](../theory/layered_sphere.md) and
+[Layered spheroid](../theory/layered_spheroid.md). Worked examples:
+[geometry and effective conductivity](../tutorials/generated/layered_spheroid_effective.md)
+(Kapitza sweep and equivalent particle),
+[what an interface does to the local fields](../tutorials/generated/layered_spheroid_interfaces.md),
+and [highly conducting interfaces](../tutorials/generated/layered_spheroid_hc.md).
 
 ## Cross-property links
 

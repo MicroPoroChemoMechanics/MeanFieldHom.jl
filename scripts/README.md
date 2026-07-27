@@ -126,13 +126,20 @@ A script converted to this contract stays runnable exactly as before
 Documenter markdown page, a Jupyter notebook, and a cleaned standalone
 script from the same file (`julia --project=docs docs/literate.jl`).
 
-**Coexistence policy** — this is additive to the tutorials, not a
-replacement. A script is only *promoted into the doc site* (added to
-`GALLERY_SCRIPTS` in `docs/literate.jl` and to `docs/src/gallery/index.md`)
-if no tutorial or application already covers its topic. Scripts that
-duplicate a tutorial (the majority — see
+**Publication policy** — a script is only *published as a tutorial page*
+(added to `PUBLISHED_SCRIPTS` in `docs/literate.jl` and to the `pages`
+tree of `docs/make.jl`) if no other tutorial or application already
+covers its topic. Scripts that duplicate one (the majority — see
 `Assets/plans/MFH_LITERATE_SCRIPTS.md` for the full classification) keep
 the plain banner style and are never regenerated into a competing page.
+
+There is no separate "Gallery" section any more: a page generated from a
+script and one written by hand are both tutorials, and the reader has no
+reason to care which is which. `PUBLISHED_SCRIPTS` maps each script to
+its **page name**, so scripts keep their numeric prefixes (a running
+order) while pages carry thematic names — inserting a tutorial never
+forces a renumbering. That mapping is what Literate's `name` option is
+for.
 
 Converting a script to the contract, whether or not it ends up promoted:
 

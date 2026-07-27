@@ -225,7 +225,7 @@ if !isempty(sol_por)
         @printf("    k₀=%5.1f  μ₀=%5.1f  ->  ksc(1/2) = %.3e   μsc(1/2) = %.3e\n", k0v, μ0v, kval, μval)
     end
     println("  (both vanish identically at f=1/2, independent of k₀,μ₀ — the classic")
-    println("   sphere percolation threshold, see tutorials/03_porous_materials.md)")
+    println("   sphere percolation threshold, see tutorials/porous_materials.md)")
 end
 
 # ── Rigid SC: kᵢ, μᵢ → ∞ ─────────────────────────────────────────────────

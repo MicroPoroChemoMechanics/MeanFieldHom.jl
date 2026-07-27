@@ -61,8 +61,16 @@ inclusion rather than the strain gives the dual statement
 becomes flat, which is why the crack theory is built on it rather than on
 ``\mathbb{P}`` — see [Crack opening displacement](cod_tensors.md).
 
-In `MeanFieldHom` these are [`hill_tensor`](@ref), [`eshelby_tensor`](@ref) and
-`hill_dual`.
+In `MeanFieldHom`, ``\mathbb{P}`` and ``\mathbb{S}`` are [`hill_tensor`](@ref)
+and [`eshelby_tensor`](@ref). There is no public accessor for ``\mathbb{Q}``:
+assemble it from ``\mathbb{P}`` when you need it,
+
+```julia
+P = hill_tensor(inclusion, C₀)
+Q = C₀ - C₀ ⊡ P ⊡ C₀
+```
+
+which is all the crack machinery does internally before taking the flat limit.
 
 ## The transport counterpart
 

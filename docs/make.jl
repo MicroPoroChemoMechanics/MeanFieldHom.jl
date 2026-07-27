@@ -89,21 +89,40 @@ makedocs(;
             "manual/sensitivities.md",
             "manual/elliptic_examples.md",
         ],
+        # One learning path, grouped by theme rather than by how the page
+        # happens to be produced. Pages under `tutorials/generated/` are built
+        # from `scripts/` by Literate (see `docs/literate.jl`); that is an
+        # implementation detail the reader has no reason to care about, so they
+        # sit alongside the hand-written ones.
         "Tutorials" => [
             "tutorials/index.md",
-            "tutorials/01_first_estimate.md",
-            "tutorials/02_bounds_and_schemes.md",
-            "tutorials/03_porous_materials.md",
-            "tutorials/04_porous_benchmark.md",
-            "tutorials/05_differential_paths.md",
-            "tutorials/06_cracks.md",
-            "tutorials/07_viscoelasticity.md",
-            "tutorials/08_sensitivities.md",
-            "tutorials/09_strength_criteria.md",
-            "tutorials/10_from_echoes.md",
-            "tutorials/11_symbolic_spheres.md",
-            "tutorials/12_nonlinear_solvers.md",
-            "tutorials/13_layered_spheroid.md",
+            "Fundamentals" => [
+                "tutorials/first_estimate.md",
+                "tutorials/bounds_and_schemes.md",
+                "tutorials/porous_materials.md",
+                "tutorials/porous_benchmark.md",
+                "tutorials/differential_paths.md",
+            ],
+            "Inclusions and geometries" => [
+                "tutorials/cracks.md",
+                "tutorials/generated/layered_sphere.md",
+                "tutorials/generated/layered_spheroid_effective.md",
+                "tutorials/generated/layered_spheroid_interfaces.md",
+                "tutorials/generated/layered_spheroid_hc.md",
+            ],
+            "Beyond elasticity" => [
+                "tutorials/viscoelasticity.md",
+            ],
+            "Differentiation and solvers" => [
+                "tutorials/sensitivities.md",
+                "tutorials/strength_criteria.md",
+                "tutorials/nonlinear_solvers.md",
+                "tutorials/symbolic_spheres.md",
+            ],
+            "Interoperability and tools" => [
+                "tutorials/from_echoes.md",
+                "tutorials/generated/symmetrization.md",
+            ],
         ],
         "Applications" => [
             "applications/transport.md",
@@ -112,17 +131,6 @@ makedocs(;
             "applications/strength.md",
             "applications/bituminous.md",
             "applications/ageing_creep.md",
-        ],
-        "Gallery" => [
-            "gallery/index.md",
-            "gallery/generated/30_average_nlayers.md",
-            "gallery/generated/70_symmetrization_showcase.md",
-            "gallery/generated/32_spheroid_nlayers_conductivity.md",
-            "gallery/generated/33_spheroid_series_convergence.md",
-            "gallery/generated/34_spheroid_equivalent_conductivity.md",
-            "gallery/generated/35_spheroid_local_fields.md",
-            "gallery/generated/36_spheroid_interface_effect.md",
-            "gallery/generated/37_spheroid_hc_conductivity.md",
         ],
         "Developer" => [
             "developer/architecture.md",

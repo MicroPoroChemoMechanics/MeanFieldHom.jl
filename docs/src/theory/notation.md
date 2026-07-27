@@ -106,7 +106,7 @@ Order-2 and order-4 tensors are stored in the **Kelvin–Mandel** convention
 makes a double contraction an ordinary matrix product and a tensor inverse an
 ordinary matrix inverse. The practical consequences when reading printed
 components are spelled out in
-[A storage convention worth knowing](../tutorials/01_first_estimate.md).
+[A storage convention worth knowing](../tutorials/first_estimate.md).
 
 ``\mathrm{Mat}(\mathbb{C})`` denotes the ``6\times 6`` Kelvin–Mandel matrix of an
 order-4 tensor, and

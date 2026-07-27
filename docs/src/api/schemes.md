@@ -67,7 +67,7 @@ symmetry, unlike the exact rotation-group averages
 [`MeanFieldHom.Core.isotropify`](@ref) / [`MeanFieldHom.Core.transverse_isotropify`](@ref) in
 [API — Core](core.md); the two differ whenever the input is not
 major-symmetric, and the difference is worked through in
-[Symmetrization showcase](../gallery/generated/70_symmetrization_showcase.md).
+[Symmetrization showcase](../tutorials/generated/symmetrization.md).
 
 ```@docs
 best_fit_iso

@@ -1,64 +1,57 @@
 # docs/literate.jl
 #
-# Runs Literate.jl over the curated list of `scripts/` demos that have been
-# converted to the "dual-usage" contract (see `scripts/README.md`, §Literate
-# convention) and are promoted into the doc site's Gallery section. Produces,
-# per script, three artifacts:
+# Runs Literate.jl over the `scripts/` demos that are published as tutorial
+# pages. Produces, per script, three artifacts:
 #
-#   - a Documenter-ready markdown page  -> docs/src/gallery/generated/
+#   - a Documenter-ready markdown page  -> docs/src/tutorials/generated/
 #     (executed by Documenter itself via `@example` when `makedocs` runs —
 #     Literate's `markdown(...; documenter=true)` leaves `execute=false`)
 #   - a pre-run Jupyter notebook        -> docs/generated_notebooks/
 #   - a cleaned standalone .jl script   -> docs/generated_scripts/
-#     (markup-only lines stripped, `#src`/`#nb`/`#md` directives resolved)
+#     (markup-only lines stripped, `#jl` directives resolved)
 #
 # Called from `docs/make.jl` *before* `makedocs`, so the generated markdown
 # exists when Documenter's `pages` list references it.
 #
-# GALLERY_SCRIPTS is intentionally curated, not "every script in scripts/":
-# only scripts classified "G" (gap-filler, no tutorial/application overlap)
-# in `Assets/plans/MFH_LITERATE_SCRIPTS.md` belong here. Scripts that
-# duplicate an existing tutorial ("D") stay plain scripts — converting them
-# would put two pages saying the same thing in the site. See that file for
-# the full classification and rationale.
+# There is no longer a separate "Gallery" section: a page generated from a
+# script and a page written by hand are both just tutorials, and the reader has
+# no reason to care which is which. What decides whether a script is published
+# is the same as before — does it cover a topic no other tutorial does — with
+# the classification kept in `Assets/plans/MFH_LITERATE_SCRIPTS.md`. Scripts
+# that duplicate an existing tutorial stay plain scripts, and SymPy-heavy ones
+# are never published (they are re-executed on every docs build).
+#
+# `PUBLISHED_SCRIPTS` maps each script to its **page name**. Scripts keep their
+# numeric prefixes (they encode a running order), while pages carry thematic
+# names, so inserting a tutorial never forces a renumbering. The mapping is what
+# Literate's `name` option is for.
 
 using Literate
 
 const SCRIPTS_DIR = joinpath(@__DIR__, "..", "scripts")
-const GALLERY_MD_DIR = joinpath(@__DIR__, "src", "gallery", "generated")
-const GALLERY_NB_DIR = joinpath(@__DIR__, "generated_notebooks")
-const GALLERY_SCRIPT_DIR = joinpath(@__DIR__, "generated_scripts")
+const TUTORIAL_MD_DIR = joinpath(@__DIR__, "src", "tutorials", "generated")
+const NOTEBOOK_DIR = joinpath(@__DIR__, "generated_notebooks")
+const CLEAN_SCRIPT_DIR = joinpath(@__DIR__, "generated_scripts")
 
-# Phase-1 pilot: only the two "G" (gap-filler) pilots are promoted to the
-# gallery. `29_symbolic_schemes.jl` was also converted to the dual-usage
-# contract as a pilot (to measure SymPy-under-`@example` build cost) but is
-# a "D" (duplicate of tutorial 11) — deliberately NOT listed here, so it
-# does not appear as a competing page in the built site.
-const GALLERY_SCRIPTS = [
-    "70_symmetrization_showcase.jl",
-    "30_average_nlayers.jl",
-    # LayeredSpheroid (2026-07): gap-fillers, no tutorial/application overlap.
-    "32_spheroid_nlayers_conductivity.jl",
-    "33_spheroid_series_convergence.jl",
-    "34_spheroid_equivalent_conductivity.jl",
-    "35_spheroid_local_fields.jl",
-    # Imperfect interfaces (2026-07): the pedagogical "what does an interface
-    # actually do" page and the highly-conducting counterpart of script 32.
-    # Neither topic is covered by a tutorial or an application.
-    "36_spheroid_interface_effect.jl",
-    "37_spheroid_hc_conductivity.jl",
+const PUBLISHED_SCRIPTS = [
+    "30_average_nlayers.jl" => "layered_sphere",
+    "32_spheroid_effective_conductivity.jl" => "layered_spheroid_effective",
+    "35_spheroid_interfaces.jl" => "layered_spheroid_interfaces",
+    "37_spheroid_hc_conductivity.jl" => "layered_spheroid_hc",
+    "70_symmetrization_showcase.jl" => "symmetrization",
 ]
 
-function build_gallery()
-    mkpath(GALLERY_MD_DIR)
-    mkpath(GALLERY_NB_DIR)
-    mkpath(GALLERY_SCRIPT_DIR)
-    for name in GALLERY_SCRIPTS
-        src = joinpath(SCRIPTS_DIR, name)
-        Literate.markdown(src, GALLERY_MD_DIR; documenter = true)
-        Literate.notebook(src, GALLERY_NB_DIR)
-        Literate.script(src, GALLERY_SCRIPT_DIR)
+function build_tutorial_pages()
+    mkpath(TUTORIAL_MD_DIR)
+    mkpath(NOTEBOOK_DIR)
+    mkpath(CLEAN_SCRIPT_DIR)
+    for (script, page) in PUBLISHED_SCRIPTS
+        src = joinpath(SCRIPTS_DIR, script)
+        Literate.markdown(src, TUTORIAL_MD_DIR; documenter = true, name = page)
+        Literate.notebook(src, NOTEBOOK_DIR; name = page)
+        Literate.script(src, CLEAN_SCRIPT_DIR; name = page)
     end
+    return nothing
 end
 
-build_gallery()
+build_tutorial_pages()

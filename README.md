@@ -14,11 +14,14 @@
 [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-pink)](https://github.com/fredrikekre/Runic.jl)
 
 `MeanFieldHom.jl` is a Julia framework for **mean-field homogenization**
-of heterogeneous materials. It provides Hill polarisation tensors for
-ellipsoidal inclusions, crack-opening-displacement tensors, stress and
-displacement intensity factors for flat cracks, and second-order Hill
-tensors for transport problems — all under a common abstraction
-hierarchy, a shared numerical core, and a central dispatch mechanism.
+of heterogeneous materials. It provides Hill polarization tensors for
+ellipsoidal inclusions and infinite cylinders, crack-opening-displacement
+tensors with stress and displacement intensity factors for flat cracks,
+second-order Hill tensors for transport problems, composite `n`-layer
+spheres and confocal spheroids with imperfect interfaces, ageing linear
+viscoelasticity, and the classical homogenization schemes built on top of
+them — all under a common abstraction hierarchy, a shared numerical core,
+and a central dispatch mechanism.
 
 The package is geared toward prototyping, symbolic simplification
 (`SymPy`, `Symbolics`) and forward-mode automatic differentiation
@@ -28,11 +31,15 @@ The package is geared toward prototyping, symbolic simplification
 
 | Sub-module                 | Responsibility                                                                          |
 | -------------------------- | --------------------------------------------------------------------------------------- |
-| `MeanFieldHom.Core`        | Abstractions, traits, shared numerics (Green / Newton kernels, Masson residue, DECUHR). |
-| `MeanFieldHom.Elasticity`  | Hill polarisation tensor for ellipsoidal inclusions (2D / 3D, iso / aniso).             |
-| `MeanFieldHom.Cracks`      | COD tensor, compliance contribution, SIF and DIF for elliptic / ribbon cracks.          |
-| `MeanFieldHom.Conductivity`| 2nd-order Hill tensor for transport problems.                                           |
-| `MeanFieldHom.Schemes`     | Placeholder for mean-field schemes (dilute, Mori–Tanaka, self-consistent, PCW, …).      |
+| `MeanFieldHom.Core`          | Abstractions, traits, shared numerics (Green / Newton kernels, Masson residue, DECUHR). |
+| `MeanFieldHom.Elliptic`      | Type-generic Legendre and Carlson elliptic integrals.                                   |
+| `MeanFieldHom.Elasticity`    | Hill polarization tensor for ellipsoidal inclusions and cylinders (2D / 3D, iso / aniso). |
+| `MeanFieldHom.Cracks`        | COD tensor, compliance contribution, SIF and DIF for elliptic / ribbon cracks.          |
+| `MeanFieldHom.Conductivity`  | 2nd-order Hill tensor for transport problems; closed form for any matrix anisotropy.    |
+| `MeanFieldHom.LayeredSpheres`| `n`-layer composite spheres with perfect or imperfect interfaces (Hervé–Zaoui).         |
+| `MeanFieldHom.LayeredSpheroids`| `n`-layer confocal spheroids, conduction only, with Kapitza / surface-conductive interfaces. |
+| `MeanFieldHom.Schemes`       | Mean-field schemes: bounds, dilute, Mori–Tanaka, self-consistent, PCW, Maxwell, differential. |
+| `MeanFieldHom.Viscoelasticity`| Ageing linear viscoelasticity via Volterra operators, with structured kernel storage.   |
 
 ## Installation
 
@@ -65,7 +72,7 @@ E, ν = 210e3, 0.3
 λ = E*ν/((1+ν)*(1-2ν));  μ = E/(2*(1+ν))
 C₀ = TensISO{3}(3*(λ+2μ/3), 2μ)
 
-# Hill polarisation for a sphere
+# Hill polarization for a sphere
 P = hill_tensor(Ellipsoid(1.0), C₀)
 
 # Crack opening displacement for a penny-shaped crack

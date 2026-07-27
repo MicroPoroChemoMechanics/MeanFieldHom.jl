@@ -210,12 +210,14 @@ separate inclusions are **different morphologies** — the first packs the pore 
 the solidifying shells concentrically (as hydrates deposit around a pore), the
 second scatters them independently in the matrix.
 
-!!! note "Reproducing Echoes, and a correction to the book text"
-    `MeanFieldHom` reproduces the Echoes *code* for **both** topologies to better
-    than 1 % (`:layers` ``E_0 J`` ≈ 1.60 → 11.06; `:whole_pores` ≈ 1.96 → 17.54 at
-    ``t_0 = 2/3``). The Echoes *book* text states the two give "identical
-    compliance curves"; its own code does **not** — they differ by ``\approx 6.5``
-    in ``E_0 J``, exactly as found here. The composite-sphere packing of
-    [sanahuja2013](@cite) is an efficient, physically-motivated model — one
-    Eshelby problem instead of ``N+1`` — not an exact reformulation of the
-    separate-inclusion RVE.
+!!! note "Reproducing Echoes: the two topologies genuinely differ"
+    `MeanFieldHom` reproduces Echoes for **both** topologies to better than 1 %
+    (`:layers` ``E_0 J`` ≈ 1.60 → 11.06; `:whole_pores` ≈ 1.96 → 17.54 at
+    ``t_0 = 2/3``), and the two differ by ``\approx 6.5`` in ``E_0 J``.
+
+    That gap is a modelling result, not a discrepancy to be reconciled: the
+    composite-sphere packing of [sanahuja2013](@cite) is an efficient,
+    physically-motivated model — one Eshelby problem instead of ``N+1`` — not an
+    exact reformulation of the separate-inclusion RVE. Choosing between the two
+    is choosing a morphology, so pick the one that matches the microstructure you
+    intend to represent rather than expecting them to agree.
