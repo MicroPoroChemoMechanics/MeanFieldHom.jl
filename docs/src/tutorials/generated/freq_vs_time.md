@@ -249,10 +249,6 @@ continuum limit.
     [ageing creep application](../../applications/ageing_creep.md) for a case
     where only the time route applies.
 
-````@example freq_vs_time
-plt
-````
-
 ---
 
 *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*

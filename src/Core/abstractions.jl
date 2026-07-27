@@ -279,3 +279,39 @@ function delta_stiffness end
 Dilute effective-conductivity correction `ΔK = f · N_K`.
 """
 function delta_conductivity end
+
+"""
+    loc_and_stiffness(incl, P₁, P₀; kw...) -> (A, N)
+
+Bundled evaluation of the dilute concentration tensor `A`
+([`strain_strain_loc`](@ref) / [`gradient_gradient_loc`](@ref)) **and** the
+size-independent contribution tensor `N` ([`stiffness_contribution`](@ref) /
+[`conductivity_contribution`](@ref)) of the *same* inclusion in the *same*
+reference medium, sharing the single expensive Hill / recurrence solve.
+
+Both quantities are needed per phase by Mori-Tanaka and by the
+self-consistent kernels; computing them separately evaluates
+[`hill_tensor`](@ref) — the dominant cost — twice with byte-identical
+arguments.
+
+!!! note "Contract"
+    The returned pair must be **bitwise identical** to
+    `(strain_strain_loc(incl, P₁, P₀; kw...),
+      stiffness_contribution(incl, P₁, P₀; kw...))`.
+    The generic fallback *is* that pair; specializations are a pure
+    performance concern and must not reassociate the arithmetic.
+
+Internal seam — not exported.
+"""
+function loc_and_stiffness end
+
+"""
+    loc_and_stress_average(incl, P₁, P₀; kw...) -> (A, B)
+
+Bundled `(strain_strain_loc, stress_strain_loc)` — resp.
+`(gradient_gradient_loc, flux_gradient_loc)` — sharing one localization
+solve.  Same bitwise contract as [`loc_and_stiffness`](@ref).
+
+Internal seam — not exported.
+"""
+function loc_and_stress_average end

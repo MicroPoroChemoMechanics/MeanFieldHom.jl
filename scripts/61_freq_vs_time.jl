@@ -234,8 +234,6 @@ end
 #     [ageing creep application](../../applications/ageing_creep.md) for a case
 #     where only the time route applies.
 
-plt
-
 const figdir = joinpath(@__DIR__, "figures")                        #jl
 isdir(figdir) || mkdir(figdir)                                       #jl
 figpath = joinpath(figdir, "61_freq_vs_time.png")                    #jl

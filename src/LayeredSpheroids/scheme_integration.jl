@@ -47,6 +47,7 @@ gradient (`α`) and flux (`β`) whole-inclusion concentration tensors,
 `(b/a)` ratios ([`spheroid_ba_ratios`](@ref)).
 """
 function _spheroid_concentration(s::LayeredSpheroid{T, N}, k₀) where {T, N}
+    MFH_Core._bump!(MFH_Core.LAYER_RECURRENCES)
     qN = s.q[N]
     ba_a, ba_t = spheroid_ba_ratios(s, k₀)
     αa = real(1 + ba_a * _shape_Ta(qN))
@@ -136,4 +137,46 @@ function layer_resistivity_average(s::LayeredSpheroid{T, N}) where {T, N}
     k_layers = _spheroid_layer_moduli(s)
     f = ntuple(k -> layer_volume_fraction(s, k), Val(N))
     return TensND.TensISO{3}(sum(f[k] / k_layers[k] for k in 1:N))
+end
+
+# =============================================================================
+#  Bundled localization + contribution for a confocal layered spheroid
+#
+#  `conductivity_contribution` already calls BOTH `flux_gradient_loc` and
+#  `gradient_gradient_loc`, each of which reruns `_spheroid_concentration`
+#  (i.e. the confocal transfer-matrix recurrence `spheroid_ba_ratios`).  Add
+#  the scheme layer's own `gradient_gradient_loc` and a Mori-Tanaka phase costs
+#  THREE recurrences where `_spheroid_concentration` already returns all four
+#  scalars at once.
+#
+#  Bitwise identical: `A` and `B` are the verbatim expressions of the two
+#  localization functions, and `N = B - K₀ ⋅ A` is the verbatim body of
+#  `conductivity_contribution`.
+# =============================================================================
+
+function Core.loc_and_stiffness(
+        s::LayeredSpheroid{T, N},
+        ::TensND.AbstractTens{2, 3},
+        K₀::TensND.TensISO{2, 3};
+        kw...,
+    ) where {T, N}
+    k₀ = MFH_Core.extract_iso_conductivity(K₀)
+    αt, αa, βt, βa = _spheroid_concentration(s, k₀)
+    A = TensND.TensTI{2}(αt, αa, s.axis)
+    B = k₀ * TensND.TensTI{2}(βt, βa, s.axis)
+    return (A, B - K₀ ⋅ A)
+end
+
+function Core.loc_and_stress_average(
+        s::LayeredSpheroid{T, N},
+        ::TensND.AbstractTens{2, 3},
+        K₀::TensND.TensISO{2, 3};
+        kw...,
+    ) where {T, N}
+    k₀ = MFH_Core.extract_iso_conductivity(K₀)
+    αt, αa, βt, βa = _spheroid_concentration(s, k₀)
+    return (
+        TensND.TensTI{2}(αt, αa, s.axis),
+        k₀ * TensND.TensTI{2}(βt, βa, s.axis),
+    )
 end

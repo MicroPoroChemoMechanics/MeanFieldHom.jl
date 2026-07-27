@@ -45,16 +45,17 @@ function _mt_4(rve, C₀::TensND.AbstractTens{4, 3}, ::Val{p}; kw...) where {p}
         a = rve.amounts[name]
         if a isa VolumeFraction
             f = amount_value(a)
-            # Apply per-phase orientation symmetrize via _phase_dilute_concentration.
-            A_dil = _phase_dilute_concentration(rve, name, p, C₀; kw...)
+            # Apply per-phase orientation symmetrize via the bundled helper,
+            # which shares the single localization solve between `A_dil` and
+            # the contribution `N` (they used to be computed independently,
+            # i.e. two `hill_tensor` calls with identical arguments).
+            # `N` goes through the trait so that internally heterogeneous
+            # inclusions (LayeredSphere) sum over their layers instead of
+            # using a phase property that does not represent them, and the
+            # helper symmetrizes the PRODUCT (C_i − C₀):A, not just A.
+            A_dil, N = _phase_dilute_and_contribution(rve, name, p, C₀; kw...)
             A_avg += f * A_dil
-            # ⟨C:ε⟩_r - C₀:A_r.  Goes through the trait so that internally
-            # heterogeneous inclusions (LayeredSphere) sum over their layers
-            # instead of using a phase property that does not represent them.
-            # Le helper symétrise le PRODUIT (C_i − C₀):A, pas seulement A,
-            # et branche sur `is_homogeneous_inclusion` pour les inclusions
-            # hétérogènes.  Même chemin que la branche fissures ci-dessous.
-            Nsum += _phase_stiffness_contribution(rve, name, p, C₀; kw...)
+            Nsum += N
         else  # CrackDensity — ECHOES `B · A^{-1}` form.
             # Strain-Stress contribution: A_crack = ε·sym(H_c)·C₀.
             # Stress-Stress contribution: 0 (traction-free).
@@ -62,9 +63,9 @@ function _mt_4(rve, C₀::TensND.AbstractTens{4, 3}, ::Val{p}; kw...) where {p}
             # (same as the additive form).  The non-trivial change is the
             # crack term in the denominator A_avg, which prevents the
             # additive form's spurious percolation at moderate density.
-            H = _phase_compliance_contribution(rve, name, p, C₀; kw...)
+            H, N = _phase_compliance_and_contribution(rve, name, p, C₀; kw...)
             A_avg += H ⊡ C₀
-            Nsum += _phase_stiffness_contribution(rve, name, p, C₀; kw...)
+            Nsum += N
         end
     end
     return C₀ + Nsum ⊡ inv(A_avg)
@@ -80,13 +81,13 @@ function _mt_2(rve, K₀::TensND.AbstractTens{2, 3}, ::Val{p}; kw...) where {p}
         a = rve.amounts[name]
         if a isa VolumeFraction
             f = amount_value(a)
-            A_dil = _phase_dilute_concentration(rve, name, p, K₀; kw...)
+            A_dil, N = _phase_dilute_and_contribution(rve, name, p, K₀; kw...)
             A_avg += f * A_dil
-            Nsum += _phase_stiffness_contribution(rve, name, p, K₀; kw...)
+            Nsum += N
         else  # CrackDensity — ECHOES `B · A^{-1}` form.
-            R = _phase_compliance_contribution(rve, name, p, K₀; kw...)
+            R, N = _phase_compliance_and_contribution(rve, name, p, K₀; kw...)
             A_avg += R ⋅ K₀
-            Nsum += _phase_stiffness_contribution(rve, name, p, K₀; kw...)
+            Nsum += N
         end
     end
     return K₀ + Nsum ⋅ inv(A_avg)

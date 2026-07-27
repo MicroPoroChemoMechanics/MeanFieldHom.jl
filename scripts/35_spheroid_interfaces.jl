@@ -24,7 +24,7 @@
 #    over ``\beta`` — the configuration of the ECHOES presentation of
 #    06/07/2020 — including an animation and an interactive 3-D view.
 #
-# Theory: [Layered spheroid](../theory/layered_spheroid.md).
+# Theory: [Layered spheroid](../../theory/layered_spheroid.md).
 
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl

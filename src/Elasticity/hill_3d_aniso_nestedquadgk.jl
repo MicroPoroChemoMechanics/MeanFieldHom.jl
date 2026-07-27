@@ -139,6 +139,7 @@ function _hill_3d_aniso_nestedquadgk(
         return vals
     end
 
+    MFH_Core._bump!(MFH_Core.QUADGK_OUTER)
     P_vals, _ = QuadGK.quadgk(
         0.0, 1.0;
         atol = abstol,
@@ -148,13 +149,12 @@ function _hill_3d_aniso_nestedquadgk(
         one_minus_u = 1.0 - u
         z = 1.0 - one_minus_u^α
         jac = α * one_minus_u^(α - 1.0)
-        inner, _ = QuadGK.quadgk(
+        inner, _ = MFH_Core._counted_quadgk(
+            φ -> integrand_at(z, φ),
             0.0, 2π;
             atol = abstol / 10,
             rtol = reltol
-        ) do φ
-            integrand_at(z, φ)
-        end
+        )
         inner .* jac
     end
     P_vals ./= T(2π)

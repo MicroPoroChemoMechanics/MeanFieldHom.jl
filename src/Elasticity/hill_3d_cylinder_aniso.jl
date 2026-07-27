@@ -69,7 +69,8 @@ function _hill_3d_cylinder_aniso(
         return vals
     end
 
-    P_vals, _ = QuadGK.quadgk(
+    MFH_Core._bump!(MFH_Core.QUADGK_OUTER)
+    P_vals, _ = MFH_Core._counted_quadgk(
         integrand_at, 0.0, 2π;
         atol = abstol, rtol = reltol, maxevals = maxiters
     )

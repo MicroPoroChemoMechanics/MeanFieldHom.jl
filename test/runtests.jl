@@ -74,6 +74,7 @@ Random.seed!(20260723)
         include("Schemes/test_sensitivities.jl")
         include("Schemes/test_symmetrize.jl")
         include("Schemes/test_orientation.jl")
+        include("Schemes/test_loc_bundles.jl")
     end
 
     @testset "LayeredSpheres" begin

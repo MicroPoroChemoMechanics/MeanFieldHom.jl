@@ -115,7 +115,8 @@ function _hill_3d_aniso_residue(
         return res
     end
 
-    P_vals, _ = QuadGK.quadgk(
+    MFH_Core._bump!(MFH_Core.QUADGK_OUTER)
+    P_vals, _ = MFH_Core._counted_quadgk(
         hill_at_phi, 0.0, π;
         atol = abstol, rtol = reltol, maxevals = maxiters
     )

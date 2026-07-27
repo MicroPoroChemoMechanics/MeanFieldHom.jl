@@ -74,7 +74,8 @@ import .Core: strain_strain_loc, stress_strain_loc, strain_stress_loc,
     stress_stress_loc, gradient_gradient_loc, flux_gradient_loc,
     gradient_flux_loc, flux_flux_loc,
     stiffness_contribution, conductivity_contribution,
-    resistivity_contribution, delta_stiffness, delta_conductivity
+    resistivity_contribution, delta_stiffness, delta_conductivity,
+    loc_and_stiffness, loc_and_stress_average
 import .Cracks: compliance_contribution, delta_compliance, delta_resistivity
 
 include("localization.jl")

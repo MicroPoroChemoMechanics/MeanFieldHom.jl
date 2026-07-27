@@ -28,7 +28,7 @@ by reconstructing the temperature and flux **pointwise**:
    over ``\beta`` — the configuration of the ECHOES presentation of
    06/07/2020 — including an animation and an interactive 3-D view.
 
-Theory: [Layered spheroid](../theory/layered_spheroid.md).
+Theory: [Layered spheroid](../../theory/layered_spheroid.md).
 
 ````@example layered_spheroid_interfaces
 using MeanFieldHom

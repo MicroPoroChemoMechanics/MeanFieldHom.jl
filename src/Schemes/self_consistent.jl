@@ -133,9 +133,9 @@ function _sc_step_dispatch(
             a isa VolumeFraction || continue
             f = amount_value(a)
         end
-        A_dil = _phase_dilute_concentration(rve, name, prop, C_n; kw...)
+        A_dil, CA = _phase_dilute_and_stress_average(rve, name, prop, C_n; kw...)
         A_avg += f * A_dil
-        CA_avg += f * _phase_stress_strain_average(rve, name, prop, C_n, A_dil; kw...)
+        CA_avg += f * CA
     end
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
@@ -174,9 +174,9 @@ function _sc_step_dispatch(
             a isa VolumeFraction || continue
             f = amount_value(a)
         end
-        A_dil = _phase_dilute_concentration(rve, name, prop, K_n; kw...)
+        A_dil, KA = _phase_dilute_and_stress_average(rve, name, prop, K_n; kw...)
         A_avg += f * A_dil
-        KA_avg += f * _phase_stress_strain_average(rve, name, prop, K_n, A_dil; kw...)
+        KA_avg += f * KA
     end
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
@@ -261,6 +261,7 @@ function _solve_sc(
     resid_best_val = typemax(_value_eltype(x0))
     ε_pos = _sc_pd_eps(x0)
     for k in 1:maxiters
+        MFH_Core._bump!(MFH_Core.SC_ITERATIONS)
         x = _sc_pd_guard_apply(x, ε_pos)
         x_new = step(x)
         last_resid = _sc_residual_norm(x_new, x)
@@ -338,6 +339,7 @@ function _solve_sc(
     p = collect(Tref, p0)
     p_best = copy(p); resid_best = Inf
     for iter in 1:maxiters
+        MFH_Core._bump!(MFH_Core.SC_ITERATIONS)
         r = residual_vec(p)
         norm_r = sqrt(sum(abs2, r))
         norm_p = sqrt(sum(abs2, p))
@@ -644,8 +646,7 @@ function _asc_step_stiffness_dispatch(
         # `_phase_stiffness_contribution`, qui utilize la même référence pour
         # les deux.  Le tenseur B (⟨C:A⟩) traite les inclusions hétérogènes et
         # symétrise le produit ; le terme en C_m réutilize ⟨A⟩.
-        A_dil = _phase_dilute_concentration(rve, name, prop, C_n; kw...)
-        CA = _phase_stress_strain_average(rve, name, prop, C_n, A_dil; kw...)
+        A_dil, CA = _phase_dilute_and_stress_average(rve, name, prop, C_n; kw...)
         Δ += f * (CA - C_m ⊡ A_dil)
     end
     return C_m + Δ
@@ -661,8 +662,7 @@ function _asc_step_stiffness_dispatch(
         a = rve.amounts[name]
         a isa VolumeFraction || continue
         f = amount_value(a)
-        A_dil = _phase_dilute_concentration(rve, name, prop, K_n; kw...)
-        KA = _phase_stress_strain_average(rve, name, prop, K_n, A_dil; kw...)
+        A_dil, KA = _phase_dilute_and_stress_average(rve, name, prop, K_n; kw...)
         Δ += f * (KA - K_m ⋅ A_dil)
     end
     return K_m + Δ

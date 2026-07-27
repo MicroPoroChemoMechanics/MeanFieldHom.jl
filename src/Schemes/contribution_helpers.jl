@@ -279,3 +279,183 @@ function _phase_reuss_property(rve::RVE, name::Symbol, prop::Symbol, ref)
         inv(phase_property(rve, name, prop)) : _layer_reuss(geom, ref)
     return _apply_symmetrize(S, phase_symmetrize(rve, name))
 end
+
+# =============================================================================
+#  Bundled phase helpers — one localization solve instead of two
+#
+#  Mori-Tanaka and the self-consistent kernels ask, for the same phase and the
+#  same reference medium, for BOTH a concentration tensor and a contribution
+#  tensor.  Each of the four helpers above independently descends to
+#  `hill_tensor` / `cod_tensor` — the dominant cost — so the pair currently
+#  costs exactly twice what it needs to.
+#
+#  The four original helpers are deliberately left untouched: `Dilute`,
+#  `DiluteDual`, `Maxwell`, `PonteCastanedaWillis`, `DifferentialScheme` and
+#  the ASC compliance form each use only ONE of them, have no duplication to
+#  remove, and therefore act as exact controls for this change.
+#
+#  Two invariants make the bundles bitwise identical rather than merely close:
+#
+#    1. `_apply_symmetrize` does NOT commute with the tensor product, so the
+#       bundles thread the RAW (pre-symmetrization) localization tensor and
+#       reproduce each original expression verbatim.
+#
+#    2. The reference medium is currently NOT uniform across the helpers:
+#       `_phase_dilute_concentration` (both orders) and
+#       `_phase_stiffness_contribution` (order 4) use
+#       `P₀_proj = _project_matrix(P₀, sym)`, whereas
+#       `_phase_stiffness_contribution` (order 2) and
+#       `_phase_compliance_contribution` (both orders) use the RAW `P₀`.
+#       Where the two differ, sharing one solve would silently change the
+#       result, so those bundles fall back to the separate calls unless
+#       `_project_matrix` was the identity (`P₀_proj === P₀`, i.e.
+#       `NoSymmetrize` or `TISymmetrize(matrix_projection = :none)`).
+#       Unifying the reference is a separate, announced change.
+# =============================================================================
+
+"""
+    _phase_dilute_and_contribution(rve, name, prop, P₀; kw...) -> (A_dil, N)
+
+`(_phase_dilute_concentration, _phase_stiffness_contribution)` for a
+`VolumeFraction` phase, sharing one localization solve.  Bitwise identical to
+calling the two helpers separately.  `CrackDensity` phases must go through
+[`_phase_compliance_and_contribution`](@ref).
+"""
+function _phase_dilute_and_contribution(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P₀::TensND.AbstractTens{4, 3}; kw...
+    )
+    geom = rve.phases[name].geometry
+    P_i = phase_property(rve, name, prop)
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
+    f = amount_value(rve.amounts[name])
+    A_raw, N_raw = MFH_Core.loc_and_stiffness(geom, P_i, P₀_proj; kw...)
+    return (_apply_symmetrize(A_raw, sym), f * _apply_symmetrize(N_raw, sym))
+end
+
+function _phase_dilute_and_contribution(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P₀::TensND.AbstractTens{2, 3}; kw...
+    )
+    geom = rve.phases[name].geometry
+    P_i = phase_property(rve, name, prop)
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
+    f = amount_value(rve.amounts[name])
+    # `_phase_stiffness_contribution` (order 2) uses the raw `P₀`; only share
+    # the solve when the projection was the identity.
+    if P₀_proj !== P₀
+        return (
+            _phase_dilute_concentration(rve, name, prop, P₀; kw...),
+            _phase_stiffness_contribution(rve, name, prop, P₀; kw...),
+        )
+    end
+    A_raw, N_raw = MFH_Core.loc_and_stiffness(geom, P_i, P₀_proj; kw...)
+    return (_apply_symmetrize(A_raw, sym), f * _apply_symmetrize(N_raw, sym))
+end
+
+"""
+    _phase_compliance_and_contribution(rve, name, prop, P₀; kw...) -> (H, N)
+
+`(_phase_compliance_contribution, _phase_stiffness_contribution)` for a
+`CrackDensity` phase, sharing one `cod_tensor` solve.
+"""
+function _phase_compliance_and_contribution(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P₀::TensND.AbstractTens{4, 3}; kw...
+    )
+    geom = rve.phases[name].geometry
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
+    # `H` currently sees the raw `P₀`, `N` sees `P₀_proj`.
+    if P₀_proj !== P₀
+        return (
+            _phase_compliance_contribution(rve, name, prop, P₀; kw...),
+            _phase_stiffness_contribution(rve, name, prop, P₀; kw...),
+        )
+    end
+    ε = amount_value(rve.amounts[name])
+    K_int = _crack_interface_K4(rve, name)
+    H_raw, N_raw = compliance_and_stiffness_contribution(
+        geom, P₀; K_interface = K_int, kw...
+    )
+    return (
+        _apply_symmetrize(delta_compliance(geom, H_raw, ε), sym),
+        _apply_symmetrize(MFH_Core.delta_stiffness(geom, N_raw, ε), sym),
+    )
+end
+
+function _phase_compliance_and_contribution(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P₀::TensND.AbstractTens{2, 3}; kw...
+    )
+    geom = rve.phases[name].geometry
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
+    if P₀_proj !== P₀
+        return (
+            _phase_compliance_contribution(rve, name, prop, P₀; kw...),
+            _phase_stiffness_contribution(rve, name, prop, P₀; kw...),
+        )
+    end
+    ε = amount_value(rve.amounts[name])
+    α_int = _crack_interface_α(rve, name)
+    R_raw, N_raw = compliance_and_stiffness_contribution(
+        geom, P₀; α_interface = α_int, kw...
+    )
+    return (
+        _apply_symmetrize(delta_resistivity(geom, R_raw, ε), sym),
+        _apply_symmetrize(MFH_Core.delta_conductivity(geom, N_raw, ε), sym),
+    )
+end
+
+"""
+    _phase_dilute_and_stress_average(rve, name, prop, P₀; kw...) -> (A_dil, CA)
+
+`(_phase_dilute_concentration, _phase_stress_strain_average)` sharing one
+localization solve.  Reproduces the three branches of
+`_phase_stress_strain_average` verbatim — including the
+`sym isa NoSymmetrize || P_i isa TensISO` shortcut, which returns
+`P_i ⊡ A_dil` (the **symmetrized** `A`) where the slow branch returns
+`_apply_symmetrize(P_i ⊡ A_raw, sym)` (the **raw** `A`).  Those two forms
+agree only to ~1e-16, so collapsing them would break bit-identity on the
+existing suite.
+"""
+function _phase_dilute_and_stress_average(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P₀::TensND.AbstractTens{4, 3}; kw...
+    )
+    geom = rve.phases[name].geometry
+    geom isa MFH_Core.AbstractCrack && return (zero(P₀), zero(P₀))
+    P_i = phase_property(rve, name, prop)
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
+    if MFH_Core.is_homogeneous_inclusion(geom)
+        A_raw = MFH_Core.strain_strain_loc(geom, P_i, P₀_proj; kw...)
+        A_dil = _apply_symmetrize(A_raw, sym)
+        (sym isa NoSymmetrize || P_i isa TensND.TensISO) && return (A_dil, P_i ⊡ A_dil)
+        return (A_dil, _apply_symmetrize(P_i ⊡ A_raw, sym))
+    end
+    A_raw, B_raw = MFH_Core.loc_and_stress_average(geom, P_i, P₀_proj; kw...)
+    return (_apply_symmetrize(A_raw, sym), _apply_symmetrize(B_raw, sym))
+end
+
+function _phase_dilute_and_stress_average(
+        rve::RVE, name::Symbol, prop::Symbol,
+        P₀::TensND.AbstractTens{2, 3}; kw...
+    )
+    geom = rve.phases[name].geometry
+    geom isa MFH_Core.AbstractCrack && return (zero(P₀), zero(P₀))
+    P_i = phase_property(rve, name, prop)
+    sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
+    if MFH_Core.is_homogeneous_inclusion(geom)
+        A_raw = MFH_Core.gradient_gradient_loc(geom, P_i, P₀_proj; kw...)
+        A_dil = _apply_symmetrize(A_raw, sym)
+        (sym isa NoSymmetrize || P_i isa TensND.TensISO) && return (A_dil, P_i ⋅ A_dil)
+        return (A_dil, _apply_symmetrize(P_i ⋅ A_raw, sym))
+    end
+    A_raw, B_raw = MFH_Core.loc_and_stress_average(geom, P_i, P₀_proj; kw...)
+    return (_apply_symmetrize(A_raw, sym), _apply_symmetrize(B_raw, sym))
+end

@@ -54,6 +54,7 @@ function _layer_localizations(
         sphere::LayeredSphere{T, N},
         C₀::TensND.TensISO{4, 3},
     ) where {T, N}
+    MFH_Core._bump!(MFH_Core.LAYER_RECURRENCES)
     κ₀, μ₀ = _iso_bulk_shear(C₀)
     α = _bulk_localization(sphere, κ₀, μ₀)
     β = _shear_localization(sphere, C₀)
@@ -307,4 +308,86 @@ function layer_resistivity_average(sphere::LayeredSphere{T, N}) where {T, N}
     k_layers = _cond_layer_moduli(sphere)
     f = _layer_fractions(sphere)
     return TensISO{3}(sum(f[k] / k_layers[k] for k in 1:N))
+end
+
+# =============================================================================
+#  Bundled localization + contribution for a composite sphere
+#
+#  A `LayeredSphere` is `is_homogeneous_inclusion == false`, so a scheme asking
+#  for both a concentration tensor and a contribution tensor runs the
+#  Hervé-Zaoui bulk + shear recurrences twice (once per function), on top of
+#  the `_membrane_surface_stress` call that re-runs `_bulk_state_seq` /
+#  `_shear_state_seq` internally.
+#
+#  The bundles below share `_layer_localizations` (and `_membrane_surface_stress`
+#  where both members need it) while keeping every `sum(...)` expression
+#  verbatim.  In particular `N` is NOT derived from the documented identity
+#  `N = B − C₀:A` (see `stress_strain_loc` above): that identity is exact in
+#  real arithmetic, but the surface terms enter both members additively and the
+#  subtraction would reassociate the floating-point operations.  Keeping the
+#  original expressions is what makes these bundles bitwise identical.
+# =============================================================================
+
+function Core.loc_and_stiffness(
+        sphere::LayeredSphere{T, N},
+        ::TensND.AbstractTens{4, 3},
+        C₀::TensND.TensISO{4, 3};
+        kw...,
+    ) where {T, N}
+    α, β, f = _layer_localizations(sphere, C₀)
+    A = TensISO{3}(sum(f[k] * α[k] for k in 1:N), sum(f[k] * β[k] for k in 1:N))
+    C_k = _layer_iso_pairs(sphere)
+    α₀, β₀ = TensND.get_data(C₀)
+    a = sum(f[k] * (C_k[k][1] - α₀) * α[k] for k in 1:N)
+    b = sum(f[k] * (C_k[k][2] - β₀) * β[k] for k in 1:N)
+    a_surf, b_surf = _membrane_surface_stress(sphere, C₀)
+    return (A, TensISO{3}(a + a_surf, b + b_surf))
+end
+
+function Core.loc_and_stress_average(
+        sphere::LayeredSphere{T, N},
+        ::TensND.AbstractTens{4, 3},
+        C₀::TensND.TensISO{4, 3};
+        kw...,
+    ) where {T, N}
+    α, β, f = _layer_localizations(sphere, C₀)
+    A = TensISO{3}(sum(f[k] * α[k] for k in 1:N), sum(f[k] * β[k] for k in 1:N))
+    C_k = _layer_iso_pairs(sphere)
+    a = sum(f[k] * C_k[k][1] * α[k] for k in 1:N)
+    b = sum(f[k] * C_k[k][2] * β[k] for k in 1:N)
+    a_surf, b_surf = _membrane_surface_stress(sphere, C₀)
+    return (A, TensISO{3}(a + a_surf, b + b_surf))
+end
+
+function Core.loc_and_stiffness(
+        sphere::LayeredSphere{T, N},
+        ::TensND.AbstractTens{2, 3},
+        K₀::TensND.TensISO{2, 3};
+        kw...,
+    ) where {T, N}
+    k₀ = _iso_scalar(K₀)
+    α = _cond_localization(sphere, k₀)
+    f = _layer_fractions(sphere)
+    A = TensISO{3}(sum(f[k] * α[k] for k in 1:N))
+    k_layers = _cond_layer_moduli(sphere)
+    N_K = sum(f[k] * (k_layers[k] - k₀) * α[k] for k in 1:N) +
+        _cond_surface_flux(sphere, k₀)
+    return (A, TensISO{3}(N_K))
+end
+
+function Core.loc_and_stress_average(
+        sphere::LayeredSphere{T, N},
+        ::TensND.AbstractTens{2, 3},
+        K₀::TensND.TensISO{2, 3};
+        kw...,
+    ) where {T, N}
+    k₀ = _iso_scalar(K₀)
+    α = _cond_localization(sphere, k₀)
+    f = _layer_fractions(sphere)
+    A = TensISO{3}(sum(f[k] * α[k] for k in 1:N))
+    k_layers = _cond_layer_moduli(sphere)
+    B = TensISO{3}(
+        sum(f[k] * k_layers[k] * α[k] for k in 1:N) + _cond_surface_flux(sphere, k₀)
+    )
+    return (A, B)
 end

@@ -93,6 +93,7 @@ function cod_tensor(
         reltol::Float64 = 1.0e-6,
         maxiters::Int = 100_000
     )
+    MFH_Core._bump!(MFH_Core.COD_CALLS)
     algo = MFH_Core._resolve_algo(Val(method), crack, C₀)
     B = _kernel(crack, C₀, algo; abstol = abstol, reltol = reltol, maxiters = maxiters)
     K_interface === nothing && return B

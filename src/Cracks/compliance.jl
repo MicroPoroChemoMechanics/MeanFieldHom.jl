@@ -211,3 +211,48 @@ Dilute conductivity correction from the crack contribution tensor
 """
 MFH_Core.delta_conductivity(crack::EllipticCrack, N, ε) = (4 * one(eltype(N)) * π / 3) * ε * N
 MFH_Core.delta_conductivity(crack::RibbonCrack, N, ε) = (one(eltype(N)) * π) * ε * N
+
+# =============================================================================
+#  Bundled compliance + stiffness contribution
+#
+#  `stiffness_contribution(crack, C₀)` above is DEFINED as
+#  `-(C₀ ⊡ compliance_contribution(crack, C₀) ⊡ C₀)`, and
+#  `compliance_contribution` is `_compliance_from_B(crack, cod_tensor(...))`.
+#  A scheme that needs both therefore solves `cod_tensor` — the most
+#  expensive object in the package for an anisotropic matrix (adaptive
+#  quadrature with a full residue/polynomial solve at every node) — twice.
+#
+#  One `cod_tensor` yields both, exactly: the expressions below are copied
+#  verbatim, so the results are bitwise identical.
+# =============================================================================
+
+"""
+    compliance_and_stiffness_contribution(crack, C₀; K_interface, kw...) -> (H, N)
+    compliance_and_stiffness_contribution(crack, K₀; kw...)              -> (R, N_K)
+
+Bundled `(compliance_contribution, stiffness_contribution)` — resp.
+`(compliance_contribution, conductivity_contribution)` — for a flat crack,
+sharing the single [`cod_tensor`](@ref) solve.
+
+Bitwise identical to calling the two functions separately.
+"""
+function compliance_and_stiffness_contribution(
+        crack::MFH_Core.AbstractCrack,
+        C₀::TensND.AbstractTens{4, 3};
+        K_interface::Union{Nothing, TensND.AbstractTens{2, 3}} = nothing,
+        kw...
+    )
+    B = cod_tensor(crack, C₀; K_interface = K_interface, kw...)
+    H = _compliance_from_B(crack, B)
+    return (H, -(C₀ ⊡ H ⊡ C₀))
+end
+
+function compliance_and_stiffness_contribution(
+        crack::MFH_Core.AbstractCrack,
+        K₀::TensND.AbstractTens{2, 3};
+        kw...
+    )
+    b = cod_tensor(crack, K₀; kw...)
+    R = _resistivity_from_b(crack, b, K₀)
+    return (R, -(K₀ ⋅ R ⋅ K₀))
+end

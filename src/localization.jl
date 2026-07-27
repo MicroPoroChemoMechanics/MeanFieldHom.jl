@@ -199,3 +199,109 @@ function flux_flux_loc(
     )
     return K₁ ⋅ gradient_gradient_loc(incl, K₁, K₀; kw...) ⋅ inv(K₀)
 end
+
+# =============================================================================
+#  Bundled localization + contribution
+#
+#  Mori-Tanaka and the self-consistent kernels need, per phase, BOTH the
+#  dilute concentration tensor `A` and the contribution tensor `N` (resp. the
+#  stress average `B`).  Computed separately, each goes through
+#  `strain_strain_loc` — hence through `hill_tensor`, the dominant cost of the
+#  whole package — with byte-identical arguments.
+#
+#  The dispatch axis is the INCLUSION CLASS rather than a runtime
+#  `is_homogeneous_inclusion` flag: the fallback on `AbstractInclusion` is
+#  literally the pair of separate calls, so a future heterogeneous inclusion
+#  that forgets to specialize can only be slow, never wrong.  The fast path
+#  is restricted to `AbstractEllipsoidalInclusion`, which is homogeneous by
+#  construction.
+#
+#  Every fast path repeats the SAME expressions in the SAME order as the two
+#  functions it replaces (`contribution.jl` `stiffness_contribution`,
+#  `stress_strain_loc` above), so the results are bitwise identical — the
+#  benchmark harness asserts exactly that.
+# =============================================================================
+
+# ── Safe fallback: any inclusion, including internally heterogeneous ones ────
+
+loc_and_stiffness(
+    incl::AbstractInclusion,
+    C₁::TensND.AbstractTens{4, 3},
+    C₀::TensND.AbstractTens{4, 3};
+    kw...
+) = (
+    strain_strain_loc(incl, C₁, C₀; kw...),
+    stiffness_contribution(incl, C₁, C₀; kw...),
+)
+
+loc_and_stiffness(
+    incl::AbstractInclusion,
+    K₁::TensND.AbstractTens{2, 3},
+    K₀::TensND.AbstractTens{2, 3};
+    kw...
+) = (
+    gradient_gradient_loc(incl, K₁, K₀; kw...),
+    conductivity_contribution(incl, K₁, K₀; kw...),
+)
+
+loc_and_stress_average(
+    incl::AbstractInclusion,
+    C₁::TensND.AbstractTens{4, 3},
+    C₀::TensND.AbstractTens{4, 3};
+    kw...
+) = (
+    strain_strain_loc(incl, C₁, C₀; kw...),
+    stress_strain_loc(incl, C₁, C₀; kw...),
+)
+
+loc_and_stress_average(
+    incl::AbstractInclusion,
+    K₁::TensND.AbstractTens{2, 3},
+    K₀::TensND.AbstractTens{2, 3};
+    kw...
+) = (
+    gradient_gradient_loc(incl, K₁, K₀; kw...),
+    flux_gradient_loc(incl, K₁, K₀; kw...),
+)
+
+# ── Homogeneous ellipsoidal fast path: ONE hill_tensor instead of two ────────
+
+function loc_and_stiffness(
+        incl::AbstractEllipsoidalInclusion,
+        C₁::TensND.AbstractTens{4, 3},
+        C₀::TensND.AbstractTens{4, 3};
+        kw...
+    )
+    A = strain_strain_loc(incl, C₁, C₀; kw...)
+    return (A, (C₁ - C₀) ⊡ A)          # verbatim `contribution.jl` :39-40
+end
+
+function loc_and_stiffness(
+        incl::AbstractEllipsoidalInclusion,
+        K₁::TensND.AbstractTens{2, 3},
+        K₀::TensND.AbstractTens{2, 3};
+        kw...
+    )
+    A = gradient_gradient_loc(incl, K₁, K₀; kw...)
+    return (A, (K₁ - K₀) ⋅ A)
+end
+
+function loc_and_stress_average(
+        incl::AbstractEllipsoidalInclusion,
+        C₁::TensND.AbstractTens{4, 3},
+        C₀::TensND.AbstractTens{4, 3};
+        kw...
+    )
+    A = strain_strain_loc(incl, C₁, C₀; kw...)
+    return (A, C₁ ⊡ A)                 # verbatim `stress_strain_loc`
+end
+
+function loc_and_stress_average(
+        incl::AbstractEllipsoidalInclusion,
+        K₁::TensND.AbstractTens{2, 3},
+        K₀::TensND.AbstractTens{2, 3};
+        kw...
+    )
+    A = gradient_gradient_loc(incl, K₁, K₀; kw...)
+    return (A, K₁ ⋅ A)
+end

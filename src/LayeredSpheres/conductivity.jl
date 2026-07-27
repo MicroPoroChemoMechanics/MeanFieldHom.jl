@@ -178,6 +178,7 @@ uniform gradient.  Reduces, for `N = 1`, to the classical formula
 `α_1 = 3 k_0 / (2 k_0 + k_1)` for a sphere inclusion.
 """
 function _cond_localization(sphere::LayeredSphere{T, N}, k₀) where {T, N}
+    MFH_Core._bump!(MFH_Core.LAYER_RECURRENCES)
     k_layers = _cond_layer_moduli(sphere)
     TP = promote_type(
         T, typeof(k₀),

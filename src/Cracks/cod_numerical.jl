@@ -47,7 +47,8 @@ function _cod_elliptic_numerical(
         return Tp[Mv[1, 1], Mv[2, 2], Mv[3, 3], Mv[1, 2], Mv[1, 3], Mv[2, 3]]
     end
 
-    Tvec, _ = QuadGK.quadgk(
+    MFH_Core._bump!(MFH_Core.QUADGK_OUTER)
+    Tvec, _ = MFH_Core._counted_quadgk(
         vec_at, zero(Tp), 2 * Tp(π);
         atol = abstol, rtol = reltol, maxevals = maxiters
     )

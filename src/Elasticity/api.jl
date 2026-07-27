@@ -38,6 +38,7 @@ function hill_tensor(
         reltol::Float64 = 1.0e-6,
         maxiters::Int = 1_000_000
     )
+    MFH_Core._bump!(MFH_Core.HILL_CALLS)
     algo = MFH_Core._resolve_algo(Val(method), ell, C₀)
     return _kernel(ell, C₀, algo; abstol = abstol, reltol = reltol, maxiters = maxiters)
 end

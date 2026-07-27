@@ -5,6 +5,7 @@ Shared abstractions and numerical kernels used throughout `MeanFieldHom`.
 
 Contents
 --------
+- `counters.jl`           : opt-in work counters for the benchmark harness
 - `abstractions.jl`       : inclusion hierarchy (`AbstractInclusion` …)
 - `traits.jl`             : algorithm and material-symmetry traits
 - `bases.jl`              : helpers around `TensND` bases
@@ -28,6 +29,7 @@ using ..Elliptic
 using Polynomials
 using PolynomialRoots
 
+include("counters.jl")
 include("abstractions.jl")
 include("traits.jl")
 include("bases.jl")

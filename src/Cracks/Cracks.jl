@@ -42,6 +42,8 @@ export crack_basis, aspect_ratio, semi_major, semi_minor, crack_normal
 export cod_tensor, B_tensor
 export cod_from_compliance, compliance_from_cod
 export compliance_contribution
+# Internal perf seam consumed by `Schemes` (not re-exported by MeanFieldHom).
+export compliance_and_stiffness_contribution
 export delta_compliance, delta_resistivity
 # (stiffness_contribution, conductivity_contribution, delta_stiffness,
 # delta_conductivity are Core-level generics; methods defined above in

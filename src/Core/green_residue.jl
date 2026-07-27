@@ -79,6 +79,7 @@ function _build_poly_system(
         α₀ζ::AbstractVector{<:Real},
         α₁ζ::AbstractVector{<:Real}
     )
+    _bump!(RESIDUE_SOLVES)
     A₀, A₁, A₂ = _build_acoustic_coeffs(C, α₀ζ, α₁ζ)
 
     poly(coefs) = Polynomial(ComplexF64.(coefs), :z)
