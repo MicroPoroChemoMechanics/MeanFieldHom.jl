@@ -287,14 +287,57 @@ maintenant canalisé par `Val`.
 C'est un gain plus large que le cas `TensOrtho` initialement visé : il porte
 sur **toute** paire d'opérandes qui retombe sur le chemin dense.
 
-**Ce que je n'ai pas fait.** Le `dcontract` fermé pour `TensOrtho` (§4.2)
-reste non implémenté. Le prototype passant par `inv_KM` donnait 1,8e-12 dans
-le repère canonique mais **6039** dans un repère tourné : la convention de
-rotation Kelvin-Mandel de `inv_KM` n'est pas celle que je supposais, et je
-n'ai pas voulu deviner. Le facteur ~690× face au tenseur générique du §4 est
-donc ramené à ~240× par le correctif (b), pas supprimé. C'est l'opportunité
-la plus rentable qui reste sur TensND, et elle est maintenant caractérisée :
-il faut d'abord établir la sémantique de repère de `inv_KM`.
+**(c) La forme fermée du `dcontract`, et le goulot qu'elle a révélé.**
+Reprise dans un second temps, après avoir établi la convention au lieu de la
+supposer.
+
+`inv_KM` n'avait aucun problème de repère : `KM(t)` est la Kelvin-Mandel
+**canonique**, `inv_KM` la relit comme telle, et le va-et-vient est exact
+pour les huit formes (ordres 2 et 4, symétrique ou non, dim 2 et 3). Mon
+prototype faisait `inv_KM(Mₐ·M_b)` avec `Mₐ`, `M_b` les KM du **repère
+matériau** : il interprétait donc des composantes matériau comme canoniques.
+En repère canonique `Q = I` et l'erreur était invisible (1,8e-12) ; en repère
+tourné elle valait 6039. Il manquait la congruence.
+
+Vérifiée sur trois repères plutôt que postulée :
+
+    KM(t) == Q · KM_material(t) · Qᵀ          (5,3e-15)
+
+où `Q` est la représentation Kelvin-Mandel de `R ⊠ˢ R`, c'est-à-dire
+`KM(rot6(θ,ϕ,ψ))` — que TensND possédait déjà. `Q` est **orthogonale**
+(2,2e-16) : c'est exactement ce que Kelvin-Mandel apporte sur Voigt, où la
+matrice analogue ne l'est pas.
+
+Le résultat n'est pas un `TensOrtho` : le produit de deux blocs 3×3
+symétriques n'est pas symétrique sauf s'ils commutent, donc `A ⊡ B` est
+orthotrope **sans symétrie majeure** — 12 constantes pour 9 stockées, écart
+mesuré à 87,6, pas du bruit. Même élargissement que `TensTI{4}` N=5 → N=6.
+La méthode renvoie donc le `TensCanonical` que la route générique produisait,
+à 6,2e-16.
+
+Et en profilant la forme fermée, les 1115 ns restants **n'étaient pas dans
+l'algèbre** :
+
+| | avant | après |
+|---|---|---|
+| `frame(A) == frame(B)` | **1117 ns** | 162 ns |
+| tout le reste cumulé | ~130 ns | ~130 ns |
+
+`AbstractBasis <: AbstractMatrix`, et son `getindex` passait par
+`vecbasis(ℬ, :cov)` — la surcharge `Symbol`, qui construit `Val(var)` à
+partir d'une valeur d'exécution : dispatch dynamique à **chaque accès
+scalaire** (67 ns). Le `==` générique d'`AbstractArray` en faisait 18. Ce
+coût était payé par tout parcours générique d'une base et par chaque
+`_check_same_reference` — la garde coûtait plus cher que l'algèbre gardée.
+
+| cas | avant v0.2.6 | après (b) | après (c) |
+|---|---|---|---|
+| `dcontract.ortho_ortho` | 13 860 ns / 9 136 o | 4 770 ns | **164 ns / 304 o** |
+| `dcontract.iso_ortho` | 10 900 ns | 4 380 ns | **164 ns** |
+| `inv_KM` 6×6 | 228 ns | — | **37,5 ns** |
+
+Soit **−98,8 %** sur ce qui était désigné comme l'opportunité restante la
+plus rentable. Le facteur ~690× face au tenseur générique tombe à ~3,3×.
 
 Deux bogues `Dual` du §5 ont été corrigés au passage (constructeur `TensTI`
 à eltypes mixtes, et `_ti8_to_ti6`) ; les deux `@test_broken` correspondants
@@ -369,38 +412,54 @@ Sans la mesure directe de recoupement, j'aurais rapporté une régression de
 
 ## 7. Campagne finale — récapitulatif
 
-`--label=P2-P6-final --baseline=baseline.json --gate=1e-14 --repeat-suite=2`,
+`--label=P7-ortho --baseline=baseline.json --gate=1e-14 --repeat-suite=2`,
 67 cas, machine au repos.
 
 ```
-14 déplacés, 0 échec de gate, 0 régression de contrôle,
-20 non fiables (evals différents)
-plancher de bruit (contrôles, p90 de |Δt|/t) = 1,5 %
+24 déplacés, 0 échec de gate, 1 « régression » de contrôle,
+21 non fiables (evals différents)
+plancher de bruit (contrôles, p90 de |Δt|/t) = 0,8 %
 ```
 
-**Gains** (au-delà du seuil « déplacé » = max(3×bruit, 3 %) = 4,5 %) :
+**Gains** (au-delà du seuil « déplacé » = max(3×bruit, 3 %)) :
 
 | cas | temps | allocations |
 |---|---|---|
-| `tensnd/getindex.ortho` | −99,8 % | −95,8 % |
-| `tensnd/collect.ortho` | −94,7 % | −98,6 % |
+| `tensnd/getindex.ortho` | −99,7 % | −95,8 % |
+| `tensnd/dcontract.ortho_ortho` | **−99,3 %** | **−94,9 %** |
+| `tensnd/dcontract.iso_ortho` | **−99,3 %** | **−95,6 %** |
+| `tensnd/collect.ortho` | −94,4 % | −98,6 % |
+| `tensnd/inv_KM.gen` | **−87,0 %** | +0,0 % |
 | `kernels/cod.nqgk.ellipse03.tri` | −85,3 % | **−99,4 %** |
 | `kernels/hill.decuhr.tri.321` | −62,0 % | −80,7 % |
-| `tensnd/dcontract.iso_ortho` | −58,2 % | −46,3 % |
-| `tensnd/dcontract.ortho_ortho` | −57,0 % | −45,5 % |
 | `schemes/mt.aniso_matrix` | −50,8 % | −50,0 % |
 | `schemes/mt.porous.oblate.isosym` | −50,2 % | −14,2 % |
 | `schemes/mt.crack.penny.tri` | −49,7 % | −50,0 % |
 | `schemes/mt.crack.penny` | −49,0 % | −35,3 % |
-| `tensnd/get_array.ortho` | −44,9 % | +0,0 % |
+| `tensnd/get_array.ortho` | −44,4 % | +0,0 % |
 | `kernels/hill2.aniso` | −35,2 % | −18,5 % |
 | `kernels/hill.dual.nqgk.tri` | −21,5 % | −0,0 % |
 | `schemes/mt.theta_binned_ti.n20` | −17,3 % | −7,2 % |
 
-**Correction** : 64 cas sur 67 restent **bit-à-bit identiques** (`0,0e+00`).
-Deux seulement bougent, tous deux par réassociation flottante due au passage
-en statique — `cod.nqgk.ellipse03.tri` à **6,9e-16** et `hill.decuhr.tri.321`
-à **1,7e-18**, loin sous la tolérance 1e-14.
+**Correction** : 63 cas sur 67 restent **bit-à-bit identiques** (`0,0e+00`).
+Les quatre qui bougent le font tous par réassociation flottante —
+`cod.nqgk.ellipse03.tri` à 6,9e-16, `hill.decuhr.tri.321` à 1,7e-18 (passage
+en statique), `dcontract.iso_ortho` à 4,0e-17 et `dcontract.ortho_ortho` à
+1,9e-17 (forme fermée) — tous très loin sous la tolérance 1e-14.
+
+**La « régression » de contrôle n'en est pas une.** `control/alv.voigt.n50`
+sort à **−5,6 %**, c'est-à-dire *plus rapide* ; le harnais signale tout écart
+de contrôle sans regarder le signe. Vérifié plutôt que supposé : reproductible
+sur cinq processus frais (−4,8 à −6,8 %), allocations identiques à l'octet,
+checksum bit-à-bit, compteurs de travail inchangés. Un A/B annulant le seul
+correctif de `bases.jl` montre que **ce n'est pas lui** ; le candidat restant
+est `inv_KM`, que l'ALV appelle en boucle pour convertir ses blocs de Mandel.
+Je ne l'ai pas isolé formellement.
+
+C'est la limite du jeu de contrôles : il a été choisi en supposant que les
+paliers ne toucheraient pas aux primitives partagées. `inv_KM`,
+`tensor_or_array` et la comparaison de bases sont globales, donc un contrôle
+peut légitimement bouger — dans le bon sens ici.
 
 **Ce qui monte.** Le seul poste déterministe est
 `schemes/mt.conductivity.iso2`, +22,2 % d'allocation — la contrepartie du
@@ -435,7 +494,8 @@ commit `0cf9fd5` : **strictement les mêmes valeurs**. Écart pré-existant vis
 
 | sujet | pourquoi ce n'est pas fait |
 |---|---|
-| `dcontract` fermé pour `TensOrtho` | convention de repère de `inv_KM` non établie (§4) — le gisement restant le plus rentable sur TensND |
+| conteneur orthotrope à 12 paramètres | `A ⊡ B` de deux `TensOrtho` n'a pas la symétrie majeure (§4c). Le résultat retombe donc sur `TensCanonical`, comme avant. Un conteneur dédié garderait la structure sur une chaîne de contractions, mais remonterait dans MFH — exactement le scénario du `MethodError` sur `TensTI{4,T,8}` (§5.2) |
+| isoler le primitif derrière le `−5,6 %` d'`alv.voigt.n50` | vérifié réel et bénéfique, `bases.jl` écarté par A/B ; l'isolement exact n'a pas d'enjeu de risque |
 | cache `prepare_logI`/`prepare_logz` du chemin `:residues` | le plus invasif des items du palier 3 ; le chemin sort de la campagne inchangé |
 | `SVector{21,T}` pour les retours d'intégrande Hill | non nécessaire au gain obtenu ; le chemin `Integrals`/DECUHR demande une vérification séparée du tampon mutable |
 | `best_sym_tens`, dé-einsum-ification, bases à type concret | paliers TensND 4 à 7, non abordés |
