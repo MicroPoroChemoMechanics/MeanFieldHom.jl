@@ -1,5 +1,131 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **Per-phase helpers now all evaluate a phase in the same reference medium.**
+  `_phase_dilute_concentration` (both orders) and
+  `_phase_stiffness_contribution` (4th order) evaluated their phase in
+  `_project_matrix(P₀, sym)`, whereas `_phase_stiffness_contribution` (2nd
+  order) and `_phase_compliance_contribution` (both orders) used the **raw**
+  `P₀`. As soon as a phase carried `symmetrize ≠ NoSymmetrize`, the
+  concentration tensor `A` and the contribution tensor `N` of one and the same
+  phase were therefore computed in two *different* reference media, and the
+  Mori-Tanaka denominator `⟨A⟩` mixed the two.
+
+  The discrepancy is invisible on an isotropic matrix — `isotropify` is then a
+  no-op to ~1e-16 — which is why every existing `symmetrize` test missed it:
+  all of them use isotropic matrices *and* isotropic phase properties. It
+  becomes a genuine (non-negligible) difference for an **anisotropic** matrix.
+  All published isotropic-matrix results are unchanged to machine precision;
+  the `echoes` cross-checks (`benchmark_pichler.jl`, `benchmark_nlayers.jl`,
+  `benchmark_hill_derivative.jl`) are unaffected.
+
+  Covered by `test/Schemes/test_loc_bundles.jl`, "every phase helper uses the
+  same reference medium", which pins the corrected values on a triclinic
+  matrix.
+
+- **`SelfConsistent` with transversely-isotropic phases no longer errors.** The
+  exact azimuthal average returns a `TensTI{4,T,8}` — the commutant of SO(2)
+  about the axis is 8-dimensional, not 6 — while the analytical TI-coaxial Hill
+  builder only had methods for the 5- and 6-parameter forms, so the running
+  estimate raised `MethodError: no method matching _hill_3d_ti_coaxial(…,
+  ::TensTI{4,Float64,8})`. A stiffness is major-symmetric, hence its average
+  has `ℓ₇ = ℓ₈ = 0` exactly and narrows losslessly (`_ti8_to_ti6`).
+
+- **`NewtonDefault` could not solve a fixed point richer than its starting
+  guess.** The Newton parameter space was taken from `x0` (often a `TensISO`
+  phase property, 2 components) while one application of the scheme can land in
+  a larger symmetry class (a `TensTI{4,T,8}`, 8 components), so the residual
+  subtracted vectors of different lengths (`DimensionMismatch`).
+  `AndersonDefault` was unaffected, since Picard simply propagates whatever the
+  step returns. The parametrization is now seeded from `step(x0)`.
+
+### Added
+
+- **Bundled localization helpers** — `Core.loc_and_stiffness` /
+  `Core.loc_and_stress_average` (plus
+  `Cracks.compliance_and_stiffness_contribution` and the `Schemes`-level
+  `_phase_*_and_*` wrappers) share the single expensive `hill_tensor` /
+  `cod_tensor` / layered-recurrence solve between the two quantities that
+  Mori-Tanaka and the self-consistent kernels always request together. They
+  used to be computed independently, i.e. twice with identical arguments.
+  Results are **bitwise identical**; measured effect: −50 % time and
+  allocations on an anisotropic matrix or a crack phase, −18.6 % on a 20-bin
+  orientation family (40 → 20 Hill solves).
+
+- **Benchmark suite** (`scripts/bench/bench_suite.jl` + `harness.jl`) with a
+  committed baseline, three independent measurement channels (time,
+  allocations, work counters), a calibrated noise floor and a bitwise
+  checksum gate. See `scripts/bench/README.md` and `scripts/bench/DIAGNOSTIC.md`.
+
+### Performance
+
+All figures below are measured against the committed baseline
+(`scripts/bench/baseline.json`, 67 cases, noise floor 1.5 %); 64 of the 67
+cases stay **bitwise identical**, the other three move by at most 6.9e-16
+through pure floating-point reassociation.
+
+- **Crack COD back-ends no longer allocate per quadrature node.**
+  `_qnn_pair_components` (the innermost loop of the whole `Cracks` module) is
+  now a pure function returning an `SMatrix{3,3,T}` instead of writing into a
+  caller buffer through ~10 heap 3×3 `Matrix{T}` temporaries per α node;
+  `_A_and_Tn`, `_phi_cache` and `_inv3` likewise return `StaticArrays`.
+  `cod_tensor` on an elliptic crack in a triclinic matrix: **−85 % time,
+  −99.4 % allocations** (18.5 MB → 111 KB). `StaticArrays` becomes a direct
+  dependency (it was already in the manifest transitively).
+
+- **Anisotropic 2D Hill uses one vector-valued quadrature.** It ran 16
+  separate `quadgk` calls, each evaluating the full 16-component integrand and
+  keeping one component. **−35 % time, −18.5 % allocations.**
+
+- **DECUHR and anisotropic-cylinder Hill use the closed-form acoustic
+  inverse.** Both built a symmetric 3×3 `K` with a 4-deep 81-iteration loop
+  and then called generic LU `inv` per node; `_sym3_inv_acoustic` already did
+  this allocation-free and Dual-safe. **−62 % time, −80.7 % allocations.**
+
+- **Green helpers exploit the major symmetry of `C`.** `Kns` follows from
+  `Vs + transpose(Vs)` at zero flops instead of an 81-iteration loop, and `Ks`
+  is accumulated on its upper triangle only. **−21.5 %** on `hill_tensor`
+  under `ForwardDiff.Dual`.
+
+- **The self-consistent Newton solver stops recomputing residuals it already
+  has.** The line search accepts `r_new` and the next iteration recomputed the
+  residual at the same point (one full RVE pass — i.e. one `hill_tensor` per
+  phase — per iteration); `Tref` was derived from a whole extra evaluation
+  whose value was discarded. **−18.4 % allocations.**
+
+- Requires TensND 0.2.6 to benefit from its `TensOrtho` `getindex` and
+  `tensor_or_array` fixes (`−57 %` on `⊡` between structured operands).
+
+### Removed
+
+- **15 dead functions**, none reachable from `src/`, `ext/`, `test/` or
+  `docs/`: `_Qnn_direct` and `_acoustic_tensor` (`Core/green_kernel.jl`),
+  `Core._quadgk` (`Core/quadrature.jl`), `_masson_log`
+  (`Core/green_residue.jl`), `_sc_pd_guard` and `_rve_in_compliance_space`
+  (`Schemes/self_consistent.jl`), `_amounts_with_promoted_eltype` and
+  `_replace_tuple_at` (`Schemes/parameters.jl`), `_mandel66_to_tens`,
+  `_block_value_tensor`, `_block_value_mandel`, `_get_block`
+  (`Viscoelasticity/trapezoidal.jl`), `_block_value_order2_tens` and
+  `_block_value_order2_mat` (`Viscoelasticity/order2_alv.jl`),
+  `_sc_alv_mt_body_against` and `_sc_alv_step_echoes`
+  (`Viscoelasticity/schemes_alv_sc.jl`).
+
+  `_Qnn_direct` was the starting point of this whole audit: it contracted the
+  stiffness with the Green kernel through a six-deep `p,q,r,s,α,β` loop — 729
+  iterations where the contraction factorizes into `U = (C·n̂)·ξ` then
+  `B = U·K⁻¹·Uᵀ`, roughly 100 flops. The factorized form already existed twice
+  in the package (`Cracks/green_residue.jl`, `Core/green_helpers.jl`), so the
+  slow copy was deleted rather than optimized, and the header of
+  `green_kernel.jl` now points at the two live implementations.
+
+  `Core._quadgk` deserves a special mention: its own header described it as
+  the wrapper "all downstream sub-modules should go through", and no call site
+  had ever used it.
+
+
 ## v0.1.0 — Initial release
 
 First public release of MeanFieldHom.jl — a mean-field homogenization toolkit

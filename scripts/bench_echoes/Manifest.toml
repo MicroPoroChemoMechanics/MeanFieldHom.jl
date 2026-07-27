@@ -1004,7 +1004,7 @@ weakdeps = ["SparseArrays"]
     MaybeInplaceSparseArraysExt = "SparseArrays"
 
 [[deps.MeanFieldHom]]
-deps = ["Elliptic", "ForwardDiff", "JSON3", "LinearAlgebra", "OrdinaryDiffEq", "PolynomialRoots", "Polynomials", "QuadGK", "TensND", "Tensors"]
+deps = ["Elliptic", "ForwardDiff", "JSON3", "LinearAlgebra", "OrdinaryDiffEq", "PolynomialRoots", "Polynomials", "QuadGK", "StaticArrays", "TensND", "Tensors"]
 path = "../.."
 uuid = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 version = "0.1.0"
@@ -2025,7 +2025,7 @@ version = "0.1.3"
 deps = ["ForwardDiff", "LinearAlgebra", "OMEinsum", "Rotations", "StaticArrays", "SymPy", "Symbolics", "Tensors", "TimerOutputs"]
 path = "../../../TensND.jl"
 uuid = "474b5345-2588-4284-8a58-2430a1a40cb0"
-version = "0.2.2"
+version = "0.2.6"
 
     [deps.TensND.extensions]
     TensNDNLoptExt = "NLopt"

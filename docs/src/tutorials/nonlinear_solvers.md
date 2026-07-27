@@ -145,8 +145,74 @@ p^\star_{\text{dual}} = p^\star - \Big(\frac{\partial F}{\partial p}\Big)^{-1} F
 ```
 
 evaluated with ``p^\star`` the primal root and the residual re-evaluated on the
-caller's `Dual` inputs — exactly the implicit function theorem applied once, at
-the root. Only the *caller's* `Dual` tag is ever present; nothing is nested.
+caller's `Dual` inputs. Only the *caller's* `Dual` tag is ever present; nothing
+is nested.
+
+### Why that one line is the implicit function theorem
+
+The formula looks like a Newton step, and that is exactly what it is — but
+taken in *dual* arithmetic from a point where the primal residual already
+vanishes. Write ``\theta = \theta_0 + \varepsilon`` for the caller's seeded
+`Dual` (``\varepsilon`` the infinitesimal unit, ``\varepsilon^2 = 0``).
+
+**Step 1 — the primal root carries no partials.** The extension solves the
+primal problem with every input stripped through `ForwardDiff.value`, so
+``p^\star`` is an ordinary real number and
+
+```math
+F(p^\star;\theta_0) = 0 .
+```
+
+**Step 2 — re-evaluating the residual at the *same* ``p^\star``, with the dual
+``\theta``, isolates ``\partial F/\partial\theta``.** Since ``p^\star`` has zero
+partials, a first-order expansion in ``\varepsilon`` gives
+
+```math
+F(p^\star;\theta) = \underbrace{F(p^\star;\theta_0)}_{=\;0}
+                  + \varepsilon\,\frac{\partial F}{\partial\theta}
+                  = \varepsilon\,\frac{\partial F}{\partial\theta} .
+```
+
+This is the crux: **the real part cancels because ``p^\star`` is a root**, so
+the residual is purely infinitesimal.
+
+**Step 3 — the correction is therefore purely infinitesimal too.** ``\partial
+F/\partial p`` is the primal Jacobian, an ordinary real matrix, so
+
+```math
+p^\star - \Big(\frac{\partial F}{\partial p}\Big)^{-1} F(p^\star;\theta)
+  = p^\star - \varepsilon
+      \Big(\frac{\partial F}{\partial p}\Big)^{-1}\frac{\partial F}{\partial\theta} .
+```
+
+**Step 4 — recognise the IFT.** Differentiating ``F(p^\star(\theta);\theta) = 0``
+with respect to ``\theta`` gives
+``\frac{\partial F}{\partial p}\frac{dp^\star}{d\theta} + \frac{\partial F}{\partial\theta} = 0``,
+i.e.
+
+```math
+\frac{dp^\star}{d\theta}
+  = -\Big(\frac{\partial F}{\partial p}\Big)^{-1}\frac{\partial F}{\partial\theta} .
+```
+
+Substituting into step 3,
+
+```math
+p^\star_{\text{dual}} = p^\star + \varepsilon\,\frac{dp^\star}{d\theta} ,
+```
+
+which is precisely the `Dual` whose value is the primal root and whose partial
+is the sensitivity. Nothing is iterated and no second-order information is
+needed — one linear solve with the Jacobian already available at the root.
+
+!!! note "The residual is not exactly zero in practice"
+    The solver returns ``p^\star`` with ``\|F\| \lesssim`` `abstol`, not exactly
+    ``0``. The real part of the formula is then
+    ``p^\star - (\partial F/\partial p)^{-1}F(p^\star;\theta_0)`` — one extra
+    *primal* Newton step. So the returned value can differ from the solver's
+    ``p^\star`` by ``O(\texttt{abstol})``, in the direction of a **better**
+    root. This is benign, but it explains why the value returned through the
+    IFT path is not always bit-identical to the one returned by a plain solve.
 The built-in [`NewtonDefault`](@ref) instead differentiates straight
 through its own iterations (safe because it is entirely
 hand-written), so both paths give the same answer by construction —

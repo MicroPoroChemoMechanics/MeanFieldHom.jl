@@ -127,7 +127,7 @@ non encore appliqué.
 
 ---
 
-## 3. Redondances dans les intégrandes (non encore corrigées)
+## 3. Redondances dans les intégrandes (palier 3, corrigé)
 
 | site | constat | correctif |
 |---|---|---|
@@ -142,6 +142,67 @@ non encore appliqué.
 Repère de coût, mesuré : `hill_tensor` triaxial/triclinique en
 `:nestedquadgk` alloue **103 Mo** et prend 83 ms pour **13 665 évaluations**
 d'intégrande. En `:residues`, 6,8 ms et 105 nœuds.
+
+### Gains mesurés (palier 3, gate 1e-14)
+
+| cas | temps | allocations | ce qui a changé |
+|---|---|---|---|
+| `kernels/hill.decuhr.tri.321` | **−62,0 %** | **−80,7 %** | `_sym3_inv_acoustic` au lieu de `Matrix` + `inv` LU par nœud |
+| `kernels/hill2.aniso` | **−35,2 %** | −18,5 % | un `quadgk` vectoriel au lieu de 16 scalaires |
+| `kernels/hill.dual.nqgk.tri` | **−21,5 %** | −0,0 % | `Kns = Vs + Vsᵀ` et `Ks` sur `i ≤ j` |
+| `schemes/sc.newton` | −2,1 % | **−18,4 %** | report de `r_new`, `Tref` dérivé du 1ᵉʳ résidu de boucle |
+
+Le compteur `nodes` est **identique** avant/après sur chaque cas de
+quadrature (13 665, 21 825, 105, 315 …) : la quadrature adaptative n'a pas
+changé de comportement, donc la comparaison de temps porte bien sur le même
+travail.
+
+Trois items du plan ont été mesurés comme non rentables ou trop invasifs et
+n'ont **pas** été appliqués : le cache `prepare_logI`/`prepare_logz` de la
+boucle 21 du chemin `:residues` (le plus invasif, gain attendu non vérifié),
+la boucle `i ≤ k` de `Cracks/green_residue.jl`, et la forme à contexte
+pré-calculé des `_Qnn_star_*`. Le chemin `:residues` sort du palier inchangé
+(`hill.residues.tri.321` −0,4 %, dans le bruit).
+
+---
+
+## 3 bis. StaticArrays sur les chemins chauds (palier 4, gate 1e-14)
+
+`_qnn_pair_components!` — la boucle la plus interne de tout le module
+`Cracks` — écrivait dans un tampon appelant et construisait ~10 `Matrix{T}`
+3×3 sur le tas **par nœud α** (`Vp, Vm, Kp, Km` par diffusion, `iKp, iKm`
+via `_inv3`, puis quatre temporaires pour les deux `(V·iK)·Vᵀ`). Elle est
+devenue une fonction **pure** renvoyant une `SMatrix{3,3,T}` ; `_A_and_Tn`,
+`_phi_cache` et `_inv3` renvoient également du statique.
+
+| cas | temps | allocations |
+|---|---|---|
+| `kernels/cod.nqgk.ellipse03.tri` | **−85,3 %** (4,35 ms → 639 µs) | **−99,4 %** (18,48 Mo → 111 Ko) |
+
+C'est le plus gros gain unitaire de la campagne. Le checksum bouge de
+**6,9e-16** — de la réassociation flottante pure, à 1 ULP, attendue dès qu'on
+remplace un produit matriciel générique par sa forme statique déroulée.
+
+Deux fausses pistes écartées en route, toutes deux dans le sens de la
+lisibilité :
+
+- une première version de `_A_and_Tn` en arithmétique d'indices `mod1`/`fld1`
+  sur des tuples : illisible, et `ntuple(f, 27)` **sans `Val` est
+  type-instable** — j'aurais introduit exactement la régression que je
+  cherchais à supprimer. Remplacée par `MArray` → `SArray` avec les boucles
+  d'origine intactes ;
+- une closure `iK = (i,j) -> iKt[…]` dans la boucle chaude DECUHR — le piège
+  de boxing déjà rencontré sur ce dépôt. Remplacée par de l'indexation
+  directe de tuple.
+
+Hors périmètre, assumé : les `zeros(T,3,3,3,3)` de queue de noyau (chemins
+froids), `Viscoelasticity/` (tout est dimensionné par le nombre de pas de
+temps), `LayeredSpheroids/` (troncature Legendre dynamique), et les
+`Matrix{Polynomial{ComplexF64}}` (3×3 mais éléments non-`isbits` : une
+`SMatrix` n'y supprimerait aucune allocation). Le portage `SVector{21,T}`
+des retours d'intégrande des back-ends Hill n'a pas été fait — il n'était
+pas nécessaire pour atteindre le gain, et le chemin `Integrals`/DECUHR exige
+une vérification séparée du caractère mutable du tampon.
 
 ---
 
@@ -192,6 +253,54 @@ sommation** ; champs abstraits `Tens.basis::Basis`, `TensRotated.basis`,
 `TensOrthogonal.basis`, `CoorSystemNum.{χ,R,Γ}_func::Function` ;
 `best_sym_tens` matérialise `Array(get_array(t))` trois fois et résout deux
 fois le même problème aux valeurs propres 3×3.
+
+### Correctifs et gains mesurés (palier 5, TensND v0.2.6, gate 1e-14)
+
+Deux changements seulement, et le second n'était pas dans le diagnostic
+initial :
+
+**(a) `getindex(::TensOrtho)` en forme fermée.** `_ortho_entry` est extraite
+de `get_array` pour qu'un accès scalaire évalue **une** composante au lieu
+des 81.
+
+| cas | temps | allocations |
+|---|---|---|
+| `tensnd/getindex.ortho` | **−99,8 %** (2 792 → 4 ns) | **−95,8 %** |
+| `tensnd/collect.ortho` | **−94,7 %** (48,8 → 2,47 µs) | **−98,6 %** |
+| `tensnd/get_array.ortho` | −44,9 % | +0,0 % |
+
+**(b) `tensor_or_array` était type-instable — le vrai gisement.** `dim` vient
+de `size(tab, 1)`, donc c'est une valeur **d'exécution** : écrire
+`Tensor{order, dim}(tab)` construit un type non concret à la compilation et
+la construction devient entièrement dynamique — **3 147 ns et 3 120 o** pour
+un tableau de 81 éléments, contre 311 ns pour produire ce tableau. Or tout
+tenseur structuré rejoint la route générique par cette fonction
+(`change_tens` → `same_basis` → chaque opération binaire), donc ce coût était
+payé **deux fois par `⊡`** entre opérandes structurés. Le `dim` est
+maintenant canalisé par `Val`.
+
+| cas | temps | allocations |
+|---|---|---|
+| `tensnd/dcontract.iso_ortho` | **−58,2 %** (10,9 → 4,38 µs) | −46,3 % |
+| `tensnd/dcontract.ortho_ortho` | **−57,0 %** (13,9 → 4,77 µs) | −45,5 % |
+
+C'est un gain plus large que le cas `TensOrtho` initialement visé : il porte
+sur **toute** paire d'opérandes qui retombe sur le chemin dense.
+
+**Ce que je n'ai pas fait.** Le `dcontract` fermé pour `TensOrtho` (§4.2)
+reste non implémenté. Le prototype passant par `inv_KM` donnait 1,8e-12 dans
+le repère canonique mais **6039** dans un repère tourné : la convention de
+rotation Kelvin-Mandel de `inv_KM` n'est pas celle que je supposais, et je
+n'ai pas voulu deviner. Le facteur ~690× face au tenseur générique du §4 est
+donc ramené à ~240× par le correctif (b), pas supprimé. C'est l'opportunité
+la plus rentable qui reste sur TensND, et elle est maintenant caractérisée :
+il faut d'abord établir la sémantique de repère de `inv_KM`.
+
+Deux bogues `Dual` du §5 ont été corrigés au passage (constructeur `TensTI`
+à eltypes mixtes, et `_ti8_to_ti6`) ; les deux `@test_broken` correspondants
+sont devenus de vrais `@test`. Les points 3 à 7 du palier 5 planifié
+(`best_sym_tens`, dé-einsum-ification, paramétrage concret des bases) n'ont
+pas été abordés.
 
 ---
 
@@ -258,14 +367,76 @@ Sans la mesure directe de recoupement, j'aurais rapporté une régression de
 
 ---
 
-## 7. Ce qui reste
+## 7. Campagne finale — récapitulatif
 
-| palier | contenu | état |
+`--label=P2-P6-final --baseline=baseline.json --gate=1e-14 --repeat-suite=2`,
+67 cas, machine au repos.
+
+```
+14 déplacés, 0 échec de gate, 0 régression de contrôle,
+20 non fiables (evals différents)
+plancher de bruit (contrôles, p90 de |Δt|/t) = 1,5 %
+```
+
+**Gains** (au-delà du seuil « déplacé » = max(3×bruit, 3 %) = 4,5 %) :
+
+| cas | temps | allocations |
 |---|---|---|
-| P2 | uniformisation de la référence `P₀` (§2), commit séparé, gate 1e-14 | non commencé |
-| P3 | noyaux de quadrature (§3) | non commencé |
-| P4 | StaticArrays sur les chemins chauds | non commencé |
-| P5 | TensND v0.2.6 (§4 et §5.3) | non commencé |
-| P6 | suppression des 15 fonctions mortes (§0, §5.1) | non commencé |
+| `tensnd/getindex.ortho` | −99,8 % | −95,8 % |
+| `tensnd/collect.ortho` | −94,7 % | −98,6 % |
+| `kernels/cod.nqgk.ellipse03.tri` | −85,3 % | **−99,4 %** |
+| `kernels/hill.decuhr.tri.321` | −62,0 % | −80,7 % |
+| `tensnd/dcontract.iso_ortho` | −58,2 % | −46,3 % |
+| `tensnd/dcontract.ortho_ortho` | −57,0 % | −45,5 % |
+| `schemes/mt.aniso_matrix` | −50,8 % | −50,0 % |
+| `schemes/mt.porous.oblate.isosym` | −50,2 % | −14,2 % |
+| `schemes/mt.crack.penny.tri` | −49,7 % | −50,0 % |
+| `schemes/mt.crack.penny` | −49,0 % | −35,3 % |
+| `tensnd/get_array.ortho` | −44,9 % | +0,0 % |
+| `kernels/hill2.aniso` | −35,2 % | −18,5 % |
+| `kernels/hill.dual.nqgk.tri` | −21,5 % | −0,0 % |
+| `schemes/mt.theta_binned_ti.n20` | −17,3 % | −7,2 % |
 
-Rien n'est commité.
+**Correction** : 64 cas sur 67 restent **bit-à-bit identiques** (`0,0e+00`).
+Deux seulement bougent, tous deux par réassociation flottante due au passage
+en statique — `cod.nqgk.ellipse03.tri` à **6,9e-16** et `hill.decuhr.tri.321`
+à **1,7e-18**, loin sous la tolérance 1e-14.
+
+**Ce qui monte.** Le seul poste déterministe est
+`schemes/mt.conductivity.iso2`, +22,2 % d'allocation — la contrepartie du
+tuple de bundle décrite au §1, sur le cas le moins cher de la suite (528 o
+au total). Le reste du cluster à +4/+6 % (`hill.nqgk.tri.321` +4,4 %,
+`hill.nqgk.oblate.tri` +4,0 %, `sc.porous.sphere.phi30` +5,0 %,
+`asc.stiffness` +4,5 %, `alv/trapezoidal.n50` +5,9 %) est du bruit machine :
+le contrôle `differential.iso2` bouge de +2,5 % et `alv/trapezoidal.n50` ne
+traverse que du code supprimé. J'ai vérifié le mécanisme suspecté plutôt que
+de le supposer — `_counted_quadgk` s'infère au **même type concret** que
+`QuadGK.quadgk` appelé directement, donc l'instrumentation n'introduit pas
+d'instabilité sur ces chemins.
+
+### Vérification de bout en bout
+
+| | |
+|---|---|
+| suite MeanFieldHom | **7154 / 7154** |
+| suite TensND | verte (AD 63/63, projections TI/ORTHO 89/89, NLopt 46/46) |
+| `benchmark_pichler` | **24 / 24** |
+| `benchmark_hill_derivative` | **17 / 17** |
+| `benchmark_nlayers` | §1-4, contraintes locales à 5,8e-16 |
+| `benchmark_porous` | 134 / 140 — **identique au commit pré-campagne**, chiffre pour chiffre |
+| build Documenter | exit 0, aucune docstring orpheline |
+
+Les 6 échecs de `benchmark_porous` (DifferentialScheme, φ ≥ 0,50, erreur
+relative croissant de 2,6e-03 à 6,2e-02) ont été rejoués sur un worktree du
+commit `0cf9fd5` : **strictement les mêmes valeurs**. Écart pré-existant vis
+à vis d'echoes, sans rapport avec cette campagne.
+
+### Ce qui reste ouvert
+
+| sujet | pourquoi ce n'est pas fait |
+|---|---|
+| `dcontract` fermé pour `TensOrtho` | convention de repère de `inv_KM` non établie (§4) — le gisement restant le plus rentable sur TensND |
+| cache `prepare_logI`/`prepare_logz` du chemin `:residues` | le plus invasif des items du palier 3 ; le chemin sort de la campagne inchangé |
+| `SVector{21,T}` pour les retours d'intégrande Hill | non nécessaire au gain obtenu ; le chemin `Integrals`/DECUHR demande une vérification séparée du tampon mutable |
+| `best_sym_tens`, dé-einsum-ification, bases à type concret | paliers TensND 4 à 7, non abordés |
+| tags `Dual` imbriqués à travers `NewtonDefault` | débloqué par le correctif `_sc_newton_seed`, révèle un problème suivant, précédemment inatteignable |
