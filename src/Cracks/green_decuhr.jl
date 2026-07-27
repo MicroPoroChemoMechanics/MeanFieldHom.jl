@@ -106,7 +106,7 @@ function _cod_elliptic_decuhr_direct(
             (ηp * cφ * lhat_p[1] + sφ * mhat_p[1]) * invρ,
             (ηp * cφ * lhat_p[2] + sφ * mhat_p[2]) * invρ,
             (ηp * cφ * lhat_p[3] + sφ * mhat_p[3]) * invρ,
-            )
+        )
         Vs, Ks, Kns = MFH_Core._phi_cache(Carr, Tn, nhat_p, ξshat, Tp)
         ca = cos(α); sa = sin(α)
         M = MFH_Core._qnn_pair_components(A, Vs, Ks, Kns, ca, sa, ρ / (sa * sa))

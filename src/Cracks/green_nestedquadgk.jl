@@ -99,7 +99,7 @@ function _cod_elliptic_nestedquadgk_direct(
             (ηp * cφ * lhat_p[1] + sφ * mhat_p[1]) * invρ,
             (ηp * cφ * lhat_p[2] + sφ * mhat_p[2]) * invρ,
             (ηp * cφ * lhat_p[3] + sφ * mhat_p[3]) * invρ,
-            )
+        )
         Vs, Ks, Kns = MFH_Core._phi_cache(Carr, Tn, nhat_p, ξshat, Tp)
 
         function inner(α)
