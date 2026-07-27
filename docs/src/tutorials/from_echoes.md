@@ -48,7 +48,7 @@ Two conventions worth flagging for a smooth transition:
 - **Both `stiff_kmu`/`iso_stiffness` take *physical* `(k, μ)`.** Where they
   differ is in what the resulting tensor *stores*: MFH's raw
   `TensISO{3}(a, b)` constructor takes the pair `(3k, 2μ)`, not `(k, μ)` —
-  see [the first tutorial](01_first_estimate.md#A-storage-convention-worth-knowing).
+  see [the first tutorial](first_estimate.md#A-storage-convention-worth-knowing).
   Building with `iso_stiffness(k, μ)` (as in the table above) sidesteps
   this entirely.
 - **Symbol-string vs. type-instance schemes.** Echoes selects a scheme via
@@ -231,7 +231,7 @@ end
 `Mori-Tanaka` — a closed-form scheme with no iterative solve on either
 side — agrees to ``\sim 10^{-8}``, essentially the floor of both
 implementations' floating-point arithmetic. `Differential` integrates the
-same ODE (see [the differential-scheme tutorial](05_differential_paths.md))
+same ODE (see [the differential-scheme tutorial](differential_paths.md))
 with independent step counts and quadrature on each side, so the two
 agree to sub-percent up to ``\varphi \approx 0.8`` and a few percent
 beyond — numerical-integration disagreement, not a modeling difference.
@@ -239,7 +239,7 @@ beyond — numerical-integration disagreement, not a modeling difference.
 **both** implementations collapse toward the numerical floor
 (``\sim 10^{-6}``) as the porous medium crosses its percolation threshold
 — exactly the behavior seen in
-[the porous-materials tutorial](03_porous_materials.md). Past that point
+[the porous-materials tutorial](porous_materials.md). Past that point
 the relative error reported above is not a meaningful measure of
 disagreement — both sides are comparing numbers at the edge of solver
 tolerance, not physically distinct predictions.

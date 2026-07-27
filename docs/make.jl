@@ -112,11 +112,13 @@ makedocs(;
             ],
             "Beyond elasticity" => [
                 "tutorials/viscoelasticity.md",
+                "tutorials/generated/freq_vs_time.md",
             ],
             "Differentiation and solvers" => [
                 "tutorials/sensitivities.md",
                 "tutorials/strength_criteria.md",
                 "tutorials/nonlinear_solvers.md",
+                "tutorials/generated/secant_elastoplasticity.md",
                 "tutorials/symbolic_spheres.md",
             ],
             "Interoperability and tools" => [
@@ -129,6 +131,7 @@ makedocs(;
             "applications/cement_paste.md",
             "applications/cement_paste_diffusion.md",
             "applications/strength.md",
+            "applications/itz_concrete.md",
             "applications/bituminous.md",
             "applications/ageing_creep.md",
         ],

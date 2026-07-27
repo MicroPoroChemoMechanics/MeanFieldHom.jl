@@ -47,7 +47,7 @@ phase plays the role of a continuous matrix.
 
 [`DifferentialScheme`](@ref) builds the composite incrementally,
 re-homogenizing after each infinitesimal addition of inclusions — see
-[the dedicated tutorial](05_differential_paths.md) for the full
+[the dedicated tutorial](differential_paths.md) for the full
 picture.
 
 ## Putting them on one graph

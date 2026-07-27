@@ -19,7 +19,7 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | 30–39 | Layered n-layer sphere / spheroid |
 | 40–49 | Strength & multiscale (Pichler-Hellmich) |
 | 50–59 | Viscoelasticity & ALV |
-| 60–69 | ALV cracks / interfaces |
+| 60–69 | ALV cracks, interfaces & cross-validations |
 | 70+   | Symmetrization showcases |
 
 ## Coverage map
@@ -67,10 +67,9 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 |---|---|---|
 | `30_average_nlayers.jl` | n-layer sphere | volume-average concentration (sphere) |
 | `31_local_nlayers.jl` | n-layer sphere | pointwise localization fields (sphere) |
-| `32_spheroid_nlayers_conductivity.jl` | Kushch 2015 setting | imperfect-interface MT effective conductivity (Kushch 2015 setting) |
-| `33_spheroid_series_convergence.jl` | series convergence | harmonic-series truncation convergence; quadrature vs. BigFloat cross-check |
-| `34_spheroid_equivalent_conductivity.jl` | equivalent particle | exact equivalent-particle conductivity (eq:defkeqAB) |
-| `35_spheroid_local_fields.jl` | local fields (spheroid) | pointwise temperature/flux fields (spheroid) |
+| `32_spheroid_effective_conductivity.jl` | Kushch 2015 setting | **published tutorial** — confocal geometry and API, Kapitza sweep, exact equivalent particle (`𝐤ᵉᑫ = 𝐁_Ω·𝐀_Ω⁻¹`), series-truncation convergence and quadrature vs. BigFloat |
+| `35_spheroid_interfaces.jl` | local fields (spheroid) | **published tutorial** — what an interface does to the local fields: temperature map, streamlines (bilateral seeding), GIF over β, interactive 3D |
+| `37_spheroid_hc_conductivity.jl` | Kushch 2015, HC interface | **published tutorial** — highly conducting (surface-conductive) interfaces vs. aspect ratio |
 
 ### 40–49 Strength & multiscale
 | Script | reference / topic | Notes |
@@ -78,6 +77,7 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `40_porous_strength_criterion.jl` | — | porous strength criterion |
 | `41_multiscale_strength.jl` | Pichler et al. (CCR 2011) | full 3-scale + strength (ω=1e4). Cross-checked in `bench_echoes/benchmark_pichler.jl` (moduli 1 %, fc 2 %) |
 | `42_cementpaste_iso.jl` | Pichler et al. (CCR 2011), ISO | elasticity-only ISO variant (**ω=100**, αmax·(1−1e-3)) |
+| `43_secant_elastoplasticity.jl` | Suquet (1997) / Ponte Castañeda (1991); Gurson (1977) | **published tutorial** — modified secant method on a porous plastic solid: n-shell composite sphere + SC + `ForwardDiff` second moments; ported from echoes `echoes_tests/elastoplasticity_porous.py` |
 
 ### 50–59 Viscoelasticity & ALV
 | Script | reference / topic | Notes |
@@ -93,10 +93,11 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `58_alv_kernel_types.jl` | — | structured ALV kernel types |
 | `59_alv_sensitivities.jl` | — | AD through the ALV pipeline |
 
-### 60+ ALV cracks / symmetrization
+### 60+ ALV cracks, cross-validations / symmetrization
 | Script | reference / topic | Notes |
 |---|---|---|
 | `60_alv_cracks_interface.jl` | crack + interface creep | finite interface stiffness |
+| `61_freq_vs_time.jl` | Sanahuja (2013) trapezoidal Volterra | **published tutorial** — complex-modulus route vs. `homogenize_alv`, cross-checked through a forward Laplace-Carson transform; O(Δt²) agreement. Ported from echoes `creep/comparison_freq_time.py` |
 | `70_symmetrization_showcase.jl` | `symmetrize` / `.paramsym` | **exact rotation average vs best-fit projection** on a non-major-symmetric concentration tensor |
 
 ## Conventions worth knowing

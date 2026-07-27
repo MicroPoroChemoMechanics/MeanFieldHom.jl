@@ -77,7 +77,7 @@ crack_density(build(0.05), :CRACK)
 
 `symmetrize = IsoSymmetrize()` declares a **uniform spatial
 distribution of crack orientations** (see the
-[porous benchmark tutorial](04_porous_benchmark.md) for the same
+[porous benchmark tutorial](porous_benchmark.md) for the same
 keyword on ordinary inclusions), so the macroscopic effect of an
 isotropically-oriented crack population is itself isotropic.
 
@@ -113,7 +113,7 @@ Stiffness decreases monotonically with crack density for every scheme,
 as expected — but at different rates: `AsymmetricSelfConsistent`
 degrades fastest because it lets cracks interact through a softening
 effective medium, exactly as the self-consistent porous estimate did
-in [an earlier tutorial](03_porous_materials.md). Crack density plays
+in [an earlier tutorial](porous_materials.md). Crack density plays
 the same qualitative role here that porosity played there; what differs
 is the *shape* (a surface rather than a volume) entering the
 localization tensor.

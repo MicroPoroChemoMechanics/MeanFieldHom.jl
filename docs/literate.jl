@@ -38,6 +38,8 @@ const PUBLISHED_SCRIPTS = [
     "32_spheroid_effective_conductivity.jl" => "layered_spheroid_effective",
     "35_spheroid_interfaces.jl" => "layered_spheroid_interfaces",
     "37_spheroid_hc_conductivity.jl" => "layered_spheroid_hc",
+    "43_secant_elastoplasticity.jl" => "secant_elastoplasticity",
+    "61_freq_vs_time.jl" => "freq_vs_time",
     "70_symmetrization_showcase.jl" => "symmetrization",
 ]
 

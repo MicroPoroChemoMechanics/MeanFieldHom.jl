@@ -27,7 +27,7 @@ nothing # hide
 
 The homogenized stiffness is expected to be isotropic here (spherical
 solid and pore geometry), so it can be read back directly with
-`k_mu` — as in the [first tutorial](01_first_estimate.md). Some
+`k_mu` — as in the [first tutorial](first_estimate.md). Some
 schemes can return a result with tiny numerical anisotropy (e.g. from
 an iterative solve that has not fully converged); dispatching to
 `best_fit_iso` first — the best isotropic projection of the
@@ -103,7 +103,7 @@ material and the self-consistent estimate collapses much faster than
 `Mori-Tanaka`, which always treats pores as isolated inclusions in a
 continuous solid and therefore never fully percolates. The
 `select_best = true` keyword (see the
-[previous tutorial](03_porous_materials.md)) is what keeps the SC/ASC
+[previous tutorial](porous_materials.md)) is what keeps the SC/ASC
 curves smooth through that crossover instead of jumping between
 branches under Picard noise.
 

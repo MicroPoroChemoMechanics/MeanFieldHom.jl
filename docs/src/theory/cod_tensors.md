@@ -234,6 +234,72 @@ detect a wrong ``\eta``-dependence.
     elliptic crack. If you compare a ``\boldsymbol{B}`` across papers, expect
     agreement; if you compare an ``\mathbb{H}``, check the normalization first.
 
+### Checking ``\mathbb{H}`` without going through ``\boldsymbol{B}``
+
+The closed forms of the next section give ``\boldsymbol{B}``, and ``\mathbb{H}``
+follows from it by the ``3/4``. Comparing ``\mathbb{H}`` to those closed forms
+would therefore verify nothing: it is the same formula read twice.
+
+The boxed definition offers a way out. Read from right to left, it is a
+**recipe**: take a genuinely three-dimensional flat ellipsoid, compute its Hill
+tensor ``\mathbb{P}``, assemble
+``\mathbb{Q} = \mathbb{C}-\mathbb{C}:\mathbb{P}:\mathbb{C}``, invert it, and
+scale by its flatness ``\omega = c/b``. That path — ``\mathbb{P}\to\mathbb{Q}\to
+\mathbb{Q}^{-1}\to`` limit — never touches the crack machinery, so agreement with
+[`compliance_contribution`](@ref) is evidence rather than tautology:
+
+```@example Horacle
+using MeanFieldHom, TensND, Plots
+gr()  # headless backend; GKSwstype is set to "100" in make.jl
+
+E, ν = 210.0, 0.3
+C₀ = TensISO{3}(E / (1 - 2ν), E / (1 + ν))   # (3k, 2μ)
+
+## ω-family of the definition, evaluated at finite flatness
+function H_from_hill(a, b, ω, C₀)
+    P = hill_tensor(Ellipsoid(a, b, ω * b), C₀)
+    Q = C₀ - C₀ ⊡ P ⊡ C₀
+    return ω * inv(Q)
+end
+
+relerr(A, B) =
+    maximum(abs(A[i,j,k,l] - B[i,j,k,l]) for i in 1:3, j in 1:3, k in 1:3, l in 1:3) /
+    maximum(abs(B[i,j,k,l]) for i in 1:3, j in 1:3, k in 1:3, l in 1:3)
+
+ωs = exp10.(range(-1, -3; length = 9))
+plt = plot(; xscale = :log10, yscale = :log10, legend = :topleft,
+           xlabel = "flatness ω = c/b", ylabel = "relative error on ℍ")
+for η in (1.0, 0.5, 0.3)
+    crack = η == 1.0 ? PennyCrack(1.0) : EllipticCrack(1.0, η)
+    H_ref = compliance_contribution(crack, C₀)
+    plot!(plt, ωs, [relerr(H_from_hill(1.0, η, ω, C₀), H_ref) for ω in ωs];
+          marker = :circle, label = "η = $η")
+end
+plot!(plt, ωs, ωs; linestyle = :dash, color = :black, label = "slope 1")
+plt
+```
+
+The three curves are straight lines of **slope 1**: the error decays like
+``\omega``, which is the order of the Taylor term that resolves the limit
+([barthelemyIJSS2009](@cite)). That slope is the real content of the check — a
+single ``\omega`` would not distinguish a true limit from a coincidence.
+
+!!! note "What is pinned in the test suite"
+    `test/Cracks/test_H_oracle.jl` asserts the *ratio*
+    ``\text{err}(10^{-2})/\text{err}(10^{-3}) > 5`` rather than an absolute
+    tolerance, for isotropic, aligned-transversely-isotropic and fully triclinic
+    matrices at ``\eta = 1, 0.7, 0.5, 0.3``. The figure above shows only the
+    isotropic case, whose Hill tensor is analytical and therefore cheap to
+    rebuild on every documentation build.
+
+    Two practical limits, both observed rather than assumed. The Hill tensor is
+    validated down to ``\omega = 10^{-3}``
+    (`test/Elasticity/test_hill_nestedquadgk_oblate.jl`), which is where the
+    sweep stops; and the residue backend returns `NaN` on ellipsoids flatter
+    than about ``c \approx 10^{-3}``, so the anisotropic cases of the oracle use
+    `method = :nestedquadgk`. Neither affects [`cod_tensor`](@ref), which
+    resolves the limit analytically instead of flattening an ellipsoid.
+
 ## Closed forms of ``\boldsymbol{B}``
 
 ### Isotropic matrix

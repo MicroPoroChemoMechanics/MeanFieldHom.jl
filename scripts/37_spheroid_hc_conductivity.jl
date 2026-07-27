@@ -1,7 +1,7 @@
 # # Highly conducting interfaces: equivalent conductivity vs. aspect ratio
 #
 # The companion of
-# [`32_spheroid_nlayers_conductivity.jl`](32_spheroid_nlayers_conductivity.md),
+# [`32_spheroid_effective_conductivity.jl`](layered_spheroid_effective.md),
 # which treats the **low-conducting** (Kapitza) interface. Here the interface is
 # **highly conducting** — a surface layer of zero thickness and finite surface
 # conductance ``\beta``:

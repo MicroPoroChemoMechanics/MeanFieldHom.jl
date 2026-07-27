@@ -30,7 +30,7 @@ nothing # hide
 [`SelfConsistent`](@ref) embeds every phase directly in the *effective*
 medium — including the pores. As porosity grows, the Picard iteration
 that solves the implicit self-consistent condition (see the
-[previous tutorial](02_bounds_and_schemes.md)) has to locate an
+[previous tutorial](bounds_and_schemes.md)) has to locate an
 effective stiffness soft enough to be consistent with soft, connected
 voids; near the percolation threshold the iteration becomes numerically
 unstable and can converge to an unphysical branch.

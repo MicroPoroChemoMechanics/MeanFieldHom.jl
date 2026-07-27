@@ -214,7 +214,7 @@ length(sol_por)
 The load-bearing (percolating) branch has a well-known, memorable property:
 it should vanish **exactly** at the percolation threshold ``f=1/2`` for a
 random sphere assembly, whatever the matrix moduli — the numerical
-instability that [the porous-materials tutorial](03_porous_materials.md)
+instability that [the porous-materials tutorial](porous_materials.md)
 warns about is this same branch collapsing to zero. SymPy's `simplify`
 does not, on its own, collapse the nested `sqrt` left by `solve` at a
 substituted `f=1/2` — so the check is done numerically, itself a very
@@ -306,6 +306,6 @@ The self-consistent curve heads to zero as `f → 1/2`, exactly as the
 percolation check above predicted; dilute and Mori–Tanaka, which never
 "see" the pores connecting, stay comfortably positive over the whole range
 — the same qualitative picture as [the porous-materials
-tutorial](03_porous_materials.md) and [the porous
-benchmark](04_porous_benchmark.md), obtained here from formulas rather than
+tutorial](porous_materials.md) and [the porous
+benchmark](porous_benchmark.md), obtained here from formulas rather than
 from a numerical sweep.

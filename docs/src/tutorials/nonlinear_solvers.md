@@ -1,6 +1,6 @@
 # Nonlinear solvers for the self-consistent fixed point
 
-The [self-consistent scheme](02_bounds_and_schemes.md) is not a one-shot
+The [self-consistent scheme](bounds_and_schemes.md) is not a one-shot
 formula — it is a fixed point ``\mathbb C = \mathrm{step}(\mathbb C)``,
 solved iteratively. Every tutorial so far has used the package's
 built-in solver, a damped Picard iteration
@@ -13,11 +13,11 @@ algorithm from [NonlinearSolve.jl](https://github.com/SciML/NonlinearSolve.jl)
 
 This matters for two reasons: some SciML algorithms converge faster or
 more robustly than Picard on stiff, high-contrast problems, and — since
-`MeanFieldHom`'s sensitivities (the [previous](08_sensitivities.md) two
+`MeanFieldHom`'s sensitivities (the [previous](sensitivities.md) two
 tutorials) are built on `ForwardDiff` — differentiating *through* an
 external nonlinear solve must not silently break or, worse, silently
 give the wrong answer. This page checks both, and closes with the
-strength-criterion example from the [capstone tutorial](09_strength_criteria.md)
+strength-criterion example from the [capstone tutorial](strength_criteria.md)
 computed through a SciML solver instead of Picard.
 
 ## The three solver families
@@ -58,7 +58,7 @@ its stiffness- and compliance-form branches.
     A root-finder is not guaranteed to track the *physical* branch of
     the self-consistent equation through the porous-percolation
     bifurcation the way Picard's positive-definite guard and
-    `select_best` do (see the [porous benchmark tutorial](04_porous_benchmark.md)).
+    `select_best` do (see the [porous benchmark tutorial](porous_benchmark.md)).
     `AutoNonlinear` and explicit SciML algorithms are opt-in for that
     reason — reach for them on well-conditioned, high-contrast problems
     away from a bifurcation, where they can be markedly faster.
@@ -196,7 +196,7 @@ d_m_tr     = derivative(rve, SelfConsistent(; algorithm = TrustRegion()), proper
 
 ## Strength criterion, revisited
 
-The [capstone tutorial](09_strength_criteria.md) built a macroscopic
+The [capstone tutorial](strength_criteria.md) built a macroscopic
 strength ellipse for a porous solid entirely from `ForwardDiff`
 derivatives of ``(k_{\mathrm{hom}}, \mu_{\mathrm{hom}})`` with respect to
 the solid's own shear modulus — no closed-form derivative written by
@@ -242,4 +242,4 @@ happens to be solved. `AutoNonlinear` (or an explicit SciML algorithm)
 is a drop-in accelerator when a sweep over many porosities or contrasts
 makes Picard's iteration count add up; `AndersonDefault` remains the
 right default whenever the sweep crosses a percolation-like
-bifurcation, as in the [porous benchmark](04_porous_benchmark.md).
+bifurcation, as in the [porous benchmark](porous_benchmark.md).

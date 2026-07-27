@@ -47,6 +47,7 @@ Random.seed!(20260723)
         include("Cracks/test_cod.jl")
         include("Cracks/test_cod_ti_aligned.jl")
         include("Cracks/test_residue_accuracy.jl")
+        include("Cracks/test_H_oracle.jl")
         include("Cracks/test_thermal.jl")
         include("Cracks/test_interface_stiffness.jl")
     end

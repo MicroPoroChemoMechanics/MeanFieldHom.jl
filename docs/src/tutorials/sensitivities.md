@@ -7,7 +7,7 @@ differentiate **any** homogenization result with respect to **any**
 scalar input — a volume fraction, a modulus, a geometric parameter — at
 machine precision, simply by running the same code on `Dual` numbers
 instead of `Float64`. This page tours the convenience API built on top
-of that fact; the [next tutorial](09_strength_criteria.md) puts it to
+of that fact; the [next tutorial](strength_criteria.md) puts it to
 work.
 
 ## Parameter lenses
