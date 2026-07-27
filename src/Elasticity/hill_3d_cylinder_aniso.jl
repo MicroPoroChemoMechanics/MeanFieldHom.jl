@@ -42,15 +42,10 @@ function _hill_3d_cylinder_aniso(
     function integrand_at(φ)
         ζ = (zero(T), cos(T(φ)) / b, sin(T(φ)) / c)
 
-        K = Matrix{T}(undef, 3, 3)
-        for i in 1:3, j in 1:3
-            s = zero(T)
-            for k in 1:3, l in 1:3
-                s += ζ[k] * C₀_arr[k, i, j, l] * ζ[l]
-            end
-            K[i, j] = s
-        end
-        iK = inv(K)
+        # Symmetric acoustic tensor + closed-form inverse (see
+        # `_sym3_inv_acoustic` in hill_3d_aniso_nestedquadgk.jl): 6 independent
+        # entries instead of 9, no `Matrix` allocation and no LU per node.
+        iK = _sym3_inv_acoustic(C₀_arr, ζ)
 
         vals = Vector{T}(undef, 21)
         idx = 0
@@ -59,8 +54,8 @@ function _hill_3d_cylinder_aniso(
             for J in I:6
                 k, l = voigt_ij[J]
                 γ = T(0.25) * (
-                    ζ[i] * (iK[j, k] * ζ[l] + iK[j, l] * ζ[k]) +
-                        ζ[j] * (iK[i, k] * ζ[l] + iK[i, l] * ζ[k])
+                    ζ[i] * (iK[j + (k - 1) * 3] * ζ[l] + iK[j + (l - 1) * 3] * ζ[k]) +
+                        ζ[j] * (iK[i + (k - 1) * 3] * ζ[l] + iK[i + (l - 1) * 3] * ζ[k])
                 )
                 idx += 1
                 vals[idx] = γ

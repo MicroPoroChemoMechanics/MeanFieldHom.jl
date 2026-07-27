@@ -9,6 +9,7 @@ points: [`cod_tensor`](@ref), [`compliance_contribution`](@ref),
 module Cracks
 
 using LinearAlgebra
+using StaticArrays
 using TensND
 using Tensors
 using QuadGK

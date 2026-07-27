@@ -14,15 +14,16 @@ Contents
                              minor-symmetric tensors, incl. Mandel-block forms
 - `moduli.jl`             : modulus extractors for the common symmetry classes
 - `newton_potential.jl`   : Newton potentials (2D / 3D)
-- `green_kernel.jl`       : acoustic tensor and its adjugate / determinant
+- `green_kernel.jl`       : closed-form 3×3 inverse (`_inv3`)
 - `green_residue.jl`      : Masson / Cauchy residue summation
 - `green_helpers.jl`      : quadrature-agnostic Green-function helpers
-- `quadrature.jl`         : uniform wrappers around `quadgk` and `hcubature`
+- `quadrature.jl`         : DECUHR cubature backend seam
 - `dispatch.jl`           : central `_resolve_algo` mechanism
 """
 module Core
 
 using LinearAlgebra
+using StaticArrays
 using TensND
 using QuadGK
 using ..Elliptic

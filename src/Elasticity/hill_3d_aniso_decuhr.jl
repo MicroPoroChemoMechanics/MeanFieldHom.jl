@@ -54,15 +54,13 @@ function _hill_3d_aniso_decuhr(
         uz = sqrt(one(T) - T(z) * T(z))
         ζ = (uz * cos(T(φ)), uz * sin(T(φ)) / η, T(z) / ω)
 
-        K = Matrix{T}(undef, 3, 3)
-        for i in 1:3, j in 1:3
-            s = zero(T)
-            for k in 1:3, l in 1:3
-                s += ζ[k] * C₀_arr[k, i, j, l] * ζ[l]
-            end
-            K[i, j] = s
-        end
-        iK = inv(K)
+        # The acoustic tensor is symmetric, so only its 6 independent entries
+        # are needed, and its inverse has a closed form.  `_sym3_inv_acoustic`
+        # (Elasticity/hill_3d_aniso_nestedquadgk.jl) returns the 9 entries of
+        # K⁻¹ as a tuple: no `Matrix` allocation and no LU per cubature node.
+        # It is a top-level function on purpose — see the comment at its
+        # definition about closure boxing.
+        iK = _sym3_inv_acoustic(C₀_arr, ζ)
 
         vals = Vector{T}(undef, 21)
         idx = 0
@@ -71,8 +69,8 @@ function _hill_3d_aniso_decuhr(
             for J in I:6
                 k, l = voigt_ij[J]
                 γ = T(0.25) * (
-                    ζ[i] * (iK[j, k] * ζ[l] + iK[j, l] * ζ[k]) +
-                        ζ[j] * (iK[i, k] * ζ[l] + iK[i, l] * ζ[k])
+                    ζ[i] * (iK[j + (k - 1) * 3] * ζ[l] + iK[j + (l - 1) * 3] * ζ[k]) +
+                        ζ[j] * (iK[i + (k - 1) * 3] * ζ[l] + iK[i + (l - 1) * 3] * ζ[k])
                 )
                 idx += 1
                 vals[idx] = γ

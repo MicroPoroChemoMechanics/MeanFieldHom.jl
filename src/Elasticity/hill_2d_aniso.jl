@@ -54,9 +54,11 @@ function _hill_2d_aniso(
             return iK22
         end
 
-        result = Array{T, 4}(undef, 2, 2, 2, 2)
+        result = Vector{T}(undef, 16)
+        n = 0
         for α in 1:2, β in 1:2, γ in 1:2, δ in 1:2
-            result[α, β, γ, δ] = T(0.25) * (
+            n += 1
+            result[n] = T(0.25) * (
                 ζ[α] * (iK(β, γ) * ζ[δ] + iK(β, δ) * ζ[γ]) +
                     ζ[β] * (iK(α, γ) * ζ[δ] + iK(α, δ) * ζ[γ])
             )
@@ -64,13 +66,21 @@ function _hill_2d_aniso(
         return result
     end
 
+    # One VECTOR-valued quadrature instead of 16 scalar ones.  The integrand
+    # builds all 16 components at every node regardless, so the previous
+    # `for α,β,γ,δ … quadgk(ψ -> γ_integrand(ψ)[α,β,γ,δ], …)` evaluated the
+    # full integrand 16 times per node and discarded 15/16 of each — and ran
+    # 16 independent adaptive subdivisions instead of one.
+    vals, _ = MFH_Core._counted_quadgk(
+        γ_integrand, 0.0, π;
+        atol = abstol, rtol = reltol, maxevals = maxiters
+    )
     P_arr = zeros(T, 2, 2, 2, 2)
-    for α in 1:2, β in 1:2, γ in 1:2, δ in 1:2
-        val, _ = QuadGK.quadgk(
-            ψ -> γ_integrand(ψ)[α, β, γ, δ], 0.0, π;
-            atol = abstol, rtol = reltol, maxevals = maxiters
-        )
-        P_arr[α, β, γ, δ] = val / π
+    let n = 0
+        for α in 1:2, β in 1:2, γ in 1:2, δ in 1:2
+            n += 1
+            P_arr[α, β, γ, δ] = vals[n] / π
+        end
     end
 
     for α in 1:2, β in 1:2, γ in 1:2, δ in 1:2

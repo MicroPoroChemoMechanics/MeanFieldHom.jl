@@ -24,23 +24,24 @@ Pre-compute the n̂-only quantities used by every `Q̂_{nn}` evaluation:
 Element type is the supplied `T = promote_type(...)`.
 """
 function _A_and_Tn(C::AbstractArray, n̂::AbstractVector, ::Type{T}) where {T}
-    Tn = Array{T}(undef, 3, 3, 3)
-    A = Matrix{T}(undef, 3, 3)
+    Tn_m = MArray{Tuple{3, 3, 3}, T}(undef)
     @inbounds for q in 1:3, p in 1:3, i in 1:3
         s = zero(T)
         for α in 1:3
             s += T(C[i, α, p, q]) * T(n̂[α])
         end
-        Tn[i, p, q] = s
+        Tn_m[i, p, q] = s
     end
+    Tn = SArray(Tn_m)
+    A_m = MMatrix{3, 3, T}(undef)
     @inbounds for p in 1:3, i in 1:3
         s = zero(T)
         for q in 1:3
             s += Tn[i, p, q] * T(n̂[q])
         end
-        A[i, p] = s
+        A_m[i, p] = s
     end
-    return A, Tn
+    return SMatrix(A_m), Tn
 end
 
 """
@@ -52,67 +53,81 @@ in-plane unit direction):
   * `Vs[i, p]  = Σ_q Tn[i, p, q] ξshat_q                   = V(ξshat)`
   * `Ks[i, j]  = Σ_{k,l} C_{i k j l} ξshat_k ξshat_l        = K(ξshat)`
   * `Kns[i, j] = Σ_{k,l} C_{i k j l} (n̂_k ξshat_l + ξshat_k n̂_l)`
+
+`Ks` is built on its upper triangle only and `Kns` is obtained as
+`Vs + transpose(Vs)` — both follow from the major symmetry of `C` (see the
+comments in the body).  `n̂` is consequently no longer read here; it is kept
+in the signature because it is part of this seam's documented contract and
+every caller already has it to hand.
 """
 function _phi_cache(
         C::AbstractArray, Tn::AbstractArray,
         n̂::AbstractVector, ξshat::AbstractVector,
         ::Type{T}
     ) where {T}
-    Vs = Matrix{T}(undef, 3, 3)
-    Ks = Matrix{T}(undef, 3, 3)
-    Kns = Matrix{T}(undef, 3, 3)
+    Vs_m = MMatrix{3, 3, T}(undef)
+    Ks_m = MMatrix{3, 3, T}(undef)
     @inbounds for p in 1:3, i in 1:3
         s = zero(T)
         for q in 1:3
             s += Tn[i, p, q] * ξshat[q]
         end
-        Vs[i, p] = s
+        Vs_m[i, p] = s
     end
-    @inbounds for j in 1:3, i in 1:3
-        sk = zero(T); skn = zero(T)
+    # `Ks` is symmetric under the major symmetry `C_{ikjl} = C_{jlik}`, so only
+    # the upper triangle is accumulated and mirrored (was: all 9 entries, half
+    # of them computed twice).
+    @inbounds for j in 1:3, i in 1:j
+        sk = zero(T)
         for k in 1:3, l in 1:3
-            cc = T(C[i, k, j, l])
-            sk += cc * ξshat[k] * ξshat[l]
-            skn += cc * (n̂[k] * ξshat[l] + ξshat[k] * n̂[l])
+            sk += T(C[i, k, j, l]) * ξshat[k] * ξshat[l]
         end
-        Ks[i, j] = sk
-        Kns[i, j] = skn
+        Ks_m[i, j] = sk
+        Ks_m[j, i] = sk
     end
-    return Vs, Ks, Kns
+    # `Kns[i,j] = Σ_{k,l} C_{ikjl}(n̂_k ξ_l + ξ_k n̂_l)` needs NO loop at all.
+    # Split the two terms:
+    #   term 1 = Σ_{k,l} C_{ikjl} n̂_k ξ_l                       = Vs[i,j]
+    #   term 2 = Σ_{k,l} C_{ikjl} ξ_k n̂_l
+    #          = Σ_{k,l} C_{jlik} ξ_k n̂_l   (major symmetry)     = Vs[j,i]
+    # so `Kns == Vs + transpose(Vs)`, at zero flops.  Verified to 2e-16 on
+    # random minor+major-symmetric stiffnesses; the identity genuinely needs
+    # the MAJOR symmetry (breaking it alone moves the result by O(0.25)), which
+    # every reference stiffness reaching this function has.
+    Vs = SMatrix(Vs_m)
+    Kns = Vs + transpose(Vs)
+    return Vs, SMatrix(Ks_m), Kns
 end
 
 """
-    _qnn_pair_components!(out, A, Vs, Ks, Kns, ca, sa, scale) -> out
+    _qnn_pair_components(A, Vs, Ks, Kns, ca, sa, scale) -> SMatrix{3,3,T}
 
-Write `[Q̂_{nn}(ζp) + Q̂_{nn}(ζm)] · scale` into the 3×3 buffer `out`,
-given the pre-computed φ-only quantities (`A, Vs, Ks, Kns`) and the
-α-only trigs (`ca = cos α, sa = sin α`) plus a caller-supplied
-`scale` factor that bundles the residual ρ / sin²α prefactor.
+`[Q̂_{nn}(ζp) + Q̂_{nn}(ζm)] · scale`, from the pre-computed φ-only quantities
+(`A, Vs, Ks, Kns`) and the α-only trigs (`ca = cos α`, `sa = sin α`), with a
+caller-supplied `scale` bundling the residual ρ / sin²α prefactor.
 
-Operates in-place on `out`.
+This is the innermost loop of every crack COD back-end.  It used to write into
+a caller-owned `Matrix{T}` buffer and build ~10 heap `Matrix{T}` temporaries
+per call (`Vp, Vm, Kp, Km` by broadcast, `iKp, iKm` from `_inv3`, then two
+chained `*` products).  Everything is `SMatrix` now, so the whole body is
+stack-resident and the function is pure.
 """
-@inline function _qnn_pair_components!(
-        out::AbstractMatrix{T},
-        A::AbstractMatrix{T},
-        Vs::AbstractMatrix{T},
-        Ks::AbstractMatrix{T},
-        Kns::AbstractMatrix{T},
+@inline function _qnn_pair_components(
+        A::StaticMatrix{3, 3, T},
+        Vs::StaticMatrix{3, 3, T},
+        Ks::StaticMatrix{3, 3, T},
+        Kns::StaticMatrix{3, 3, T},
         ca::T, sa::T,
         scale::T
     ) where {T}
     cs = ca * sa
     ca² = ca * ca
     sa² = sa * sa
-    Vp = ca .* A .+ sa .* Vs
-    Vm = sa .* Vs .- ca .* A
-    Kp = ca² .* A .+ cs .* Kns .+ sa² .* Ks
-    Km = ca² .* A .- cs .* Kns .+ sa² .* Ks
-    iKp = _inv3(Kp)
-    iKm = _inv3(Km)
-    Bp = (Vp * iKp) * transpose(Vp)
-    Bm = (Vm * iKm) * transpose(Vm)
-    @inbounds for j in 1:3, i in 1:3
-        out[i, j] = (2 * A[i, j] - Bp[i, j] - Bm[i, j]) * scale
-    end
-    return out
+    Vp = ca * A + sa * Vs
+    Vm = sa * Vs - ca * A
+    Kp = ca² * A + cs * Kns + sa² * Ks
+    Km = ca² * A - cs * Kns + sa² * Ks
+    Bp = (Vp * _inv3(Kp)) * transpose(Vp)
+    Bm = (Vm * _inv3(Km)) * transpose(Vm)
+    return (2 * A - Bp - Bm) * scale
 end

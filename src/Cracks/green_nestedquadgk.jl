@@ -3,7 +3,7 @@
 #  and direct 2D cubature for the elliptic-crack COD, using **nested 1-D
 #  QuadGK quadrature** (historical default shipped under the `_decuhr`
 #  suffix).  Shared 2-D helpers (`_A_and_Tn`, `_phi_cache`,
-#  `_qnn_pair_components!`, `_inv3`) live in
+#  `_qnn_pair_components`, `_inv3`) live in
 #  `src/Core/green_helpers.jl`.  The true DECUHR-based counterpart lives
 #  in `green_decuhr.jl`.
 # =============================================================================
@@ -29,18 +29,16 @@ function _Qnn_star_nestedquadgk(
     ρ = sqrt(ρ²)
     iszero(ρ) && return zeros(T, 3, 3)
 
-    nhat = T[T(n̂[1]), T(n̂[2]), T(n̂[3])]
-    ξshat = T[T(ξs[1]) / ρ, T(ξs[2]) / ρ, T(ξs[3]) / ρ]
+    nhat = SVector{3, T}(T(n̂[1]), T(n̂[2]), T(n̂[3]))
+    ξshat = SVector{3, T}(T(ξs[1]) / ρ, T(ξs[2]) / ρ, T(ξs[3]) / ρ)
 
     A, Tn = MFH_Core._A_and_Tn(C, nhat, T)
     Vs, Ks, Kns = MFH_Core._phi_cache(C, Tn, nhat, ξshat, T)
 
-    buf = Matrix{T}(undef, 3, 3)
-
     function vec_at(α)
         ca = cos(α); sa = sin(α)
-        MFH_Core._qnn_pair_components!(buf, A, Vs, Ks, Kns, ca, sa, inv(sa * sa))
-        return T[buf[1, 1], buf[2, 2], buf[3, 3], buf[1, 2], buf[1, 3], buf[2, 3]]
+        M = MFH_Core._qnn_pair_components(A, Vs, Ks, Kns, ca, sa, inv(sa * sa))
+        return SVector{6, T}(M[1, 1], M[2, 2], M[3, 3], M[1, 2], M[1, 3], M[2, 3])
     end
 
     Tvec, _ = QuadGK.quadgk(
@@ -97,21 +95,17 @@ function _cod_elliptic_nestedquadgk_direct(
         cφ = cos(φ); sφ = sin(φ)
         ρ = sqrt(ηp * ηp * cφ * cφ + sφ * sφ)
         invρ = inv(ρ)
-        ξshat = Tp[
+        ξshat = SVector{3, Tp}(
             (ηp * cφ * lhat_p[1] + sφ * mhat_p[1]) * invρ,
             (ηp * cφ * lhat_p[2] + sφ * mhat_p[2]) * invρ,
             (ηp * cφ * lhat_p[3] + sφ * mhat_p[3]) * invρ,
-        ]
+            )
         Vs, Ks, Kns = MFH_Core._phi_cache(Carr, Tn, nhat_p, ξshat, Tp)
-        buf = Matrix{Tp}(undef, 3, 3)
 
         function inner(α)
             ca = cos(α); sa = sin(α)
-            MFH_Core._qnn_pair_components!(buf, A, Vs, Ks, Kns, ca, sa, ρ / (sa * sa))
-            return Tp[
-                buf[1, 1], buf[2, 2], buf[3, 3],
-                buf[1, 2], buf[1, 3], buf[2, 3],
-            ]
+            M = MFH_Core._qnn_pair_components(A, Vs, Ks, Kns, ca, sa, ρ / (sa * sa))
+            return SVector{6, Tp}(M[1, 1], M[2, 2], M[3, 3], M[1, 2], M[1, 3], M[2, 3])
         end
 
         inner_val, _ = QuadGK.quadgk(
