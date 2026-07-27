@@ -318,10 +318,25 @@ function _solve_sc(
         select_best::Bool = false,
         kw...
     )
-    p0 = _tens_to_param_vec(x0)
+    # The parameter space is the symmetry class of the ITERATE, and that class
+    # is not always the one of `x0`: `x0` defaults to a phase property (often
+    # `TensISO`, 2 components) while one application of the scheme can land in
+    # a richer class — e.g. `TISymmetrize` phases make `step` return a
+    # `TensTI{4,T,8}` (8 components).  Parameterizing on `x0` then made the
+    # residual subtract an 8-vector from a 2-vector (`DimensionMismatch`), so
+    # `NewtonDefault` could not solve any problem whose fixed point is richer
+    # than its starting guess — while `AndersonDefault` coped, because Picard
+    # simply propagates whatever `step` returns.
+    #
+    # Seed the parametrization from `step(x0)` instead: one application
+    # reaches the class the fixed point lives in (the scheme's symmetrization
+    # is idempotent), and the starting point is then a strictly better iterate
+    # than `x0` at no extra cost.
+    x_seed = _sc_newton_seed(x0, step)
+    p0 = _tens_to_param_vec(x_seed)
     L = length(p0)
-    rebuild = p -> _tens_from_param_vec(x0, p)
-    ε_pos = _sc_pd_eps(x0)
+    rebuild = p -> _tens_from_param_vec(x_seed, p)
+    ε_pos = _sc_pd_eps(x_seed)
     residual_vec = function (p)
         x_in = _sc_pd_guard_apply(rebuild(p), ε_pos)
         x_out = step(x_in)
@@ -335,12 +350,20 @@ function _solve_sc(
     # itself is plain `Float64`. Promote `Tref` against the residual's
     # own eltype too — evaluated once, no cost beyond the iteration the
     # loop would run anyway.
-    Tref = float(promote_type(eltype(p0), eltype(residual_vec(p0))))
+    # One residual evaluation is a FULL RVE pass — one `hill_tensor` per phase,
+    # the dominant cost of the whole solve.  `r0` is therefore computed once
+    # and reused for two purposes: fixing `Tref` (the residual's own eltype
+    # matters, because `step` can promote to `Dual` internally even when `p0`
+    # is plain `Float64` — e.g. differentiating w.r.t. an inclusion modulus
+    # while `x0` is the matrix property), and seeding the loop.  Previously the
+    # value was computed for `Tref` and then thrown away.
+    r0 = residual_vec(p0)
+    Tref = float(promote_type(eltype(p0), eltype(r0)))
     p = collect(Tref, p0)
+    r = collect(Tref, r0)
     p_best = copy(p); resid_best = Inf
     for iter in 1:maxiters
         MFH_Core._bump!(MFH_Core.SC_ITERATIONS)
-        r = residual_vec(p)
         norm_r = sqrt(sum(abs2, r))
         norm_p = sqrt(sum(abs2, p))
         tol_eff = abstol + reltol * norm_p
@@ -361,7 +384,10 @@ function _solve_sc(
             @debug "SC-Newton: linear solve failed, applying tiny Tikhonov" err
             (J + 1.0e-10 * sqrt(sum(abs2, J)) * LinearAlgebra.I) \ (-r)
         end
-        # Backtracking line search (Armijo).
+        # Backtracking line search (Armijo).  The accepted `r_new` IS the
+        # residual at the new point, so it is carried into the next iteration
+        # instead of being recomputed there — one full RVE pass saved per
+        # Newton step.
         α_step = one(Tref)
         accepted = false
         for _ in 1:30
@@ -369,6 +395,7 @@ function _solve_sc(
             r_new = residual_vec(p_new)
             if sqrt(sum(abs2, r_new)) ≤ (1 - 1.0e-4 * α_step) * norm_r
                 p .= p_new
+                r .= r_new
                 accepted = true
                 break
             end
@@ -376,9 +403,13 @@ function _solve_sc(
             α_step < 1.0e-6 && break
         end
         if !accepted
-            # Fall back to a damped Picard step.
+            # Fall back to a damped Picard step.  `r` is already `F(p)`, and a
+            # Picard step is `p ← F(p) + p`, so no new evaluation is needed
+            # here either; the residual at the updated point is unknown, so it
+            # is refreshed at the top of the next iteration.
             verbose && @info "SC-Newton: line search failed, taking Picard step"
-            p .= residual_vec(p) .+ p   # one Picard step
+            p .= r .+ p
+            r .= residual_vec(p)
         end
     end
     @debug "SC-Newton: maxiters reached without convergence" maxiters
@@ -425,10 +456,6 @@ end
 # guard here: when any canonical eigenvalue of the running estimate
 # falls below a relative threshold, we reset it to `ε · α_M_init`
 # (matrix scale).
-
-function _sc_pd_guard(x, x0)
-    return _sc_pd_guard_apply(x, _sc_pd_eps(x0))
-end
 
 # `x0` is fixed for the entire SC iteration (Picard or Newton) — computing
 # this once and passing `ε_pos` into `_sc_pd_guard_apply` directly avoids
@@ -489,6 +516,28 @@ end
 # ForwardDiff-friendly residual function, and rebuild the same
 # concrete type via the canonical constructor inferred from the
 # prototype.
+"""
+    _sc_newton_seed(x0, step) -> AbstractTens
+
+Prototype whose symmetry class defines the Newton parameter space.
+
+Returns `x0` when one application of `step` stays in the same class, and
+`step(x0)` when it lands in a richer one (e.g. `TensISO` → `TensTI{4,T,8}`
+for `TISymmetrize` phases).  Parameterizing on `x0` alone is what used to
+make the residual subtract vectors of different lengths.
+
+The extra `step` call is not wasted work: its result is also a strictly
+better starting iterate than `x0`.
+"""
+function _sc_newton_seed(x0::TensND.AbstractTens, step)
+    x1 = try
+        step(x0)
+    catch
+        return x0            # let the main loop surface the real failure
+    end
+    return length(TensND.get_data(x1)) == length(TensND.get_data(x0)) ? x0 : x1
+end
+
 _tens_to_param_vec(t::TensND.AbstractTens) = collect(TensND.get_data(t))
 _tens_from_param_vec(prototype::TensND.AbstractTens, p::AbstractVector) =
     _rebuild_from_data(prototype, p)
@@ -748,31 +797,4 @@ function _asc_step_compliance_dispatch(
     end
     R_new = R_m + (A_avg - R_m ⋅ KA_avg) ⋅ R_n
     return inv(R_new)
-end
-
-# ── Legacy compliance-space RVE builder (kept for reference) ────────────────
-function _rve_in_compliance_space(rve::RVE{T, S}, prop::Symbol) where {T, S}
-    rve_S = RVE(
-        rve.matrix_name; T = T,
-        distribution_shape = rve.distribution_shape
-    )
-    m_phase = matrix_phase(rve)
-    add_matrix!(rve_S, m_phase.geometry, Dict(:S => inv(m_phase.properties[prop])))
-    for name in inclusion_phase_names(rve)
-        ph = rve.phases[name]
-        a = rve.amounts[name]
-        new_props = Dict(:S => inv(ph.properties[prop]))
-        if a isa VolumeFraction
-            add_phase!(
-                rve_S, name, ph.geometry, new_props;
-                fraction = amount_value(a)
-            )
-        else
-            add_phase!(
-                rve_S, name, ph.geometry, new_props;
-                density = amount_value(a)
-            )
-        end
-    end
-    return rve_S
 end

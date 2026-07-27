@@ -135,22 +135,6 @@ function _build_poly_system(
     return (K_poly = K_poly, adj_poly = adj_poly, Q = Q, dQ = dQ, roots_uhp = roots_uhp)
 end
 
-# ─── Masson log factor (Hill-style) ──────────────────────────────────────────
-
-"""
-    _masson_log(z) -> ComplexF64
-
-Masson (2008) log-factor ``L(z) = -(2\\log(z + \\sqrt{1+z²}) - iπ)``.
-Used by the Hill residue algorithm to fold the analytic continuation of
-the 1-D integral of the Green kernel back onto the real axis.
-"""
-@inline function _masson_log(z::ComplexF64)
-    t2 = 1.0 + z * z
-    t3 = sqrt(t2)
-    t9 = log(z + t3)
-    return -(2.0 * t9 - im * π)
-end
-
 # ─── Multiplicity detection
 #
 # The Bairstow / Durand-Kerner root finder splits a true multiplicity-k root

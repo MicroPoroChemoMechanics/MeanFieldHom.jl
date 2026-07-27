@@ -89,48 +89,6 @@ end
     return TensND.get_array(s)
 end
 
-@inline function _block_value_order2_tens(
-        law::ViscoLaw, times::AbstractVector,
-        i::Int, j::Int
-    )
-    if i == 1 && j == 1
-        return _to_order2_mat(visco_eval(law, times[1], times[1]))
-    elseif j == i
-        a = _to_order2_mat(visco_eval(law, times[i], times[i - 1]))
-        b = _to_order2_mat(visco_eval(law, times[i], times[i]))
-        return (a .+ b) ./ 2
-    elseif j == 1
-        a = _to_order2_mat(visco_eval(law, times[i], times[1]))
-        b = _to_order2_mat(visco_eval(law, times[i], times[2]))
-        return (a .- b) ./ 2
-    else
-        a = _to_order2_mat(visco_eval(law, times[i], times[j - 1]))
-        b = _to_order2_mat(visco_eval(law, times[i], times[j + 1]))
-        return (a .- b) ./ 2
-    end
-end
-
-@inline function _block_value_order2_mat(
-        law::ViscoLaw, times::AbstractVector,
-        i::Int, j::Int
-    )
-    if i == 1 && j == 1
-        return copy(visco_eval(law, times[1], times[1]))
-    elseif j == i
-        a = visco_eval(law, times[i], times[i - 1])
-        b = visco_eval(law, times[i], times[i])
-        return (a .+ b) ./ 2
-    elseif j == 1
-        a = visco_eval(law, times[i], times[1])
-        b = visco_eval(law, times[i], times[2])
-        return (a .- b) ./ 2
-    else
-        a = visco_eval(law, times[i], times[j - 1])
-        b = visco_eval(law, times[i], times[j + 1])
-        return (a .- b) ./ 2
-    end
-end
-
 @inline function _set_block_order2!(
         M::AbstractMatrix, i::Int, j::Int,
         block::AbstractMatrix

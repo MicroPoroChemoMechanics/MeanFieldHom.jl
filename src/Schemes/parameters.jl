@@ -342,12 +342,6 @@ function _promote_tuple_at(t::NTuple{N}, i::Int, v, ::Type{Tnew}) where {N, Tnew
     return ntuple(k -> k == i ? convert(Tnew, v) : convert(Tnew, t[k]), N)
 end
 
-# Helper : replace the i-th NTuple element with uniform type promotion.
-function _replace_tuple_at(t::NTuple{N, T}, i::Int, v::Tv) where {N, T, Tv}
-    Tnew = promote_type(T, Tv)
-    return ntuple(k -> k == i ? convert(Tnew, v) : convert(Tnew, t[k]), N)
-end
-
 # ─── Specializations for built-in inclusion types ────────────────────────────
 # Parametric structs whose type parameters are computed from the values
 # (Ellipsoid, EllipticCrack, RibbonCrack) need explicit reconstruction
@@ -415,15 +409,6 @@ end
 
 Base.eltype(::Type{<:RVE{T}}) where {T} = T
 Base.eltype(rve::RVE) = eltype(typeof(rve))
-
-# Build a fresh amounts dict where every entry is converted to AbstractAmount{Tnew}.
-function _amounts_with_promoted_eltype(amounts::AbstractDict, ::Type{Tnew}) where {Tnew}
-    new_dict = Dict{Symbol, AbstractAmount{Tnew}}()
-    for (k, v) in amounts
-        new_dict[k] = _promote_amount(v, Tnew)
-    end
-    return new_dict
-end
 
 # Same dict but with one entry replaced by `new_amount` (any type that subtypes
 # AbstractAmount). The new dict's eltype is inferred from the union of the

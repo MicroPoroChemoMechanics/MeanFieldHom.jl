@@ -157,26 +157,6 @@ function _tens_to_mandel66(C::TensND.AbstractTens{4, 3})
     return M
 end
 
-# Convert a 6×6 Mandel matrix back to a {3,3,3,3} array.  Used downstream
-# (not strictly needed in `trapezoidal_matrix` itself).
-function _mandel66_to_tens(M::AbstractMatrix)
-    T = eltype(M)
-    arr = zeros(T, 3, 3, 3, 3)
-    sq2_inv = one(T) / sqrt(T(2))
-    voigt = ((1, 1), (2, 2), (3, 3), (2, 3), (1, 3), (1, 2))
-    for I in 1:6, J in 1:6
-        i, j = voigt[I]
-        k, l = voigt[J]
-        scale = (I ≥ 4 ? sq2_inv : one(T)) * (J ≥ 4 ? sq2_inv : one(T))
-        v = M[I, J] * scale
-        arr[i, j, k, l] = v
-        arr[j, i, k, l] = v
-        arr[i, j, l, k] = v
-        arr[j, i, l, k] = v
-    end
-    return arr
-end
-
 # Fill the (6×6)-block-structured matrix from a 4-tensor kernel.
 # Per-row cache halves the number of `visco_eval` + `_to_mandel` calls.
 # (Threading reverted: see note in `_fill_trapezoidal_scalar!`.)
@@ -255,58 +235,10 @@ end
     return M
 end
 
-# Compute the (i, j) trapezoidal weight as a 6×6 Mandel block from a
-# 4-tensor kernel.  Indices are 1-based: `i` = 1..n, `j` = 1..i.
-@inline function _block_value_tensor(law::ViscoLaw, times::AbstractVector, i::Int, j::Int)
-    if i == 1 && j == 1
-        return _to_mandel(visco_eval(law, times[1], times[1]))
-    end
-    if j == i
-        a = _to_mandel(visco_eval(law, times[i], times[i - 1]))
-        b = _to_mandel(visco_eval(law, times[i], times[i]))
-        return (a .+ b) ./ 2
-    end
-    if j == 1
-        a = _to_mandel(visco_eval(law, times[i], times[1]))
-        b = _to_mandel(visco_eval(law, times[i], times[2]))
-        return (a .- b) ./ 2
-    end
-    # Interior 1 < j < i.
-    a = _to_mandel(visco_eval(law, times[i], times[j - 1]))
-    b = _to_mandel(visco_eval(law, times[i], times[j + 1]))
-    return (a .- b) ./ 2
-end
-
-@inline function _block_value_mandel(law::ViscoLaw, times::AbstractVector, i::Int, j::Int)
-    if i == 1 && j == 1
-        return copy(visco_eval(law, times[1], times[1]))
-    end
-    if j == i
-        a = visco_eval(law, times[i], times[i - 1])
-        b = visco_eval(law, times[i], times[i])
-        return (a .+ b) ./ 2
-    end
-    if j == 1
-        a = visco_eval(law, times[i], times[1])
-        b = visco_eval(law, times[i], times[2])
-        return (a .- b) ./ 2
-    end
-    a = visco_eval(law, times[i], times[j - 1])
-    b = visco_eval(law, times[i], times[j + 1])
-    return (a .- b) ./ 2
-end
-
 # Place a 6×6 block into the (i, j)-th block of the 6n×6n matrix.
 @inline function _set_block!(M::AbstractMatrix, i::Int, j::Int, block::AbstractMatrix)
     rows = (6 * (i - 1) + 1):(6 * i)
     cols = (6 * (j - 1) + 1):(6 * j)
     @inbounds M[rows, cols] = block
     return M
-end
-
-# Read the (i, j)-th 6×6 block.
-@inline function _get_block(M::AbstractMatrix, i::Int, j::Int)
-    rows = (6 * (i - 1) + 1):(6 * i)
-    cols = (6 * (j - 1) + 1):(6 * j)
-    return @inbounds M[rows, cols]
 end

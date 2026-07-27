@@ -281,6 +281,39 @@ _hill_3d_ti_coaxial(ell::Ellipsoid{3, Prolate}, C₀::TensND.TensTI{4, T, 6}) wh
 _hill_3d_ti_coaxial(ell::Ellipsoid{3, Spherical}, C₀::TensND.TensTI{4, T, 6}) where {T} =
     _hill_3d_ti_coaxial(ell, _ti6_to_ti5(C₀))
 
+# ── TI(N=8) inputs ──────────────────────────────────────────────────────────
+#
+# `TensTI{4,T,8}` spans the commutant of SO(2) — rotations about the axis
+# ONLY. That space is 8-dimensional, not 6: in Kelvin-Mandel the axial part
+# is a full 2×2 block (ℓ₁..ℓ₄) and each of the m=1 and m=2 doublets carries a
+# commutant ≅ ℂ, i.e. two real parameters instead of one (4 + 2 + 2 = 8).
+# The two extra generators W₇, W₈ are built from the in-plane rotation
+# generator `w·p = n × p`, so they are ODD in `n` and MAJOR-ANTISYMMETRIC.
+#
+# Requiring invariance under the *full* transverse-isotropy point group (i.e.
+# adding the reflection n → −n) kills them, leaving the classical 6; adding
+# major symmetry leaves the classical 5. `transverse_isotropify` returns N=8
+# uniformly because the exact azimuthal average of a strain-CONCENTRATION
+# tensor genuinely populates ℓ₇, ℓ₈ (such a tensor is neither major-symmetric
+# nor reflection-invariant).
+#
+# A STIFFNESS, however, is major-symmetric, so its azimuthal average has
+# ℓ₇ = ℓ₈ = 0 exactly — verified on the self-consistent running estimate.
+# Dropping them here is therefore exact for every reference medium the
+# analytical builder is meant to accept, and is the same convention as the
+# N=6 → N=5 collapse just above (which averages a non-trivial ℓ₃ ≠ ℓ₄).
+function _ti8_to_ti6(C::TensND.TensTI{4, T, 8}) where {T}
+    ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆, _, _ = TensND.get_ℓ8(C)
+    return TensND.TensTI{4, T, 6}((ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆), TensND.axis(C))
+end
+
+_hill_3d_ti_coaxial(ell::Ellipsoid{3, Oblate}, C₀::TensND.TensTI{4, T, 8}) where {T} =
+    _hill_3d_ti_coaxial(ell, _ti8_to_ti6(C₀))
+_hill_3d_ti_coaxial(ell::Ellipsoid{3, Prolate}, C₀::TensND.TensTI{4, T, 8}) where {T} =
+    _hill_3d_ti_coaxial(ell, _ti8_to_ti6(C₀))
+_hill_3d_ti_coaxial(ell::Ellipsoid{3, Spherical}, C₀::TensND.TensTI{4, T, 8}) where {T} =
+    _hill_3d_ti_coaxial(ell, _ti8_to_ti6(C₀))
+
 # ── Coaxiality test ----------------------------------------------------------
 
 """

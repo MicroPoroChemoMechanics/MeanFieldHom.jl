@@ -218,16 +218,16 @@ end
         fraction = 0.1, symmetrize = TISymmetrize(axis)
     )
 
-    # Only Mori-Tanaka here. `SelfConsistent` on this configuration hits a
-    # PRE-EXISTING gap, unrelated to the bundles and reproducible at the commit
-    # before them: the running estimate becomes a `TensTI{4,T,8}` (the exact
-    # 8-parameter symmetrization result) and the analytical TI-coaxial Hill
-    # kernel only has methods for the 5-/6-parameter `TensTI`, so it raises
-    # `MethodError: no method matching _hill_3d_ti_coaxial(::Ellipsoid{Spherical},
-    # ::TensTI{4,Float64,8})`.  Marked broken rather than silently dropped.
-    C_eff = homogenize(rve, MoriTanaka(), :C)
-    @test all(isfinite, TensND.get_array(C_eff))
-    @test_broken (homogenize(rve, SelfConsistent(), :C); true)
+    # `SelfConsistent` used to fail here: the running estimate becomes a
+    # `TensTI{4,T,8}` (the exact azimuthal average spans the 8-dimensional
+    # commutant of SO(2)) while the analytical TI-coaxial Hill kernel only had
+    # methods for the 5-/6-parameter `TensTI`.  A stiffness is major-symmetric,
+    # so its average has ℓ₇ = ℓ₈ = 0 exactly and narrows losslessly — see
+    # `_ti8_to_ti6` in `Elasticity/hill_3d_ti_coaxial.jl`.
+    for sch in (MoriTanaka(), SelfConsistent())
+        C_eff = homogenize(rve, sch, :C)
+        @test all(isfinite, TensND.get_array(C_eff))
+    end
 
     # Independent reference for the stress average of that phase, built from
     # the raw localization exactly as the slow branch prescribes.
@@ -256,12 +256,101 @@ end
         end
         f = x -> TensND.get_array(homogenize(build(x), MoriTanaka(), :C))[3, 3, 3, 3]
         @test isfinite(f(1.0))
-        # PRE-EXISTING TensND limitation (reproducible before the bundles):
-        # differentiating a scheme whose phase property is a `TensTI` promotes
-        # the five Walpole parameters to `Dual` while the AXIS stays `Float64`,
-        # and the inner constructor
-        # `TensTI{order,T,N}(::NTuple{N,T}, ::Tuple{T,T,T})` demands a single
-        # `T` for both.  Fix belongs in TensND, not here.
-        @test_broken (FD.derivative(f, 1.0); true)
+        # Differentiating a scheme whose phase property is a `TensTI` promotes
+        # the Walpole parameters to `Dual` while the AXIS — pure geometry —
+        # stays `Float64`.  The inner constructor
+        # `TensTI{order,T,N}(::NTuple{N,T}, ::Tuple{T,T,T})` demanded a single
+        # `T` for both.  Fixed in TensND by a mixed-eltype constructor; this
+        # test therefore passes only against TensND ≥ 0.2.6, and is marked
+        # broken against the currently registered 0.2.5.
+        if pkgversion(TensND) >= v"0.2.6"
+            g = FD.derivative(f, 1.0)
+            h = 1.0e-5
+            @test g ≈ (f(1.0 + h) - f(1.0 - h)) / 2h rtol = 1.0e-4
+        else
+            @test_broken (FD.derivative(f, 1.0); true)
+        end
+    end
+end
+
+# =============================================================================
+#  Uniform reference medium across the per-phase helpers
+# =============================================================================
+
+@testset "every phase helper uses the same reference medium" begin
+    # `_phase_dilute_concentration` always evaluated its phase in
+    # `_project_matrix(P₀, sym)`, while `_phase_compliance_contribution` (both
+    # orders) and `_phase_stiffness_contribution` (2nd order) used the RAW
+    # `P₀`.  With `symmetrize ≠ NoSymmetrize` the two differ, so `A_dil` and
+    # `N` of one and the same phase were computed in two different media.
+    #
+    # Invisible on an isotropic matrix (`isotropify` is then a no-op to
+    # ~1e-16), which is why every pre-existing `symmetrize` test missed it.
+    # These cases use an ANISOTROPIC matrix, where the projection really bites.
+    C_tri = TensND.inv_KM(_KM_TRI_B, CanonicalBasis{3, Float64}())
+    sym = MeanFieldHom.Schemes.IsoSymmetrize()
+    C_proj = MeanFieldHom.Schemes._project_matrix(C_tri, sym)
+    @test maximum(abs, _vals(C_proj) .- _vals(C_tri)) > 1.0        # really differs
+
+    @testset "crack phase, 4th order" begin
+        rve = RVE(:M)
+        add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_tri))
+        add_phase!(
+            rve, :CR, PennyCrack(1.0), Dict(:C => C_tri);
+            density = 0.08, symmetrize = :iso
+        )
+        H = MeanFieldHom.Schemes._phase_compliance_contribution(rve, :CR, :C, C_tri)
+        N = MeanFieldHom.Schemes._phase_stiffness_contribution(rve, :CR, :C, C_tri)
+
+        # Both must now be built on the PROJECTED reference.
+        ε = 0.08
+        Href, Nref = MeanFieldHom.Cracks.compliance_and_stiffness_contribution(
+            PennyCrack(1.0), C_proj
+        )
+        @test _vals(H) == _vals(
+            MeanFieldHom.Schemes._apply_symmetrize(
+                delta_compliance(PennyCrack(1.0), Href, ε), sym
+            )
+        )
+        @test _vals(N) == _vals(
+            MeanFieldHom.Schemes._apply_symmetrize(
+                MeanFieldHom.Core.delta_stiffness(PennyCrack(1.0), Nref, ε), sym
+            )
+        )
+
+        # …and the bundle agrees with the two separate calls, bitwise.
+        Hb, Nb = MeanFieldHom.Schemes._phase_compliance_and_contribution(rve, :CR, :C, C_tri)
+        @test _vals(Hb) == _vals(H)
+        @test _vals(Nb) == _vals(N)
+
+        @test all(isfinite, _vals(homogenize(rve, MoriTanaka(), :C)))
+    end
+
+    @testset "solid phase, 2nd order" begin
+        K_aniso = TensND.Tens([3.0 0.5 0.3; 0.5 2.0 0.2; 0.3 0.2 1.5])
+        symK = MeanFieldHom.Schemes.IsoSymmetrize()
+        K_proj = MeanFieldHom.Schemes._project_matrix(K_aniso, symK)
+        rve = RVE(:M)
+        add_matrix!(rve, Ellipsoid(1.0), Dict(:K => K_aniso))
+        add_phase!(
+            rve, :I, Spheroid(0.3), Dict(:K => TensISO{3}(20.0));
+            fraction = 0.2, symmetrize = :iso
+        )
+        A = MeanFieldHom.Schemes._phase_dilute_concentration(rve, :I, :K, K_aniso)
+        N = MeanFieldHom.Schemes._phase_stiffness_contribution(rve, :I, :K, K_aniso)
+        geom = rve.phases[:I].geometry
+        @test _vals(A) == _vals(
+            MeanFieldHom.Schemes._apply_symmetrize(
+                gradient_gradient_loc(geom, TensISO{3}(20.0), K_proj), symK
+            )
+        )
+        @test _vals(N) == _vals(
+            0.2 * MeanFieldHom.Schemes._apply_symmetrize(
+                conductivity_contribution(geom, TensISO{3}(20.0), K_proj), symK
+            )
+        )
+        Ab, Nb = MeanFieldHom.Schemes._phase_dilute_and_contribution(rve, :I, :K, K_aniso)
+        @test _vals(Ab) == _vals(A)
+        @test _vals(Nb) == _vals(N)
     end
 end

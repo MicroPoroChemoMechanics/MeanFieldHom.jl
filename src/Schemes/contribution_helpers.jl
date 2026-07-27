@@ -118,14 +118,15 @@ function _phase_stiffness_contribution(
     a = rve.amounts[name]
     geom = rve.phases[name].geometry
     sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        N = MFH_Core.conductivity_contribution(geom, P_i, P₀; kw...)
+        N = MFH_Core.conductivity_contribution(geom, P_i, P₀_proj; kw...)
         return amount_value(a) * _apply_symmetrize(N, sym)
     else
         α_int = _crack_interface_α(rve, name)
         N = MFH_Core.conductivity_contribution(
-            geom, P₀;
+            geom, P₀_proj;
             α_interface = α_int, kw...
         )
         return _apply_symmetrize(MFH_Core.delta_conductivity(geom, N, amount_value(a)), sym)
@@ -166,13 +167,14 @@ function _phase_compliance_contribution(
     a = rve.amounts[name]
     geom = rve.phases[name].geometry
     sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        H = compliance_contribution(geom, P_i, P₀; kw...)
+        H = compliance_contribution(geom, P_i, P₀_proj; kw...)
         return amount_value(a) * _apply_symmetrize(H, sym)
     else
         K_int = _crack_interface_K4(rve, name)
-        H = compliance_contribution(geom, P₀; K_interface = K_int, kw...)
+        H = compliance_contribution(geom, P₀_proj; K_interface = K_int, kw...)
         return _apply_symmetrize(delta_compliance(geom, H, amount_value(a)), sym)
     end
 end
@@ -184,13 +186,14 @@ function _phase_compliance_contribution(
     a = rve.amounts[name]
     geom = rve.phases[name].geometry
     sym = phase_symmetrize(rve, name)
+    P₀_proj = _project_matrix(P₀, sym)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        R = MFH_Core.resistivity_contribution(geom, P_i, P₀; kw...)
+        R = MFH_Core.resistivity_contribution(geom, P_i, P₀_proj; kw...)
         return amount_value(a) * _apply_symmetrize(R, sym)
     else
         α_int = _crack_interface_α(rve, name)
-        R = compliance_contribution(geom, P₀; α_interface = α_int, kw...)
+        R = compliance_contribution(geom, P₀_proj; α_interface = α_int, kw...)
         return _apply_symmetrize(delta_resistivity(geom, R, amount_value(a)), sym)
     end
 end
@@ -300,17 +303,13 @@ end
 #       bundles thread the RAW (pre-symmetrization) localization tensor and
 #       reproduce each original expression verbatim.
 #
-#    2. The reference medium is currently NOT uniform across the helpers:
-#       `_phase_dilute_concentration` (both orders) and
-#       `_phase_stiffness_contribution` (order 4) use
-#       `P₀_proj = _project_matrix(P₀, sym)`, whereas
+#    2. Every helper now evaluates its phase in the SAME reference medium,
+#       `P₀_proj = _project_matrix(P₀, sym)`.  This was not always the case:
 #       `_phase_stiffness_contribution` (order 2) and
-#       `_phase_compliance_contribution` (both orders) use the RAW `P₀`.
-#       Where the two differ, sharing one solve would silently change the
-#       result, so those bundles fall back to the separate calls unless
-#       `_project_matrix` was the identity (`P₀_proj === P₀`, i.e.
-#       `NoSymmetrize` or `TISymmetrize(matrix_projection = :none)`).
-#       Unifying the reference is a separate, announced change.
+#       `_phase_compliance_contribution` (both orders) used to pass the RAW
+#       `P₀`, so `A_dil` and `N` of one and the same phase could be computed
+#       in two different reference media as soon as
+#       `symmetrize ≠ NoSymmetrize`.  See the CHANGELOG entry for v0.1.1.
 # =============================================================================
 
 """
@@ -343,14 +342,6 @@ function _phase_dilute_and_contribution(
     sym = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P₀, sym)
     f = amount_value(rve.amounts[name])
-    # `_phase_stiffness_contribution` (order 2) uses the raw `P₀`; only share
-    # the solve when the projection was the identity.
-    if P₀_proj !== P₀
-        return (
-            _phase_dilute_concentration(rve, name, prop, P₀; kw...),
-            _phase_stiffness_contribution(rve, name, prop, P₀; kw...),
-        )
-    end
     A_raw, N_raw = MFH_Core.loc_and_stiffness(geom, P_i, P₀_proj; kw...)
     return (_apply_symmetrize(A_raw, sym), f * _apply_symmetrize(N_raw, sym))
 end
@@ -368,17 +359,10 @@ function _phase_compliance_and_contribution(
     geom = rve.phases[name].geometry
     sym = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P₀, sym)
-    # `H` currently sees the raw `P₀`, `N` sees `P₀_proj`.
-    if P₀_proj !== P₀
-        return (
-            _phase_compliance_contribution(rve, name, prop, P₀; kw...),
-            _phase_stiffness_contribution(rve, name, prop, P₀; kw...),
-        )
-    end
     ε = amount_value(rve.amounts[name])
     K_int = _crack_interface_K4(rve, name)
     H_raw, N_raw = compliance_and_stiffness_contribution(
-        geom, P₀; K_interface = K_int, kw...
+        geom, P₀_proj; K_interface = K_int, kw...
     )
     return (
         _apply_symmetrize(delta_compliance(geom, H_raw, ε), sym),
@@ -393,16 +377,10 @@ function _phase_compliance_and_contribution(
     geom = rve.phases[name].geometry
     sym = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P₀, sym)
-    if P₀_proj !== P₀
-        return (
-            _phase_compliance_contribution(rve, name, prop, P₀; kw...),
-            _phase_stiffness_contribution(rve, name, prop, P₀; kw...),
-        )
-    end
     ε = amount_value(rve.amounts[name])
     α_int = _crack_interface_α(rve, name)
     R_raw, N_raw = compliance_and_stiffness_contribution(
-        geom, P₀; α_interface = α_int, kw...
+        geom, P₀_proj; α_interface = α_int, kw...
     )
     return (
         _apply_symmetrize(delta_resistivity(geom, R_raw, ε), sym),
