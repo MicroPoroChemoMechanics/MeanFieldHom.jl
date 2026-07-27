@@ -201,17 +201,13 @@ add_phase!(rve, :CRACK, PennyCrack(1.0),
 C_eff = homogenize_alv(rve, MoriTanaka(), :C; times = times)
 ```
 
-Behind the scenes the COD matrices `B̃_n`, `B̃_t` are post-corrected via
-the Sevostianov spring identity
+Behind the scenes the scalar COD kernels `B̃_n`, `B̃_t` are post-corrected
+by the spring-interface construction of [sevostianovIJSS2007](@cite),
+transposed to the Volterra algebra: the compliance of the crack faces and
+that of the interface add up, so a stiffer interface closes the crack. The
+correction reduces to one extra scalar Volterra inverse per direction.
 
-```math
-\widetilde{\mathbf B}_{\text{eff}}
-   = (b\,\mathbb K + \widetilde{\mathbf B}^{-1})^{-\text{vol}}
-   = \widetilde{\mathbf B} \circ
-     (\mathbb 1 + b\,\mathbb K \circ \widetilde{\mathbf B})^{-\text{vol}},
-```
-
-where `b = semi_minor(crack)` is the in-plane semi-axis. Limits :
+Limits, all exercised in the test suite :
 
 | Interface | Behavior                                  |
 |-----------|--------------------------------------------|

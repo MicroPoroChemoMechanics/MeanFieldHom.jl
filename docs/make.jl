@@ -103,12 +103,13 @@ makedocs(;
                 "tutorials/porous_benchmark.md",
                 "tutorials/differential_paths.md",
             ],
-            "Inclusions and geometries" => [
+            "Inclusions, geometries and orientation" => [
                 "tutorials/cracks.md",
                 "tutorials/generated/layered_sphere.md",
                 "tutorials/generated/layered_spheroid_effective.md",
                 "tutorials/generated/layered_spheroid_interfaces.md",
                 "tutorials/generated/layered_spheroid_hc.md",
+                "tutorials/generated/symmetrization.md",
             ],
             "Beyond elasticity" => [
                 "tutorials/viscoelasticity.md",
@@ -119,11 +120,10 @@ makedocs(;
                 "tutorials/strength_criteria.md",
                 "tutorials/nonlinear_solvers.md",
                 "tutorials/generated/secant_elastoplasticity.md",
-                "tutorials/symbolic_spheres.md",
             ],
             "Interoperability and tools" => [
                 "tutorials/from_echoes.md",
-                "tutorials/generated/symmetrization.md",
+                "tutorials/symbolic_spheres.md",
             ],
         ],
         "Applications" => [

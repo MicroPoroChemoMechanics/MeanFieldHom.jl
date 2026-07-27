@@ -27,11 +27,12 @@ microstructure and the one where the choice of scheme matters most.
 5. [The differential scheme and path dependence](differential_paths.md) —
    incremental homogenization and why mixing order matters.
 
-## Inclusions and geometries
+## Inclusions, geometries and orientation
 
-Beyond the single homogeneous ellipsoid: flat cracks, and **composite**
-inclusions that carry no Hill tensor at all and plug into the schemes through
-their volume-averaged concentration tensors instead.
+Beyond the single homogeneous ellipsoid: flat cracks, **composite** inclusions
+that carry no Hill tensor at all and plug into the schemes through their
+volume-averaged concentration tensors instead, and what averaging over
+orientations does to the result.
 
 - [Cracks and crack density](cracks.md) — from volume fraction to crack density,
   and the crack-opening-displacement tensor.
@@ -46,11 +47,16 @@ their volume-averaged concentration tensors instead.
   interface conductance, and an interactive 3-D view.
 - [Highly conducting interfaces](generated/layered_spheroid_hc.md) — the
   equivalent conductivity of an HC-coated particle against aspect ratio.
+- [Symmetrization](generated/symmetrization.md) — exact rotation-group average
+  versus best-fit projection, and when the two differ.
 
 ## Beyond elasticity
 
 - [Viscoelastic composites](viscoelasticity.md) — complex moduli in the
   frequency domain, and a first taste of ageing creep.
+- [Frequency or time?](generated/freq_vs_time.md) — the complex-modulus route
+  and the time-domain ALV route, cross-checked against each other on the same
+  non-ageing composite.
 
 ## Differentiation and solvers
 
@@ -61,16 +67,17 @@ their volume-averaged concentration tensors instead.
 - [Nonlinear solvers for the self-consistent fixed point](nonlinear_solvers.md) —
   solve the fixed point with `NonlinearSolve.jl` instead of Picard iteration, and
   check that sensitivities agree regardless of which solver found it.
-- [Symbolic spheres](symbolic_spheres.md) — derive the Eshelby/Hill tensors and
-  the dilute, Mori–Tanaka and self-consistent estimates in closed form, then
-  substitute numbers at the very end.
+- [Nonlinear homogenization by the secant method](generated/secant_elastoplasticity.md)
+  — an elastic–perfectly plastic porous solid, closed by second moments obtained
+  from the very same derivative.
 
 ## Interoperability and tools
 
 - [From Echoes to MeanFieldHom](from_echoes.md) — translate your Echoes
   (C++/Python) scripts, and cross-check with Echoes live via PyCall.
-- [Symmetrization](generated/symmetrization.md) — exact rotation-group average
-  versus best-fit projection, and when the two differ.
+- [Symbolic spheres](symbolic_spheres.md) — the same tensor algebra run on
+  `SymPy` / `Symbolics` expressions instead of numbers: Eshelby/Hill tensors and
+  the dilute, Mori–Tanaka and self-consistent estimates in closed form.
 
 !!! note "Pages generated from runnable scripts"
     Some pages above live under `tutorials/generated/`: they are produced from

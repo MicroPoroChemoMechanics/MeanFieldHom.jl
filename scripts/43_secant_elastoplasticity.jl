@@ -54,17 +54,31 @@
 #
 # Writing ``x_i`` for the resulting equivalent deviatoric strain,
 # ``x_i = \sqrt{\langle\boldsymbol{\varepsilon}_d\!:\!\boldsymbol{\varepsilon}_d
-# \rangle_i}``, a von Mises solid of yield stress ``\sigma_0`` and elastic shear
-# modulus ``\mu_s`` responds with the secant modulus
+# \rangle_i}``, a von Mises solid of elastic shear modulus ``\mu_s`` responds
+# with the secant modulus
 #
 # ```math
 # \mu_i = \begin{cases}
-#   \mu_s, & x_i \le \varepsilon_0 = \dfrac{\sigma_0}{2\mu_s}
+#   \mu_s, & x_i \le \varepsilon_0
 #   \quad\text{(still elastic)},\\[2ex]
-#   \dfrac{\sigma_0}{2\,x_i}, & x_i > \varepsilon_0
-#   \quad\text{(yielding: } 2\mu_i x_i = \sigma_0\text{)} .
+#   \dfrac{\sqrt{2/3}\;\sigma_0}{2\,x_i}, & x_i > \varepsilon_0
+#   \quad\text{(yielding)} ,
 # \end{cases}
+# \qquad
+# \varepsilon_0 = \frac{\sqrt{2/3}\;\sigma_0}{2\mu_s}.
 # ```
+#
+# !!! warning "Where the ``\sqrt{2/3}`` comes from"
+#     ``\sigma_0`` is the yield stress in **simple tension**, which is how a von
+#     Mises criterion is normally quoted. The quantity the secant closure
+#     actually caps is the *norm of the deviatoric stress*
+#     ``\|\boldsymbol{\sigma}_d\| = 2\mu_i x_i``, and under simple tension
+#     ``\boldsymbol{\sigma} = \sigma_0\,\underline{e}\otimes\underline{e}`` the
+#     deviator has norm ``\|\boldsymbol{\sigma}_d\| = \sqrt{2/3}\,\sigma_0``, not
+#     ``\sigma_0``. Yielding therefore reads ``2\mu_i x_i = \sqrt{2/3}\,\sigma_0``.
+#     Dropping that factor rescales the whole plastic branch by
+#     ``\sqrt{3/2} \approx 1.22`` — enough to make a converged estimate look like
+#     a systematic 20 % overestimate.
 #
 # The ``n`` shells are coupled through ``\mathbb{C}^{\hom}``, so this is a
 # fixed point on the vector ``(\mu_1,\dots,\mu_n)`` — solved below by direct
@@ -218,13 +232,13 @@ hline!(plt, [(2 / 3) * log(1 / FPORE)]; linestyle = :dash, color = :black,
     label = "hollow sphere, (2/3)ln(1/f)")
 plt
 
-# ## §4 What the plateau is, and what it is not
+# ## §4 What the plateau converges to
 #
-# For a **rigid–perfectly plastic** hollow sphere under hydrostatic loading, limit
-# analysis gives the exact collapse stress ``\Sigma_m = \tfrac{2}{3}\sigma_0
-# \ln(1/f)`` — the hydrostatic point of the Gurson criterion
-# ([gurson1977](@cite)). The secant estimate converges with ``n``, but to a
-# value distinctly above it:
+# For a **rigid–perfectly plastic** hollow sphere under hydrostatic loading,
+# limit analysis gives the exact collapse stress ``\Sigma_m = \tfrac{2}{3}
+# \sigma_0\ln(1/f)`` — the hydrostatic point of the Gurson criterion
+# ([gurson1977](@cite)). Refining the radial discretization drives the secant
+# estimate onto it:
 
 @printf("\nexact rigid-plastic hollow sphere : %.4f σ₀\n", (2 / 3) * log(1 / FPORE))
 for n in shells
@@ -234,18 +248,31 @@ for n in shells
     )
 end
 
-# The gap is not a numerical artifact — it is the method. The secant closure
-# replaces the field ``\boldsymbol{\varepsilon}_d`` by its **quadratic average**
-# over each shell, and a quadratic average is never smaller than the average of
-# the norm, so the estimated dissipation is too large. The bias is a documented
-# feature of second-moment (variational) estimates for porous plastic solids,
-# and it is at its worst precisely at the high stress triaxiality of hydrostatic
-# loading ([suquet1997](@cite), [ponteCastaneda1991](@cite)).
+# So the number of shells is not a numerical detail — it *is* the model, and the
+# two ends of the sweep are both meaningful.
 #
-# Refining the discretization narrows the gap only slowly: the residual
-# difference between ``n = 5`` and ``n = 10`` is small compared with the
-# distance to the exact value, so what is left is the modelling error, not the
-# meshing error.
+# **A single shell reproduces the classical variational estimate.** With
+# ``n = 1`` the second moment is taken over the whole solid at once, which is
+# exactly the linear-comparison construction of the variational / modified
+# secant method ([ponteCastaneda1991](@cite), [suquet1997](@cite)): one uniform
+# secant modulus for the entire matrix. The resulting plateau matches
+# ``\tfrac{2}{3}\sigma_0(1-f)/\sqrt{f}`` to five digits — verified here at
+# ``f = 0.05``, ``0.1`` and ``0.3``:
+
+@printf("\n  n = 1 plateau                    : %.5f σ₀\n", curves[1][end] / SIG0)
+@printf("  (2/3)·(1-f)/√f                   : %.5f σ₀\n", (2 / 3) * (1 - FPORE) / sqrt(FPORE))
+
+# That estimate sits about 24 % above the exact collapse load at this porosity:
+# a *uniform* secant modulus cannot represent a solid that yields near the void
+# long before it yields far from it, and the quadratic average of
+# ``\boldsymbol{\varepsilon}_d`` over the whole shell overstates the
+# dissipation.
+#
+# **Resolving the radial profile removes that gap.** Each shell then carries its
+# own secant modulus, the plastic front is free to progress outwards from the
+# void, and the estimate converges to the exact limit — within 0.2 % at
+# ``n = 20``. Over the range computed here the approach is monotone and always
+# from above.
 #
 # !!! tip "Where the derivative came from"
 #     Nothing above ever evaluated a local field. The second moment of the
