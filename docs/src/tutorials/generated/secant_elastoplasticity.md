@@ -157,10 +157,10 @@ function secant_update(μs, f, Ev, Ed2)
     n = length(μs)
     J = ForwardDiff.jacobian(m -> kmu_hom(m, f), μs)   # row 1: k, row 2: μ
     fi = (1 - f) / n
-    ε₀ = SIG0 / (2 * MUS)
+    ε₀ = sqrt(2/3) * SIG0 / (2 * MUS)
     return map(1:n) do i
         x = sqrt(max(0.0, (0.5 * J[1, i] * Ev^2 + J[2, i] * Ed2) / fi))
-        x ≤ ε₀ ? MUS : SIG0 / (2x)
+        x ≤ ε₀ ? MUS : sqrt(2/3) * SIG0 / (2x)
     end
 end
 ````
@@ -205,8 +205,8 @@ function response(n, f, Evs)
     return Σm, allok
 end
 
-Evs = range(0.0, 4.0e-3; length = 21)[2:end]
-shells = (1, 2, 5, 10)
+Evs = range(0.0, 4.0e-3; length = 51)[2:end]
+shells = (1, 2, 5, 20)
 
 curves = Dict{Int, Vector{Float64}}()
 for n in shells
