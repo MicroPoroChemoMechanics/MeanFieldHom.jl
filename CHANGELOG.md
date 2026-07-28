@@ -29,37 +29,16 @@
     order, hence bit-identical. Do not write `rve.amounts` directly; that
     leaves the cache stale.
 
-  **Cost, measured.** Paired A/B against a `git worktree` at the previous
-  commit, same machine, `scripts/bench` suite, 67 cases, `--repeat-suite=2`:
-  **all 67 checksums bit-identical**, allocations **down on 21 cases**
-  (−19 152 B in total, up to −14 400 B on `sc.porous.oblate.phi15`, because
-  iterative schemes no longer recompute the matrix fraction per iteration),
-  up on one (`sens/mt.dC_df`, +32 B). Median |Δt| 1.1 %, and every
-  sub-microsecond scheme is at or below the previous commit
-  (`voigt.iso2` −1.1 %, `reuss.iso2` −3.0 %, `dilute_dual.iso2` −1.1 %,
-  `maxwell.iso2` +0.5 %, `mt.iso2.sphere` +1.3 %).
-
-  Getting there took two steps, and the first one measured badly. A
-  heterogeneous `amounts` dict costs a type *refinement*, not an allocation:
-  `rve.amounts[name]` already returned an abstract type before this change
-  (`AbstractAmount{Float64}`, one boxed scalar per access, 16 B — identical
-  on both trees), but `a isa VolumeFraction` used to intersect with
-  `AbstractAmount{Float64}` down to the concrete `VolumeFraction{Float64}`,
-  which made the surrounding arithmetic inferable. Without the element type
-  in the dict's value type it no longer does, which cost +5 to +11 % on the
-  two-phase isotropic schemes. Both halves are now recovered:
-
-  - `matrix_volume_fraction` became the `f_matrix` field read described above
-    (61 ns / 48 B / 3 boxed temporaries → 2.4 ns / 0 B);
-  - `scale_by_amount(a, X)` puts the per-phase product behind a function
-    barrier that dispatches on the amount's *concrete* type, so `a.value` is
-    inferred inside and the product is specialized — one dynamic dispatch
-    instead of a boxing plus two.
-
-  The barrier is applied only where it pays. Wrapping the crack `delta_*`
-  paths the same way (amount as trailing argument, hence varargs) *cost*
-  ~1.4 KB per call on `mt.crack.penny` for no gain — those cases run at tens
-  of microseconds — so they keep the plain `amount_value(a)`.
+  **Performance.** Paired against the previous commit on the 67-case
+  `scripts/bench` suite: all checksums bit-identical, allocations down on 21
+  cases (−19 152 B), median |Δt| 1.1 %, every sub-microsecond scheme at or
+  below the previous commit. Heterogeneous amounts cost a type refinement
+  (`a isa VolumeFraction` no longer narrows to a concrete
+  `VolumeFraction{Float64}`), paid back by the `f_matrix` cache
+  (61 ns / 48 B → 2.4 ns / 0 B) and by `scale_by_amount(a, X)`, which puts the
+  per-phase product behind a barrier dispatching on the amount's concrete
+  type. The crack `delta_*` paths keep the plain `amount_value(a)`: the same
+  barrier needs varargs there and measured +1.4 KB per call for no gain.
 
   Complex moduli never required a declaration in the first place — the moduli
   live in an untyped `Phase.properties` dict and were always promoted at the
@@ -76,26 +55,15 @@
 
 ### Fixed
 
-- **The n-layer sphere's shear localization ``β_k`` *is* validated against
-  ECHOES.** `benchmark_nlayers.jl` carried a header note claiming a 1–50 %
-  disagreement on genuine multi-layer stacks, blamed on a layer-indexing
-  convention in `echoes.layer_eE`, and substituted §3's analytical limits for
-  the comparison. That conclusion was stale: `β_k` was then the bare mode-1
-  amplitude `a_k`, missing the mode-2 term `b_k·F_k`, whose omission cancels
-  in exactly the degenerate configurations §3 tests. The missing term was
-  added later (same day) by an unrelated fix — the `git` history puts the note
-  strictly before it — and the Echoes comparison was never re-run. It is now
-  restored alongside `α_k` in §1: **30/30 configurations (2 to 8 layers),
-  worst relative error 4.4e-14**, i.e. better than `α_k` (4.6e-13).
-
-  The note's own explanation could not have held, and the docs now say so:
-  `α_k` and `β_k` are read from the *same* `layer_eE(k)` matrix, so a
-  layer-index error could not have spared `α_k`; and the ALV per-layer
-  `β(t,t')` blocks were already pinned to Echoes at 1e-16 on the diagonal,
-  which is impossible if the elastic `β_k` were tens of percent off. The
-  header comment in `shear_recurrence.jl` also still described `β_k = a_k`,
-  contradicting its own implementation; it now states the mode-2 term and why
-  degenerate configurations hide its absence.
+- **The n-layer sphere's shear localization `β_k` is validated against ECHOES.**
+  `benchmark_nlayers.jl` had dropped the comparison, citing a 1–50 % gap blamed
+  on an `echoes.layer_eE` indexing convention. The gap was ours: `β_k` was the
+  bare mode-1 amplitude `a_k`, missing `b_k·F_k`, whose omission cancels in the
+  degenerate configurations the fallback check used. The term was added later
+  by an unrelated fix and the comparison never re-run. Restored alongside
+  `α_k`: **30/30 configurations (2 to 8 layers), 4.4e-14**. The header comment
+  in `shear_recurrence.jl`, which still described `β_k = a_k`, now matches the
+  implementation.
 
 - **`test_complex_moduli.jl` no longer hides scheme failures.** Every scheme
   was wrapped in `try/catch … @test_broken false`, so a scheme that stopped
