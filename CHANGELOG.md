@@ -28,6 +28,10 @@
 - Unrecognised `DifferentialScheme` keywords are now forwarded to
   `OrdinaryDiffEq.solve` (`maxiters`, `dtmax`, `callback`, …) instead of being
   silently dropped.
+- **New tutorial: [Comparing loading-path trajectories](docs/src/tutorials/differential_loading_paths.md)**,
+  a τ-resolved companion to the existing path-dependence tutorial — four
+  trajectories to the same target fractions, plotted through
+  `differential_path` rather than compared at `τ = 1` only.
 
 ### Changed
 

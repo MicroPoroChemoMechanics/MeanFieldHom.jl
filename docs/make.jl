@@ -103,6 +103,7 @@ makedocs(;
                 "tutorials/porous_materials.md",
                 "tutorials/porous_benchmark.md",
                 "tutorials/differential_paths.md",
+                "tutorials/differential_loading_paths.md",
             ],
             "Inclusions, geometries and orientation" => [
                 "tutorials/cracks.md",

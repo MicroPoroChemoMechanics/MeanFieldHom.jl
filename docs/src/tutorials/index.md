@@ -22,6 +22,7 @@ and the one where the choice of scheme matters most.
 | [Porous materials and the self-consistent trap](porous_materials.md) | why soft pores break the naive SC iteration |
 | [Porous benchmark: all schemes](porous_benchmark.md) | every scheme on the canonical porosity sweep, spheres and oblate pores |
 | [The differential scheme and path dependence](differential_paths.md) | incremental homogenization; why mixing order matters |
+| [Comparing loading-path trajectories](differential_loading_paths.md) | the same target fractions, four trajectories, watched τ by τ |
 
 ## Inclusions, geometries and orientation
 

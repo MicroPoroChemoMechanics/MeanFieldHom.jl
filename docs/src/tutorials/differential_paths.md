@@ -92,6 +92,11 @@ encodes a **construction history**, and for a real composite the
 mixing or loading order is itself a physical modeling choice, not a
 numerical one.
 
+[Comparing loading-path trajectories](differential_loading_paths.md)
+takes this further: instead of reading off only the endpoint `k_eff` of
+a fraction sweep, it plots `C^{hom}(\tau)` for several trajectories —
+including a `Path` schedule — over the whole incorporation history.
+
 ## Following the construction history
 
 The scheme knows the effective property at every `τ`, not just at the
