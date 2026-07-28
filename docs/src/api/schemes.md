@@ -58,6 +58,7 @@ AutoNonlinear
 
 ```@docs
 homogenize
+differential_path
 MeanFieldHom.Schemes.SCHEME_ALIAS
 ```
 

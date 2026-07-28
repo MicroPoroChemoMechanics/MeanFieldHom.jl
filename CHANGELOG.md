@@ -2,6 +2,72 @@
 
 ## Unreleased
 
+### Added
+
+- **Compliance formulation of the differential scheme.**
+  `DifferentialScheme(; formulation = :compliance)` integrates the dual ODE
+  `dS/dτ = Σ φ̇ᵢ ℍᵢ(S)` and inverts the result, instead of
+  `dC/dτ = Σ φ̇ᵢ 𝐍ᵢ(C)`. The two are analytically equivalent
+  (`ℍ = −𝕊 : 𝐍 : 𝕊`) and agree to solver accuracy; they differ in which
+  variable carries the error control, the compliance form being the better
+  conditioned one for a medium softening towards percolation. Available in
+  elasticity, conduction and ALV (both tensor orders).
+- **`differential_path(rve, scheme, property)`** returns `(τ, states)` along
+  the incorporation path instead of the `τ = 1` value alone. `scripts/24`
+  no longer has to reach into the scheme's internals to plot `C^hom(τ)`.
+- **Pair constructors for the trajectories**: `Path(:A => τ -> …, :B => …)`,
+  `CustomPath(:A => values, …)`, `Sequential(:A, :B)` — the form the
+  documentation already advertised.
+- **Differential scheme in order-2 ALV** (viscous conduction / diffusion):
+  `differential_alv_order2`, reached through
+  `homogenize_alv(rve, DifferentialScheme(), :K; times)`, which previously
+  raised a `MethodError`.
+- **`LayeredSphere` phases in the ALV differential scheme**, through
+  block-matrix (`_at`) variants of the layered-sphere ALV kernels. Mori-Tanaka
+  and the self-consistent schemes already supported them.
+- Unrecognised `DifferentialScheme` keywords are now forwarded to
+  `OrdinaryDiffEq.solve` (`maxiters`, `dtmax`, `callback`, …) instead of being
+  silently dropped.
+
+### Fixed
+
+- **Crack densities are now diluted by the solid increments in the
+  differential scheme.** Replacing `dφ` of the current medium by solid
+  material also destroys the cracks that piece contained, so the volume
+  balance extends to `dε_c = dφ_c^ε − ε_c Σ_{j solid} dφ_j`, inverted by the
+  same Sherman-Morrison factor: `dφ_c^ε = dε_c + (ε_c/f₀) Σ_{j solid} df_j`.
+  The missing term made `ε_c(τ)` an incorporation schedule rather than the
+  density actually reached. Unchanged for crack-only RVEs and for
+  trajectories where no solid grows while the cracks do.
+- **An aligned non-spherical phase no longer crashes the differential
+  scheme.** The ODE state was sized from the matrix's symmetry class alone,
+  on the assumption that only cracks could leak anisotropy into the running
+  estimate. An aligned spheroid does too — its dilute concentration tensor is
+  transversely isotropic even between two isotropic materials — so
+  `homogenize(rve, DifferentialScheme(), :C)` died on a `DimensionMismatch`
+  as soon as a phase was not spherical. The state is now sized by probing the
+  phase contributions, and lands in the smallest class that holds the running
+  estimate (TI for aligned spheroids and cracks, rather than the full Mandel
+  fallback — smaller state, and the Hill backends keep their closed-form
+  paths). Isotropic RVEs keep the exact same 2-component state and results.
+- **The compliance contribution of a heterogeneous inclusion no longer uses
+  its declared (meaningless) phase property.** `_phase_compliance_contribution`
+  applied `inv(C₁)` to a placeholder that every stiffness-side kernel ignores,
+  so `DiluteDual` and the compliance-side ASC silently depended on what the
+  user happened to declare for a `LayeredSphere` / `LayeredSpheroid`. It now
+  goes through `ℍ = −𝕊₀ : 𝐍 : 𝕊₀`.
+- **The ALV differential scheme no longer returns wrong values for an
+  anisotropic running medium.** The ALV Hill kernel exists for an isotropic
+  reference only, but the differential scheme evaluates it against its
+  *running* medium, which an aligned non-spherical inclusion — or any crack
+  without isotropic orientation average — takes out of the iso class;
+  `iso_params_from_blocks` read `(α, β)` off it regardless. Such RVEs now
+  raise an `ArgumentError` naming the phase and the two ways out. Cracks with
+  `symmetrize = :iso` now work, where they used to fail with a cryptic "only
+  iso reference is supported".
+- `homogenize_alv(rve, DifferentialScheme(), prop; times)` honours `prop`
+  instead of always homogenising `:C`.
+
 ### Changed
 
 - **A `RVE`'s element type is now a promotion floor, not a cast.** The

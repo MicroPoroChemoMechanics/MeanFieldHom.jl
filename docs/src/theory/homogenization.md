@@ -63,32 +63,30 @@ non-linear algorithm (`NewtonRaphson()`, `TrustRegion()`,
 
 ## Differential scheme
 
-The **DifferentialScheme** integrates the Norris ODE
-([Norris 1985](@cite norris1985))
-```math
-\frac{\mathrm d \mathbb C}{\mathrm d f_i} = (\mathbb C_i - \mathbb C):\mathbb A_\mathrm{dil}^{(i)}(\mathbb C)
-```
-along a user-selectable trajectory. At step `k` the per-phase increment
-``\Phi_k`` is the solution of a small linear system that compensates for
-the matrix already homogenised at step ``k-1``:
+The **DifferentialScheme** integrates the multi-phase Norris ODE
+([Norris 1985](@cite norris1985)) on a fictitious incorporation time
+``\tau \in [0, 1]``,
 
 ```math
-\big(\mathbb I - \mathrm{diag}(\mathrm{path}_j(k-1)\,f_j)\big)\,\Phi_k
-  = (\mathrm{path}_i(k) - \mathrm{path}_i(k-1))\,f_i .
+\frac{\mathrm d \mathbb C^{hom}}{\mathrm d \tau}
+  = \sum_i \dot\varphi_i \, \mathbb N_i(\mathbb C^{hom}) ,
+\qquad
+\dot\varphi_i = \dot f_i + \frac{f_i}{f_0} \sum_j \dot f_j ,
 ```
 
-Three trajectories are shipped:
+the increments ``\dot\varphi_i`` following from the volume balance by
+Sherman-Morrison, along a user-selectable trajectory
+([`Proportional`](@ref), [`Sequential`](@ref), [`CustomPath`](@ref),
+[`Path`](@ref)). The dual form on the compliance is available through
+`formulation = :compliance`, and cracks — which have no volume but a
+finite density — enter with a balance of their own.
 
-- **Proportional** (default) — every phase grows at the same relative
-  rate `k/N`; target fractions reached simultaneously.
-- **Sequential(order)** — phases are introduced one after another; each
-  ramps from 0 to its target fraction over its allotted slice of steps.
-- **CustomPath(dict)** — explicit per-phase monotone trajectory with
-  `path_i(0) = 0` and `path_i(N) = 1`.
+The trajectories agree in the dilute limit (`f → 0`) and diverge like
+`f` at finite fractions — a *physical* feature of the scheme.
 
-The three trajectories agree in the dilute limit (`f → 0`) and diverge like
-`f` at finite fractions — a *physical* feature of the differential scheme.
-Cracks (`CrackDensity`) are integrated separately, having no volume.
+The full derivation, the crack case, the closed form of the homothetic
+trajectory and the SciML resolution are in
+[The differential scheme](differential_scheme.md).
 
 ## Number-type compatibility
 

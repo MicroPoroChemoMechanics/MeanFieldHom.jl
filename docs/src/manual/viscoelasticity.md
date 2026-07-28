@@ -277,7 +277,42 @@ order-2 pipeline ([`homogenize_alv_order2`](@ref) under the hood).
 Result is a `(3n × 3n)` block matrix. See
 `scripts/56_ageing_creep_order2.jl`.
 
-## 7. Symmetry-class fast paths
+The order-2 pipeline implements the bounds, `Dilute`, `DiluteDual`,
+`MoriTanaka`, `Maxwell` and `DifferentialScheme`.
+
+## 7. The differential scheme in ALV
+
+`DifferentialScheme` is available in both tensor orders, with the same
+keywords as the elastic scheme — `trajectory`, `nsteps`, `abstol` /
+`reltol`, `alg`, and `formulation = :stiffness | :compliance` (the dual
+form integrates the creep function `J̃ = C̃^{-vol}`):
+
+```julia
+homogenize_alv(rve, DifferentialScheme(; formulation = :compliance), :C; times = times)
+```
+
+Supported inclusions: ellipsoids and spheroids, `LayeredSphere`, and
+crack families through their density.
+
+One restriction is specific to ALV, and specific to this scheme. The ALV
+Hill kernel is built for an **isotropic** reference; Mori-Tanaka and the
+dilute schemes evaluate it against the (isotropic) matrix, but the
+differential scheme evaluates it against its *running* effective medium,
+which an aligned non-spherical inclusion — or a crack, whose
+contribution is transversely isotropic in its own frame — progressively
+takes out of the isotropic class. Those RVEs raise an explicit
+`ArgumentError` instead of returning a wrong answer. The way out is an
+isotropic orientation average, which is also what randomly oriented
+inclusions or cracks mean physically:
+
+```julia
+add_phase!(rve, :CR, PennyCrack(1.0), Dict(:C => law_M);
+           density = 0.1, symmetrize = :iso)
+```
+
+A non-isotropic ALV matrix is refused for the same reason.
+
+## 8. Symmetry-class fast paths
 
 When all phases share an iso / TI / ortho symmetry with compatible
 axes, [`homogenize_alv`](@ref) automatically routes through a fast
@@ -319,7 +354,7 @@ Matrix(K_iso)                      # back to dense (6n × 6n) on demand
 does not accept them as inputs — use `Matrix(K)` to cross the boundary
 (`scripts/58_alv_kernel_types.jl`).
 
-## 8. Sensitivities (autodiff via ForwardDiff)
+## 9. Sensitivities (autodiff via ForwardDiff)
 
 The pipeline supports `ForwardDiff.Dual` end-to-end so derivatives of
 effective properties wrt RVE parameters are direct.
@@ -392,7 +427,7 @@ The complete suite of sensitivity patterns lives in
 `scripts/59_alv_sensitivities.jl`. Each derivative is validated against
 a central finite difference at `rtol ≤ 1e-7`.
 
-## 9. Validation against ECHOES C++
+## 10. Validation against ECHOES C++
 
 | script | benchmark | agreement |
 | :--- | :--- | :--- |

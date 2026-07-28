@@ -26,11 +26,25 @@
 # ── Helpers : extract scalar (κ, μ) Volterra matrices for each layer ────────
 
 """
-    _bulk_layer_moduli_alv(sphere, C0_law, times) -> (NTuple{N,(M_κ, M_μ)}, M_κ_0, M_μ_0)
+    _ALVReference
+
+Reference medium a layered-sphere ALV kernel is evaluated against:
+either the matrix `ViscoLaw` — the usual case, where the reference is
+fixed and known symbolically — or an already-discretized `(6n × 6n)`
+relaxation matrix.  The latter is what the self-consistent and
+differential schemes need: their reference is the *running* effective
+medium, which exists only as a block matrix.  Same role as the `_at`
+suffix on the crack kernels (`stiffness_contribution_alv_at`).
+"""
+const _ALVReference = Union{ViscoLaw, AbstractMatrix}
+
+"""
+    _bulk_layer_moduli_alv(sphere, C0_ref, times) -> (NTuple{N,(M_κ, M_μ)}, M_κ_0, M_μ_0)
 
 Trapezoidal `(n×n)` matrices of `κ(t,t')` and `μ(t,t')` for every
-layer of `sphere` plus the matrix reference `C0_law` (whose iso
-parameters are extracted from its trapezoidal block matrix).
+layer of `sphere` plus the matrix reference `C0_ref` (whose iso
+parameters are extracted from its trapezoidal block matrix, or read
+directly off it when the reference is already a block matrix).
 
 The per-layer kernels must be `ViscoLaw`s returning iso 4-tensors
 (`TensISO{4,3}`) or stored as elastic `TensISO{4,3}` (auto-wrapped in a
@@ -38,12 +52,12 @@ Heaviside law).
 """
 function _bulk_layer_moduli_alv(
         sphere::LayeredSphere{T, N},
-        C0_law::ViscoLaw,
+        C0_law::_ALVReference,
         times::AbstractVector{<:Real}
     ) where {T, N}
     n = length(times)
     # Matrix kernel : iso scalar matrices.
-    R0 = trapezoidal_matrix(C0_law, times)
+    R0 = C0_law isa ViscoLaw ? trapezoidal_matrix(C0_law, times) : C0_law
     α0, β0 = iso_params_from_blocks(R0)
     M_κ_0 = α0 ./ 3
     M_μ_0 = β0 ./ 2
@@ -265,7 +279,7 @@ remain stable for any non-degenerate modulus.
 """
 function bulk_amplitude_seq_alv(
         sphere::LayeredSphere{T, N},
-        C0_law::ViscoLaw,
+        C0_law::_ALVReference,
         times::AbstractVector{<:Real}
     ) where {T, N}
     layers, M_κ_0, M_μ_0 = _bulk_layer_moduli_alv(sphere, C0_law, times)
@@ -333,7 +347,7 @@ Reference : Hervé-Zaoui 1993 (elastic) ; ECHOES manual ch07
 """
 function bulk_localization_alv(
         sphere::LayeredSphere{T, N},
-        C0_law::ViscoLaw,
+        C0_law::_ALVReference,
         times::AbstractVector{<:Real}
     ) where {T, N}
     inside_amps, A_M, _ = bulk_amplitude_seq_alv(sphere, C0_law, times)
@@ -360,7 +374,7 @@ condition.
 """
 function bulk_state_seq_alv(
         sphere::LayeredSphere{T, N},
-        C0_law::ViscoLaw,
+        C0_law::_ALVReference,
         times::AbstractVector{<:Real}
     ) where {T, N}
     layers, M_κ_0, M_μ_0 = _bulk_layer_moduli_alv(sphere, C0_law, times)
@@ -907,7 +921,7 @@ Hervé-Zaoui 1993 generalized to ALV via [@sanahuja2013].
 """
 function shear_localization_alv(
         sphere::LayeredSphere{T, N},
-        C0_law::ViscoLaw,
+        C0_law::_ALVReference,
         times::AbstractVector{<:Real}
     ) where {T, N}
     n = length(times)
@@ -975,7 +989,7 @@ when the inclusion phase is a `LayeredSphere`.
 """
 function strain_strain_loc_alv(
         sphere::LayeredSphere{T, N},
-        C0_law::ViscoLaw,
+        C0_law::_ALVReference,
         times::AbstractVector{<:Real}
     ) where {T, N}
     α_k = bulk_localization_alv(sphere, C0_law, times)
@@ -1002,7 +1016,7 @@ fraction `f` is `C̃_eff = C̃_0 + f · stiffness_contribution_alv(sphere, …)`
 """
 function stiffness_contribution_alv(
         sphere::LayeredSphere{T, N},
-        C0_law::ViscoLaw,
+        C0_law::_ALVReference,
         times::AbstractVector{<:Real}
     ) where {T, N}
     layers, M_κ_0, M_μ_0 = _bulk_layer_moduli_alv(sphere, C0_law, times)
@@ -1025,6 +1039,26 @@ function stiffness_contribution_alv(
 end
 
 """
+    stiffness_contribution_alv_at(sphere::LayeredSphere, C_ref::AbstractMatrix, times)
+
+Layered-sphere counterpart of
+[`stiffness_contribution_alv_at`](@ref MeanFieldHom.Viscoelasticity.stiffness_contribution_alv_at)
+for cracks: the same size-independent ALV contribution, but against a
+pre-discretized `(6n × 6n)` reference — the *running* effective medium
+of the differential (or self-consistent) ODE rather than the matrix law.
+
+The reference must be isotropic, as everywhere in the layered-sphere ALV
+recurrences.
+"""
+function stiffness_contribution_alv_at(
+        sphere::LayeredSphere,
+        C_ref::AbstractMatrix,
+        times::AbstractVector{<:Real}
+    )
+    return stiffness_contribution_alv(sphere, C_ref, times)
+end
+
+"""
     _membrane_surface_stress_alv(sphere, C0_law, times) -> (a_surf, b_surf)
 
 ALV analog of `_membrane_surface_stress`: the Gurtin–Murdoch surface-stress
@@ -1041,7 +1075,7 @@ bulk :  4 κs · u_r(r)·r / R³ ,   shear:  (2/5)(−κs U + 3κs W + 6μs W)·
 """
 function _membrane_surface_stress_alv(
         sphere::LayeredSphere{T, N},
-        C0_law::ViscoLaw,
+        C0_law::_ALVReference,
         times::AbstractVector{<:Real}
     ) where {T, N}
     n = length(times)

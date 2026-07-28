@@ -220,9 +220,53 @@ end
 # =============================================================================
 
 """
+    _alv_diff_keeps_iso(geom, sym, C_r) -> Bool
+
+Whether a solid phase leaves the **running** effective medium of the
+differential ALV ODE inside the isotropic class.
+
+This matters only for the differential scheme.  The ALV Hill kernel
+[`hill_kernel`](@ref) exists for an isotropic reference **only**, and
+where Mori-Tanaka or the dilute scheme evaluate it against the (fixed,
+isotropic) matrix, the differential scheme evaluates it against the
+running estimate `C̃(τ)` — which an aligned, non-spherical inclusion
+progressively takes out of the iso class.  Rather than silently reading
+`(α, β)` off a matrix that is no longer isotropic, the ODE refuses to
+start (see [`differential_alv`](@ref)).
+
+An isotropic orientation average (`symmetrize = :iso`) restores the
+property for any shape, which is what randomly oriented inclusions or
+cracks mean physically.
+"""
+function _alv_diff_keeps_iso(geom, sym::AbstractSymmetrize, C_r)
+    sym isa IsoSymmetrize && return true
+    geom isa LayeredSphere && return true    # iso contribution by construction
+    return _alv_geom_is_spherical(geom) && (C_r === nothing || _is_iso_block(C_r))
+end
+
+_alv_geom_is_spherical(geom) = false
+_alv_geom_is_spherical(::Ellipsoid{3, Elasticity.Spherical}) = true
+
+# Error message shared by the two ALV differential drivers (order 4 and
+# order 2), naming the offending phase and the two ways out.
+function _alv_diff_iso_error(name::Symbol, what::AbstractString)
+    return throw(
+        ArgumentError(
+            "differential_alv: $what of phase :$(name) would take the " *
+                "running effective medium out of the isotropic class, for which " *
+                "no ALV Hill kernel exists. Either give the phase an isotropic " *
+                "orientation average (`symmetrize = :iso` in `add_phase!`), or " *
+                "use a scheme whose reference medium stays the (isotropic) " *
+                "matrix — Mori-Tanaka, dilute, Maxwell, PCW."
+        )
+    )
+end
+
+"""
     differential_alv(rve::RVE, prop::Symbol; times,
                       nsteps = 100, trajectory = nothing,
-                      abstol = 1e-8, reltol = 1e-6, alg = nothing) -> Matrix{T}
+                      abstol = 1e-8, reltol = 1e-6, alg = nothing,
+                      formulation = :stiffness) -> Matrix{T}
 
 Differential homogenization in ageing linear viscoelasticity, solved
 as a SciML ODE on the fictitious incorporation time `τ ∈ [0, 1]`
@@ -241,6 +285,19 @@ with the volume balance `df = (𝟙 − f ⊗ 𝐔)·dφ` inverted by Sherman-
 Morrison for solid phases (cracks contribute their density derivative
 directly).  `nsteps` is the density of save points along τ ; the
 integration step is controlled by `abstol` / `reltol`.
+
+`formulation = :compliance` integrates the dual ODE on the creep
+function `J̃ = C̃^{-vol}` instead, through `H̃_α = −J̃ ∘ Ñ_α ∘ J̃`, and
+inverts the result — the same choice as the elastic
+[`DifferentialScheme`](@ref).
+
+Supported inclusion geometries: ellipsoids / spheroids (through the ALV
+Hill kernel), `LayeredSphere` (through the bulk + shear ALV
+recurrences) and flat cracks (`CrackDensity`).  Because the reference of
+the ODE is the *running* medium and the ALV Hill kernel is isotropic
+only, every phase must keep that medium isotropic — see
+[`_alv_diff_keeps_iso`](@ref); the ODE throws an explicit `ArgumentError`
+otherwise instead of returning a wrong answer.
 """
 function differential_alv(
         rve::RVE, prop::Symbol;
@@ -249,12 +306,30 @@ function differential_alv(
         trajectory = nothing,
         abstol::Real = 1.0e-8,
         reltol::Real = 1.0e-6,
-        alg = nothing
+        alg = nothing,
+        formulation::Symbol = :stiffness,
+        solver_kwargs::NamedTuple = NamedTuple()
+    )
+    formulation in (:stiffness, :compliance) ||
+        throw(
+        ArgumentError(
+            "differential_alv: formulation must be :stiffness or " *
+                ":compliance; got :$(formulation)"
+        )
     )
     C_M_law = matrix_property(rve, prop)
     C_M_law isa ViscoLaw ||
         throw(ArgumentError("differential_alv: matrix property is not a ViscoLaw"))
     C_M_full = _trapezoidal_relaxation(C_M_law, times, 6)
+    _is_iso_block(C_M_full) ||
+        throw(
+        ArgumentError(
+            "differential_alv: the ALV matrix must be isotropic (the " *
+                "differential ODE evaluates the ALV Hill kernel against its " *
+                "running effective medium, and that kernel exists for an " *
+                "isotropic reference only)."
+        )
+    )
     n = length(times)
 
     # Per-phase data : split solids vs cracks.
@@ -264,23 +339,47 @@ function differential_alv(
         ph = rve.phases[name]
         amt = rve.amounts[name]
         if amt isa Schemes.VolumeFraction
+            sym = phase_symmetrize(rve, name)
+            geom = ph.geometry
+            if geom isa LayeredSphere
+                # Heterogeneous inclusion: the per-layer moduli carried by the
+                # geometry are the material data; the declared phase property
+                # is a placeholder, exactly as in the elastic pipeline.
+                push!(
+                    solid_data, (
+                        name = name, kind = :layered_sphere,
+                        C_r = nothing, geom = geom,
+                        target = amt.value, sym = sym,
+                        U_M = nothing, V_M = nothing,
+                    )
+                )
+                continue
+            end
             C_r_law = phase_property(rve, name, prop)
             C_r_law isa ViscoLaw ||
                 throw(ArgumentError("differential_alv: phase $name property is not a ViscoLaw"))
+            C_r = _trapezoidal_relaxation(C_r_law, times, 6)
+            _alv_diff_keeps_iso(geom, sym, C_r) ||
+                _alv_diff_iso_error(name, "the shape or the anisotropy")
             push!(
                 solid_data, (
-                    name = name,
-                    C_r = _trapezoidal_relaxation(C_r_law, times, 6),
-                    geom = ph.geometry,
+                    name = name, kind = :ellipsoid,
+                    C_r = C_r,
+                    geom = geom,
                     target = amt.value,
-                    sym = phase_symmetrize(rve, name),
-                    U_M = _tens_to_mandel66(tens_UA(ph.geometry)),
-                    V_M = _tens_to_mandel66(tens_VA(ph.geometry)),
+                    sym = sym,
+                    U_M = _tens_to_mandel66(tens_UA(geom)),
+                    V_M = _tens_to_mandel66(tens_VA(geom)),
                 )
             )
         else  # CrackDensity
             ph.geometry isa MFH_Core.AbstractCrack ||
                 throw(ArgumentError("differential_alv: phase $name has CrackDensity but geometry $(typeof(ph.geometry)) is not a crack"))
+            sym = phase_symmetrize(rve, name)
+            # A crack contributes a TI tensor in its own frame; only an
+            # isotropic orientation average keeps the running medium iso.
+            sym isa IsoSymmetrize ||
+                _alv_diff_iso_error(name, "the transversely isotropic crack contribution")
             Rn_mat = haskey(ph.properties, :Rn) ?
                 _trapezoidal_relaxation_scalar(ph.properties[:Rn], times) : nothing
             Rt_mat = haskey(ph.properties, :Rt) ?
@@ -290,7 +389,7 @@ function differential_alv(
                     name = name,
                     geom = ph.geometry,
                     target = amt.value,
-                    sym = phase_symmetrize(rve, name),
+                    sym = sym,
                     Rn_mat = Rn_mat,
                     Rt_mat = Rt_mat,
                 )
@@ -307,7 +406,9 @@ function differential_alv(
     # every input (Dual-safe, cf. `_alv_promoted_eltype`).
     Tp = eltype(C_M_full)
     for sd in solid_data
-        Tp = promote_type(Tp, eltype(sd.C_r), typeof(sd.target), eltype(sd.U_M))
+        Tp = promote_type(Tp, typeof(sd.target))
+        sd.C_r === nothing || (Tp = promote_type(Tp, eltype(sd.C_r)))
+        sd.U_M === nothing || (Tp = promote_type(Tp, eltype(sd.U_M)))
     end
     for cd in crack_data
         Tp = promote_type(Tp, typeof(cd.target))
@@ -315,12 +416,16 @@ function differential_alv(
         cd.Rt_mat === nothing || (Tp = promote_type(Tp, eltype(cd.Rt_mat)))
     end
     sz = 6 * n
-    x0 = vec(Tp.(C_M_full))
+    dual = formulation === :compliance
+    # The dual form integrates the creep function J̃ = C̃^{-vol}.
+    x0 = vec(Tp.(dual ? volterra_inverse(C_M_full; block_size = 6) : C_M_full))
     ode_p = (
         n = n, sz = sz,
         solid_data = solid_data,
         crack_data = crack_data,
         paths = paths,
+        times = times,
+        dual = dual,
     )
     rhs! = (du, u, p, τ) -> _diff_alv_ode_rhs!(du, u, p, τ)
     prob = ODEProblem(rhs!, x0, (0.0, 1.0), ode_p)
@@ -329,32 +434,48 @@ function differential_alv(
         alg === nothing ? Tsit5() : alg;
         abstol, reltol,
         saveat = range(0.0, 1.0; length = max(nsteps, 1) + 1),
-        dense = false
+        dense = false,
+        solver_kwargs...
     )
-    return reshape(sol.u[end], sz, sz)
+    P_end = reshape(sol.u[end], sz, sz)
+    return dual ? volterra_inverse(P_end; block_size = 6) : P_end
 end
 
 # ── ALV ODE RHS ─────────────────────────────────────────────────────────────
 
 function _diff_alv_ode_rhs!(du, u, p, τ)
     n, sz = p.n, p.sz
-    C_curr = reshape(u, sz, sz)
+    # In the dual form the state carries J̃ and every phase kernel is still
+    # evaluated against the running relaxation C̃ = J̃^{-vol}; each stiffness
+    # contribution Ñ is mapped to its compliance counterpart by the exact
+    # identity H̃ = − J̃ ∘ Ñ ∘ J̃ (same relation as
+    # `stiffness_contribution_alv(crack, …)`, read backwards).
+    P_curr = reshape(u, sz, sz)
+    C_curr = p.dual ? volterra_inverse(P_curr; block_size = 6) : P_curr
+    J_curr = p.dual ? P_curr : nothing
     Δ = zeros(eltype(u), sz, sz)
     Id = _identity_alv(n, eltype(u))
+    push_contrib! = (contrib, weight) -> begin
+        term = p.dual ? -(J_curr * contrib * J_curr) : contrib
+        @. Δ += weight * term
+        nothing
+    end
 
     n_solid = length(p.solid_data)
-    if n_solid > 0
-        # Sherman-Morrison : dφ_α/dτ = df_α/dτ + (f_α / f_0) · sum(df).
-        f = Vector{eltype(u)}(undef, n_solid)
-        df = Vector{eltype(u)}(undef, n_solid)
-        @inbounds for (i, r) in enumerate(p.solid_data)
-            nt = p.paths[r.name]
-            f[i] = nt.f(τ) * r.target
-            df[i] = nt.df(τ) * r.target
-        end
-        f0 = one(eltype(u)) - sum(f; init = zero(eltype(u)))
-        sum_df = sum(df; init = zero(eltype(u)))
+    # Sherman-Morrison : dφ_α/dτ = df_α/dτ + (f_α / f_0) · sum(df).  Only
+    # solid phases enter the volume balance; the sum is needed by the crack
+    # loop below as well, so it is computed unconditionally.
+    f = Vector{eltype(u)}(undef, n_solid)
+    df = Vector{eltype(u)}(undef, n_solid)
+    @inbounds for (i, r) in enumerate(p.solid_data)
+        nt = p.paths[r.name]
+        f[i] = nt.f(τ) * r.target
+        df[i] = nt.df(τ) * r.target
+    end
+    f0 = one(eltype(u)) - sum(f; init = zero(eltype(u)))
+    sum_df = sum(df; init = zero(eltype(u)))
 
+    if n_solid > 0
         # Pre-compute Volterra inverses against C_curr (shared across solid phases).
         α_c, β_c = iso_params_from_blocks(C_curr)
         M_long = @. (α_c + 2 * β_c) / 3
@@ -365,20 +486,25 @@ function _diff_alv_ode_rhs!(du, u, p, τ)
         @inbounds for (i, r) in enumerate(p.solid_data)
             dφᵢ = df[i] + (f[i] / f0) * sum_df
             iszero(dφᵢ) && continue
-            # Per-phase Hill kernel against C_curr.
-            D_M = r.V_M .- r.U_M
-            P_r = zeros(eltype(u), sz, sz)
-            for ii in 1:n, jj in 1:ii
-                block = J_long[ii, jj] .* r.U_M .+ J_shear[ii, jj] .* D_M
-                rows = (6 * (ii - 1) + 1):(6 * ii)
-                cols = (6 * (jj - 1) + 1):(6 * jj)
-                P_r[rows, cols] = block
+            contrib = if r.kind === :layered_sphere
+                # No Hill kernel: the bulk + shear ALV recurrences give the
+                # contribution of the whole composite sphere directly.
+                stiffness_contribution_alv_at(r.geom, C_curr, p.times)
+            else
+                # Per-phase Hill kernel against C_curr.
+                D_M = r.V_M .- r.U_M
+                P_r = zeros(eltype(u), sz, sz)
+                for ii in 1:n, jj in 1:ii
+                    block = J_long[ii, jj] .* r.U_M .+ J_shear[ii, jj] .* D_M
+                    rows = (6 * (ii - 1) + 1):(6 * ii)
+                    cols = (6 * (jj - 1) + 1):(6 * jj)
+                    P_r[rows, cols] = block
+                end
+                ΔC = r.C_r - C_curr
+                A_dil = volterra_inverse(Id + P_r * ΔC; block_size = 6)
+                ΔC * A_dil
             end
-            ΔC = r.C_r - C_curr
-            A_dil = volterra_inverse(Id + P_r * ΔC; block_size = 6)
-            contrib = ΔC * A_dil
-            contrib = _maybe_symmetrize_alv(contrib, r.sym)
-            @. Δ += dφᵢ * contrib
+            push_contrib!(_maybe_symmetrize_alv(contrib, r.sym), dφᵢ)
         end
     end
 
@@ -386,17 +512,20 @@ function _diff_alv_ode_rhs!(du, u, p, τ)
     # crack ΔC̃^crack is the dilute stiffness contribution evaluated
     # against the running matrix `C_curr` (with optional Sevostianov
     # interface stiffness correction).
+    # As in the elastic scheme, a crack family carries no volume but is
+    # still diluted by the solid increments:
+    #     dφ_c^ε = dε_c + (ε_c / f_0) Σ_{j solid} df_j .
     @inbounds for r in p.crack_data
         nt = p.paths[r.name]
-        dε = nt.df(τ) * r.target
-        iszero(dε) && continue
+        εᶜ = nt.f(τ) * r.target
+        dφᶜ = nt.df(τ) * r.target + (εᶜ / f0) * sum_df
+        iszero(dφᶜ) && continue
         Ñ = stiffness_contribution_alv_at(
             r.geom, C_curr;
             Rn_mat = r.Rn_mat, Rt_mat = r.Rt_mat
         )
         ΔC = delta_stiffness_alv(r.geom, Ñ, 1.0)
-        ΔC = _maybe_symmetrize_alv(ΔC, r.sym)
-        @. Δ += dε * ΔC
+        push_contrib!(_maybe_symmetrize_alv(ΔC, r.sym), dφᶜ)
     end
 
     du .= vec(Δ)

@@ -795,21 +795,32 @@ end
 
 # Differential ALV — SciML ODE on the fictitious incorporation time τ.
 function _homogenize_alv_dispatch(
-        rve::RVE, sch::DifferentialScheme, ::Symbol,
+        rve::RVE, sch::DifferentialScheme, prop::Symbol,
         times::AbstractVector,
         C_0, C_phases, A_duts, contribs,
         H_phases, fractions, f_M; kw...
     )
-    nsteps = get(sch.options, :nsteps, 100)
-    abstol = get(sch.options, :abstol, 1.0e-8)
-    reltol = get(sch.options, :reltol, 1.0e-6)
-    alg = get(sch.options, :alg, nothing)
     return differential_alv(
-        rve, :C; times = times,
-        nsteps = nsteps,
+        rve, prop; times = times,
+        _diff_alv_options(sch)...
+    )
+end
+
+# Solver options shared by the order-4 and order-2 ALV differential
+# drivers.  Mirrors the elastic `DifferentialScheme` contract: the
+# recognised keywords are read out, everything else is forwarded to
+# `OrdinaryDiffEq.solve`.
+function _diff_alv_options(sch::DifferentialScheme)
+    return (
+        nsteps = get(sch.options, :nsteps, 100),
         trajectory = sch.trajectory,
-        abstol = abstol,
-        reltol = reltol,
-        alg = alg
+        abstol = get(sch.options, :abstol, 1.0e-8),
+        reltol = get(sch.options, :reltol, 1.0e-6),
+        alg = get(sch.options, :alg, nothing),
+        formulation = get(sch.options, :formulation, :stiffness),
+        solver_kwargs = Base.structdiff(
+            sch.options,
+            NamedTuple{(:nsteps, :abstol, :reltol, :alg, :formulation)}
+        ),
     )
 end

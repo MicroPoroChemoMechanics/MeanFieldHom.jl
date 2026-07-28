@@ -211,20 +211,28 @@ phase ramps over its allotted steps; and so on.
 struct Sequential <: DifferentialTrajectory
     order::Vector{Symbol}
 end
+Sequential(first::Symbol, rest::Symbol...) = Sequential(Symbol[first, rest...])
 
 """
     CustomPath(path::Dict{Symbol, <:AbstractVector{<:Real}}) <: DifferentialTrajectory
+    CustomPath(:phase => values, ...)
 
 Explicit per-phase trajectory. `path[:phase]` must be a length-`N`
 monotone vector with `path[:phase][1] = 0` and `path[:phase][end] = 1`,
 where `N` is the number of differential steps.
+
+The pair form is a convenience constructor for the same thing:
+`CustomPath(:I1 => [0.0, 0.5, 1.0], :I2 => [0.0, 0.2, 1.0])`.
 """
 struct CustomPath{D <: AbstractDict{Symbol, <:AbstractVector{<:Real}}} <: DifferentialTrajectory
     path::D
 end
+CustomPath(first::Pair{Symbol}, rest::Pair{Symbol}...) =
+    CustomPath(Dict(first, rest...))
 
 """
     Path(path::Dict{Symbol, <:Function}) <: DifferentialTrajectory
+    Path(:phase => τ -> f(τ), ...)
 
 Explicit per-phase trajectory as a callable.  `path[:phase]` is a
 function of the fictitious incorporation time `τ ∈ [0, 1]` returning
@@ -249,15 +257,22 @@ into the increments `dφ_α / dτ`.
 The single-phase case is degenerate (`f₁` itself serves as `τ`) and
 does not require a `Path` — the default [`Proportional`](@ref) is
 sufficient.
+
+The pair form is a convenience constructor for the same thing:
+
+```julia
+Path(:I1 => τ -> τ^2, :I2 => τ -> 2τ - τ^2)
+```
 """
 struct Path{D <: AbstractDict{Symbol, <:Function}} <: DifferentialTrajectory
     path::D
 end
+Path(first::Pair{Symbol}, rest::Pair{Symbol}...) = Path(Dict(first, rest...))
 
 """
     DifferentialScheme(; trajectory = Proportional(), nsteps::Int = 100,
                          abstol::Real = 1e-8, reltol::Real = 1e-6,
-                         alg = nothing, kwargs...)
+                         alg = nothing, formulation = :stiffness, kwargs...)
 
 Differential scheme : integrates the Norris ODE on the fictitious
 incorporation time `τ ∈ [0, 1]` ([Norris 1985](@cite norris1985)) :
@@ -276,17 +291,30 @@ along the chosen `trajectory`.
 
 - `trajectory` — one of [`Proportional`](@ref), [`Sequential`](@ref),
   [`CustomPath`](@ref), [`Path`](@ref).  Default `Proportional()`.
+- `formulation` — `:stiffness` (default) integrates the ODE above;
+  `:compliance` integrates its exact dual
+  ``\\mathrm d \\mathbb S^{hom} / \\mathrm d \\tau =
+  \\sum_i \\dot\\varphi_i \\, \\mathbb H_i(\\mathbb S^{hom})``
+  and inverts the result, so both return the same declared property.
+  The two agree analytically (`ℍ = −𝕊 : 𝐍 : 𝕊`) and differ only in
+  which variable carries the solver's error control: prefer
+  `:compliance` for a medium softening towards percolation (porous,
+  cracked), `:stiffness` for a stiffening one.
 - `nsteps` — density of save points along `τ` (passed as `saveat` to
   the SciML ODE solver).  The integration step is controlled by
-  `abstol` / `reltol`, **not** by `nsteps`.
+  `abstol` / `reltol`, **not** by `nsteps`.  See
+  [`differential_path`](@ref) to read the saved states back.
 - `abstol`, `reltol` — ODE solver tolerances (forwarded to
   `OrdinaryDiffEq.solve`).
 - `alg` — explicit ODE algorithm.  `nothing` selects `Tsit5()` (5th
   order adaptive Runge-Kutta).  Pass any `OrdinaryDiffEqAlgorithm`
-  instance to override (e.g. `Vern9()` for higher accuracy, `Rosenbrock23()`
-  for stiff cases).
-- `kwargs...` — additional kwargs stored verbatim and forwarded to the
-  scheme-specific dispatch.
+  instance to override (e.g. `Vern9()` for higher accuracy).  Implicit
+  algorithms must be built with a non-AD Jacobian
+  (`Rosenbrock23(autodiff = AutoFiniteDiff())`): the RHS calls the
+  Hill-tensor backends, which are not differentiable with respect to
+  the ODE state.
+- `kwargs...` — any other keyword is forwarded verbatim to
+  `OrdinaryDiffEq.solve` (`maxiters`, `dtmax`, `dt`, `callback`, …).
 """
 struct DifferentialScheme{P <: DifferentialTrajectory, K <: NamedTuple} <: HomogenizationScheme
     trajectory::P
@@ -298,9 +326,10 @@ DifferentialScheme(;
     abstol::Real = 1.0e-8,
     reltol::Real = 1.0e-6,
     alg = nothing,
+    formulation::Symbol = :stiffness,
     kwargs...
 ) =
     DifferentialScheme(
     trajectory,
-    (; nsteps, abstol, reltol, alg, kwargs...)
+    (; nsteps, abstol, reltol, alg, formulation, kwargs...)
 )

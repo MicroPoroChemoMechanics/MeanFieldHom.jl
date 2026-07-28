@@ -153,6 +153,21 @@ function _crack_interface_α(rve::RVE, name::Symbol)
 end
 
 # ── Compliance / resistivity contribution ────────────────────────────────────
+#
+#  Heterogeneous inclusions (`LayeredSphere`, `LayeredSpheroid`) have NO
+#  representative phase property: `phase_property(rve, name, prop)` is a
+#  placeholder that every stiffness-side kernel deliberately ignores (see
+#  `LayeredSpheres/scheme_integration.jl`).  Feeding it to the generic
+#  `compliance_contribution` — which does use `inv(C₁)` — silently returns a
+#  value that depends on that meaningless declaration.  The compliance
+#  contribution is instead obtained from the stiffness one through the exact
+#  identity
+#
+#      ℍ = − 𝕊₀ : 𝐍 : 𝕊₀ ,      (resp.  ℍ_R = − 𝐑₀ ⋅ 𝐍_K ⋅ 𝐑₀)
+#
+#  which holds for ANY inclusion (for a homogeneous one it reproduces
+#  `(𝕊₁ − 𝕊₀) : 𝔸_σσ` exactly, since 𝔹 = ℂ₁ : 𝔸 there).  The same identity
+#  is used on the ALV side by `stiffness_contribution_alv(crack, …)`.
 
 """
     _phase_compliance_contribution(rve, name, prop::Symbol, P₀; kw...)
@@ -170,7 +185,12 @@ function _phase_compliance_contribution(
     P₀_proj = _project_matrix(P₀, sym)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        H = compliance_contribution(geom, P_i, P₀_proj; kw...)
+        H = if MFH_Core.is_homogeneous_inclusion(geom)
+            compliance_contribution(geom, P_i, P₀_proj; kw...)
+        else
+            S₀ = inv(P₀_proj)
+            -(S₀ ⊡ MFH_Core.stiffness_contribution(geom, P_i, P₀_proj; kw...) ⊡ S₀)
+        end
         return scale_by_amount(a, _apply_symmetrize(H, sym))
     else
         K_int = _crack_interface_K4(rve, name)
@@ -189,7 +209,12 @@ function _phase_compliance_contribution(
     P₀_proj = _project_matrix(P₀, sym)
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
-        R = MFH_Core.resistivity_contribution(geom, P_i, P₀_proj; kw...)
+        R = if MFH_Core.is_homogeneous_inclusion(geom)
+            MFH_Core.resistivity_contribution(geom, P_i, P₀_proj; kw...)
+        else
+            R₀ = inv(P₀_proj)
+            -(R₀ ⋅ MFH_Core.conductivity_contribution(geom, P_i, P₀_proj; kw...) ⋅ R₀)
+        end
         return scale_by_amount(a, _apply_symmetrize(R, sym))
     else
         α_int = _crack_interface_α(rve, name)

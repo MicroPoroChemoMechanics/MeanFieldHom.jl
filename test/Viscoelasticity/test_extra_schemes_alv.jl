@@ -7,6 +7,11 @@ using LinearAlgebra
 #  test_extra_schemes_alv.jl — PCW / ASC / DIFF ALV vs elastic limit and
 #  vs the existing ALV schemes (consistency on identity / pure-matrix
 #  edge cases).
+#
+#  The differential ALV part also covers: the compliance formulation
+#  (elastic limit and genuinely ageing), `LayeredSphere` and crack phases,
+#  the isotropy guard on the running effective medium, and the order-2
+#  (conduction / diffusion) driver.
 # =============================================================================
 
 const _to_mandel = MeanFieldHom.Viscoelasticity._tens_to_mandel66
@@ -122,4 +127,161 @@ end
     R100 = homogenize_alv(rve, DifferentialScheme(; nsteps = 100), :C; times = ctx.times)
     # Higher nsteps should converge — finite difference in nsteps is small.
     @test isapprox(R20, R100; atol = 1.0e-3, rtol = 1.0e-3)
+end
+
+# =============================================================================
+#  Differential ALV : compliance formulation, layered spheres, cracks,
+#  order-2 (conduction), and the isotropy guard.
+# =============================================================================
+
+@testset "differential_alv — stiffness ≡ compliance formulation" begin
+    ctx = _setup_2phase_elastic()
+    rve = _build_alv(ctx)
+    tol = (abstol = 1.0e-12, reltol = 1.0e-10)
+    R_s = homogenize_alv(rve, DifferentialScheme(; tol...), :C; times = ctx.times)
+    R_c = homogenize_alv(
+        rve, DifferentialScheme(; formulation = :compliance, tol...), :C;
+        times = ctx.times
+    )
+    @test isapprox(R_s, R_c; rtol = 1.0e-8, atol = 1.0e-8)
+
+    # Genuinely ageing matrix — the equivalence is not an artefact of the
+    # elastic limit.
+    law_M = maxwell_iso(20.0, 8.0, 2.0, 1.5)
+    t = collect(range(0.0, 2.0; length = 5))
+    aged = RVE(:M)
+    add_matrix!(aged, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => law_M))
+    add_phase!(
+        aged, :I, Ellipsoid(1.0, 1.0, 1.0),
+        Dict(:C => heaviside_law(ctx.C_I_t)); fraction = 0.25
+    )
+    A_s = homogenize_alv(aged, DifferentialScheme(; tol...), :C; times = t)
+    A_c = homogenize_alv(
+        aged, DifferentialScheme(; formulation = :compliance, tol...), :C; times = t
+    )
+    @test isapprox(A_s, A_c; rtol = 1.0e-8, atol = 1.0e-8)
+end
+
+@testset "differential_alv — LayeredSphere phase (elastic limit)" begin
+    sphere = LayeredSphere(
+        (0.8, 1.0),
+        (TensISO{3}(3 * 80.0, 2 * 35.0), TensISO{3}(3 * 5.0, 2 * 2.0))
+    )
+    C_M_t = TensISO{3}(3 * 20.0, 2 * 8.0)
+    C_I_t = TensISO{3}(3 * 50.0, 2 * 20.0)
+    times = collect(range(0.0, 1.0; length = 4))
+    n = length(times)
+    sch = DifferentialScheme(; abstol = 1.0e-12, reltol = 1.0e-10)
+
+    rve_alv = RVE(:M)
+    add_matrix!(rve_alv, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => heaviside_law(C_M_t)))
+    add_phase!(rve_alv, :I, sphere, Dict(:C => heaviside_law(C_I_t)); fraction = 0.3)
+
+    rve_el = RVE(:M)
+    add_matrix!(rve_el, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_M_t))
+    add_phase!(rve_el, :I, sphere, Dict(:C => C_I_t); fraction = 0.3)
+
+    C_alv = homogenize_alv(rve_alv, sch, :C; times = times)
+    _check_alv_elastic(C_alv, _to_mandel(homogenize(rve_el, sch, :C)), n; atol = 1.0e-8, rtol = 1.0e-8)
+end
+
+@testset "differential_alv — crack phase (elastic limit)" begin
+    C_M_t = TensISO{3}(3 * 20.0, 2 * 8.0)
+    times = collect(range(0.0, 1.0; length = 4))
+    n = length(times)
+
+    rve_alv = RVE(:M)
+    add_matrix!(rve_alv, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => heaviside_law(C_M_t)))
+    add_phase!(
+        rve_alv, :CR, PennyCrack(1.0), Dict(:C => heaviside_law(C_M_t));
+        density = 0.1, symmetrize = :iso
+    )
+
+    rve_el = RVE(:M)
+    add_matrix!(rve_el, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_M_t))
+    add_phase!(rve_el, :CR, PennyCrack(1.0), Dict(:C => C_M_t); density = 0.1, symmetrize = :iso)
+
+    C_alv = homogenize_alv(rve_alv, DifferentialScheme(), :C; times = times)
+    _check_alv_elastic(
+        C_alv, _to_mandel(homogenize(rve_el, DifferentialScheme(), :C)), n;
+        atol = 1.0e-6, rtol = 1.0e-6
+    )
+end
+
+# The ALV Hill kernel is built for an isotropic reference; the differential
+# scheme evaluates it against its RUNNING medium, so anything that takes that
+# medium out of the iso class must be refused, not silently mis-evaluated.
+@testset "differential_alv — isotropy guard" begin
+    C_M_t = TensISO{3}(3 * 20.0, 2 * 8.0)
+    C_I_t = TensISO{3}(3 * 50.0, 2 * 20.0)
+    times = collect(range(0.0, 1.0; length = 4))
+
+    # Aligned (non-spherical) inclusion.
+    aligned = RVE(:M)
+    add_matrix!(aligned, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => heaviside_law(C_M_t)))
+    add_phase!(aligned, :I, Spheroid(0.2), Dict(:C => heaviside_law(C_I_t)); fraction = 0.2)
+    @test_throws ArgumentError homogenize_alv(aligned, DifferentialScheme(), :C; times = times)
+
+    # …accepted with an isotropic orientation average.
+    randomized = RVE(:M)
+    add_matrix!(randomized, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => heaviside_law(C_M_t)))
+    add_phase!(
+        randomized, :I, Spheroid(0.2), Dict(:C => heaviside_law(C_I_t));
+        fraction = 0.2, symmetrize = :iso
+    )
+    @test size(homogenize_alv(randomized, DifferentialScheme(), :C; times = times)) ==
+        (6 * length(times), 6 * length(times))
+
+    # A crack without isotropic orientation average leaks its TI contribution.
+    cracked = RVE(:M)
+    add_matrix!(cracked, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => heaviside_law(C_M_t)))
+    add_phase!(cracked, :CR, PennyCrack(1.0), Dict(:C => heaviside_law(C_M_t)); density = 0.1)
+    @test_throws ArgumentError homogenize_alv(cracked, DifferentialScheme(), :C; times = times)
+
+    # A non-isotropic ALV matrix is refused outright.
+    n̂ = (0.0, 0.0, 1.0)
+    C_TI = TensND.TensTI{4, Float64, 5}((20.0, 30.0, 10.0, 8.0, 9.0), n̂)
+    ti_matrix = RVE(:M)
+    add_matrix!(ti_matrix, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => heaviside_law(C_TI)))
+    add_phase!(
+        ti_matrix, :I, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => heaviside_law(C_I_t));
+        fraction = 0.2
+    )
+    @test_throws ArgumentError homogenize_alv(ti_matrix, DifferentialScheme(), :C; times = times)
+end
+
+@testset "differential_alv_order2 — elastic limit and dual form" begin
+    K_M_t = TensISO{3}(1.0)
+    K_I_t = TensISO{3}(10.0)
+    times = collect(range(0.0, 1.0; length = 4))
+    n = length(times)
+    sch(form) = DifferentialScheme(;
+        formulation = form, abstol = 1.0e-12, reltol = 1.0e-10
+    )
+
+    rve_alv = RVE(:M)
+    add_matrix!(rve_alv, Ellipsoid(1.0, 1.0, 1.0), Dict(:K => heaviside_law(K_M_t)))
+    add_phase!(
+        rve_alv, :I, Ellipsoid(1.0, 1.0, 1.0), Dict(:K => heaviside_law(K_I_t));
+        fraction = 0.3
+    )
+
+    rve_el = RVE(:M)
+    add_matrix!(rve_el, Ellipsoid(1.0, 1.0, 1.0), Dict(:K => K_M_t))
+    add_phase!(rve_el, :I, Ellipsoid(1.0, 1.0, 1.0), Dict(:K => K_I_t); fraction = 0.3)
+    K_ref = Array(homogenize(rve_el, sch(:stiffness), :K))
+
+    K_alv = homogenize_alv(rve_alv, sch(:stiffness), :K; times = times)
+    @test size(K_alv) == (3n, 3n)
+    for i in 1:n
+        rows = (3 * (i - 1) + 1):(3 * i)
+        @test isapprox(K_alv[rows, rows], K_ref; atol = 1.0e-9)
+        for j in 1:(i - 1)
+            cols = (3 * (j - 1) + 1):(3 * j)
+            @test maximum(abs, K_alv[rows, cols]) ≤ 1.0e-9
+        end
+    end
+
+    K_dual = homogenize_alv(rve_alv, sch(:compliance), :K; times = times)
+    @test isapprox(K_alv, K_dual; rtol = 1.0e-8, atol = 1.0e-8)
 end

@@ -71,6 +71,7 @@ makedocs(;
             "theory/hill_tensors.md",
             "theory/localization.md",
             "theory/homogenization.md",
+            "theory/differential_scheme.md",
             "theory/cod_tensors.md",
             "theory/thermal_cracks.md",
             "theory/layered_sphere.md",

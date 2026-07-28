@@ -32,7 +32,6 @@ Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
 using MeanFieldHom
 using TensND
-using OrdinaryDiffEq      # for `solve` access if user wants intermediate states
 using Plots
 using Printf
 
@@ -54,61 +53,38 @@ end
 
 # ─── Compute C^hom along τ for each trajectory ─────────────────────────────
 #
-# To get the full curve `C^hom(τ)` we ask the scheme for a high
-# `nsteps` (saveat density along τ) and read the saved trajectory.
+# `differential_path` returns the states saved along τ (`nsteps + 1` of
+# them), instead of the τ = 1 value that `homogenize` returns.
 
 const NSTEPS = 200
-const TAU = collect(range(0.0, 1.0; length = NSTEPS + 1))
 
 function eval_path(traj)
-    rve = build_rve()
-    # The current public homogenize() returns C^hom(τ = 1) only.  To
-    # recover the saved trajectory `C^hom(τ)` we re-build the ODE
-    # integration here using the same RHS — keeps the demo
-    # self-contained and explicit.
-    paths = MeanFieldHom.Schemes._resolve_paths(traj, rve, NSTEPS)
-    P_init = matrix_property(rve, :C)
-    sym_tag = MeanFieldHom.Schemes._symmetry_tag(P_init)
-    x0 = collect(TensND.get_data(P_init))
-    ode_p = (
-        rve = rve, prop = :C, paths = paths,
-        solid_names = [:I1, :I2], crack_names = Symbol[],
-        targets = Dict(:I1 => F1, :I2 => F2),
-        sym_tag = sym_tag, proto = P_init, kw = NamedTuple(),
+    scheme = DifferentialScheme(;
+        trajectory = traj, nsteps = NSTEPS,
+        abstol = 1.0e-9, reltol = 1.0e-7
     )
-    rhs! = (du, u, p, τ) -> MeanFieldHom.Schemes._diff_ode_rhs!(du, u, p, τ)
-    prob = ODEProblem(rhs!, x0, (0.0, 1.0), ode_p)
-    sol = solve(
-        prob, Tsit5(); abstol = 1.0e-9, reltol = 1.0e-7,
-        saveat = TAU, dense = false
-    )
-    # Extract bulk and shear moduli of every saved state.
-    α = [u[1] for u in sol.u]   # = 3 k_eff
-    β = [u[2] for u in sol.u]   # = 2 μ_eff
-    return α ./ 3, β ./ 2
+    τ, Cs = differential_path(build_rve(), scheme, :C)
+    kμ = k_mu.(Cs)
+    return τ, first.(kμ), last.(kμ)
 end
 
 println("Computing four loading-path scenarios on the same target (f₁=$F1, f₂=$F2)…")
 
 paths_to_run = (
     ("Proportional", Proportional()),
-    ("Sequential :I1 → :I2", Sequential([:I1, :I2])),
-    ("Sequential :I2 → :I1", Sequential([:I2, :I1])),
+    ("Sequential :I1 → :I2", Sequential(:I1, :I2)),
+    ("Sequential :I2 → :I1", Sequential(:I2, :I1)),
     (
-        "Path (I1 ∝ τ²,  I2 ∝ 2τ−τ²)", Path(
-            Dict(
-                :I1 => τ -> τ^2,
-                :I2 => τ -> 2τ - τ^2,
-            )
-        ),
+        "Path (I1 ∝ τ²,  I2 ∝ 2τ−τ²)",
+        Path(:I1 => τ -> τ^2, :I2 => τ -> 2τ - τ^2),
     ),
 )
 
-results = Dict{String, Tuple{Vector{Float64}, Vector{Float64}}}()
+results = Dict{String, NTuple{3, Vector{Float64}}}()
 for (name, traj) in paths_to_run
     println("  $name…")
-    k, μ = eval_path(traj)
-    results[name] = (k, μ)
+    τ, k, μ = eval_path(traj)
+    results[name] = (τ, k, μ)
     @printf "    k_eff(τ=1) = %.5f   μ_eff(τ=1) = %.5f\n" k[end] μ[end]
 end
 
@@ -129,9 +105,9 @@ p_μ = plot(
 
 colors = (:black, :red, :blue, :green)
 for (i, (name, _)) in enumerate(paths_to_run)
-    k, μ = results[name]
-    plot!(p_k, TAU, k; label = name, color = colors[i], linewidth = 2)
-    plot!(p_μ, TAU, μ; label = name, color = colors[i], linewidth = 2)
+    τ, k, μ = results[name]
+    plot!(p_k, τ, k; label = name, color = colors[i], linewidth = 2)
+    plot!(p_μ, τ, μ; label = name, color = colors[i], linewidth = 2)
 end
 
 fig = plot(p_k, p_μ; layout = (1, 2), size = (1400, 600))
@@ -149,7 +125,7 @@ println(" Effective moduli at τ = 1 (same target volume fractions, different pa
 println("═══════════════════════════════════════════════════════════════════")
 @printf "  %-32s  %-12s  %-12s\n" "trajectory" "k_eff" "μ_eff"
 for (name, _) in paths_to_run
-    k, μ = results[name]
+    _, k, μ = results[name]
     @printf "  %-32s  %-12.5f  %-12.5f\n" name k[end] μ[end]
 end
 println()

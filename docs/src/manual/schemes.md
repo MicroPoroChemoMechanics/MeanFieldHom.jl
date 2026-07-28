@@ -101,19 +101,60 @@ All three are `ForwardDiff`-compatible — differentiating `homogenize` through 
 `Dual`s ever form (see [`derivative`](@ref) and the
 [Nonlinear solvers tutorial](../tutorials/nonlinear_solvers.md)).
 
-## Differential trajectories
+## Differential scheme
+
+### Trajectories
 
 ```julia
-homogenize(rve, DifferentialScheme(; nsteps = 200))                  # Proportional (default)
-homogenize(rve, DifferentialScheme(; trajectory = Sequential([:I1, :I2])))
-custom = CustomPath(Dict(:I => collect(range(0.0, 1.0; length = 101))))
-homogenize(rve, DifferentialScheme(; trajectory = custom, nsteps = 100))
+homogenize(rve, DifferentialScheme())                             # Proportional (default)
+homogenize(rve, DifferentialScheme(; trajectory = Sequential(:I1, :I2)))
+homogenize(rve, DifferentialScheme(; trajectory = Path(:I1 => τ -> τ^2, :I2 => τ -> 2τ - τ^2)))
+homogenize(rve, DifferentialScheme(; trajectory = CustomPath(:I => collect(range(0.0, 1.0; length = 101)))))
 ```
 
+Every trajectory takes either a `Dict` or the pair form shown above.
 For multi-phase RVEs the trajectory choice is *physical* — the schemes
-agree in the dilute limit and diverge at finite fractions. Cracks
-(`CrackDensity`) are added at constant target density per step
-regardless of the trajectory.
+agree in the dilute limit and diverge at finite fractions. Cracks follow
+the trajectory like any other phase, their target being the final
+density; because they carry no volume they enter the volume balance
+differently (see
+[The differential scheme](../theory/differential_scheme.md)).
+
+### Stiffness or compliance
+
+```julia
+homogenize(rve, DifferentialScheme(), :C)                             # stiffness (default)
+homogenize(rve, DifferentialScheme(; formulation = :compliance), :C)  # compliance
+```
+
+Both integrate the same trajectory and return the same declared
+property; they differ only in which variable carries the solver's error
+control. Prefer `:compliance` for a medium softening towards percolation
+(porous, cracked), `:stiffness` for a stiffening one.
+
+### Solver control
+
+The ODE is solved by `OrdinaryDiffEq`. `nsteps` sets **only** the density
+of saved points along `τ`; the step size is adaptive and governed by the
+tolerances.
+
+```julia
+DifferentialScheme(; alg = Vern9(), abstol = 1e-12, reltol = 1e-10)
+DifferentialScheme(; maxiters = 10^7)   # unrecognised kwargs go to `solve`
+```
+
+Implicit algorithms need a non-AD Jacobian
+(`Rosenbrock23(autodiff = AutoFiniteDiff())`): the RHS calls the
+Hill-tensor backends, which are not differentiable with respect to the
+ODE state.
+
+To follow the effective property *along* the incorporation path rather
+than at `τ = 1` only:
+
+```julia
+τ, Cs = differential_path(rve, DifferentialScheme(; nsteps = 200), :C)
+ks = [k_mu(C)[1] for C in Cs]
+```
 
 ## Frequency-domain viscoelasticity
 

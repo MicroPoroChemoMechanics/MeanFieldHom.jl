@@ -190,7 +190,19 @@ function hill_kernel_order2(
         ell, K_0_law::ViscoLaw,
         times::AbstractVector{<:Real}
     )
-    K_0 = _trapezoidal_relaxation(K_0_law, times, 3)
+    return hill_kernel_order2_at(ell, _trapezoidal_relaxation(K_0_law, times, 3))
+end
+
+"""
+    hill_kernel_order2_at(ell, K_0::AbstractMatrix) -> Matrix
+
+Variant of [`hill_kernel_order2`](@ref) taking an already-discretized
+`(3n × 3n)` reference matrix instead of the matrix law — what the
+differential scheme needs, its reference being the *running* effective
+medium.  Same `_at` convention as the order-4 crack and layered-sphere
+kernels.
+"""
+function hill_kernel_order2_at(ell, K_0::AbstractMatrix)
     _is_iso_order2_block(K_0) ||
         throw(ArgumentError("hill_kernel_order2: only iso ALV matrix is currently supported"))
     α_0 = iso_order2_params_from_blocks(K_0)
@@ -501,6 +513,168 @@ function _homogenize_alv2_dispatch(
     # Default distribution shape: spherical
     H_0 = hill_kernel_order2(Spheroid(1.0), K_M_law, times)
     return maxwell_alv_order2(K_0, contribs, fractions; H_0 = H_0)
+end
+
+function _homogenize_alv2_dispatch(
+        rve::RVE, sch::DifferentialScheme, prop::Symbol,
+        times::AbstractVector,
+        K_0, K_phases, A_duts, contribs,
+        fractions, f_M, K_M_law; kw...
+    )
+    return differential_alv_order2(
+        rve, prop; times = times,
+        _diff_alv_options(sch)...
+    )
+end
+
+# =============================================================================
+#  Differential ALV, order 2 (viscous conduction / diffusion) — SciML ODE on
+#  the fictitious incorporation time τ, mirror of the order-4
+#  `differential_alv`:
+#
+#      dK̃/dτ = Σ_α dφ_α/dτ · (K̃_α − K̃) ∘ Ã_α^dil(K̃)
+#
+#  with the same Sherman-Morrison volume balance and the same
+#  trajectories.  State: `vec(K̃)` of size `(3n)²`.
+# =============================================================================
+
+"""
+    differential_alv_order2(rve, prop::Symbol; times, nsteps = 100,
+                            trajectory = nothing, abstol = 1e-8,
+                            reltol = 1e-6, alg = nothing,
+                            formulation = :stiffness) -> Matrix
+
+Order-2 (conductivity / diffusion) counterpart of
+[`differential_alv`](@ref): the same incorporation-sequence ODE on
+`τ ∈ [0, 1]`, integrated on the `(3n × 3n)` ALV conductivity block
+matrix.
+
+`formulation = :compliance` integrates the resistivity `R̃ = K̃^{-vol}`
+instead, through `H̃_α = −R̃ ∘ Ñ_α ∘ R̃`, and inverts the result.
+
+As in the order-4 case the reference of the ODE is the running
+effective medium, and the order-2 ALV Hill kernel exists for an
+isotropic reference only — every inclusion must therefore be spherical
+or carry an isotropic orientation average.
+"""
+function differential_alv_order2(
+        rve::RVE, prop::Symbol;
+        times::AbstractVector{<:Real},
+        nsteps::Int = 100,
+        trajectory = nothing,
+        abstol::Real = 1.0e-8,
+        reltol::Real = 1.0e-6,
+        alg = nothing,
+        formulation::Symbol = :stiffness,
+        solver_kwargs::NamedTuple = NamedTuple()
+    )
+    formulation in (:stiffness, :compliance) ||
+        throw(
+        ArgumentError(
+            "differential_alv_order2: formulation must be :stiffness or " *
+                ":compliance; got :$(formulation)"
+        )
+    )
+    K_M_law = matrix_property(rve, prop)
+    K_M_law isa ViscoLaw ||
+        throw(ArgumentError("differential_alv_order2: matrix property is not a ViscoLaw"))
+    K_0 = _trapezoidal_relaxation(K_M_law, times, 3)
+    _is_iso_order2_block(K_0) ||
+        throw(
+        ArgumentError(
+            "differential_alv_order2: the ALV matrix must be isotropic (the " *
+                "differential ODE evaluates the order-2 ALV Hill kernel against " *
+                "its running effective medium, and that kernel exists for an " *
+                "isotropic reference only)."
+        )
+    )
+    n = length(times)
+
+    solid_data = NamedTuple[]
+    for name in inclusion_phase_names(rve)
+        amt = rve.amounts[name]
+        amt isa VolumeFraction ||
+            throw(
+            ArgumentError(
+                "differential_alv_order2: phase :$(name) carries a crack " *
+                    "density; order-2 ALV cracks are not supported by the " *
+                    "differential scheme."
+            )
+        )
+        ph = rve.phases[name]
+        sym = phase_symmetrize(rve, name)
+        K_r_law = phase_property(rve, name, prop)
+        K_r_law isa ViscoLaw ||
+            throw(ArgumentError("differential_alv_order2: phase $name property is not a ViscoLaw"))
+        K_r = _trapezoidal_relaxation(K_r_law, times, 3)
+        _alv_diff_keeps_iso(ph.geometry, sym, nothing) ||
+            _alv_diff_iso_error(name, "the shape")
+        push!(
+            solid_data, (
+                name = name, geom = ph.geometry, K_r = K_r,
+                target = _amount_value(rve, name), sym = sym,
+            )
+        )
+    end
+
+    paths = trajectory === nothing ?
+        _resolve_paths_alv(Schemes.Proportional(), rve, nsteps) :
+        _resolve_paths_alv(trajectory, rve, nsteps)
+
+    Tp = eltype(K_0)
+    for sd in solid_data
+        Tp = promote_type(Tp, eltype(sd.K_r), typeof(sd.target))
+    end
+    sz = 3 * n
+    dual = formulation === :compliance
+    x0 = vec(Tp.(dual ? volterra_inverse(K_0; block_size = 3) : K_0))
+    ode_p = (n = n, sz = sz, solid_data = solid_data, paths = paths, dual = dual)
+    rhs! = (du, u, p, τ) -> _diff_alv2_ode_rhs!(du, u, p, τ)
+    prob = ODEProblem(rhs!, x0, (0.0, 1.0), ode_p)
+    sol = solve(
+        prob,
+        alg === nothing ? Tsit5() : alg;
+        abstol, reltol,
+        saveat = range(0.0, 1.0; length = max(nsteps, 1) + 1),
+        dense = false,
+        solver_kwargs...
+    )
+    P_end = reshape(sol.u[end], sz, sz)
+    return dual ? volterra_inverse(P_end; block_size = 3) : P_end
+end
+
+function _diff_alv2_ode_rhs!(du, u, p, τ)
+    sz = p.sz
+    P_curr = reshape(u, sz, sz)
+    K_curr = p.dual ? volterra_inverse(P_curr; block_size = 3) : P_curr
+    Δ = zeros(eltype(u), sz, sz)
+
+    n_solid = length(p.solid_data)
+    n_solid == 0 && (du .= vec(Δ); return nothing)
+
+    # Sherman-Morrison : dφ_α/dτ = df_α/dτ + (f_α / f_0) · sum(df).
+    f = Vector{eltype(u)}(undef, n_solid)
+    df = Vector{eltype(u)}(undef, n_solid)
+    @inbounds for (i, r) in enumerate(p.solid_data)
+        nt = p.paths[r.name]
+        f[i] = nt.f(τ) * r.target
+        df[i] = nt.df(τ) * r.target
+    end
+    f0 = one(eltype(u)) - sum(f; init = zero(eltype(u)))
+    sum_df = sum(df; init = zero(eltype(u)))
+
+    @inbounds for (i, r) in enumerate(p.solid_data)
+        dφᵢ = df[i] + (f[i] / f0) * sum_df
+        iszero(dφᵢ) && continue
+        P_r = hill_kernel_order2_at(r.geom, K_curr)
+        contrib = dilute_contribution_alv_order2(r.K_r, K_curr, P_r)
+        contrib = _maybe_symmetrize_alv(contrib, r.sym)
+        term = p.dual ? -(P_curr * contrib * P_curr) : contrib
+        @. Δ += dφᵢ * term
+    end
+
+    du .= vec(Δ)
+    return nothing
 end
 
 """

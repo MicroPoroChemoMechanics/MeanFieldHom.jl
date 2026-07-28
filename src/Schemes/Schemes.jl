@@ -74,7 +74,7 @@ export AndersonDefault, NewtonDefault, AutoNonlinear
 export DifferentialTrajectory, Proportional, Sequential, CustomPath, Path, DifferentialScheme
 
 # Entry point
-export homogenize
+export homogenize, differential_path
 
 # Sensitivities — lentilles paramétriques + wrappers ForwardDiff (extension)
 export AbstractParameter, AmountParameter, PropertyParameter,
