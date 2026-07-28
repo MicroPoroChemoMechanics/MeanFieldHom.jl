@@ -2,7 +2,110 @@
 
 ## Unreleased
 
+### Changed
+
+- **A `RVE`'s element type is now a promotion floor, not a cast.** The
+  `amounts` dict became heterogeneous (`Dict{Symbol,AbstractAmount}`) and
+  `add_phase!` stores each amount under `promote_type(T, typeof(value))`
+  instead of `convert(T, value)`. Every consequence is a widening: an amount
+  narrower than the floor (`Int`, `Float32`, `Rational` under the default
+  `T = Float64`) is stored exactly as before, and the only pre-existing calls
+  whose stored type changes are those that used to be silently *narrowed*
+  (a `BigFloat` fraction in a `Float64` RVE now stays `BigFloat`).
+
+  - complex, `ForwardDiff.Dual` and symbolic amounts are accepted by a plain
+    `RVE(:M)`, so `T = ComplexF64` / `T = typeof(f)` / `T = Sym` declarations
+    are no longer needed anywhere (they remain valid, and still widen narrower
+    amounts);
+  - phases may carry amounts of *different* element types — a `Dual` fraction
+    next to a `Float64` one, a `Dual` crack density next to a real fraction —
+    promoted only where the values meet;
+  - `eltype(rve)` now reports the *effective* element type (floor promoted with
+    the stored amounts); `eltype(typeof(rve))` reports the declared floor;
+  - `matrix_volume_fraction` takes its unit from the accumulator, so a symbolic
+    RVE yields `1 - f` rather than `1.0 - f`;
+  - `matrix_volume_fraction` is now a **cached field read** (`RVE.f_matrix`),
+    refreshed by `add_phase!` with the same loop and the same dict iteration
+    order, hence bit-identical. Do not write `rve.amounts` directly; that
+    leaves the cache stale.
+
+  **Cost, measured.** Paired A/B against a `git worktree` at the previous
+  commit, same machine, `scripts/bench` suite, 67 cases, `--repeat-suite=2`:
+  **all 67 checksums bit-identical**, allocations **down on 21 cases**
+  (−19 152 B in total, up to −14 400 B on `sc.porous.oblate.phi15`, because
+  iterative schemes no longer recompute the matrix fraction per iteration),
+  up on one (`sens/mt.dC_df`, +32 B). Median |Δt| 1.1 %, and every
+  sub-microsecond scheme is at or below the previous commit
+  (`voigt.iso2` −1.1 %, `reuss.iso2` −3.0 %, `dilute_dual.iso2` −1.1 %,
+  `maxwell.iso2` +0.5 %, `mt.iso2.sphere` +1.3 %).
+
+  Getting there took two steps, and the first one measured badly. A
+  heterogeneous `amounts` dict costs a type *refinement*, not an allocation:
+  `rve.amounts[name]` already returned an abstract type before this change
+  (`AbstractAmount{Float64}`, one boxed scalar per access, 16 B — identical
+  on both trees), but `a isa VolumeFraction` used to intersect with
+  `AbstractAmount{Float64}` down to the concrete `VolumeFraction{Float64}`,
+  which made the surrounding arithmetic inferable. Without the element type
+  in the dict's value type it no longer does, which cost +5 to +11 % on the
+  two-phase isotropic schemes. Both halves are now recovered:
+
+  - `matrix_volume_fraction` became the `f_matrix` field read described above
+    (61 ns / 48 B / 3 boxed temporaries → 2.4 ns / 0 B);
+  - `scale_by_amount(a, X)` puts the per-phase product behind a function
+    barrier that dispatches on the amount's *concrete* type, so `a.value` is
+    inferred inside and the product is specialized — one dynamic dispatch
+    instead of a boxing plus two.
+
+  The barrier is applied only where it pays. Wrapping the crack `delta_*`
+  paths the same way (amount as trailing argument, hence varargs) *cost*
+  ~1.4 KB per call on `mt.crack.penny` for no gain — those cases run at tens
+  of microseconds — so they keep the plain `amount_value(a)`.
+
+  Complex moduli never required a declaration in the first place — the moduli
+  live in an untyped `Phase.properties` dict and were always promoted at the
+  arithmetic. The tutorials that claimed otherwise, and the
+  `fraction = ComplexF64(f)` idiom in `scripts/51`, `scripts/61` and the
+  bituminous application, have been corrected.
+
+### Added
+
+- **`RVE{T}(:M)` / `RVE{T,S}(:M)` constructors**, strictly equivalent to the
+  `RVE(:M; T = …)` keyword form, which is kept.
+- **`promote_rve(rve, T)` and `convert(RVE{T}, rve)`** to force an
+  element-type floor on an already-built RVE.
+
 ### Fixed
+
+- **The n-layer sphere's shear localization ``β_k`` *is* validated against
+  ECHOES.** `benchmark_nlayers.jl` carried a header note claiming a 1–50 %
+  disagreement on genuine multi-layer stacks, blamed on a layer-indexing
+  convention in `echoes.layer_eE`, and substituted §3's analytical limits for
+  the comparison. That conclusion was stale: `β_k` was then the bare mode-1
+  amplitude `a_k`, missing the mode-2 term `b_k·F_k`, whose omission cancels
+  in exactly the degenerate configurations §3 tests. The missing term was
+  added later (same day) by an unrelated fix — the `git` history puts the note
+  strictly before it — and the Echoes comparison was never re-run. It is now
+  restored alongside `α_k` in §1: **30/30 configurations (2 to 8 layers),
+  worst relative error 4.4e-14**, i.e. better than `α_k` (4.6e-13).
+
+  The note's own explanation could not have held, and the docs now say so:
+  `α_k` and `β_k` are read from the *same* `layer_eE(k)` matrix, so a
+  layer-index error could not have spared `α_k`; and the ALV per-layer
+  `β(t,t')` blocks were already pinned to Echoes at 1e-16 on the diagonal,
+  which is impossible if the elastic `β_k` were tens of percent off. The
+  header comment in `shear_recurrence.jl` also still described `β_k = a_k`,
+  contradicting its own implementation; it now states the mode-2 term and why
+  degenerate configurations hide its absence.
+
+- **`test_complex_moduli.jl` no longer hides scheme failures.** Every scheme
+  was wrapped in `try/catch … @test_broken false`, so a scheme that stopped
+  working in the complex plane vanished silently from the report. The
+  assertions are now explicit and per scheme. Ground truth established by the
+  de-masking: all ten schemes work with complex moduli; the single gap is
+  `SelfConsistent(algorithm = NewtonDefault())`, whose ForwardDiff Jacobian
+  cannot carry a `Dual` over a complex scalar (the default Anderson solver is
+  the complex-capable path). This is now pinned by a `@test_throws` and
+  documented in the manual.
 
 - **Per-phase helpers now all evaluate a phase in the same reference medium.**
   `_phase_dilute_concentration` (both orders) and

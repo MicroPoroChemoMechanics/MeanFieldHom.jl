@@ -125,6 +125,72 @@ end
     )
     @test rve_c.amounts[:I] isa VolumeFraction{Complex{Float64}}
     @test matrix_volume_fraction(rve_c) ≈ 0.8 + 0.0im
+
+    # Parametric constructor: strictly equivalent to the `T = …` keyword.
+    @test RVE{Complex{Float64}}(:M) isa RVE{Complex{Float64}}
+    @test typeof(RVE{DT}(:M)) === typeof(RVE(:M; T = DT))
+    ds = UniformDistribution(Ellipsoid(1.0, 1.0, 0.5))
+    @test RVE{Float64}(:M; distribution_shape = ds).distribution_shape === ds
+end
+
+@testset "RVE — heterogeneous amounts (declared T is a floor, not a cast)" begin
+    C₀ = TensISO{3}(30.0, 10.0)
+    DT = ForwardDiff.Dual{Nothing, Float64, 1}
+    d = ForwardDiff.Dual{Nothing}(0.2, 1.0)
+
+    # An amount WIDER than the declared floor is stored as such, not narrowed:
+    # no `T = …` is needed to differentiate w.r.t. a fraction, or to sweep a
+    # complex one.
+    rve = RVE(:M)                                # floor = Float64
+    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C₀))
+    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => C₀); fraction = d)
+    @test rve.amounts[:I] isa VolumeFraction{DT}
+    @test eltype(rve) === DT                     # effective eltype
+    @test eltype(typeof(rve)) === Float64        # declared floor
+    @test ForwardDiff.partials(matrix_volume_fraction(rve))[1] ≈ -1.0
+
+    rve_c = RVE(:M)
+    add_matrix!(rve_c, Ellipsoid(1.0), Dict(:C => C₀))
+    add_phase!(rve_c, :I, Ellipsoid(1.0), Dict(:C => C₀); fraction = 0.2 + 0.01im)
+    @test rve_c.amounts[:I] isa VolumeFraction{Complex{Float64}}
+    @test matrix_volume_fraction(rve_c) ≈ 0.8 - 0.01im
+
+    # Amounts of different element types coexist in one RVE and promote only
+    # where the values meet.
+    rve_mix = RVE(:M)
+    add_matrix!(rve_mix, Ellipsoid(1.0), Dict(:C => C₀))
+    add_phase!(rve_mix, :I, Ellipsoid(1.0), Dict(:C => C₀); fraction = d)
+    add_phase!(rve_mix, :J, Ellipsoid(1.0), Dict(:C => C₀); fraction = 0.1)
+    add_phase!(rve_mix, :CRACK, PennyCrack(1.0), Dict(:C => C₀); density = 0.05)
+    @test rve_mix.amounts[:I] isa VolumeFraction{DT}
+    @test rve_mix.amounts[:J] isa VolumeFraction{Float64}
+    @test rve_mix.amounts[:CRACK] isa CrackDensity{Float64}
+    @test eltype(rve_mix) === DT
+    fm = matrix_volume_fraction(rve_mix)         # cracks excluded from the sum
+    @test ForwardDiff.value(fm) ≈ 0.7
+    @test ForwardDiff.partials(fm)[1] ≈ -1.0
+    @test volume_fraction(rve_mix, :J) ≈ 0.1
+    @test crack_density(rve_mix, :CRACK) ≈ 0.05
+
+    # A NARROWER amount is still widened to the declared floor (no silent
+    # narrowing of the RVE, and `Int` fractions keep behaving as before).
+    rve_floor = RVE{Complex{Float64}}(:M)
+    add_matrix!(rve_floor, Ellipsoid(1.0), Dict(:C => C₀))
+    add_phase!(rve_floor, :I, Ellipsoid(1.0), Dict(:C => C₀); fraction = 0.2)
+    @test rve_floor.amounts[:I] isa VolumeFraction{Complex{Float64}}
+
+    rve_int = RVE(:M)
+    add_matrix!(rve_int, Ellipsoid(1.0), Dict(:C => C₀))
+    add_phase!(rve_int, :I, Ellipsoid(1.0), Dict(:C => C₀); fraction = 0)
+    @test matrix_volume_fraction(rve_int) === 1.0
+
+    # promote_rve / convert force a floor after the fact.
+    rve_p = promote_rve(rve_int, Complex{Float64})
+    @test rve_p isa RVE{Complex{Float64}}
+    @test rve_p.amounts[:I] isa VolumeFraction{Complex{Float64}}
+    @test matrix_volume_fraction(rve_p) === Complex{Float64}(1.0)
+    @test convert(RVE{Complex{Float64}}, rve_int) isa RVE{Complex{Float64}}
+    @test convert(RVE{Float64}, rve_int) === rve_int
 end
 
 @testset "RVE — Amounts unit tests" begin

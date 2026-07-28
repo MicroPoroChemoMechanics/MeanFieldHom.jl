@@ -37,11 +37,11 @@ for (i, ω) in enumerate(ωs)
     G_i = maxwell_G(ω; G_inf = 30.0, G_d = 15.0, τ = 1.0)
     K_m = ComplexF64(30.0)
     K_i = ComplexF64(80.0)
-    rve = RVE(:M; T = ComplexF64)
-    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => iso_C(K_m, G_m)))
-    add_phase!(
+    rve = RVE(:M)                                # nothing to declare: the moduli
+    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => iso_C(K_m, G_m)))   # carry the
+    add_phase!(                                  # complex part, the fraction stays real
         rve, :I, Ellipsoid(1.0),
-        Dict(:C => iso_C(K_i, G_i)); fraction = ComplexF64(f_inc)
+        Dict(:C => iso_C(K_i, G_i)); fraction = f_inc
     )
     y_mt[i] = get_array(homogenize(rve, MoriTanaka()))[1, 2, 1, 2]    # shear-like component
     y_sc[i] = get_array(homogenize(rve, SelfConsistent(; abstol = 1.0e-10, maxiters = 200)))[1, 2, 1, 2]

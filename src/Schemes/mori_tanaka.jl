@@ -44,7 +44,6 @@ function _mt_4(rve, C₀::TensND.AbstractTens{4, 3}, ::Val{p}; kw...) where {p}
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
         if a isa VolumeFraction
-            f = amount_value(a)
             # Apply per-phase orientation symmetrize via the bundled helper,
             # which shares the single localization solve between `A_dil` and
             # the contribution `N` (they used to be computed independently,
@@ -54,7 +53,7 @@ function _mt_4(rve, C₀::TensND.AbstractTens{4, 3}, ::Val{p}; kw...) where {p}
             # using a phase property that does not represent them, and the
             # helper symmetrizes the PRODUCT (C_i − C₀):A, not just A.
             A_dil, N = _phase_dilute_and_contribution(rve, name, p, C₀; kw...)
-            A_avg += f * A_dil
+            A_avg += scale_by_amount(a, A_dil)
             Nsum += N
         else  # CrackDensity — ECHOES `B · A^{-1}` form.
             # Strain-Stress contribution: A_crack = ε·sym(H_c)·C₀.
@@ -80,9 +79,8 @@ function _mt_2(rve, K₀::TensND.AbstractTens{2, 3}, ::Val{p}; kw...) where {p}
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
         if a isa VolumeFraction
-            f = amount_value(a)
             A_dil, N = _phase_dilute_and_contribution(rve, name, p, K₀; kw...)
-            A_avg += f * A_dil
+            A_avg += scale_by_amount(a, A_dil)
             Nsum += N
         else  # CrackDensity — ECHOES `B · A^{-1}` form.
             R, N = _phase_compliance_and_contribution(rve, name, p, K₀; kw...)

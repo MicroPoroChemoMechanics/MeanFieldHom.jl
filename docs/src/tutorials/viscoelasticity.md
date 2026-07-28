@@ -35,9 +35,9 @@ const f_inc = 0.3
 function C_eff_at(ω, scheme)
     G_m = maxwell_G(ω; G_inf = 10.0, G_d = 5.0)
     G_i = maxwell_G(ω; G_inf = 30.0, G_d = 15.0)
-    r = RVE(:M; T = ComplexF64)
+    r = RVE(:M)
     add_matrix!(r, Ellipsoid(1.0), Dict(:C => iso_stiffness(ComplexF64(30.0), G_m)))
-    add_phase!(r, :I, Ellipsoid(1.0), Dict(:C => iso_stiffness(ComplexF64(80.0), G_i)); fraction = ComplexF64(f_inc))
+    add_phase!(r, :I, Ellipsoid(1.0), Dict(:C => iso_stiffness(ComplexF64(80.0), G_i)); fraction = f_inc)
     _, μ = k_mu(homogenize(r, scheme, :C))
     return μ
 end
@@ -64,10 +64,17 @@ viscoelastic composite, MT and SC differing only in how strongly the
 inclusion phase influences the peak's height and position through
 interaction.
 
-!!! note "Note the RVE's element type"
-    Complex-valued homogenization needs `RVE(:M; T = ComplexF64)`; the
-    default `RVE(:M)` fixes the volume-fraction element type to
-    `Float64` and does not accept complex phase properties.
+!!! note "Nothing to declare on the RVE"
+    Complex-valued homogenization needs no element type on the RVE: the
+    moduli carry the complex part, the volume fraction stays real, and
+    the two are promoted where they meet. `RVE(:M)` is enough — the
+    `RVE{ComplexF64}(:M)` / `RVE(:M; T = ComplexF64)` forms only declare
+    a *floor* for the amounts and give the same numbers.
+
+    One gap, in the complex plane only:
+    `SelfConsistent(algorithm = NewtonDefault())` builds its Jacobian
+    with `ForwardDiff`, which cannot carry a `Dual` over a complex
+    scalar. The default Anderson solver is the complex-capable path.
 
 ## A first taste of time-domain ageing viscoelasticity
 

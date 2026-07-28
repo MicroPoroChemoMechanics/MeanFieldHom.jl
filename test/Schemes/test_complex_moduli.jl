@@ -6,6 +6,15 @@
 #   * produces a `Complex{Float64}` result (eltype propagation),
 #   * agrees with the real-modulus result in the limit Im(modulus) → 0,
 #   * preserves causality (Im(C_eff[1111]) ≥ -tol).
+#
+#  Complex moduli need NO declaration on the RVE: the volume fraction stays
+#  real, the element types are promoted where the values meet.  `RVE(:M)`,
+#  `RVE{ComplexF64}(:M)` and `RVE(:M; T = ComplexF64)` must all give the same
+#  numbers here — that equivalence is asserted below.
+#
+#  Assertions are deliberately NOT wrapped in try/catch: a scheme that stops
+#  working in the complex plane must break this file, not disappear into a
+#  `@test_broken`.  The single known gap is documented at the bottom.
 # =============================================================================
 
 using Test
@@ -14,79 +23,102 @@ using TensND
 
 const ATOL_FREQ = 1.0e-10
 
+# Every scheme that must work with complex moduli.
+complex_schemes() = [
+    "Voigt" => Voigt(),
+    "Reuss" => Reuss(),
+    "Dilute" => Dilute(),
+    "DiluteDual" => DiluteDual(),
+    "MoriTanaka" => MoriTanaka(),
+    "Maxwell" => Maxwell(),
+    "PonteCastanedaWillis" => PonteCastanedaWillis(),
+    "SelfConsistent" => SelfConsistent(; abstol = 1.0e-10, maxiters = 200),
+    "AsymmetricSelfConsistent" =>
+        AsymmetricSelfConsistent(; abstol = 1.0e-10, maxiters = 200),
+    "DifferentialScheme" => DifferentialScheme(; nsteps = 50),
+]
+
+function _two_phase_rve(C_m, C_i, f; kw...)
+    rve = RVE(:M; kw...)
+    add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_m))
+    add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => C_i); fraction = f)
+    return rve
+end
+
 @testset "Schemes — Complex moduli sweep" begin
-    function build_rve(C_m, C_i, f, T)
-        rve = RVE(:M; T = T)
-        add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_m))
-        add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => C_i); fraction = f)
-        return rve
-    end
-
-    schemes = [
-        Voigt(), Reuss(), Dilute(), DiluteDual(), MoriTanaka(),
-        Maxwell(), PonteCastanedaWillis(),
-        SelfConsistent(; abstol = 1.0e-10, maxiters = 100),
-        AsymmetricSelfConsistent(; abstol = 1.0e-10, maxiters = 100),
-        DifferentialScheme(; nsteps = 50),
-    ]
-
-    # Sweep ω with Maxwell-model loss factor δ = 0.05 ω / (1 + ω²)
     f_inc = 0.3
+    # Sweep ω with Maxwell-model loss factor δ = 0.05 ω / (1 + ω²)
     for ω in (0.01, 0.1, 1.0, 10.0)
         δ = 0.05 * ω / (1 + ω^2)
         C_m = TensISO{3}(30.0 + δ * im, 10.0 + 0.5δ * im)
         C_i = TensISO{3}(60.0 + δ * im, 20.0 + 0.5δ * im)
-        rve_c = build_rve(C_m, C_i, f_inc, Complex{Float64})
+        # No `T = …`: the fraction stays real, the moduli carry the complex part.
+        rve_c = _two_phase_rve(C_m, C_i, f_inc)
 
-        for sch in schemes
-            try
-                Cs = homogenize(rve_c, sch)
-                @test eltype(Cs) <: Complex
-                @test all(isfinite, get_array(Cs))
-                # Causality (loose, allow numerical noise)
-                @test imag(get_array(Cs)[1, 1, 1, 1]) ≥ -1.0e-6
-            catch e
-                @info "Scheme $(typeof(sch)) skipped at ω=$ω: $(e)"
-                @test_broken false
-            end
+        @testset "ω = $ω — $name" for (name, sch) in complex_schemes()
+            Cs = homogenize(rve_c, sch)
+            @test eltype(Cs) <: Complex
+            @test all(isfinite, get_array(Cs))
+            # Causality (loose, allow numerical noise)
+            @test imag(get_array(Cs)[1, 1, 1, 1]) ≥ -1.0e-6
         end
+    end
+end
+
+@testset "Schemes — complex moduli need no RVE declaration" begin
+    # The three construction forms must be strictly interchangeable.
+    δ = 0.05
+    C_m = TensISO{3}(30.0 + δ * im, 10.0 + 0.5δ * im)
+    C_i = TensISO{3}(60.0 + δ * im, 20.0 + 0.5δ * im)
+    f_inc = 0.3
+
+    rve_plain = _two_phase_rve(C_m, C_i, f_inc)                       # nothing declared
+    rve_param = let r = RVE{ComplexF64}(:M)                           # parametric form
+        add_matrix!(r, Ellipsoid(1.0), Dict(:C => C_m))
+        add_phase!(r, :I, Ellipsoid(1.0), Dict(:C => C_i); fraction = f_inc)
+        r
+    end
+    rve_kwarg = _two_phase_rve(C_m, C_i, ComplexF64(f_inc); T = ComplexF64)  # legacy form
+
+    @test rve_param isa RVE{ComplexF64}
+    @test rve_kwarg isa RVE{ComplexF64}
+    @test eltype(rve_plain) === Float64        # the amount really stays real
+    @test eltype(rve_param) === ComplexF64     # the floor widens it
+
+    @testset "$name" for (name, sch) in complex_schemes()
+        C_plain = get_array(homogenize(rve_plain, sch))
+        C_param = get_array(homogenize(rve_param, sch))
+        C_kwarg = get_array(homogenize(rve_kwarg, sch))
+        @test maximum(abs.(C_plain .- C_param)) < ATOL_FREQ
+        @test maximum(abs.(C_plain .- C_kwarg)) < ATOL_FREQ
     end
 end
 
 @testset "Schemes — Im → 0 limit consistency" begin
     f_inc = 0.3
-    rve_re = RVE(:M)
-    add_matrix!(rve_re, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
-    add_phase!(
-        rve_re, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
-        fraction = f_inc
+    rve_re = _two_phase_rve(TensISO{3}(30.0, 10.0), TensISO{3}(60.0, 20.0), f_inc)
+    rve_0 = _two_phase_rve(
+        TensISO{3}(30.0 + 0im, 10.0 + 0im), TensISO{3}(60.0 + 0im, 20.0 + 0im), f_inc
     )
 
-    rve_0 = RVE(:M; T = Complex{Float64})
-    add_matrix!(
-        rve_0, Ellipsoid(1.0),
-        Dict(:C => TensISO{3}(30.0 + 0im, 10.0 + 0im))
-    )
-    add_phase!(
-        rve_0, :I, Ellipsoid(1.0),
-        Dict(:C => TensISO{3}(60.0 + 0im, 20.0 + 0im));
-        fraction = f_inc + 0im
-    )
-
-    for sch in (
-            Voigt(), Reuss(), Dilute(), DiluteDual(), MoriTanaka(),
-            Maxwell(), PonteCastanedaWillis(),
-            SelfConsistent(; abstol = 1.0e-12, maxiters = 200),
-            DifferentialScheme(; nsteps = 50),
-        )
-        try
-            C_re = get_array(homogenize(rve_re, sch))
-            C_0 = get_array(homogenize(rve_0, sch))
-            @test maximum(abs.(real.(C_0) .- C_re)) < ATOL_FREQ
-            @test maximum(abs.(imag.(C_0))) < ATOL_FREQ
-        catch e
-            @info "Scheme $(typeof(sch)) skipped: $(e)"
-            @test_broken false
-        end
+    @testset "$name" for (name, sch) in complex_schemes()
+        C_re = get_array(homogenize(rve_re, sch))
+        C_0 = get_array(homogenize(rve_0, sch))
+        @test maximum(abs.(real.(C_0) .- C_re)) < ATOL_FREQ
+        @test maximum(abs.(imag.(C_0))) < ATOL_FREQ
     end
+end
+
+@testset "Schemes — known complex-plane gap: SC Newton solver" begin
+    # `SelfConsistent(algorithm = NewtonDefault())` builds its Jacobian with
+    # ForwardDiff, which requires a real scalar type.  The default Anderson
+    # solver (asserted above) is the complex-capable path.  Documented in
+    # docs/src/manual/schemes.md § Complex-valued workflows.
+    δ = 0.05
+    rve_c = _two_phase_rve(
+        TensISO{3}(30.0 + δ * im, 10.0 + 0.5δ * im),
+        TensISO{3}(60.0 + δ * im, 20.0 + 0.5δ * im), 0.3
+    )
+    sc_newton = SelfConsistent(; algorithm = NewtonDefault(), abstol = 1.0e-10)
+    @test_throws ArgumentError homogenize(rve_c, sc_newton)
 end

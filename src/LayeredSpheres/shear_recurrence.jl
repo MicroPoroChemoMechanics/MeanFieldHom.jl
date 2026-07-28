@@ -45,8 +45,17 @@
 #  We propagate two probe states (a, b) = (1, 0) and (0, 1) through the
 #  whole stack, extract the matrix-side (a, b) amplitudes from the state
 #  at r_N⁺, and form the linear combination that yields a unit remote
-#  deviatoric far-field (a_{N+1}, b_{N+1}) = (1, 0).  The per-layer
-#  shear localization is β_k = a_k (volume-averaged Y₂ projection).
+#  deviatoric far-field (a_{N+1}, b_{N+1}) = (1, 0).
+#
+#  The per-layer shear localization is **not** the mode-1 amplitude alone:
+#  the r³ profile of mode 2 integrates to a non-zero deviatoric strain over
+#  a shell of finite thickness, so
+#      β_k = a_k + b_k · _layer_avg_dev_shear_factor(r_{k-1}, r_k, κ_k, μ_k),
+#  modes 3 (1/r⁴) and 4 (1/r²) integrating to zero.  Dropping the mode-2
+#  term is invisible on degenerate configurations (vanishing core, core ≡
+#  shell, single layer) and wrong by 1–50 % on genuine multi-layer stacks —
+#  see `_shear_localization_multi` and the ECHOES cross-check in
+#  `scripts/bench_echoes/benchmark_nlayers.jl` §3.
 # =============================================================================
 
 """

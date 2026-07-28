@@ -149,7 +149,7 @@ export matrix_phase, inclusion_phase_names
 export phase_property, matrix_property
 export volume_fraction, crack_density, matrix_volume_fraction
 export phase_symmetrize
-export validate_rve
+export validate_rve, promote_rve
 
 # ── Schemes : scheme types + entry point ─────────────────────────────────────
 export HomogenizationScheme

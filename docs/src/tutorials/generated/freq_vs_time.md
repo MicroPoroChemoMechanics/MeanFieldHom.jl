@@ -106,11 +106,11 @@ the result.
 ````@example freq_vs_time
 function mu_frequency(ω)
     p = im * ω
-    rve = RVE(:M; T = ComplexF64)
+    rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => stiffness_star(Z_MATRIX, p)))
     add_phase!(
         rve, :I, Ellipsoid(1.0), Dict(:C => stiffness_star(Z_INCL, p));
-        fraction = ComplexF64(F_INCL)
+        fraction = F_INCL
     )
     return TensND.get_data(homogenize(rve, MoriTanaka()))[2] / 2
 end

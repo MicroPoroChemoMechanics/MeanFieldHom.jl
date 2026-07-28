@@ -141,7 +141,9 @@ makedocs(;
             "developer/adding_algorithm.md",
             "developer/adding_scheme.md",
             "developer/testing_conventions.md",
+            "developer/validation.md",
             "developer/performance_notes.md",
+            "developer/benchmarks.md",
             "developer/roadmap.md",
         ],
         "API" => [

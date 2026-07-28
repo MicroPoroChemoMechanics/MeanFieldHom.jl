@@ -41,7 +41,10 @@ subtypes:
 
 The type parameter `T` is the element type of the stored value
 (`Float64`, `ForwardDiff.Dual`, `Complex{Float64}`, …) and propagates
-through every scheme that consumes the amount.
+through every scheme that consumes the amount. Each amount carries its
+own `T`: a `RVE` may hold a `Float64` fraction next to a
+`ForwardDiff.Dual` one, the element types being promoted where the
+values actually meet (see [`RVE`](@ref)).
 """
 abstract type AbstractAmount{T <: Number} end
 
@@ -69,6 +72,27 @@ end
 Return the scalar value carried by an `AbstractAmount`.
 """
 amount_value(a::AbstractAmount) = a.value
+
+"""
+    scale_by_amount(a::AbstractAmount, X) -> typeof(a.value * X)
+
+Multiply `X` by the amount's value **through a function barrier**.
+
+`amounts` is heterogeneous, so `rve.amounts[name]` is statically an
+`AbstractAmount` and `amount_value(a)` alone would return `Any` — one
+boxed scalar, then a second dynamic call for the product. Passing `a`
+itself lets the dispatch land on its concrete type (`VolumeFraction{F}`),
+inside which `a.value::F` is inferred and the product is specialized: one
+dynamic dispatch instead of a boxing plus two, on a path every scheme
+walks once per phase.
+"""
+scale_by_amount(a::AbstractAmount, X) = a.value * X
+#
+# Only the `f * X` shape is worth a barrier. The crack paths pass the amount
+# as the last argument of a `delta_*` helper; wrapping those in a varargs
+# barrier was measured to *cost* ~1.4 KB per call on `mt.crack.penny` (the
+# varargs tuple) for no gain, since those cases run at tens of microseconds.
+# They keep the plain `amount_value(a)`.
 
 Base.eltype(::Type{<:AbstractAmount{T}}) where {T} = T
 Base.eltype(a::AbstractAmount) = eltype(typeof(a))
@@ -280,21 +304,41 @@ Multi-phase representative volume element. Fields:
 - `phase_names::Vector{Symbol}` — phases in insertion order (the matrix
   is the first entry).
 - `phases::Dict{Symbol,Phase}` — geometry + properties of each phase.
-- `amounts::Dict{Symbol,AbstractAmount{T}}` — volume fraction or crack
-  density of each non-matrix phase. The matrix entry, if present, is
-  ignored when computing `matrix_volume_fraction`.
+- `amounts::Dict{Symbol,AbstractAmount}` — volume fraction or crack
+  density of each non-matrix phase. Each entry keeps its own element
+  type. The matrix entry, if present, is ignored when computing
+  `matrix_volume_fraction`.
 - `distribution_shape::S` — outer envelope used by Maxwell / PCW;
   defaults to a unit sphere wrapped in [`UniformDistribution`](@ref).
+- `f_matrix` — cached `1 - Σ f_inc`, maintained by [`add_phase!`](@ref)
+  and read by [`matrix_volume_fraction`](@ref). Do not write `amounts`
+  directly: that would leave the cache stale.
 
-`T` is the element type of every amount in the RVE — it drives the
-propagation of `ForwardDiff.Dual` / `Complex{Float64}` through fractions
-independently of the moduli, which can carry their own element type on
-each phase.
+`T` is the *declared* amount element type, i.e. a **floor for
+promotion**, not a constraint: it seeds `zero`/`one` for an RVE whose
+amounts are all narrower (an `Int` fraction still yields a `Float64`
+matrix fraction under the default `T = Float64`), and any amount handed
+to [`add_phase!`](@ref) that is *wider* than `T` is stored as such
+rather than converted down. Amounts, moduli and geometries therefore
+each carry their own element type, promoted only where the values meet:
+
+```julia
+rve = RVE(:M)                                          # nothing to declare
+add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_complex))    # complex moduli
+add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => C_complex);
+           fraction = 0.3)                             # real fraction
+add_phase!(rve, :J, Ellipsoid(1.0), Dict(:C => C1);
+           fraction = dual_x)                          # Dual fraction
+```
+
+`eltype(rve)` reports the *effective* element type (the promotion of the
+floor with every stored amount); `eltype(RVE{T,S})` reports the declared
+floor `T`.
 
 Construction is two-step:
 
 ```julia
-rve = RVE(:M; T = Float64, distribution_shape = nothing)
+rve = RVE(:M; distribution_shape = nothing)   # or RVE{ComplexF64}(:M)
 add_matrix!(rve, ellipsoid_matrix, Dict(:C => C0))
 add_phase!(rve, :I1, ellipsoid_inc, Dict(:C => C1); fraction = 0.2)
 add_phase!(rve, :CRACK, penny_crack, Dict(:C => C0); density = 0.05)
@@ -307,19 +351,30 @@ mutable struct RVE{T <: Number, S <: Union{Nothing, AbstractDistributionShape}}
     matrix_name::Symbol
     phase_names::Vector{Symbol}
     phases::Dict{Symbol, Phase}
-    amounts::Dict{Symbol, AbstractAmount{T}}
+    amounts::Dict{Symbol, AbstractAmount}
     symmetrize::Dict{Symbol, AbstractSymmetrize}
     distribution_shape::S
+    # Cached `1 - Σ f_inc`. Heterogeneous amounts make the sum's element type
+    # a runtime property, so recomputing it per call costs three boxed
+    # temporaries — measurable on the sub-µs schemes, which call it once per
+    # `homogenize`. `add_phase!` (the only writer of `amounts` on a live RVE)
+    # refreshes it with the very same loop, so the arithmetic and the dict
+    # iteration order are unchanged and the value stays bit-identical.
+    f_matrix::Any
 end
 
 """
     RVE(matrix_name::Symbol; T = Float64, distribution_shape = nothing)
+    RVE{T}(matrix_name::Symbol; distribution_shape = nothing)
 
 Construct an empty RVE. The matrix phase is referenced by `matrix_name`
-but **not** added — call [`add_matrix!`](@ref) next. Element type of
-the amounts is fixed by the `T` keyword (default `Float64`); use
-`T = ForwardDiff.Dual{...}` or `T = Complex{Float64}` for AD or
-frequency-domain workflows.
+but **not** added — call [`add_matrix!`](@ref) next.
+
+The two forms are strictly equivalent; both are optional. `T` declares
+the amount element-type *floor* (default `Float64`) and is only needed
+to force a wider type on amounts that are themselves narrow — complex
+moduli, `ForwardDiff.Dual` or symbolic amounts propagate on their own,
+without declaration (see [`RVE`](@ref)).
 """
 function RVE(
         matrix_name::Symbol;
@@ -331,11 +386,72 @@ function RVE(
         matrix_name,
         Symbol[],
         Dict{Symbol, Phase}(),
-        Dict{Symbol, AbstractAmount{T}}(),
+        Dict{Symbol, AbstractAmount}(),
         Dict{Symbol, AbstractSymmetrize}(),
         ds,
+        one(T),
     )
 end
+
+RVE{T}(matrix_name::Symbol; distribution_shape = nothing) where {T <: Number} =
+    RVE(matrix_name; T = T, distribution_shape = distribution_shape)
+
+function RVE{T, S}(
+        matrix_name::Symbol; distribution_shape = nothing
+    ) where {T <: Number, S <: Union{Nothing, AbstractDistributionShape}}
+    rve = RVE(matrix_name; T = T, distribution_shape = distribution_shape)
+    rve isa RVE{T, S} || throw(
+        ArgumentError(
+            "distribution_shape yields $(typeof(rve.distribution_shape)), not the requested $S"
+        )
+    )
+    return rve
+end
+
+"""
+    _amount_promote(::Type{T}, v) -> Number
+
+Store `v` as an amount value under the declared floor `T`: widened to
+`promote_type(T, typeof(v))`, never narrowed down to `T`. This is what
+lets a `Dual` or complex amount live in a plain `RVE(:M)`.
+"""
+_amount_promote(::Type{T}, v::Number) where {T <: Number} =
+    convert(promote_type(T, typeof(v)), v)
+# Non-`Number` scalars (symbolic backends that do not subtype `Number`)
+# are stored verbatim rather than rejected.
+_amount_promote(::Type{<:Number}, v) = v
+
+"""
+    eltype(rve::RVE) -> Type
+
+Effective amount element type: the promotion of the declared floor
+`T` with the element type of every stored amount. Use
+`eltype(typeof(rve))` for the declared floor alone.
+"""
+Base.eltype(rve::RVE{T}) where {T} =
+    mapfoldl(eltype, promote_type, values(rve.amounts); init = T)
+
+"""
+    promote_rve(rve, ::Type{T}) -> RVE
+
+Return a copy of `rve` whose declared floor is `T` and whose amounts are
+all converted to `promote_type(T, ·)`. Rarely needed — amounts promote
+themselves where they are consumed — but useful to force an element type
+on an RVE built elsewhere.
+"""
+function promote_rve(rve::RVE, ::Type{T}) where {T <: Number}
+    new_amounts = Dict{Symbol, AbstractAmount}()
+    for (k, a) in rve.amounts
+        new_amounts[k] = _promote_amount(a, promote_type(T, eltype(a)))
+    end
+    return _rebuild_rve(rve; amounts = new_amounts, T = T)
+end
+
+# A single method: the `rve::RVE{T}` identity overload is never selected over
+# this one (`Type{RVE{T}}` is itself a `UnionAll` in `S`), so the no-op case is
+# handled by an explicit guard rather than by dispatch.
+Base.convert(::Type{RVE{T}}, rve::RVE) where {T <: Number} =
+    eltype(typeof(rve)) === T ? rve : promote_rve(rve, T)
 
 # =============================================================================
 #  Mutators
@@ -377,8 +493,11 @@ solid inhomogeneities) or `density` (for cracks) must be supplied;
 `fraction` produces a [`VolumeFraction`](@ref), `density` a
 [`CrackDensity`](@ref).
 
-Both `fraction` and `density` are converted to the RVE's amount eltype
-`T` at insertion.
+Both `fraction` and `density` are stored under the RVE's declared
+element-type floor `T`: widened to `promote_type(T, typeof(value))`,
+never narrowed. A complex, `ForwardDiff.Dual` or symbolic amount is
+therefore accepted by a plain `RVE(:M)`, and phases may carry amounts of
+different element types.
 
 The optional `symmetrize` kwarg declares an orientation-distribution
 projection of this phase's localization tensor : `:iso` (uniform spatial
@@ -404,10 +523,11 @@ function add_phase!(
     rve.phases[name] = Phase(geometry, properties)
     push!(rve.phase_names, name)
     rve.amounts[name] = if fraction !== nothing
-        VolumeFraction{T}(convert(T, fraction))
+        VolumeFraction(_amount_promote(T, fraction))
     else
-        CrackDensity{T}(convert(T, density))
+        CrackDensity(_amount_promote(T, density))
     end
+    rve.f_matrix = _compute_matrix_volume_fraction(rve.amounts, T)
     sym = _to_symmetrize(symmetrize)
     if !(sym isa NoSymmetrize)
         rve.symmetrize[name] = sym
@@ -464,25 +584,27 @@ matrix_property(rve::RVE, key::Symbol) = phase_property(rve, rve.matrix_name, ke
 """
     volume_fraction(rve, name::Symbol) -> Number
 
-Volume fraction of phase `name`. Returns `zero(T)` if the phase carries a
+Volume fraction of phase `name`. Returns a zero of the phase's own
+element type (promoted with the RVE floor) if the phase carries a
 [`CrackDensity`](@ref) instead of a [`VolumeFraction`](@ref).
 """
 function volume_fraction(rve::RVE{T}, name::Symbol) where {T}
     name === rve.matrix_name && return matrix_volume_fraction(rve)
     a = rve.amounts[name]
-    return a isa VolumeFraction ? amount_value(a) : zero(T)
+    return a isa VolumeFraction ? amount_value(a) : zero(promote_type(T, eltype(a)))
 end
 
 """
     crack_density(rve, name::Symbol) -> Number
 
-Crack density of phase `name`. Returns `zero(T)` if the phase carries a
+Crack density of phase `name`. Returns a zero of the phase's own element
+type (promoted with the RVE floor) if the phase carries a
 [`VolumeFraction`](@ref) instead of a [`CrackDensity`](@ref).
 """
 function crack_density(rve::RVE{T}, name::Symbol) where {T}
     haskey(rve.amounts, name) || return zero(T)
     a = rve.amounts[name]
-    return a isa CrackDensity ? amount_value(a) : zero(T)
+    return a isa CrackDensity ? amount_value(a) : zero(promote_type(T, eltype(a)))
 end
 
 """
@@ -500,15 +622,29 @@ phase_symmetrize(rve::RVE, name::Symbol) =
 Implicit matrix volume fraction `1 - Σ_inc f_inc` (only
 [`VolumeFraction`](@ref) entries contribute; [`CrackDensity`](@ref)
 entries are ignored).
+
+The value is cached on the RVE and refreshed by [`add_phase!`](@ref);
+this is a read of the `f_matrix` field, not a recomputation.
+
+The accumulator behind it is seeded with `zero(T)` (the declared floor)
+and then promoted by the stored amounts, so the result carries the
+effective element type — `Dual` as soon as one fraction is `Dual`,
+`Complex` as soon as one is complex. The unit is taken from the
+accumulator rather than from `T`, so a symbolic RVE yields `1 - f` and
+not `1.0 - f`.
 """
-function matrix_volume_fraction(rve::RVE{T}) where {T}
+matrix_volume_fraction(rve::RVE) = rve.f_matrix
+
+# Recomputation behind the `f_matrix` cache. Only `add_phase!` and
+# `_rebuild_rve` call it — never a scheme.
+function _compute_matrix_volume_fraction(amounts::AbstractDict, ::Type{T}) where {T}
     f_inc = zero(T)
-    for (_, a) in rve.amounts
+    for (_, a) in amounts
         if _sums_to_unit(a)
-            f_inc += amount_value(a)
+            f_inc = f_inc + amount_value(a)
         end
     end
-    return one(T) - f_inc
+    return one(f_inc) - f_inc
 end
 
 # =============================================================================
@@ -544,7 +680,9 @@ end
 # =============================================================================
 
 function Base.show(io::IO, ::MIME"text/plain", rve::RVE{T, S}) where {T, S}
-    println(io, "RVE{$T} with ", length(rve.phase_names), " phase(s)")
+    Te = eltype(rve)
+    tag = Te === T ? "$T" : "$T → $Te"
+    println(io, "RVE{$tag} with ", length(rve.phase_names), " phase(s)")
     println(io, "  matrix : :$(rve.matrix_name)")
     for name in rve.phase_names
         name === rve.matrix_name && continue

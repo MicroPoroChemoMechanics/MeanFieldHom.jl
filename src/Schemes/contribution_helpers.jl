@@ -100,7 +100,7 @@ function _phase_stiffness_contribution(
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
         N = MFH_Core.stiffness_contribution(geom, P_i, P₀_proj; kw...)
-        return amount_value(a) * _apply_symmetrize(N, sym)
+        return scale_by_amount(a, _apply_symmetrize(N, sym))
     else  # CrackDensity
         K_int = _crack_interface_K4(rve, name)
         N = MFH_Core.stiffness_contribution(
@@ -122,7 +122,7 @@ function _phase_stiffness_contribution(
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
         N = MFH_Core.conductivity_contribution(geom, P_i, P₀_proj; kw...)
-        return amount_value(a) * _apply_symmetrize(N, sym)
+        return scale_by_amount(a, _apply_symmetrize(N, sym))
     else
         α_int = _crack_interface_α(rve, name)
         N = MFH_Core.conductivity_contribution(
@@ -171,7 +171,7 @@ function _phase_compliance_contribution(
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
         H = compliance_contribution(geom, P_i, P₀_proj; kw...)
-        return amount_value(a) * _apply_symmetrize(H, sym)
+        return scale_by_amount(a, _apply_symmetrize(H, sym))
     else
         K_int = _crack_interface_K4(rve, name)
         H = compliance_contribution(geom, P₀_proj; K_interface = K_int, kw...)
@@ -190,7 +190,7 @@ function _phase_compliance_contribution(
     if a isa VolumeFraction
         P_i = phase_property(rve, name, prop)
         R = MFH_Core.resistivity_contribution(geom, P_i, P₀_proj; kw...)
-        return amount_value(a) * _apply_symmetrize(R, sym)
+        return scale_by_amount(a, _apply_symmetrize(R, sym))
     else
         α_int = _crack_interface_α(rve, name)
         R = compliance_contribution(geom, P₀_proj; α_interface = α_int, kw...)
@@ -328,9 +328,12 @@ function _phase_dilute_and_contribution(
     P_i = phase_property(rve, name, prop)
     sym = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P₀, sym)
-    f = amount_value(rve.amounts[name])
+    a = rve.amounts[name]
     A_raw, N_raw = MFH_Core.loc_and_stiffness(geom, P_i, P₀_proj; kw...)
-    return (_apply_symmetrize(A_raw, sym), f * _apply_symmetrize(N_raw, sym))
+    return (
+        _apply_symmetrize(A_raw, sym),
+        scale_by_amount(a, _apply_symmetrize(N_raw, sym)),
+    )
 end
 
 function _phase_dilute_and_contribution(
@@ -341,9 +344,12 @@ function _phase_dilute_and_contribution(
     P_i = phase_property(rve, name, prop)
     sym = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P₀, sym)
-    f = amount_value(rve.amounts[name])
+    a = rve.amounts[name]
     A_raw, N_raw = MFH_Core.loc_and_stiffness(geom, P_i, P₀_proj; kw...)
-    return (_apply_symmetrize(A_raw, sym), f * _apply_symmetrize(N_raw, sym))
+    return (
+        _apply_symmetrize(A_raw, sym),
+        scale_by_amount(a, _apply_symmetrize(N_raw, sym)),
+    )
 end
 
 """
@@ -359,14 +365,14 @@ function _phase_compliance_and_contribution(
     geom = rve.phases[name].geometry
     sym = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P₀, sym)
-    ε = amount_value(rve.amounts[name])
+    a = rve.amounts[name]
     K_int = _crack_interface_K4(rve, name)
     H_raw, N_raw = compliance_and_stiffness_contribution(
         geom, P₀_proj; K_interface = K_int, kw...
     )
     return (
-        _apply_symmetrize(delta_compliance(geom, H_raw, ε), sym),
-        _apply_symmetrize(MFH_Core.delta_stiffness(geom, N_raw, ε), sym),
+        _apply_symmetrize(delta_compliance(geom, H_raw, amount_value(a)), sym),
+        _apply_symmetrize(MFH_Core.delta_stiffness(geom, N_raw, amount_value(a)), sym),
     )
 end
 
@@ -377,14 +383,14 @@ function _phase_compliance_and_contribution(
     geom = rve.phases[name].geometry
     sym = phase_symmetrize(rve, name)
     P₀_proj = _project_matrix(P₀, sym)
-    ε = amount_value(rve.amounts[name])
+    a = rve.amounts[name]
     α_int = _crack_interface_α(rve, name)
     R_raw, N_raw = compliance_and_stiffness_contribution(
         geom, P₀_proj; α_interface = α_int, kw...
     )
     return (
-        _apply_symmetrize(delta_resistivity(geom, R_raw, ε), sym),
-        _apply_symmetrize(MFH_Core.delta_conductivity(geom, N_raw, ε), sym),
+        _apply_symmetrize(delta_resistivity(geom, R_raw, amount_value(a)), sym),
+        _apply_symmetrize(MFH_Core.delta_conductivity(geom, N_raw, amount_value(a)), sym),
     )
 end
 

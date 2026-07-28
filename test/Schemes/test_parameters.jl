@@ -36,19 +36,26 @@ using ForwardDiff
     rve2 = set_param(rve, p_f, 0.3)
     @test get_param(rve2, p_f) ≈ 0.3
     @test eltype(rve2) === Float64
+    # The cached matrix fraction must follow (it is a field, not a recomputation)
+    @test matrix_volume_fraction(rve2) ≈ 0.7
 
     # set_param promotes amount eltype to Dual when value is Dual
     dx = ForwardDiff.Dual{Nothing, Float64, 1}(0.2, ForwardDiff.Partials((1.0,)))
     rve3 = set_param(rve, p_f, dx)
     @test eltype(rve3) <: ForwardDiff.Dual
+    @test matrix_volume_fraction(rve3) isa ForwardDiff.Dual
+    @test ForwardDiff.partials(matrix_volume_fraction(rve3))[1] ≈ -1.0
 
     # CrackDensity is preserved as CrackDensity, not VolumeFraction
     rve4 = set_param(rve, p_e, 0.15)
     @test get_param(rve4, p_e) ≈ 0.15
     @test rve4.amounts[:C] isa CrackDensity
+    # A crack density does not enter the unit sum, so the cache is unchanged
+    @test matrix_volume_fraction(rve4) ≈ 0.8
 
     # Original is untouched (no mutation)
     @test get_param(rve, p_f) ≈ 0.2
+    @test matrix_volume_fraction(rve) ≈ 0.8
 
     # Setting matrix amount must error
     @test_throws ArgumentError set_param(rve, p_M, 0.5)

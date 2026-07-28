@@ -24,9 +24,23 @@
 
 ## Measuring
 
-Benchmarks live in `scripts/bench/` (`bench_alv.jl`, `bench_sc_solvers.jl`, with
-their own `Project.toml`) and `scripts/bench_echoes/` for the side-by-side
-comparison against the C++ Echoes library through PyCall.
+Benchmarks live in `scripts/bench/`, with their own `Project.toml`:
+
+- **`bench_suite.jl` + `harness.jl` + `cases_*.jl`** — the gated suite: a
+  registry of 67 cases, three independent measurement channels, a committed
+  baseline, a calibrated noise floor and a numerical checksum gate. This is
+  what any performance claim should go through; see
+  [Performance benchmarks](benchmarks.md) for the design and the results it has
+  produced.
+- **`bench_alv.jl`, `bench_sc_solvers.jl`** — the older hand-rolled quick-look
+  scripts (`@elapsed` / `@allocated`, 3 warm-ups + 5 samples, min reported).
+  Still handy for a one-off glance, but they cannot resolve the sub-microsecond
+  tier and they pair allocation and timing measurements taken on *different*
+  calls.
+
+`scripts/bench_echoes/` holds the side-by-side comparison against the C++
+Echoes library through PyCall — accuracy, not speed. See
+[Cross-validation against Echoes](validation.md).
 
 !!! warning "The Echoes benchmark needs its extension imports"
     `scripts/bench_echoes/benchmark.jl` exercises `jl_method = :decuhr`, which

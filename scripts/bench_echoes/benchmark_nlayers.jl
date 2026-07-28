@@ -4,8 +4,8 @@
 #  Verification of MeanFieldHom.jl `LayeredSphere` against four
 #  independent references:
 #
-#   § 1  **Bulk α_k** vs `echoes.layer_eE` (volume-averaged strain
-#        localization in each layer).
+#   § 1  **Bulk α_k and shear β_k** vs `echoes.layer_eE` (volume-averaged
+#        strain localization in each layer).
 #   § 2  **Internal consistency**: Julia state-vector recurrence vs
 #        a direct 8×8 linear-system solver assembled from the same mode
 #        formulas (sanity check that the recurrence implements the
@@ -16,18 +16,29 @@
 #   § 4  **Local bulk stress profile** `σ_rr(r), σ_θθ(r)` vs
 #        `echoes.loc_sS` under remote hydrostatic loading.
 #
-#  Note on the shear (β_k) ECHOES comparison
-#  -----------------------------------------
-#  Direct comparison of `β_k = (layer_eE[1,1] - layer_eE[1,2])` between
-#  Julia and ECHOES disagrees by 1–50 % in genuine multi-layer cases,
-#  while bulk α_k matches to 5e-13 and the local bulk stress profile
-#  matches `loc_sS` to 5e-16.  Both Julia's mode formulas and the 8×8
-#  direct solver agree, and the result reproduces the analytical
-#  Eshelby limits.  The disagreement appears to stem from a different
-#  internal convention in `echoes.layer_eE` (the C++ source uses
-#  `layer++` before fetching mode amplitudes — i.e. the outer layer's
-#  amplitudes evaluated over the inner layer's volume).  We therefore
-#  benchmark β_k against analytical limits rather than ECHOES.
+#  History of the shear (β_k) ECHOES comparison
+#  --------------------------------------------
+#  An earlier revision of this file compared β_k against ECHOES, found a
+#  1–50 % disagreement on genuine multi-layer stacks, attributed it to an
+#  `echoes.layer_eE` indexing convention, and fell back to §3's analytical
+#  limits.  That conclusion was wrong, and is kept here so nobody redoes
+#  the same reasoning:
+#
+#    * β_k was then computed as the bare mode-1 amplitude a_k, dropping the
+#      mode-2 term b_k·F_k (see `_shear_localization_multi`).  The omission
+#      cancels in every degenerate configuration — which is exactly what §3
+#      tests — hence "agrees with the analytical limits but not with ECHOES".
+#      The same bug was found and fixed in §2's direct 8×8 solver.
+#    * The `layer++` explanation cannot hold: α_k and β_k are read from the
+#      *same* `layer_eE(k)` matrix, so a layer-index error would have broken
+#      α_k too, and α_k matched to 5e-13 throughout.
+#    * Independently, the ALV per-layer β(t,t') Volterra blocks are pinned to
+#      ECHOES Python at 1e-16 on the diagonal
+#      (`test/Viscoelasticity/test_layered_alv.jl`), which is impossible if
+#      the elastic β_k were 1–50 % off.
+#
+#  β_k is therefore compared against ECHOES in §1, like α_k. §3's analytical
+#  limits are kept as an independent check, not as a substitute.
 #
 #  Run from the `MeanFieldHom.jl` package root:
 #    julia --project=scripts/bench_echoes scripts/bench_echoes/benchmark_nlayers.jl
@@ -121,7 +132,7 @@ relerr(a, b) = (abs(a) + abs(b) < 1.0e-14) ? 0.0 : abs(a - b) / max(abs(a), abs(
 # ─── §1 + §2  Random n-layer cross-check ────────────────────────────────────
 
 println("="^78)
-println("§1  Bulk α_k vs ECHOES layer_eE (random n-layer configs)")
+println("§1  Bulk α_k and shear β_k vs ECHOES layer_eE (random n-layer configs)")
 println("="^78)
 
 const rtol_match = 1.0e-8
@@ -133,6 +144,8 @@ const N_LAYERS_RANGE = 2:8
 
 n_pass_α = 0; n_fail_α = 0
 worst_α_err = 0.0
+n_pass_β = 0; n_fail_β = 0
+worst_β_err = 0.0
 
 for cfg in 1:N_CONFIGS
     n = rand(N_LAYERS_RANGE)
@@ -158,20 +171,27 @@ for cfg in 1:N_CONFIGS
     spn_py = py_make_nlayers(radii, C_layers_py, C_ref_py)
 
     cfg_α_err = 0.0
+    cfg_β_err = 0.0
     for k in 1:n
         A_jl = strain_strain_loc(sphere_jl, C_ref_jl; layer = k)
-        α_jl, _ = TensND.get_data(A_jl)
+        α_jl, β_jl = TensND.get_data(A_jl)
         eE_py = py_layer_eE(spn_py, k - 1)
-        α_py, _ = _iso_data_from_echoes6x6(eE_py)
+        α_py, β_py = _iso_data_from_echoes6x6(eE_py)
         cfg_α_err = max(cfg_α_err, relerr(α_jl, α_py))
+        cfg_β_err = max(cfg_β_err, relerr(β_jl, β_py))
     end
 
     pass_α = cfg_α_err ≤ rtol_match
     pass_α ? (global n_pass_α += 1) : (global n_fail_α += 1)
     global worst_α_err = max(worst_α_err, cfg_α_err)
+
+    pass_β = cfg_β_err ≤ rtol_match
+    pass_β ? (global n_pass_β += 1) : (global n_fail_β += 1)
+    global worst_β_err = max(worst_β_err, cfg_β_err)
 end
 
-@printf "  %d/%d configs within rtol = %.0e (worst rerr = %.3e)\n" n_pass_α (n_pass_α + n_fail_α) rtol_match worst_α_err
+@printf "  α_k :  %d/%d configs within rtol = %.0e (worst rerr = %.3e)\n" n_pass_α (n_pass_α + n_fail_α) rtol_match worst_α_err
+@printf "  β_k :  %d/%d configs within rtol = %.0e (worst rerr = %.3e)\n" n_pass_β (n_pass_β + n_fail_β) rtol_match worst_β_err
 println()
 
 # ─── §2  Internal consistency : Julia recurrence vs direct 8×8 solver ───────

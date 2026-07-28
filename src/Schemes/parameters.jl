@@ -385,52 +385,59 @@ _promote_amount(a::CrackDensity{T}, ::Type{Tnew}) where {T, Tnew} =
 """
     _rebuild_rve(rve; phases=rve.phases, amounts=rve.amounts,
                  symmetrize=rve.symmetrize,
-                 distribution_shape=rve.distribution_shape) -> RVE
+                 distribution_shape=rve.distribution_shape,
+                 T=_declared_eltype(rve)) -> RVE
 
 Immutable reconstruction of a `RVE` with a subset of fields replaced.
-Preserves `phase_names` (insertion order) and recomputes the parametric
-type `RVE{T, S}` from the new `amounts` and `distribution_shape`.
+Preserves `phase_names` (insertion order) and the declared element-type
+floor `T`, and recomputes `S` from `distribution_shape`.
+
+The floor is preserved rather than recomputed because amounts carry
+their own element types: replacing one amount by a `Dual` does not
+require re-typing the others, they promote where the values meet.
 """
 function _rebuild_rve(
         rve::RVE;
         phases = rve.phases,
         amounts = rve.amounts,
         symmetrize = rve.symmetrize,
-        distribution_shape = rve.distribution_shape
+        distribution_shape = rve.distribution_shape,
+        T = _declared_eltype(rve)
     )
-    # Determine the new amount eltype T from the dict's value type.
-    T = isempty(amounts) ? eltype(rve) : eltype(valtype(amounts))
     S = typeof(distribution_shape)
+    # `amounts` is already a `Dict{Symbol,AbstractAmount}` on every call path
+    # (`rve.amounts` itself, `_amounts_with_replacement`, `promote_rve`), so it
+    # is stored as-is — copying it here would allocate a second dict per
+    # `set_param`, i.e. per autodiff step.
+    new_amounts = amounts isa Dict{Symbol, AbstractAmount} ? amounts :
+        Dict{Symbol, AbstractAmount}(amounts)
+    # Property / geometry / distribution-shape lenses leave the amounts alone,
+    # which is the common case under autodiff — carry the cached fraction over
+    # instead of summing the dict again.
+    f_matrix = (new_amounts === rve.amounts && T === _declared_eltype(rve)) ?
+        rve.f_matrix : _compute_matrix_volume_fraction(new_amounts, T)
     return RVE{T, S}(
         rve.matrix_name, copy(rve.phase_names),
-        phases, amounts, symmetrize, distribution_shape
+        phases, new_amounts,
+        symmetrize, distribution_shape, f_matrix,
     )
 end
 
-Base.eltype(::Type{<:RVE{T}}) where {T} = T
-Base.eltype(rve::RVE) = eltype(typeof(rve))
+# Declared element-type floor (as opposed to `eltype(rve)`, the effective
+# element type promoted with the stored amounts — see `rve.jl`).
+_declared_eltype(::Type{<:RVE{T}}) where {T} = T
+_declared_eltype(rve::RVE) = _declared_eltype(typeof(rve))
 
-# Same dict but with one entry replaced by `new_amount` (any type that subtypes
-# AbstractAmount). The new dict's eltype is inferred from the union of the
-# replaced amount's eltype and the existing entries.
+Base.eltype(::Type{<:RVE{T}}) where {T} = T
+
+# Same dict but with one entry replaced by `new_amount`. No cross-promotion
+# of the untouched entries: the amounts dict is heterogeneous by design.
 function _amounts_with_replacement(
         amounts::AbstractDict, name::Symbol,
         new_amount::AbstractAmount
     )
-    # Compute promoted eltype.
-    Tnew = eltype(new_amount)
-    for (k, v) in amounts
-        k === name && continue
-        Tnew = promote_type(Tnew, eltype(v))
-    end
-    new_dict = Dict{Symbol, AbstractAmount{Tnew}}()
-    for (k, v) in amounts
-        if k === name
-            new_dict[k] = _promote_amount(new_amount, Tnew)
-        else
-            new_dict[k] = _promote_amount(v, Tnew)
-        end
-    end
+    new_dict = Dict{Symbol, AbstractAmount}(amounts)
+    new_dict[name] = new_amount
     return new_dict
 end
 
@@ -475,9 +482,8 @@ function set_param(rve::RVE, p::AmountParameter, value)
     haskey(rve.amounts, p.phase) ||
         throw(ArgumentError("phase :$(p.phase) has no amount in RVE"))
     old = rve.amounts[p.phase]
-    new_amount = old isa VolumeFraction ?
-        VolumeFraction{typeof(value)}(value) :
-        CrackDensity{typeof(value)}(value)
+    v = _amount_promote(_declared_eltype(rve), value)
+    new_amount = old isa VolumeFraction ? VolumeFraction(v) : CrackDensity(v)
     new_amounts = _amounts_with_replacement(rve.amounts, p.phase, new_amount)
     return _rebuild_rve(rve; amounts = new_amounts)
 end

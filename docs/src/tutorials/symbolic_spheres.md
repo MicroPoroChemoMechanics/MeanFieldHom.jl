@@ -109,12 +109,12 @@ k_dil = simplify(k_dil)
 k_dil
 ```
 
-To confirm this by-hand derivation against the package's own scheme API, a
-symbolic RVE must be declared with `T = Sym` (the default `T = Float64`
-would make `add_phase!` try `convert(Float64, ::Sym)` and fail):
+To confirm this by-hand derivation against the package's own scheme API, the
+ordinary `RVE(:M)` is enough — a symbolic fraction is stored as it comes,
+without conversion:
 
 ```@example tutsymsph
-rve = RVE(:M; T = Sym)
+rve = RVE(:M)
 add_matrix!(rve, sphere, Dict(:C => C0))
 add_phase!(rve, :I, sphere, Dict(:C => Ci); fraction = f)
 

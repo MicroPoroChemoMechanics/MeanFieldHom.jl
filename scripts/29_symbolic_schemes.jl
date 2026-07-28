@@ -107,9 +107,9 @@ println("\n  Dilute estimate (explicit tensor algebra):")
 println("    k_dil = ", k_dil)
 println("    μ_dil = ", μ_dil)
 
-# Cross-check against the scheme API. A symbolic RVE MUST be declared with
-# T = Sym, otherwise `add_phase!` tries `convert(Float64, ::Sym)` and errors.
-rve = RVE(:M; T = Sym)
+# Cross-check against the scheme API. The ordinary `RVE(:M)` takes a symbolic
+# fraction as it comes — the declared element type is only a promotion floor.
+rve = RVE(:M)
 add_matrix!(rve, sphere, Dict(:C => C0))
 add_phase!(rve, :I, sphere, Dict(:C => Ci); fraction = f)
 

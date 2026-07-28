@@ -27,7 +27,7 @@ function _evaluate(rve::RVE, ::Voigt, ::Val{p}; kw...) where {p}
     for name in inclusion_phase_names(rve)
         a = rve.amounts[name]
         if a isa VolumeFraction
-            Ceff += amount_value(a) * _phase_voigt_property(rve, name, p, Ceff)
+            Ceff += scale_by_amount(a, _phase_voigt_property(rve, name, p, Ceff))
         end
     end
     return Ceff

@@ -173,7 +173,7 @@ ECHOES validation).
 ```julia
 using ForwardDiff
 df = ForwardDiff.derivative(0.3) do f
-    rve = RVE(:M; T = typeof(f))
+    rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
     add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => TensISO{3}(60.0, 20.0));
                fraction = f)
@@ -182,6 +182,38 @@ end
 ```
 
 Every scheme is differentiable through the fractions, moduli, and
-inclusion geometry. The volume-fraction eltype `T` is fixed at RVE
-construction (default `Float64`); pass `T = ForwardDiff.Dual{...}` or
-`T = Complex{Float64}` explicitly when needed.
+inclusion geometry.
+
+## Element types: nothing to declare
+
+Amounts (volume fractions, crack densities), moduli and geometries each
+carry their own element type, promoted only where the values meet. A
+plain `RVE(:M)` therefore accepts a `ForwardDiff.Dual` fraction, a
+complex one, a symbolic one, and phases whose amounts have *different*
+element types:
+
+```julia
+rve = RVE(:M)
+add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_complex))   # complex moduli
+add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => C_complex);
+           fraction = 0.3)                                # real fraction
+add_phase!(rve, :J, Ellipsoid(1.0), Dict(:C => C1);
+           fraction = dual_x)                             # Dual fraction
+```
+
+The type parameter of `RVE{T,S}` is a **floor for promotion**, not a
+cast: `RVE{ComplexF64}(:M)` (or the equivalent `RVE(:M; T = ComplexF64)`)
+widens narrower amounts to `ComplexF64`, but an amount wider than `T` is
+stored as it comes, never narrowed. `eltype(rve)` reports the effective
+element type, `eltype(typeof(rve))` the declared floor, and
+[`promote_rve`](@ref) forces a floor after the fact.
+
+### Complex-valued workflows
+
+Every scheme listed above works with complex moduli, with one exception:
+`SelfConsistent(algorithm = NewtonDefault())` differentiates its
+residual with `ForwardDiff`, which cannot build a `Dual` over a complex
+scalar. Use the default Anderson solver in the frequency domain. The
+order-2 anisotropic conductivity kernels
+(`hill_order2_3d`, thermal crack COD) rely on `eigen(Symmetric(·))` and
+are real-only as well.

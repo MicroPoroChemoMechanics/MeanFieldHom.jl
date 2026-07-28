@@ -27,6 +27,7 @@ volume_fraction
 crack_density
 matrix_volume_fraction
 validate_rve
+promote_rve
 ```
 
 ## Schemes
