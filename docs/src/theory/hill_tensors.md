@@ -158,13 +158,12 @@ and ``I_{22}^{\boldsymbol{A}}=I_{33}^{\boldsymbol{A}}=I_{23}^{\boldsymbol{A}}
     ```
 
     These products appear only through ``\rho_j^{2}I_{ij}^{\boldsymbol{A}}``
-    terms (with ``\rho_1=a``) in ``\mathbb{U}^{\boldsymbol{A}}``, where they
-    produce the vanishing first row and column of
-    ``\mathrm{Mat}(\mathbb{U}^{\mathrm{cyl}})`` below. They are also what keeps
-    the third Eshelby identity valid at the cylinder endpoint. In
-    `MeanFieldHom` the circular sub-case ``b=c`` is evaluated on a separate
-    branch, to avoid forming the ``(b^2-c^2)^{-1}`` intermediates of the
-    triaxial formulas.
+    terms (``\rho_1=a``) in ``\mathbb{U}^{\boldsymbol{A}}``, where they produce
+    the vanishing first row and column of
+    ``\mathrm{Mat}(\mathbb{U}^{\mathrm{cyl}})`` below and keep the third Eshelby
+    identity valid at the cylinder endpoint. The circular sub-case ``b=c`` is
+    evaluated on a separate branch, avoiding the ``(b^2-c^2)^{-1}``
+    intermediates.
 
 ### Identities
 

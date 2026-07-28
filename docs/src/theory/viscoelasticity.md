@@ -214,17 +214,14 @@ purely **geometric** tensors of the elastic theory
      {\|\boldsymbol{A}\cdot\underline{\xi}\|^{3}}\,\mathrm{d}S_{\underline{\xi}} .
 ```
 
-!!! tip "Why this factorization is what makes ALV tractable"
-    The geometry sits entirely in ``\mathbb{U}^{\boldsymbol{A}}`` and
-    ``\mathbb{V}^{\boldsymbol{A}}``, which are **the elastic ones**, computed
-    once per shape and reusable unchanged. The time dependence sits entirely in
-    two *scalar* Volterra inverses. A ``6n \times 6n`` tensor-kernel inversion is
-    thereby replaced by two ``n \times n`` scalar ones. This is exactly what
-    [`hill_kernel`](@ref) does: discretize the
-    matrix law, extract its isotropic parameters ``(3k, 2\mu)``, form
-    ``k+\tfrac{4}{3}\mu`` and ``\mu``, invert each in the Volterra sense, and
-    assemble the blocks against [`tens_UA`](@ref) and [`tens_VA`](@ref).
-    An anisotropic reference kernel is not supported by that fast path.
+This is what makes ALV tractable: the geometry sits entirely in
+``\mathbb{U}^{\boldsymbol{A}}`` and ``\mathbb{V}^{\boldsymbol{A}}`` — **the
+elastic ones**, computed once per shape — and the time dependence in two
+*scalar* Volterra inverses, so a ``6n \times 6n`` tensor-kernel inversion
+becomes two ``n \times n`` scalar ones. [`hill_kernel`](@ref) discretizes the
+matrix law, extracts ``(3k, 2\mu)``, inverts ``k+\tfrac{4}{3}\mu`` and ``\mu``
+in the Volterra sense, and assembles against [`tens_UA`](@ref) and
+[`tens_VA`](@ref). An anisotropic reference kernel has no such fast path.
 
 For a **sphere** the geometric tensors are
 ``\mathbb{U}^{\boldsymbol{A}} = \tfrac{1}{3}\mathbb{J} + \tfrac{2}{15}\mathbb{K}``
@@ -316,12 +313,10 @@ which yields, after substitution:
 ``\mathbb{P}_{\Omega}`` in the Maxwell row is the Hill kernel of the
 **distribution shape** ``\Omega``, not of an inclusion.
 
-The only genuinely new difficulty relative to elasticity is bookkeeping: since
-``\circ`` does not commute, the order of the factors above is prescribed, and it
-matters even in the isotropic case where every factor looks scalar. All the
-schemes listed are implemented by [`homogenize_alv`](@ref) — Voigt, Reuss,
-dilute, dual dilute, Mori-Tanaka, Maxwell, Ponte Castañeda-Willis,
-self-consistent, asymmetric self-consistent and differential.
+The one new difficulty is bookkeeping: ``\circ`` does not commute, so the
+order of the factors is prescribed — even in the isotropic case, where every
+factor looks scalar. All ten schemes are implemented by
+[`homogenize_alv`](@ref).
 
 ## The n-layer composite sphere
 

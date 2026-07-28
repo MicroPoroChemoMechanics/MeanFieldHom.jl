@@ -1,11 +1,9 @@
 # Sensitivities — autodiff via ForwardDiff
 
-Since v0.4.0 `MeanFieldHom` exposes a small but expressive API for computing
-derivatives of `homogenize(rve, scheme)` outputs with respect to any scalar
-input parameter — physical (stiffness coefficients, conductivities) or
-geometric (radii, aspect ratios, volume fractions, crack densities, distribution
-shape envelopes) — *and* with respect to scalar fields of inclusion types
-defined later by the user.
+`MeanFieldHom` differentiates `homogenize(rve, scheme)` with respect to any
+scalar input — physical (stiffness coefficients, conductivities), geometric
+(radii, aspect ratios, volume fractions, crack densities, distribution-shape
+envelopes), including fields of user-defined inclusion types.
 
 The whole machinery is a thin convenience layer on top of [ForwardDiff.jl];
 ForwardDiff is shipped as a [weak dependency](https://pkgdocs.julialang.org/v1/creating-packages/#Conditional-loading-of-code-in-packages-(Extensions))
@@ -13,13 +11,11 @@ so the API only activates when you `using ForwardDiff` alongside `MeanFieldHom`.
 
 ## Why autodiff
 
-Every kernel of the package (`hill_tensor`, `eshelby_tensor`, the ten
-schemes, the SC/ASC/Differential solvers) is engineered to be
-`ForwardDiff.Dual`-friendly: cross-checked by `test/Schemes/test_dual_compat.jl`
-and validated via direct propagation through every numerical branch. The
-sensitivity API just lifts that property into a friendly user-facing form,
-so you do not have to rebuild the RVE manually with `Dual` values, plumb
-the right `Tag`, or extract scalars by hand.
+Every kernel (`hill_tensor`, `eshelby_tensor`, the ten schemes, the
+SC/ASC/Differential solvers) is `ForwardDiff.Dual`-friendly, pinned by
+`test/Schemes/test_dual_compat.jl`. The sensitivity API lifts that property
+into a user-facing form: no manual RVE rebuild with `Dual` values, no `Tag`
+plumbing, no scalar extraction by hand.
 
 Practical consequences:
 
@@ -141,21 +137,17 @@ the parametric inner constructor of `MyBlob{T,B}` resolves cleanly.
 
 ## Multi-scale chain rule
 
-Composing several `homogenize` calls in a single closure means the chain
-rule is taken care of automatically. The script
+Composing several `homogenize` calls in one closure applies the chain rule
+automatically.
 [`scripts/28_multiscale_strength.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/28_multiscale_strength.jl)
-is a complete worked example following Pichler & Hellmich (CCR 2011): a
-three-scale upscaling of cement-paste / mortar elasticity and quasi-brittle
-strength built from a self-consistent hydrate foam plus two Mori-Tanaka
-stages. The strength criterion requires `∂C_mortar / ∂μ_hyd` through the
-full chain — exposed in two complementary styles:
+follows Pichler & Hellmich (CCR 2011) — a three-scale cement-paste / mortar
+upscaling (SC hydrate foam + two Mori-Tanaka stages) requiring
+`∂C_mortar / ∂μ_hyd` through the full chain — in two styles:
 
-- **Manual chain rule** — one `jacobian` call per scale, then an explicit
-  tensor product of partial Jacobians. Useful when the intermediate
-  partials are themselves of interest.
-- **End-to-end autodiff** — a single `ForwardDiff.derivative` (or
-  `sensitivity`) on a closure that runs the three nested schemes in one
-  pass. Shorter, scheme-agnostic, and naturally extends to longer chains.
+- **Manual chain rule** — one `jacobian` per scale, then a tensor product of
+  the partial Jacobians; use it when the intermediate partials matter.
+- **End-to-end autodiff** — a single `ForwardDiff.derivative` on the nested
+  closure; shorter and scheme-agnostic.
 
 Both approaches agree to the floor of ForwardDiff itself, and the
 end-to-end approach is the recommended default unless you specifically
@@ -163,12 +155,10 @@ need the intermediate Jacobians.
 
 ## Symmetrize and orientation distributions
 
-Inclusions are often modeled as oriented distributions rather than a
-single oriented inclusion: a thin oblate spheroid with a *uniform spatial
-distribution of orientations* is, on average, isotropic. The
-`symmetrize` keyword on `add_matrix!` / `add_phase!` declares such a
-distribution at the RVE level so the homogenization kernel projects the
-phase localization tensor onto the corresponding symmetry class:
+A thin oblate spheroid with a *uniform spatial distribution of orientations*
+is, on average, isotropic. The `symmetrize` keyword on `add_matrix!` /
+`add_phase!` declares such a distribution, so the kernel projects the phase
+localization tensor onto the corresponding symmetry class:
 
 | Symmetrize value           | Meaning                                                     | Result class |
 | -------------------------- | ----------------------------------------------------------- | ------------ |
@@ -212,10 +202,8 @@ projection automatically.
 
 ## Validation
 
-The package ships a cross-cutting test in
 [`test/Schemes/test_sensitivities.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/test/Schemes/test_sensitivities.jl)
-that compares every sensitivity against centerd finite differences on every
-scheme, plus an exact match against the Christensen 1990 closed form for
-`∂k_MT/∂f`. Expect agreement to `rtol ≈ 1e-6` for closed-form schemes and
-`rtol ≈ 1e-4` for iterative schemes (limited by the fixed-point tolerance,
-not the autodiff itself).
+compares every sensitivity against centered finite differences on every scheme,
+plus the Christensen 1990 closed form for `∂k_MT/∂f`: `rtol ≈ 1e-6`
+(closed-form schemes), `rtol ≈ 1e-4` (iterative, limited by the fixed-point
+tolerance rather than the autodiff).

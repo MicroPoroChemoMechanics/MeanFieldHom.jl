@@ -1,12 +1,10 @@
 # Viscoelastic complex modulus of a bituminous mixture
 
-This chapter homogenizes the **complex modulus** ``E^*(\omega)`` of a bituminous
-mixture through three nested scales, following [someCBM2022](@cite) and mirroring
-the corresponding chapter of the Echoes book [echoes](@cite). The bitumen is
-viscoelastic (2S2P1D model); the mineral phases are elastic. Because every
-`MeanFieldHom` scheme is `ComplexF64`-safe, the frequency-domain correspondence
-principle is applied by simply running the homogenization with complex-valued
-stiffnesses.
+The **complex modulus** ``E^*(\omega)`` of a bituminous mixture through three
+nested scales, following [someCBM2022](@cite). The bitumen is viscoelastic
+(2S2P1D); the mineral phases are elastic. Every scheme being `ComplexF64`-safe,
+the correspondence principle amounts to running the homogenization with
+complex-valued stiffnesses.
 
 | Scale | RVE | Phases | Scheme |
 |:-----:|:----|:-------|:------:|
@@ -173,10 +171,8 @@ J(\alpha,\chi,k_t) = \sum_\omega
 ```
 
 subject to inequality constraints keeping the fit acceptable for the more-aged
-states. [someCBM2022](@cite) perform this minimization with a derivative-free
-`COBYLA` routine; the resulting parameters are used directly here (the objective
-above can be minimized with any optimizer — e.g. `NLopt` or `Optim` — but the
-calibration is not repeated in this page). The calibrated sets are
+states. [someCBM2022](@cite) minimize it with a derivative-free `COBYLA`
+routine; their parameters are used directly here rather than re-calibrated:
 
 ```@example bitumen
 x_HMA = (5.866e-3, 0.9760, 6366.1)   # J = 4.10e-1

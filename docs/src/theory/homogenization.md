@@ -1,11 +1,8 @@
 # Homogenization schemes
 
-`MeanFieldHom.Schemes` provides ten classical mean-field homogenization
-schemes for computing the *effective* property tensor of a multi-phase
-heterogeneous medium given (i) the phase geometries, (ii) the phase
-properties, and (iii) the phase volume fractions or crack densities.
-This page summarizes the mathematics behind each scheme and the design
-choices that govern their implementation.
+`MeanFieldHom.Schemes` computes the *effective* property tensor of a
+multi-phase medium from (i) the phase geometries, (ii) the phase properties and
+(iii) the phase volume fractions or crack densities.
 
 ## Notation
 
@@ -89,11 +86,9 @@ Three trajectories are shipped:
 - **CustomPath(dict)** — explicit per-phase monotone trajectory with
   `path_i(0) = 0` and `path_i(N) = 1`.
 
-For multi-phase RVEs the three trajectories agree in the dilute limit
-(`f → 0`) and diverge by an amount proportional to `f` at finite
-fractions — a *physical* feature of the differential scheme, not a
-numerical artefact. Cracks (`CrackDensity`) are integrated separately
-since they don't compete for matrix volume.
+The three trajectories agree in the dilute limit (`f → 0`) and diverge like
+`f` at finite fractions — a *physical* feature of the differential scheme.
+Cracks (`CrackDensity`) are integrated separately, having no volume.
 
 ## Number-type compatibility
 

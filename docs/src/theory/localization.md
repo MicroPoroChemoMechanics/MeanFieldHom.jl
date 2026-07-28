@@ -93,22 +93,15 @@ Every routine above has a 2-tensor analog, triggered by dispatch on
 
 ## Type-genericity
 
-All four localization and both contribution tensors are generic in the
-element type — Float64, BigFloat, `ForwardDiff.Dual`, `SymPy.Sym`, and
-`Symbolics.Num` all flow through the computation.  The only
-requirement is that [`hill_tensor`](@ref) supports the chosen element
-type.
+All four localization and both contribution tensors are generic in the element
+type; the only requirement is that [`hill_tensor`](@ref) supports it.
 
 ## Extending to user-defined inclusions
 
-Any concrete subtype of `AbstractInclusion` inherits the four
-localization and the contribution tensors automatically once it
-provides a method for [`hill_tensor`](@ref).  For inclusions where the
-Hill polarization tensor has no convenient closed form (e.g.
-`LayeredSphere`), the user may directly override
-[`strain_strain_loc`](@ref) (and, if needed, its variants) — the three
-remaining localization tensors and the contribution tensors are
-derived algebraically and do not require additional methods.
+A concrete subtype of `AbstractInclusion` inherits the four localization and
+the contribution tensors as soon as it provides [`hill_tensor`](@ref). When
+``\mathbb P`` has no convenient closed form (e.g. `LayeredSphere`), override
+[`strain_strain_loc`](@ref) instead — the rest is derived algebraically.
 
 See the developer guide [Adding a new inclusion](../developer/adding_inclusion.md)
 for a step-by-step recipe.

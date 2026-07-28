@@ -6,11 +6,10 @@ isotropic matrix, in **conduction only** (thermal, electric, Darcy). It follows
 [barthelemyBignonnetIJES2020](@cite), which extends the layered-sphere
 recurrence of [herve1993](@cite) to spheroids.
 
-The difficulty, and the reason this page exists, is one sentence: **on a sphere,
-an imperfect interface acts on each harmonic degree independently; on a
-spheroid, it couples them.** The sphere's simple ``2\times 2`` transfer per mode
-therefore becomes a truncated series with a ``2\mathcal{N}\times 2\mathcal{N}``
-transfer matrix per interface.
+**On a sphere an imperfect interface acts on each harmonic degree
+independently; on a spheroid it couples them.** The sphere's ``2\times 2``
+transfer per mode therefore becomes a truncated series with a
+``2\mathcal{N}\times 2\mathcal{N}`` transfer matrix per interface.
 
 !!! note "No elastic counterpart"
     Unlike [`LayeredSphere`](@ref), there is none. The harmonic decomposition
@@ -267,24 +266,21 @@ thumb — a working precision of about ``0.8\,(2\mathcal{N}-1)`` decimal digits 
 is exactly this cancellation bound, and is why the reference implementation
 needs `mpmath` arbitrary precision once ``\mathcal{N}\gtrsim 10``.
 
-`MeanFieldHom` **sidesteps the problem rather than reproducing it**. The default
-backend integrates the paper's own closed-form integral definitions directly by
-Gauss quadrature (`QuadGK`), evaluating ``P_i(x)``, ``P_i^{1}(x)`` and their
-derivatives at real ``x\in[-1,1]`` through the **stable three-term recurrence**,
-never through the monomial expansion:
+`MeanFieldHom` integrates the definitions above directly by Gauss quadrature
+(`QuadGK`), evaluating ``P_i(x)``, ``P_i^{1}(x)`` and their derivatives through
+the **stable three-term recurrence**, never through the monomial expansion:
 
 ```julia
 coupling_matrices(q, Nseries; method = :quadrature)   # default
 coupling_matrices(q, Nseries; method = :series)       # BigFloat validation oracle
 ```
 
-For a prolate ``q`` the integrand is smooth and bounded on ``[-1,1]``; for an
-oblate ``q = \mathrm{i}\tau`` it is complex-analytic with no real singularity.
-Either way `Float64` quadrature converges to essentially machine precision for
-any ``\mathcal{N}``. The faithful `BigFloat` port of the original monomial
-series is kept as an independent oracle, cross-checked to machine precision in
-`test/LayeredSpheroids/test_coupling.jl`, and the comparison is shown in
-`scripts/33_spheroid_series_convergence.jl`.
+The integrand is smooth and bounded on ``[-1,1]`` for a prolate ``q``, and
+complex-analytic with no real singularity for an oblate ``q = \mathrm{i}\tau``:
+`Float64` quadrature reaches machine precision for any ``\mathcal{N}``. The
+`BigFloat` port of the monomial series is kept as an independent oracle
+(`test/LayeredSpheroids/test_coupling.jl`,
+`scripts/33_spheroid_series_convergence.jl`).
 
 ## Integration with the schemes
 

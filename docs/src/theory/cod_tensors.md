@@ -23,12 +23,10 @@ correction ``\Delta\mathbb{S}`` to the effective compliance; independently,
 ``\boldsymbol{B}`` gives the stress and displacement intensity factors
 ``\underline{K}``, ``\underline{N}`` at the crack front.
 
-Echoes computes ``\mathbb{H}`` directly and never forms
-``\boldsymbol{B}``; `MeanFieldHom` computes ``\boldsymbol{B}`` first, because
-the intensity factors need it and reconstructing ``\mathbb{H}`` from it avoids
-inverting a rank-deficient order-4 tensor. The price: the normalization of
-``\boldsymbol{B}`` is not unique in the literature, so it is stated explicitly
-under *Conventions* below.
+`MeanFieldHom` computes ``\boldsymbol{B}`` first — the intensity factors need
+it, and rebuilding ``\mathbb{H}`` from it avoids inverting a rank-deficient
+order-4 tensor. Its normalization is not unique in the literature, hence the
+*Conventions* section below.
 
 ## Geometry
 
@@ -228,13 +226,12 @@ The closed forms of the next section give ``\boldsymbol{B}``, and ``\mathbb{H}``
 follows from it by the ``3/4``. Comparing ``\mathbb{H}`` to those closed forms
 would therefore verify nothing: it is the same formula read twice.
 
-The boxed definition offers a way out. Read from right to left, it is a
-**recipe**: take a genuinely three-dimensional flat ellipsoid, compute its Hill
-tensor ``\mathbb{P}``, assemble
-``\mathbb{Q} = \mathbb{C}-\mathbb{C}:\mathbb{P}:\mathbb{C}``, invert it, and
-scale by its flatness ``\omega = c/b``. That path — ``\mathbb{P}\to\mathbb{Q}\to
-\mathbb{Q}^{-1}\to`` limit — never touches the crack machinery, so agreement with
-[`compliance_contribution`](@ref) is evidence rather than tautology:
+Read from right to left the boxed definition is a **recipe**: take a flat
+ellipsoid, compute ``\mathbb{P}``, assemble
+``\mathbb{Q} = \mathbb{C}-\mathbb{C}:\mathbb{P}:\mathbb{C}``, invert, scale by
+the flatness ``\omega = c/b``. That path never touches the crack machinery, so
+agreement with [`compliance_contribution`](@ref) is evidence rather than
+tautology:
 
 ```@example Horacle
 using MeanFieldHom, TensND, Plots

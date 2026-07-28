@@ -20,12 +20,10 @@ stiffness does that cost? Microstructural model of
 
 ## The three scales
 
-The paste scale is exactly the one used in
-[Quasi-brittle strength](strength.md) — the hydrate foam and cement paste model
-of [pichler2011](@cite), shared as
+The paste scale is the one used in [Quasi-brittle strength](strength.md) — the
+hydrate foam and cement paste model of [pichler2011](@cite), shared as
 [`scripts/common/pichler_model.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/common/pichler_model.jl).
-What this page adds is the fourth phase geometry: aggregates are no longer bare
-spheres but **coated** ones.
+The new ingredient is the fourth phase geometry: **coated** aggregates.
 
 | Scale | RVE | Phases | Scheme |
 |:-----:|:----|:-------|:------:|
@@ -63,11 +61,9 @@ const WC, ALPHA, SC_RATIO = 0.5, 1.0, 3.0
 ## Scale 1–2: the bulk cement paste
 
 The hydrate foam is a self-consistent polycrystal of needle-shaped hydrates
-(aspect ratio ``\omega = 10^4``) whose orientations are discretized into
-``N`` polar bins, plus water and air. Clinker grains are then embedded by
-Mori-Tanaka. This is the model of [pichler2011](@cite) verbatim; see
-[Quasi-brittle strength](strength.md) for its derivation and its cross-check
-against Echoes.
+(``\omega = 10^4``) discretized into ``N`` polar orientation bins, plus water
+and air; clinker grains are then embedded by Mori-Tanaka. Derivation and
+cross-check against Echoes: [Quasi-brittle strength](strength.md).
 
 ```@example itz
 const N_BINS = 20

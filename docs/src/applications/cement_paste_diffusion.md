@@ -356,14 +356,12 @@ plot_model(detailed_model, "Detailed model")
 
 ## Comparison of both models
 
-The two models predict consistent trends. The engineering model is faster but
-relies on effective hydrate properties calibrated from mature paste; the detailed
-model is richer in microstructural content and agrees more closely with
-experiment across the full hydration range [achourCBM2020](@cite). For a given
-``w/c`` both predict a **percolation threshold** in stiffness near the observed
-setting degree, and a **sharp drop** in diffusivity at intermediate-to-high
-hydration as the large capillary pores disconnect and transport is forced through
-the poorly-diffusive gel.
+Both predict, for a given ``w/c``, a **percolation threshold** in stiffness
+near the observed setting degree and a **sharp drop** in diffusivity at
+intermediate-to-high hydration, as the large capillary pores disconnect and
+transport is forced through the poorly-diffusive gel. The engineering model is
+faster but calibrated on mature paste; the detailed one follows experiment more
+closely across the full hydration range [achourCBM2020](@cite).
 
 ```@example diffusion
 wc = 0.4
@@ -550,18 +548,15 @@ plotly_surface(logω, logω, Zd; title = "Diffusion percolation threshold φ_dif
     zlabel = "φ_diff (%)", uid = "surf-phi-diff")
 ```
 
-At the engineering calibration point the solid is a very thin oblate platelet
-(``\omega_s = 0.013``): it percolates at a tiny solid fraction, so the skeleton
-carries load up to a **high** porosity, ``\varphi^{\rm elas} \approx 93\%`` — the
-paste sets early (low ``\alpha``). The prolate pores combined with those thin
-solid barriers give ``\varphi^{\rm diff} \approx 66\%``, so the capillary network
-disconnects only at low porosity (high ``\alpha``): the elastic and diffusion
-thresholds are well separated, which is exactly the behavior needed to reproduce
-both the early set and the late diffusivity drop. The C-S-H gel point sits at
-``\varphi^{\rm elas} \approx 64\%`` and ``\varphi^{\rm diff} \approx 17\%``, so at
-the HD porosity ``\varphi_{HD} = 0.24`` the gel is simultaneously load-bearing
-(``0.24 < 0.64``) and diffusive (``0.24 > 0.17``) — the prolate gel pores are
-what keep ``\mathbf D_{HD} > 0``.
+The thin oblate solid (``\omega_s = 0.013``) percolates at a tiny solid
+fraction, so the skeleton carries load up to ``\varphi^{\rm elas} \approx 93\%``
+(early set, low ``\alpha``), while the prolate pores give
+``\varphi^{\rm diff} \approx 66\%`` (late disconnection, high ``\alpha``): the
+two thresholds are well separated, which is what reproduces both the early set
+and the late diffusivity drop. The gel sits at ``\varphi^{\rm elas} \approx 64\%``
+and ``\varphi^{\rm diff} \approx 17\%``, so at ``\varphi_{HD} = 0.24`` it is
+simultaneously load-bearing and diffusive — the prolate gel pores are what keep
+``\mathbf D_{HD} > 0``.
 
 !!! note "Numerical agreement with Echoes"
     Evaluated with the compiled Echoes library, ``\varphi^{\rm elas}`` and

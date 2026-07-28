@@ -1,14 +1,11 @@
 # Layered sphere — bulk + shear recurrences and imperfect interfaces
 
-`MeanFieldHom.LayeredSpheres` provides the concrete type
-[`LayeredSphere`](@ref) — an `n`-layer isotropic spherical composite
-inclusion embedded in an infinite isotropic matrix — together with the
-per-layer localization, global contribution tensors, and
-layer / sphere / cumulative average utilities.  The bulk and shear
-recurrences follow [herve1993](@cite) (which generalizes the three-phase
-model of [christensenLo1979](@cite)); the imperfect-interface extension
-follows [herveLuanco2014](@cite).  Four physically-motivated interface
-types are supported: `PerfectInterface`, and two primal/dual pairs per
+[`LayeredSphere`](@ref) is an `n`-layer isotropic spherical composite
+inclusion in an infinite isotropic matrix, with per-layer localization, global
+contribution tensors and layer / sphere / cumulative averages. The bulk and
+shear recurrences follow [herve1993](@cite) (generalizing the three-phase model
+of [christensenLo1979](@cite)); imperfect interfaces follow
+[herveLuanco2014](@cite) — `PerfectInterface` plus one primal/dual pair per
 physics:
 
 | Elasticity (primal / dual)                   | Conductivity (primal / dual)                    |
@@ -183,5 +180,5 @@ Three volume-average flavors are provided:
 - [`cumulative_strain_average`](@ref)`(sphere, C₀, ε∞, r)` — mean
   strain inside the ball of radius ``r``.
 
-All three now cover the deviatoric part for any ``N ≥ 1`` via the
-shear recurrence described above.
+All three cover the deviatoric part for any ``N ≥ 1`` via the shear
+recurrence above.

@@ -91,11 +91,9 @@ end
 plt
 ```
 
-Flatter pores (``\omega \ll 1``) lift the effective diffusivity far more per
-unit porosity than spheres (``\omega = 1``) or prolate pores (``\omega > 1``):
-at a given ``\varphi`` the oblate curve sits well above the others, because a
-thin disc bridges a larger span of the microstructure than a compact inclusion
-of the same volume.
+At a given ``\varphi`` the oblate curve sits well above the others: a thin disc
+bridges a larger span of the microstructure than a compact inclusion of the same
+volume.
 
 Two limits are worth checking. At zero porosity every curve must return the
 solid diffusivity, and at ``\omega = 1`` (spherical pores) the self-consistent

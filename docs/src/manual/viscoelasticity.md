@@ -1,10 +1,8 @@
 # Viscoelastic homogenization — user manual
 
 The ALV (ageing linear viscoelastic) pipeline reuses the [`RVE`](@ref)
-machinery of the elastic side. Switching to viscoelasticity is
-essentially a matter of replacing each phase property by a
-[`ViscoLaw`](@ref) and passing a `times` grid to
-[`homogenize_alv`](@ref).
+machinery of the elastic side: replace each phase property by a
+[`ViscoLaw`](@ref) and pass a `times` grid to [`homogenize_alv`](@ref).
 
 This manual walks through eight use cases, each runnable as is.
 A more elaborate version of every example exists under
@@ -201,11 +199,10 @@ add_phase!(rve, :CRACK, PennyCrack(1.0),
 C_eff = homogenize_alv(rve, MoriTanaka(), :C; times = times)
 ```
 
-Behind the scenes the scalar COD kernels `B̃_n`, `B̃_t` are post-corrected
-by the spring-interface construction of [sevostianovIJSS2007](@cite),
-transposed to the Volterra algebra: the compliance of the crack faces and
-that of the interface add up, so a stiffer interface closes the crack. The
-correction reduces to one extra scalar Volterra inverse per direction.
+The scalar COD kernels `B̃_n`, `B̃_t` are post-corrected by the
+spring-interface construction of [sevostianovIJSS2007](@cite), transposed to
+the Volterra algebra: crack-face and interface compliances add up, at the cost
+of one extra scalar Volterra inverse per direction.
 
 Limits, all exercised in the test suite :
 
@@ -232,24 +229,15 @@ literature for crack-bearing RVEs :
   (`strain_Strain = H̃·C_0`).  At convergence SC writes
   `C_eff = (B_E)·(A_E)^{-vol}` where the cracks contribute to `A_E`.
 
-The two formulations differ at finite crack density (they coincide in
-the dilute limit `ε → 0`).  At `d = 0.30, traction-free` for example,
-MFH MT gives `ε_xx(t→∞) ≈ 0.481` while ECHOES MT gives `0.559`.
-PCW happens to coincide between the two implementations (at least
-numerically through the configurations exercised by
-`scripts/60_alv_cracks_interface.jl`).
+They coincide in the dilute limit `ε → 0` and differ at finite density: at
+`d = 0.30, traction-free`, MFH MT gives `ε_xx(t→∞) ≈ 0.481` against `0.559` for
+ECHOES MT. PCW coincides between the two implementations over the configurations
+of `scripts/60_alv_cracks_interface.jl`.
 
-The MFH MT and SC additive forms are kept for internal consistency
-with the (also-additive) MFH elastic MT.  Switching all four MFH
-schemes (elastic, conduction, ALV, ALV-cracks) to the multiplicative
-ECHOES form simultaneously is left to a follow-up PR — it requires a
-coordinated refactor of `Schemes/contribution_helpers.jl`.
-
-ECHOES C++ cross-check : `scripts/60_alv_cracks_interface.jl` runs the
-same configuration through both implementations.  At low density the
-two MT and SC variants agree numerically with PCW (`rtol ≤ 1e-3`);
-at moderate density (`d ≥ 0.20`) the additive vs multiplicative
-discrepancy becomes visible (a few % to ~14% depending on density).
+The additive form is kept for consistency with the (also-additive) MFH
+elastic MT. `scripts/60_alv_cracks_interface.jl` runs the same configuration
+through both implementations: `rtol ≤ 1e-3` at low density, a few % to ~14 %
+at `d ≥ 0.20`.
 
 A static (non-ageing) elastic + conductivity crack benchmark with
 matrix-only interface stiffness is in
@@ -327,10 +315,9 @@ K_iso * K_O                        # ALVKernelOrtho
 Matrix(K_iso)                      # back to dense (6n × 6n) on demand
 ```
 
-These types are a **prototype**: they are fully usable for hand-rolled
-ALV pipelines but `homogenize_alv` does not yet accept them as inputs
-(use `Matrix(K)` to cross the boundary). See
-`scripts/58_alv_kernel_types.jl` for a runnable demo.
+**Prototype**: usable for hand-rolled ALV pipelines, but `homogenize_alv`
+does not accept them as inputs — use `Matrix(K)` to cross the boundary
+(`scripts/58_alv_kernel_types.jl`).
 
 ## 8. Sensitivities (autodiff via ForwardDiff)
 
@@ -407,14 +394,11 @@ a central finite difference at `rtol ≤ 1e-7`.
 
 ## 9. Validation against ECHOES C++
 
-`scripts/53_ageing_creep_solid.jl` reproduces the multi-phase Maxwell +
-solidifying Maxwell + pore benchmark from the ECHOES C++ manual.
-`scripts/57_ageing_creep_cracks.jl` covers all seven crack-aware ALV
-schemes on a penny-crack RVE.
-`scripts/52_rabotnov_mittag_leffler.jl` validates the **Rabotnov /
-Mittag-Leffler** closed-form benchmark of @barthelemyIJES2019 §5,
-overlaying the analytical curves and reaching `rtol ≤ 1.3e-3` at
-`n_times = 200` (trapezoidal-rule discretization accuracy).
+| script | benchmark | agreement |
+| :--- | :--- | :--- |
+| `53_ageing_creep_solid.jl` | multi-phase Maxwell + solidifying Maxwell + pore (ECHOES C++ manual) | — |
+| `57_ageing_creep_cracks.jl` | seven crack-aware ALV schemes, penny-crack RVE | — |
+| `52_rabotnov_mittag_leffler.jl` | Rabotnov / Mittag-Leffler closed form, @barthelemyIJES2019 §5 | `rtol ≤ 1.3e-3` at `n_times = 200` |
 
 An external Python module exposing a Mittag-Leffler / Rabotnov kernel is
 callable from Julia via PyCall :

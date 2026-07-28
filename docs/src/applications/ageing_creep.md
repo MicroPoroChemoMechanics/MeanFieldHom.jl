@@ -1,13 +1,10 @@
 # Ageing creep of solidifying cementitious materials
 
-This chapter implements the ageing-creep homogenization model of
-[sanahuja2013](@cite), mirroring the corresponding chapter of the Echoes book
-[echoes](@cite). It describes a composite in which one phase **solidifies
-progressively** — as C-S-H does during hydration — so the effective relaxation
-tensor ``\mathbb R^{\rm hom}(t, t')`` depends on the observation time ``t`` and
-the loading time ``t'`` *independently*. The Laplace–Carson correspondence
-principle no longer applies; the homogenization is done directly in the time
-domain by [`homogenize_alv`](@ref).
+The ageing-creep model of [sanahuja2013](@cite): one phase **solidifies
+progressively** — as C-S-H does during hydration — so ``\mathbb R^{\rm hom}(t,
+t')`` depends on the observation time ``t`` and the loading time ``t'``
+*independently*. Laplace–Carson no longer applies; the homogenization runs
+directly in the time domain, through [`homogenize_alv`](@ref).
 
 The composite has three phase types:
 
@@ -215,9 +212,7 @@ second scatters them independently in the matrix.
     (`:layers` ``E_0 J`` ≈ 1.60 → 11.06; `:whole_pores` ≈ 1.96 → 17.54 at
     ``t_0 = 2/3``), and the two differ by ``\approx 6.5`` in ``E_0 J``.
 
-    That gap is a modelling result, not a discrepancy to be reconciled: the
-    composite-sphere packing of [sanahuja2013](@cite) is an efficient,
-    physically-motivated model — one Eshelby problem instead of ``N+1`` — not an
-    exact reformulation of the separate-inclusion RVE. Choosing between the two
-    is choosing a morphology, so pick the one that matches the microstructure you
-    intend to represent rather than expecting them to agree.
+    That gap is a modelling result, not a discrepancy: the composite-sphere
+    packing of [sanahuja2013](@cite) is an efficient model — one Eshelby problem
+    instead of ``N+1`` — not an exact reformulation of the separate-inclusion
+    RVE. Choosing between them is choosing a morphology.

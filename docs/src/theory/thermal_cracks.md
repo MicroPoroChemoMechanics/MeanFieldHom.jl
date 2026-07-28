@@ -1,11 +1,9 @@
 # Thermal cracks — COD scalar and resistivity contribution
 
-This page gives the analog of the **elasticity crack quantities** for
-the 2nd-order (conductivity / diffusion / Darcy) problem.  It is the
-direct transposition of the theory in
-[Crack opening displacement and compliance tensors](cod_tensors.md)
-to the scalar-potential problem, where the driving field is a
-vector (heat flux or gradient) rather than a symmetric 2-tensor.
+Transposition of
+[Crack opening displacement and compliance tensors](cod_tensors.md) to the
+2nd-order (conductivity / diffusion / Darcy) problem, where the driving field
+is a vector rather than a symmetric 2-tensor.
 
 ## Elasticity ↔ Conductivity — correspondence table
 
@@ -22,21 +20,13 @@ vector (heat flux or gradient) rather than a symmetric 2-tensor.
 | Stress intensity factors ``K_I, K_{II}, K_{III}``                | Heat-flux intensity factor ``K_T`` — scalar (mode I analog only)      |
 | Displacement intensity factor ``\hat{\mathbf N}``                | Temperature intensity factor — scalar ``[T]_\text{avg}``                |
 
-Why a scalar ``b`` and not a tensor? In the 2nd-order problem, the
-driving field ``\nabla T`` is a vector and the jump ``[T]`` across the
-crack is a scalar; only the **normal component** of the heat flux
-``\mathbf q\cdot\hat{\mathbf n}`` produces a non-trivial jump.  A
-single scalar ``b`` captures the full crack flexibility — as opposed to
-the 6-component ``\mathbf B`` of the 4-tensor problem, which has to
-resolve sliding and shear modes.
-
-Why always ``\hat{\mathbf n}``?  The null space of the block
-``\mathbf K_0 - \mathbf K_0\mathbf P(0)\mathbf K_0`` — which emerges
-in the ``\omega\to 0`` limit of the Hill tensor with the correct
-V-formula (right singular vectors of
-``\mathbf A\cdot\mathbf K_0^{-1/2}``) — is spanned by
-``\hat{\mathbf n}`` for any ``\mathbf K_0`` (see derivation below).
-The scalar ``b`` captures all the anisotropy of the matrix.
+A scalar ``b`` suffices because ``[T]`` is a scalar and only
+``\mathbf q\cdot\hat{\mathbf n}`` produces a jump — there are no sliding or
+shear modes to resolve, unlike the 6-component ``\mathbf B``. The direction is
+always ``\hat{\mathbf n}``: the null space of
+``\mathbf K_0 - \mathbf K_0\mathbf P(0)\mathbf K_0`` is spanned by
+``\hat{\mathbf n}`` for any ``\mathbf K_0`` (derivation below), so ``b``
+carries all the matrix anisotropy.
 
 ## Crack geometry
 

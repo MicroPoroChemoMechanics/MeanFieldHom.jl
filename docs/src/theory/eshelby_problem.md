@@ -23,12 +23,11 @@ it is specific to the ellipsoid: no other shape has it.
 \boldsymbol{\varepsilon}(\underline{x}) = -\,\mathbb{P}:\boldsymbol{\tau}.
 ```
 
-The order-4 tensor ``\mathbb{P} = \mathbb{P}(\boldsymbol{A},\mathbb{C})`` is the
-**Hill polarization tensor** [hill1963](@cite), [willis1977](@cite). It depends
-on nothing but the ellipsoid's shape and orientation, through
-``\boldsymbol{A}``, and the reference medium, through ``\mathbb{C}``. In
-particular it is **independent of the ellipsoid's size** — only the ratios of
-the semi-axes matter.
+``\mathbb{P} = \mathbb{P}(\boldsymbol{A},\mathbb{C})`` is the **Hill
+polarization tensor** [hill1963](@cite), [willis1977](@cite). It depends only on
+the ellipsoid's shape and orientation (through ``\boldsymbol{A}``) and on the
+reference medium (through ``\mathbb{C}``) — in particular it is **independent of
+the ellipsoid's size**.
 
 ## Three tensors, one contraction apart
 

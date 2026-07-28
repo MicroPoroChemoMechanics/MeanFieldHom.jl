@@ -1,24 +1,15 @@
 # Nonlinear solvers for the self-consistent fixed point
 
-The [self-consistent scheme](bounds_and_schemes.md) is not a one-shot
-formula — it is a fixed point ``\mathbb C = \mathrm{step}(\mathbb C)``,
-solved iteratively. Every tutorial so far has used the package's
-built-in solver, a damped Picard iteration
-([`AndersonDefault`](@ref), the default). `MeanFieldHom` also ships a
-dependency-free Newton-Raphson solver ([`NewtonDefault`](@ref)), and —
-the subject of this page — a weak extension,
-`MeanFieldHomNonlinearSolveExt`, that hands the same fixed point to any
-algorithm from [NonlinearSolve.jl](https://github.com/SciML/NonlinearSolve.jl)
-(`NewtonRaphson`, `TrustRegion`, `LevenbergMarquardt`, …).
+The [self-consistent scheme](bounds_and_schemes.md) is a fixed point
+``\mathbb C = \mathrm{step}(\mathbb C)``. Three solver families are available
+(see [Homogenization schemes](../manual/schemes.md)): the default damped Picard
+[`AndersonDefault`](@ref), the dependency-free [`NewtonDefault`](@ref), and —
+the subject of this page — the weak extension
+`MeanFieldHomNonlinearSolveExt`, which hands the same fixed point to any
+[NonlinearSolve.jl](https://github.com/SciML/NonlinearSolve.jl) algorithm.
 
-This matters for two reasons: some SciML algorithms converge faster or
-more robustly than Picard on stiff, high-contrast problems, and — since
-`MeanFieldHom`'s sensitivities (the [previous](sensitivities.md) two
-tutorials) are built on `ForwardDiff` — differentiating *through* an
-external nonlinear solve must not silently break or, worse, silently
-give the wrong answer. This page checks both, and closes with the
-strength-criterion example from the [capstone tutorial](strength_criteria.md)
-computed through a SciML solver instead of Picard.
+Two things need checking: that they agree, and that `ForwardDiff`
+differentiates *through* an external solve correctly.
 
 ## The three solver families
 
@@ -46,13 +37,11 @@ C_auto   = homogenize(rve, SelfConsistent(; algorithm = AutoNonlinear()))     # 
 k_mu.((C_picard, C_newton, C_nr, C_tr, C_auto))
 ```
 
-All five agree on the same fixed point — as they must, since they solve
-the same equation. [`AutoNonlinear`](@ref) resolves, at runtime, to a
-globalized SciML algorithm (`TrustRegion`) when the extension is active,
-and to the built-in [`NewtonDefault`](@ref) otherwise — a solver choice
-that works whether or not `NonlinearSolve.jl` happens to be loaded.
-`AsymmetricSelfConsistent` accepts `algorithm` the same way, for both
-its stiffness- and compliance-form branches.
+All five agree on the same fixed point. [`AutoNonlinear`](@ref) resolves at
+runtime to `TrustRegion` when the extension is active and to
+[`NewtonDefault`](@ref) otherwise. `AsymmetricSelfConsistent` accepts
+`algorithm` the same way, on both its stiffness- and compliance-form
+branches.
 
 SciML algorithms are opt-in rather than the default (see
 [Homogenization schemes](../manual/schemes.md)): reach for them on
@@ -61,14 +50,9 @@ be markedly faster.
 
 ## Benchmark: time and memory
 
-A single `homogenize` call is cheap enough that the interesting
-comparison is many repeated solves — exactly the situation in a
-parameter sweep or an optimization loop. The numbers below use plain
-`@elapsed`/`@allocated` (minimum of a few samples after warm-up); they
-are illustrative of the *relative* cost between solvers on this
-particular problem, not absolute guarantees — see
-`scripts/bench/bench_sc_solvers.jl` for the full, repeatable benchmark
-this page summarizes.
+The numbers below use `@elapsed`/`@allocated` (minimum of a few samples after
+warm-up) and are indicative of *relative* cost on this problem only; the
+repeatable benchmark is `scripts/bench/bench_sc_solvers.jl`.
 
 ```@example tutnls
 function bench(f, label; warmups = 3, samples = 5)
@@ -97,30 +81,21 @@ for r in results
 end
 ```
 
-On this well-conditioned, moderate-contrast problem, all four solvers
-converge in a handful of iterations; differences in time/memory here
-mostly reflect iteration count and per-iterate overhead (Picard has the
-cheapest iterate but sometimes needs more of them; Newton-type solvers
-converge quadratically but pay for a Jacobian each step). Which solver
-wins depends on the contrast and proximity to a bifurcation — this is
-exactly why the choice is exposed as a keyword rather than hard-coded.
+All four converge in a handful of iterations; the differences reflect
+iteration count against per-iterate cost (Picard: cheap iterate, more of them;
+Newton-type: quadratic, one Jacobian per step). Which one wins depends on the
+contrast and the proximity to a bifurcation — hence the keyword.
 
 ## Differentiating through a SciML solve
 
-This is the part that needs care. `ForwardDiff` computes
-`derivative(rve, scheme, p)` by seeding a `Dual` number into the RVE and
-re-running `homogenize` — so if `scheme` solves its fixed point via
-`NonlinearSolve.jl`, that solver internally sees `Dual`-valued inputs
-too. Naively handing those to a general-purpose nonlinear solver risks
-**nested** `ForwardDiff.Dual`s: the solver's own Jacobian routine seeds
-*its own* `Dual` on top of the caller's, which is fragile (tag ordering)
-and wasteful.
+`ForwardDiff` computes `derivative(rve, scheme, p)` by seeding a `Dual` into
+the RVE, so the nonlinear solver sees `Dual`-valued inputs and would seed *its
+own* `Dual` on top — **nested** duals, fragile in tag ordering and wasteful.
 
-`MeanFieldHomNonlinearSolveExt` avoids this with an
-implicit-function-theorem (IFT) **lift**: it solves the *primal*
-problem — every input stripped to `Float64` via `ForwardDiff.value`,
-with an *explicit* finite-difference Jacobian so `NonlinearSolve` never
-seeds a `Dual` of its own — and then recovers the caller's partials with
+`MeanFieldHomNonlinearSolveExt` avoids this with an implicit-function-theorem
+(IFT) **lift**: it solves the *primal* problem (inputs stripped to `Float64`
+via `ForwardDiff.value`, explicit finite-difference Jacobian, so
+`NonlinearSolve` never seeds a `Dual`) and recovers the caller's partials with
 one linear-algebra correction.
 
 Write the self-consistent scheme as a root-finding problem. Let ``p`` collect the
@@ -238,14 +213,12 @@ d_fd = (f_modulus(k_i + h) - f_modulus(k_i - h)) / (2h)
 @printf "central FD = %.6f   |TrustRegion − FD| / |FD| = %.3e\n" d_fd abs(d_tr - d_fd) / abs(d_fd)
 ```
 
-All four agree to within the solver tolerances — the IFT lift is exact
-to first order, and cheaper than differentiating through iterations
-(one linear solve at the root, versus propagating partials at every
-Picard/Newton step). The same check holds differentiating with respect
-to the *inclusion* fraction or the *matrix* shear modulus — parameters
-that live on a phase other than the one the fixed point's initial
-estimate is built from, which is exactly the case a naive
-type-from-the-initial-guess dispatch can miss:
+All four agree to within the solver tolerances: the IFT lift is exact to
+first order and costs one linear solve at the root instead of propagating
+partials at every step. The same holds for the *inclusion* fraction or the
+*matrix* shear modulus — parameters living on a phase other than the one the
+initial estimate is built from, which a naive type-from-the-initial-guess
+dispatch can miss:
 
 ```@example tutnls
 d_f_picard = derivative(rve, SelfConsistent(), amount(:I); indexer = idxC)
@@ -258,13 +231,11 @@ d_m_tr     = derivative(rve, SelfConsistent(; algorithm = TrustRegion()), proper
 
 ## Strength criterion, revisited
 
-The [capstone tutorial](strength_criteria.md) built a macroscopic
-strength ellipse for a porous solid entirely from `ForwardDiff`
-derivatives of ``(k_{\mathrm{hom}}, \mu_{\mathrm{hom}})`` with respect to
-the solid's own shear modulus — no closed-form derivative written by
-hand. Swapping the underlying SC solve for a SciML algorithm changes
-nothing about that recipe, since `derivative` only ever sees
-`homogenize`'s public interface:
+The [capstone tutorial](strength_criteria.md) builds a macroscopic strength
+ellipse from `ForwardDiff` derivatives of
+``(k_{\mathrm{hom}}, \mu_{\mathrm{hom}})`` with respect to the solid's shear
+modulus. Swapping the SC solve for a SciML algorithm changes nothing, since
+`derivative` only sees `homogenize`'s public interface:
 
 ```@example tutnls
 const k_s, μs_value = 1.0e6, 1.0

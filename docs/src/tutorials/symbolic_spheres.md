@@ -1,17 +1,13 @@
 # Symbolic spheres: closed forms with SymPy and Symbolics.jl
 
-Every tutorial so far has homogenized *numbers*: pick `k₀, μ₀, kᵢ, μᵢ, f`,
-call `homogenize`, read off a number. But `TensND` — the tensor engine
-underneath `MeanFieldHom` — is generic in its element type: the very same
-tensor algebra (`⊡`, `inv`, projectors, …) runs identically whether the
-scalars are `Float64`, or symbols from **SymPy.jl** (`Sym`) or
-**Symbolics.jl** (`Num`). The classical homogenization formulas therefore come
-out **in closed form**, with numbers substituted only at the very end.
+`TensND` is generic in its element type: the same tensor algebra (`⊡`, `inv`,
+projectors, …) runs on `Float64`, on **SymPy.jl** `Sym` and on **Symbolics.jl**
+`Num`. The classical homogenization formulas therefore come out **in closed
+form**, with numbers substituted only at the end.
 
-The running example is a single sphere in an isotropic matrix, in three
-regimes: a general inclusion, the **porous** limit (``k_i,\mu_i \to 0``), and
-the **rigid** limit (``k_i,\mu_i \to \infty``). A companion, more terse
-script lives at
+Running example: a single sphere in an isotropic matrix, in three regimes —
+general inclusion, **porous** limit (``k_i,\mu_i \to 0``) and **rigid** limit
+(``k_i,\mu_i \to \infty``). Terser script:
 [`scripts/29_symbolic_schemes.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/29_symbolic_schemes.jl).
 
 ## Setup
@@ -209,14 +205,12 @@ ksc_por, μsc_por = sol_por[1]
 length(sol_por)
 ```
 
-The load-bearing (percolating) branch has a well-known, memorable property:
-it should vanish **exactly** at the percolation threshold ``f=1/2`` for a
-random sphere assembly, whatever the matrix moduli — the numerical
-instability that [the porous-materials tutorial](porous_materials.md)
-warns about is this same branch collapsing to zero. SymPy's `simplify`
-does not, on its own, collapse the nested `sqrt` left by `solve` at a
-substituted `f=1/2` — so the check is done numerically, itself a very
-"derive symbolically, then substitute numbers" move:
+The load-bearing branch must vanish **exactly** at the percolation threshold
+``f=1/2`` for a random sphere assembly, whatever the matrix moduli — the same
+branch whose collapse causes the numerical instability that [the
+porous-materials tutorial](porous_materials.md) warns about. SymPy's `simplify`
+does not collapse the nested `sqrt` left by `solve` at ``f=1/2``, so the check
+is done numerically:
 
 ```@example tutsymsph
 for (k0v, μ0v) in ((30.0, 15.0), (90.0, 30.0), (5.0, 50.0))
@@ -300,10 +294,7 @@ plot!(plt, fs, ksc_curve; label = "Self-consistent (closed form)", color = :purp
 plt
 ```
 
-The self-consistent curve heads to zero as `f → 1/2`, exactly as the
-percolation check above predicted; dilute and Mori–Tanaka, which never
-"see" the pores connecting, stay comfortably positive over the whole range
-— the same qualitative picture as [the porous-materials
-tutorial](porous_materials.md) and [the porous
-benchmark](porous_benchmark.md), obtained here from formulas rather than
-from a numerical sweep.
+The self-consistent curve heads to zero as `f → 1/2`, as the percolation
+check predicted; dilute and Mori–Tanaka never "see" the pores connecting and
+stay positive throughout — the picture of [the porous-materials
+tutorial](porous_materials.md), obtained from formulas rather than a sweep.
