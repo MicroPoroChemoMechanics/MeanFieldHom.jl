@@ -304,26 +304,24 @@ function _diff_state_proto(rve::RVE, P_init::TensND.AbstractTens, prop::Symbol, 
                 _diff_probe_contribution(rve, name, prop, ref, dual; kw...)
             catch err
                 # The widened reference is a fully anisotropic *type* holding,
-                # at τ = 0, isotropic *values*: `_resolve_algo` then routes the
-                # solid kernels to the numerical residue algorithm, whose roots
-                # are degenerate exactly there.  `Dilute` and `MoriTanaka` fail
-                # the same way given the same reference, so this is a backend
-                # limitation rather than a scheme one — but only the
-                # differential scheme reaches it on its own, by feeding its
-                # running estimate back in.
+                # at τ = 0, isotropic *values* — the case on which the residue
+                # algorithm's acoustic polynomial degenerates.  `:auto` routes
+                # around it (it selects a cubature, see `Core/dispatch.jl`), so
+                # this is only reachable when the caller asked for
+                # `method = :residues` explicitly.
                 pass == 1 && rethrow()
                 throw(
                     ArgumentError(
                         "DifferentialScheme: the running effective medium of " *
                             "this RVE is fully anisotropic from the first step, " *
-                            "and the Hill-tensor backend cannot evaluate phase " *
-                            ":$(name) against it while its values are still " *
-                            "isotropic ($(sprint(showerror, err))). This happens " *
-                            "with aligned triaxial ellipsoids, and when a solid " *
-                            "phase is combined with an aligned crack family. " *
-                            "Give the offending phase an orientation average " *
-                            "(`symmetrize = :iso`), which keeps the running " *
-                            "medium isotropic."
+                            "and the Hill-tensor backend selected for phase " *
+                            ":$(name) cannot be evaluated against it while its " *
+                            "values are still isotropic " *
+                            "($(sprint(showerror, err))). The residue algorithm " *
+                            "degenerates there: drop `method = :residues` and let " *
+                            "`:auto` pick a cubature, or give the phase an " *
+                            "orientation average (`symmetrize = :iso`), which " *
+                            "keeps the running medium isotropic."
                     )
                 )
             end

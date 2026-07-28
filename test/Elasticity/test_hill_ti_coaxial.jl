@@ -86,8 +86,14 @@ end
     ell = Ellipsoid(1.0, 1.0, 0.4)                       # oblate, axis e₃
     C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
 
+    # Default fallback for non-coaxial is a CUBATURE (DECUHR when its
+    # extension is loaded, else NestedQuadGK) — not the residue algorithm,
+    # which degenerates on an anisotropically-typed isotropic-valued
+    # reference and is therefore reachable on `:residues` only.
     algo = MeanFieldHom.Core._resolve_algo(Val(:auto), ell, C_TI)
-    @test algo isa MeanFieldHom.Core.Residue   # default fallback for non-coaxial
+    @test algo isa Union{MeanFieldHom.Core.DECUHR, MeanFieldHom.Core.NestedQuadGK}
+    @test MeanFieldHom.Core._resolve_algo(Val(:residues), ell, C_TI) isa
+        MeanFieldHom.Core.Residue
 
     # And the residue / DECUHR path should still produce a finite answer.
     P_dec = hill_tensor(ell, C_TI; method = :decuhr)

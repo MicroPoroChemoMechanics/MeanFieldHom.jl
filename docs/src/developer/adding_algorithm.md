@@ -13,9 +13,9 @@ declared in `src/Core/traits.jl`. The five that exist:
 | Trait | Selected by | Nature |
 | :---- | :---------- | :----- |
 | `Analytical` | `:auto` on isotropic, 2-D, conduction, coaxial TI | closed form |
-| `Residue` | `:auto` / `:residues` on 3-D anisotropic elasticity | Cauchy residues then 1-D quadrature; `Float64` only |
-| `DECUHR` | `:decuhr` | adaptive cubature for singular integrands; AD-safe |
-| `NestedQuadGK` | `:nestedquadgk` | historical nested 1-D quadrature, kept for benchmarking |
+| `Residue` | `:residues` only (explicit) on 3-D anisotropic elasticity | Cauchy residues then 1-D quadrature; fastest, but `Float64` only and degenerate on an anisotropically-typed isotropic-valued reference |
+| `DECUHR` | `:auto` on 3-D anisotropic elasticity **when its extension is loaded**, or `:decuhr` | adaptive cubature for singular integrands; AD-safe |
+| `NestedQuadGK` | `:auto` on 3-D anisotropic elasticity otherwise, or `:nestedquadgk` | nested 1-D quadrature; type-generic, so also the `:auto` route for `Dual` / `Complex` / symbolic coefficients |
 | `CylinderQuadrature` | `Cylinder` with an anisotropic matrix | 1-D quadrature over the transverse circle |
 
 ```julia
@@ -70,7 +70,10 @@ The rules currently in force:
 - 2-D stiffness or conductivity, any inclusion → `Analytical`;
 - 3-D conductivity (order-2 tensor) → `Analytical`, since the square-root
   transformation is closed-form for *any* anisotropy;
-- 3-D anisotropic elasticity → `Residue` by default, `DECUHR` on `:decuhr`;
+- 3-D anisotropic elasticity → a **cubature** by default (`DECUHR` when its
+  extension is loaded, else `NestedQuadGK`); `Residue` is reachable on an
+  explicit `:residues` only, because it degenerates on a reference that is
+  anisotropic in type and isotropic in value;
   a crack in a TI matrix aligned with ``\underline{n}`` → `Analytical`.
 
 ## 4. Document and test the AD story

@@ -350,6 +350,24 @@ end
 @testset "Differential — state accommodates anisotropy leaked by the phases" begin
     C_m = TensISO{3}(3 * 20.0, 2 * 8.0)
     C_i = TensISO{3}(3 * 50.0, 2 * 20.0)
+
+    # An aligned TRIAXIAL inclusion takes the running medium all the way out of
+    # the TI class, so the Hill tensors come from the cubature `:auto` selects
+    # for an anisotropic reference (the residue path degenerates at the
+    # isotropic start — see `Core/dispatch.jl`).
+    @testset "aligned triaxial ellipsoid" begin
+        rve = RVE(:M)
+        add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_m))
+        add_phase!(rve, :I, Ellipsoid(1.0, 0.6, 0.3), Dict(:C => C_i); fraction = 0.2)
+        C = homogenize(rve, DifferentialScheme(), :C)
+        @test all(isfinite, get_array(C))
+        Cv = get_array(homogenize(rve, Voigt(), :C))[1, 1, 1, 1]
+        Cr = get_array(homogenize(rve, Reuss(), :C))[1, 1, 1, 1]
+        @test Cr - RTOL_DIFF * abs(Cr) ≤ get_array(C)[1, 1, 1, 1] ≤ Cv + RTOL_DIFF * abs(Cv)
+        # Asking for the residue path explicitly is refused with an explanation.
+        @test_throws ArgumentError homogenize(rve, DifferentialScheme(), :C; method = :residues)
+    end
+
     for geom in (Spheroid(0.2), Spheroid(3.0))
         rve = RVE(:M)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_m))

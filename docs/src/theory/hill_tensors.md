@@ -270,15 +270,25 @@ its axis**. For the circular cylinder ``b=c`` the non-zero entries reduce to
 ``\underline{\xi}\cdot\mathbb{C}\cdot\underline{\xi}`` pointwise is the source of
 all the computational work: in general no closed form exists and one resorts to
 numerical cubature [ghahremani1977](@cite), [gavazzi1990](@cite),
-[masson2008](@cite). `MeanFieldHom` offers two algorithm traits, mirroring the
+[masson2008](@cite). `MeanFieldHom` offers three algorithm traits, mirroring the
 Echoes `NUMINT` / `RESIDUES` options:
 
 - **`DECUHR`** — the surface integral is evaluated by the adaptive cubature for
-  singular integrands of [espelid1994](@cite). ForwardDiff-safe.
+  singular integrands of [espelid1994](@cite). ForwardDiff-safe. Selected by
+  `:auto` when its (weak-dependency) extension is loaded.
+- **`NestedQuadGK`** — nested adaptive 1-D quadrature, type-generic and always
+  available; the `:auto` choice otherwise, and the one used for `Dual`,
+  `Complex` and symbolic coefficients whatever else is loaded.
 - **`Residue`** — the inner ``\varphi`` integral is reduced to a sum of residues
   by the Cauchy theorem, leaving a single 1-D quadrature [masson2008](@cite).
-  Faster, but `Float64` only: the polynomial root finder it needs is not
-  differentiable by ForwardDiff.
+  The fastest of the three (~4 ms against ~11 ms and ~31 ms on a triaxial
+  ellipsoid), but reachable on an explicit `method = :residues` only: it is
+  `Float64`-only (the polynomial root finder it needs is not differentiable by
+  ForwardDiff), and its acoustic polynomial degenerates when the reference is
+  anisotropic in *type* while isotropic in *value* — returning `NaN` there
+  instead of a number. That reference is what the differential and
+  self-consistent schemes feed back at their first step, hence the choice of a
+  cubature as the default.
 
 Analytical paths exist in the literature for further anisotropy classes
 ([withers1989](@cite), [pouya2000](@cite), [pouya2006](@cite),
@@ -345,7 +355,7 @@ constants ``(C_{1111}, C_{1122}, C_{1133}, C_{3333}, C_{2323})``.
 The dispatcher routes a `TensTI{4}` matrix combined with a coaxial
 `Ellipsoid{3, Spherical|Prolate|Oblate}` to this path by default; coaxiality is
 detected by `_ti_coaxial(C₀, ell)`. Non-coaxial spheroids and triaxial
-ellipsoids fall back to `Residue`.
+ellipsoids fall back to the anisotropic default, i.e. a cubature.
 Implementation: `src/Elasticity/hill_3d_ti_coaxial.jl`.
 
 ### Anisotropic matrix, cylinder limit
@@ -454,7 +464,7 @@ geometric auxiliaries via [`tens_IA`](@ref), [`tens_UA`](@ref),
 | :---------------- | :-------------- | :----------- | :---------: |
 | `Ellipsoid{3}, TensISO` | `Analytical` | — | ✓ |
 | `Ellipsoid{3}, TensTI` (coaxial) | `Analytical` (MFH) | `:residues`, `:decuhr` | ✓ |
-| `Ellipsoid{3}, AbstractTens{4,3}` | `Residue` (Float64) | `:decuhr` | ✓ (decuhr) |
+| `Ellipsoid{3}, AbstractTens{4,3}` | `DECUHR` if loaded, else `NestedQuadGK` | `:residues`, `:decuhr`, `:nestedquadgk` | ✓ |
 | `Cylinder, TensISO` | `Analytical` | — | ✓ |
 | `Cylinder, AbstractTens{4,3}` | `CylinderQuadrature` | (residue degenerates) | ✓ |
 | `Ellipsoid{2}, TensISO` | `Analytical` | — | ✓ |

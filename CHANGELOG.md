@@ -29,46 +29,39 @@
   `OrdinaryDiffEq.solve` (`maxiters`, `dtmax`, `callback`, …) instead of being
   silently dropped.
 
-### Fixed
-
-- **Crack densities are now diluted by the solid increments in the
-  differential scheme.** Replacing `dφ` of the current medium by solid
-  material also destroys the cracks that piece contained, so the volume
-  balance extends to `dε_c = dφ_c^ε − ε_c Σ_{j solid} dφ_j`, inverted by the
-  same Sherman-Morrison factor: `dφ_c^ε = dε_c + (ε_c/f₀) Σ_{j solid} df_j`.
-  The missing term made `ε_c(τ)` an incorporation schedule rather than the
-  density actually reached. Unchanged for crack-only RVEs and for
-  trajectories where no solid grows while the cracks do.
-- **An aligned non-spherical phase no longer crashes the differential
-  scheme.** The ODE state was sized from the matrix's symmetry class alone,
-  on the assumption that only cracks could leak anisotropy into the running
-  estimate. An aligned spheroid does too — its dilute concentration tensor is
-  transversely isotropic even between two isotropic materials — so
-  `homogenize(rve, DifferentialScheme(), :C)` died on a `DimensionMismatch`
-  as soon as a phase was not spherical. The state is now sized by probing the
-  phase contributions, and lands in the smallest class that holds the running
-  estimate (TI for aligned spheroids and cracks, rather than the full Mandel
-  fallback — smaller state, and the Hill backends keep their closed-form
-  paths). Isotropic RVEs keep the exact same 2-component state and results.
-- **The compliance contribution of a heterogeneous inclusion no longer uses
-  its declared (meaningless) phase property.** `_phase_compliance_contribution`
-  applied `inv(C₁)` to a placeholder that every stiffness-side kernel ignores,
-  so `DiluteDual` and the compliance-side ASC silently depended on what the
-  user happened to declare for a `LayeredSphere` / `LayeredSpheroid`. It now
-  goes through `ℍ = −𝕊₀ : 𝐍 : 𝕊₀`.
-- **The ALV differential scheme no longer returns wrong values for an
-  anisotropic running medium.** The ALV Hill kernel exists for an isotropic
-  reference only, but the differential scheme evaluates it against its
-  *running* medium, which an aligned non-spherical inclusion — or any crack
-  without isotropic orientation average — takes out of the iso class;
-  `iso_params_from_blocks` read `(α, β)` off it regardless. Such RVEs now
-  raise an `ArgumentError` naming the phase and the two ways out. Cracks with
-  `symmetrize = :iso` now work, where they used to fail with a cryptic "only
-  iso reference is supported".
-- `homogenize_alv(rve, DifferentialScheme(), prop; times)` honours `prop`
-  instead of always homogenising `:C`.
-
 ### Changed
+
+- **`method = :auto` no longer selects the residue algorithm for a 3D
+  anisotropic elastic reference.** It now picks a cubature — `DECUHR` when its
+  extension is loaded, the type-generic `NestedQuadGK` otherwise — and
+  `Residue` is reachable on an explicit `method = :residues` only, mirroring
+  the `NUMINT` default of ECHOES. The reason is robustness, not taste: the
+  residue acoustic polynomial degenerates whenever the reference is
+  anisotropic in *type* and isotropic in *value*, and returns `NaN` /
+  `DomainError` there. That reference is easy to reach — it is what the
+  differential and self-consistent schemes feed back at their first step, and
+  `Dilute` / `MoriTanaka` hit it too — so several RVEs that used to fail now
+  work: an aligned triaxial ellipsoid or a solid phase combined with an
+  aligned crack family in the differential scheme, and any scheme given an
+  anisotropically-typed isotropic-valued matrix.
+
+  Consequences to be aware of:
+
+  - anisotropic `:auto` paths are slower (~11 ms with `DECUHR`, ~31 ms with
+    `NestedQuadGK`, against ~4 ms for the residues) and their results move.
+    Measured against the residue values on the benchmark suite: 7.4e-12 for a
+    crack in a triclinic matrix, 1.25e-10 for Mori-Tanaka with an anisotropic
+    matrix, and 1.34e-7 for a multi-axis-TI self-consistent estimate — a
+    fixed-point scheme amplifies the per-evaluation cubature error (~1e-9 for
+    `DECUHR`) up to its own convergence tolerance, so that is the floor on a
+    converged SC value now. Pass `method = :residues` explicitly to recover
+    both the previous speed and the ~1e-14 accuracy where the reference is
+    known to be non-degenerate, or `:nestedquadgk` for ~1e-14 robustly;
+  - loading `DECUHR` changes which cubature `:auto` picks, hence the accuracy
+    the effective property is computed to. Pass `method` explicitly wherever
+    that must not depend on the session;
+  - non-`Float64` coefficients (`ForwardDiff.Dual`, `Complex`, symbolic) are
+    unaffected: they already routed to `NestedQuadGK`.
 
 - **A `RVE`'s element type is now a promotion floor, not a cast.** The
   `amounts` dict became heterogeneous (`Dict{Symbol,AbstractAmount}`) and
@@ -111,6 +104,56 @@
   arithmetic. The tutorials that claimed otherwise, and the
   `fraction = ComplexF64(f)` idiom in `scripts/51`, `scripts/61` and the
   bituminous application, have been corrected.
+
+### Fixed
+
+- **`method = :nestedquadgk` no longer raises a method ambiguity on an
+  isotropic reference.** The `TensISO` disambiguation rules existed for
+  `:auto`, `:residues` and `:decuhr` but had never been added for
+  `:nestedquadgk`, so the one always-available cubature could not be requested
+  explicitly for an isotropic matrix — for an ellipsoid or for a crack.
+- **The crack dispatch no longer decides the anisotropic default on its own.**
+  `Cracks._ti_crack_dispatch` ended on a hard-coded `Residue()` for a crack in
+  a non-aligned TI matrix, so that path kept the residue algorithm as its
+  `:auto` regardless of the shared rule — exactly the duplication
+  `Core/dispatch.jl` centralises to avoid. It now defers to
+  `_aniso_default_algo`, as the ellipsoid TI refinement already did.
+- **Crack densities are now diluted by the solid increments in the
+  differential scheme.** Replacing `dφ` of the current medium by solid
+  material also destroys the cracks that piece contained, so the volume
+  balance extends to `dε_c = dφ_c^ε − ε_c Σ_{j solid} dφ_j`, inverted by the
+  same Sherman-Morrison factor: `dφ_c^ε = dε_c + (ε_c/f₀) Σ_{j solid} df_j`.
+  The missing term made `ε_c(τ)` an incorporation schedule rather than the
+  density actually reached. Unchanged for crack-only RVEs and for
+  trajectories where no solid grows while the cracks do.
+- **An aligned non-spherical phase no longer crashes the differential
+  scheme.** The ODE state was sized from the matrix's symmetry class alone,
+  on the assumption that only cracks could leak anisotropy into the running
+  estimate. An aligned spheroid does too — its dilute concentration tensor is
+  transversely isotropic even between two isotropic materials — so
+  `homogenize(rve, DifferentialScheme(), :C)` died on a `DimensionMismatch`
+  as soon as a phase was not spherical. The state is now sized by probing the
+  phase contributions, and lands in the smallest class that holds the running
+  estimate (TI for aligned spheroids and cracks, rather than the full Mandel
+  fallback — smaller state, and the Hill backends keep their closed-form
+  paths). Isotropic RVEs keep the exact same 2-component state and results.
+- **The compliance contribution of a heterogeneous inclusion no longer uses
+  its declared (meaningless) phase property.** `_phase_compliance_contribution`
+  applied `inv(C₁)` to a placeholder that every stiffness-side kernel ignores,
+  so `DiluteDual` and the compliance-side ASC silently depended on what the
+  user happened to declare for a `LayeredSphere` / `LayeredSpheroid`. It now
+  goes through `ℍ = −𝕊₀ : 𝐍 : 𝕊₀`.
+- **The ALV differential scheme no longer returns wrong values for an
+  anisotropic running medium.** The ALV Hill kernel exists for an isotropic
+  reference only, but the differential scheme evaluates it against its
+  *running* medium, which an aligned non-spherical inclusion — or any crack
+  without isotropic orientation average — takes out of the iso class;
+  `iso_params_from_blocks` read `(α, β)` off it regardless. Such RVEs now
+  raise an `ArgumentError` naming the phase and the two ways out. Cracks with
+  `symmetrize = :iso` now work, where they used to fail with a cryptic "only
+  iso reference is supported".
+- `homogenize_alv(rve, DifferentialScheme(), prop; times)` honours `prop`
+  instead of always homogenising `:C`.
 
 ### Added
 

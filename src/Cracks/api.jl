@@ -30,7 +30,12 @@ if isdefined(TensND, :TensTI)
         _ti_aligned(C₀, crack_basis(crack)) && return MFH_Core.Analytical()
         method === :decuhr && return MFH_Core.DECUHR()
         method === :nestedquadgk && return MFH_Core.NestedQuadGK()
-        return MFH_Core.Residue()
+        method === :residues && return MFH_Core.Residue()
+        # Non-aligned : hand over to the shared anisotropic default, which
+        # picks a cubature.  Deciding it here again would silently reinstate
+        # the residue algorithm as a default — the very thing
+        # `Core.dispatch.jl` centralises to avoid.
+        return MFH_Core._aniso_default_algo(C₀)
     end
     @eval MFH_Core._resolve_algo(::Val{:auto}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4}) =
         _ti_crack_dispatch(:auto, crack, C₀)

@@ -310,16 +310,15 @@ it at the first step (a crack, or simply an aligned spheroid, whose
 isotropic materials). The scheme therefore probes each phase's
 contribution once before integrating and sizes the state accordingly.
 
-Two configurations remain out of reach, for the same backend reason:
-aligned *triaxial* ellipsoids, and a solid phase combined with an
-*aligned* crack family. In both the running estimate is fully
-anisotropic from the first step, so the solid Hill tensors have to come
-from the numerical residue algorithm — which is degenerate exactly at
-the isotropic starting point. `Dilute` and `MoriTanaka` fail the same
-way given such a reference, so this is a property of that backend rather
-than of the scheme; the scheme reports it with an explicit error.
-Giving the phase an orientation average (`symmetrize = :iso`) keeps the
-running medium isotropic and resolves both cases.
+When the running estimate is fully anisotropic from the first step —
+aligned *triaxial* ellipsoids, or a solid phase combined with an
+*aligned* crack family — the Hill tensors are evaluated by cubature.
+This is what `method = :auto` selects for an anisotropic reference (see
+[Hill tensors](hill_tensors.md)): the residue algorithm would be ~3×
+faster, but its acoustic polynomial degenerates precisely at the
+isotropic starting point of the integration, so it is only used on an
+explicit `method = :residues`. Passing that explicitly on such an RVE
+raises an error saying so.
 
 `nsteps` does **not** set the integration step — it only sets the
 density of saved points along `τ`, which [`differential_path`](@ref)

@@ -13,11 +13,13 @@
 #  - 2D stiffness / conductivity (any inclusion)               → Analytical
 #  - 3D conductivity (2nd-order tensor)                        → Analytical
 #  - 3D anisotropic elasticity (4th-order `AbstractTens{4,3}`) :
-#      * `AbstractEllipsoidalInclusion`, `:auto` or `:residues` → Residue
-#      * `AbstractEllipsoidalInclusion`, `:decuhr`             → DECUHR
-#      * `AbstractCrack`, TI + aligned with n̂                  → Analytical
-#      * `AbstractCrack`, `:auto` or `:residues`                → Residue
-#      * `AbstractCrack`, `:decuhr`                            → DECUHR
+#      * `AbstractEllipsoidalInclusion`, `:auto`  → DECUHR if its extension is
+#                                                   loaded, else NestedQuadGK
+#      * `AbstractEllipsoidalInclusion`, `:residues` → Residue (explicit only)
+#      * `AbstractEllipsoidalInclusion`, `:decuhr` / `:nestedquadgk` → as named
+#      * `AbstractCrack`, TI + aligned with n̂     → Analytical
+#      * `AbstractCrack`, `:auto`                 → same cubature rule as above
+#      * `AbstractCrack`, `:residues`             → Residue (explicit only)
 #
 #  The rules that depend on the *inclusion* class are injected at the end
 #  of the file so that they can refer to the abstract types defined in
@@ -36,6 +38,7 @@ _resolve_algo(::Val, ::AbstractInclusion, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:auto}, ::AbstractInclusion, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:residues}, ::AbstractInclusion, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:decuhr}, ::AbstractInclusion, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val{:nestedquadgk}, ::AbstractInclusion, ::TensND.TensISO) = Analytical()
 
 # Specific inclusion + TensISO — keep the same rule (needed to avoid
 # ambiguity with the inclusion-refined 3D-aniso methods below).
@@ -43,11 +46,13 @@ _resolve_algo(::Val, ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analyti
 _resolve_algo(::Val{:auto}, ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:residues}, ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:decuhr}, ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val{:nestedquadgk}, ::AbstractEllipsoidalInclusion, ::TensND.TensISO) = Analytical()
 
 _resolve_algo(::Val, ::AbstractCrack, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:auto}, ::AbstractCrack, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:residues}, ::AbstractCrack, ::TensND.TensISO) = Analytical()
 _resolve_algo(::Val{:decuhr}, ::AbstractCrack, ::TensND.TensISO) = Analytical()
+_resolve_algo(::Val{:nestedquadgk}, ::AbstractCrack, ::TensND.TensISO) = Analytical()
 
 # ─── 2D elasticity → Analytical ──────────────────────────────────────────────
 
@@ -63,13 +68,36 @@ _resolve_algo(::Val, ::AbstractEllipsoidalInclusion, ::TensND.AbstractTens{2, 2}
 
 # ─── 3D anisotropic elasticity ───────────────────────────────────────────────
 
-# The residue algorithm is Float64-only by design (polynomial root finding);
-# for any other coefficient type (`ForwardDiff.Dual`, `Complex`, symbolic)
-# `:auto` falls back to the type-generic NestedQuadGK cubature.  This is what
-# makes AD through a self-consistent iteration with a generically-anisotropic
-# running estimate possible.
-_aniso_default_algo(C₀::TensND.AbstractTens) =
-    eltype(TensND.get_array(C₀)) === Float64 ? Residue() : NestedQuadGK()
+# `:auto` picks a CUBATURE, never the residue algorithm — the same choice
+# ECHOES makes with its `NUMINT` default.  The residue path is faster
+# (~4 ms vs ~11 ms on a triaxial ellipsoid) but it is not robust: its
+# acoustic polynomial degenerates whenever the reference is anisotropic in
+# *type* and isotropic in *value*, and it then returns `NaN` / throws a
+# `DomainError` rather than a number.  That reference is not exotic — it is
+# exactly what the differential and self-consistent schemes feed back at
+# their first step, and `Dilute` / `MoriTanaka` reach it too as soon as an
+# anisotropically-typed matrix happens to hold isotropic values.  A default
+# must not fail on a legitimate input, so `Residue` is now available on
+# explicit `method = :residues` only.
+#
+# Between the two cubatures, `DECUHR` is the cheaper one (~11 ms vs ~31 ms)
+# but lives behind a weak dependency, so it is used when its extension is
+# active and the type-generic `NestedQuadGK` otherwise.  Loading `DECUHR`
+# therefore changes the default backend — hence the accuracy the effective
+# properties are computed to (~1e-9 against ~1e-14); pass `method`
+# explicitly wherever that must not depend on the session.
+#
+# Non-`Float64` coefficient types (`ForwardDiff.Dual`, `Complex`, symbolic)
+# keep the type-generic `NestedQuadGK`: it is what makes AD through a
+# self-consistent iteration with a generically-anisotropic running estimate
+# possible, and `DECUHR`'s support beyond `Dual` is not established.
+function _aniso_default_algo(C₀::TensND.AbstractTens)
+    eltype(TensND.get_array(C₀)) === Float64 || return NestedQuadGK()
+    return _decuhr_available() ? DECUHR() : NestedQuadGK()
+end
+
+_decuhr_available() =
+    Base.get_extension(parentmodule(@__MODULE__), :MeanFieldHomDECUHRExt) !== nothing
 
 # Ellipsoidal inclusions — 3D anisotropic default (see `_aniso_default_algo`)
 _resolve_algo(::Val{:auto}, ::AbstractEllipsoidalInclusion, C₀::TensND.AbstractTens{4, 3}) = _aniso_default_algo(C₀)

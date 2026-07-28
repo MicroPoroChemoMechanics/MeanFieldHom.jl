@@ -85,8 +85,13 @@ end
     n_axis = [1.0, 0.0, 0.0]
     C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
     c = EllipticCrack(1.0, 0.5)
+    # `:auto` falls back to a CUBATURE, never to the residue algorithm: the
+    # latter degenerates on a reference that is anisotropic in type and
+    # isotropic in value, so it is reachable on `:residues` only.
     algo = MeanFieldHom.Core._resolve_algo(Val(:auto), c, C_TI)
-    @test algo isa MeanFieldHom.Core.Residue
+    @test algo isa Union{MeanFieldHom.Core.DECUHR, MeanFieldHom.Core.NestedQuadGK}
+    @test MeanFieldHom.Core._resolve_algo(Val(:residues), c, C_TI) isa
+        MeanFieldHom.Core.Residue
     # And the residue path still produces a finite COD tensor.
     B = cod_tensor(c, C_TI; method = :residues)
     @test all(isfinite, get_array(B))
