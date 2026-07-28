@@ -12,18 +12,14 @@ through three nested homogenization scales.
 | 2 | Cement paste (CP) | HF matrix + clinker grains | Mori-Tanaka |
 | 3 | Mortar (MO) | CP matrix + sand grains | Mori-Tanaka |
 
-!!! note "One autodiff pass instead of a hand-rolled chain rule"
-    The strength criterion needs ``\partial \mathbb C^{\rm hom}_{MO}/\partial
-    \mu_{\rm hyd}`` — the sensitivity of the mortar stiffness to the hydrate shear
-    modulus, propagated through all three scales. In Echoes this is assembled by
-    an explicit chain rule over the five transversely-isotropic parameters of each
-    intermediate tensor (`homogenize_derivative` per index, per scale). In
-    `MeanFieldHom` the same quantity is a **single [ForwardDiff](https://github.com/JuliaDiff/ForwardDiff.jl)
-    pass** through the entire nested chain (multi-bin SC + two MT stages): making
-    the θ = 0 family's shear modulus a `Dual` and reading the partial of the final
-    `C_mo` gives value and derivative at once. The two routes agree to the
-    validation tolerances of `scripts/bench_echoes/benchmark_pichler.jl` (moduli
-    within 1 %, ``f_c`` within 2 %).
+The criterion needs ``\partial \mathbb C^{\rm hom}_{MO}/\partial
+\mu_{\rm hyd}``, propagated through all three scales. Echoes assembles it by an
+explicit chain rule over the five transversely-isotropic parameters of every
+intermediate tensor; here it is a single
+[ForwardDiff](https://github.com/JuliaDiff/ForwardDiff.jl) pass through the
+whole nested chain — make the ``\theta = 0`` family's shear modulus a `Dual`,
+read the partial of the final `C_mo`. Both routes agree to the tolerances of
+[Cross-validation](../developer/validation.md).
 
 The code below is the model of
 [`scripts/common/pichler_model.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/common/pichler_model.jl),
@@ -280,14 +276,10 @@ maxdiff = maximum(abs, dCmo_chain .- dCmo_direct)
 println("max |chain rule − direct pass| = ", round(maxdiff, sigdigits = 3))
 ```
 
-!!! tip "Why prefer the direct pass in practice"
-    Both routes give the same numbers, but the explicit chain rule requires you
-    to (i) know the intermediate symmetry to parameterize it, (ii) choose a
-    consistent parameter ordering, and (iii) assemble the Jacobian product by
-    hand — three opportunities for error that grow with the number of scales. The
-    single `ForwardDiff` pass needs none of that: it differentiates whatever the
-    model actually computes. The chain rule is invaluable for *understanding*;
-    the direct pass is what you *ship*.
+Same numbers, but the chain rule requires knowing the intermediate symmetry,
+choosing a consistent parameter ordering, and assembling the Jacobian product by
+hand — three opportunities for error that grow with the number of scales. The
+`ForwardDiff` pass differentiates whatever the model actually computes.
 
 ## Results — strength and stiffness vs hydration degree
 

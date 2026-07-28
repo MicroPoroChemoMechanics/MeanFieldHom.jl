@@ -119,6 +119,4 @@ plt
 The two curves coincide as ``f \to 0`` — both schemes agree in the
 dilute limit, as they must — and diverge as ``f`` grows: at finite
 volume fraction the inclusions interact, and Mori–Tanaka, which accounts
-for that, departs from the naive dilute sum. The next tutorial puts
-this comparison in its proper context: rigorous bounds that every
-estimate must respect.
+for that, departs from the naive dilute sum.

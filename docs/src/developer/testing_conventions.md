@@ -79,9 +79,6 @@ back that claim with a test.
 Run coverage through `.github/scripts/coverage.jl` rather than the stock
 `julia-processcoverage` action.
 
-!!! note "Why a custom script"
-    The stock processor misattributes coverage for this package — it has been
-    observed reporting ~59 % on files that are in fact ~95 % covered, because of
-    how it accounts for lines inside generated functions and multi-line
-    expressions. The hybrid script reconciles the counts; trust its numbers over
-    the action's.
+The stock processor misattributes lines inside generated functions and
+multi-line expressions — observed reporting ~59 % where the true figure is
+~95 %. Trust the script's numbers over the action's.

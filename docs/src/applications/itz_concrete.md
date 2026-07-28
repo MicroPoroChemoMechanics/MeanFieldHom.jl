@@ -3,9 +3,9 @@
 Around every aggregate in a concrete there is a thin shell of cement paste that
 is **more porous than the bulk paste**: packing of cement grains against a rigid
 surface leaves more room for water, and the resulting *interfacial transition
-zone* (ITZ) is softer and weaker than the material around it. This page asks a
-quantitative question about it — *how much stiffness does a porous ITZ actually
-cost?* — using the microstructural model of [konigsberger2013](@cite).
+zone* (ITZ) is softer and weaker than the material around it. How much
+stiffness does that cost? Microstructural model of
+[konigsberger2013](@cite).
 
 !!! note "Scope: the elastic effect only"
     [konigsberger2013](@cite) go further and use the ITZ to explain the **elastic

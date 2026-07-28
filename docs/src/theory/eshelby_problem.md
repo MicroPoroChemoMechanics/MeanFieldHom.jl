@@ -124,8 +124,3 @@ subject of the next two pages, and it has two parts:
    (Mori–Tanaka), the effective medium being sought (self-consistent), or
    something in between ([Localization](localization.md)).
 
-!!! note "The uniformity result is exact"
-    Nothing is approximated on *this* page: for a single ellipsoidal inclusion
-    in an infinite homogeneous medium, ``\mathbb{P}`` is exact. All the
-    approximation in mean-field homogenization enters later, when many
-    interacting inclusions are replaced by many non-interacting ones.

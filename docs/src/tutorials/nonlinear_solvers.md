@@ -54,14 +54,10 @@ that works whether or not `NonlinearSolve.jl` happens to be loaded.
 `AsymmetricSelfConsistent` accepts `algorithm` the same way, for both
 its stiffness- and compliance-form branches.
 
-!!! note "Why `AndersonDefault` stays the default"
-    A root-finder is not guaranteed to track the *physical* branch of
-    the self-consistent equation through the porous-percolation
-    bifurcation the way Picard's positive-definite guard and
-    `select_best` do (see the [porous benchmark tutorial](porous_benchmark.md)).
-    `AutoNonlinear` and explicit SciML algorithms are opt-in for that
-    reason — reach for them on well-conditioned, high-contrast problems
-    away from a bifurcation, where they can be markedly faster.
+SciML algorithms are opt-in rather than the default (see
+[Homogenization schemes](../manual/schemes.md)): reach for them on
+well-conditioned, high-contrast problems away from a bifurcation, where they can
+be markedly faster.
 
 ## Benchmark: time and memory
 
@@ -302,10 +298,5 @@ for (scheme, label) in (
 end
 ```
 
-The two solver families produce the same ellipse — the strength
-criterion is a property of the *scheme*, not of how its fixed point
-happens to be solved. `AutoNonlinear` (or an explicit SciML algorithm)
-is a drop-in accelerator when a sweep over many porosities or contrasts
-makes Picard's iteration count add up; `AndersonDefault` remains the
-right default whenever the sweep crosses a percolation-like
-bifurcation, as in the [porous benchmark](porous_benchmark.md).
+The two solver families produce the same ellipse — the strength criterion is a
+property of the *scheme*, not of how its fixed point happens to be solved.

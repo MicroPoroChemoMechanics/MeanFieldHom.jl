@@ -45,9 +45,8 @@ have to switch constructors manually:
 | `Ellipsoid(Inf, Inf, 1.0)` | `ArgumentError` |
 | `Ellipsoid(2.0, 0.0, 0.0)` | `ArgumentError` |
 
-The detection is active only for real element types.  With symbolic
-element types (`SymPy.Sym`, `Symbolics.Num`), call the dedicated
-constructor (`Cylinder`, `EllipticCrack`, `RibbonCrack`) explicitly.
+As for ellipsoids, the detection is active only for real element types (see
+[Ellipsoidal inclusions](ellipsoidal_inclusions.md)).
 
 ## Hill tensor
 

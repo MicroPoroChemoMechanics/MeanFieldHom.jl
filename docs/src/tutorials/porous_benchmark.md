@@ -1,10 +1,8 @@
 # Porous benchmark: all schemes
 
-This page is the centerpiece of the porous-material arc: a single
-canonical problem — a solid matrix with spherical pores, porosity
-sweeping the *entire* range ``\varphi \in [0, 1]`` — run through every
-scheme `MeanFieldHom` implements. It mirrors the porous benchmark of
-the Echoes book [echoes](@cite).
+A solid matrix with spherical pores, porosity sweeping the *entire* range
+``\varphi \in [0, 1]``, run through every scheme `MeanFieldHom` implements —
+the porous benchmark of the Echoes book [echoes](@cite).
 
 ## The benchmark problem
 
@@ -93,19 +91,18 @@ end
 plot(p_k, p_μ; layout = (1, 2), size = (1400, 600), plot_title = "Porous benchmark (spheres)")
 ```
 
-Every scheme starts at the solid's moduli (``\varphi = 0``) and every
-one — except `Voigt` — reaches zero at ``\varphi = 1``, but they part
-ways in between. `Voigt` and `Reuss` bracket the whole family, as they
-must. `Self-Consistent` and `Asym. SC` cross the **percolation**
-threshold around ``\varphi \approx 0.5``: below it the solid still
-percolates and carries load; above it the pores connect through the
-material and the self-consistent estimate collapses much faster than
-`Mori-Tanaka`, which always treats pores as isolated inclusions in a
-continuous solid and therefore never fully percolates. The
-`select_best = true` keyword (see the
-[previous tutorial](porous_materials.md)) is what keeps the SC/ASC
-curves smooth through that crossover instead of jumping between
-branches under Picard noise.
+All schemes start at the solid's moduli and part ways in between:
+
+| Scheme | ``\varphi \to 1`` | Percolation |
+| :--- | :--- | :--- |
+| `Voigt` / `Reuss` | ``\ne 0`` / ``0`` | bracket the whole family |
+| `Mori-Tanaka`, `Maxwell`, `PCW` | ``0`` | none — pores stay isolated inclusions |
+| `Self-Consistent`, `Asym. SC` | ``0`` | ``\varphi \approx 0.5``, then collapse |
+| `Differential` | ``0`` | gradual |
+
+`select_best = true` (see the [previous tutorial](porous_materials.md)) is what
+keeps the SC/ASC curves smooth through the crossover rather than jumping
+between branches under Picard noise.
 
 ## Non-spherical pores
 

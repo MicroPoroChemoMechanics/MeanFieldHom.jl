@@ -23,16 +23,12 @@ correction ``\Delta\mathbb{S}`` to the effective compliance; independently,
 ``\boldsymbol{B}`` gives the stress and displacement intensity factors
 ``\underline{K}``, ``\underline{N}`` at the crack front.
 
-!!! note "This is the reverse of the Echoes pipeline"
-    Echoes computes ``\mathbb{H}`` directly, as a limit of the second Hill
-    tensor, and never forms ``\boldsymbol{B}``. `MeanFieldHom` computes
-    ``\boldsymbol{B}`` first and *reconstructs* ``\mathbb{H}`` from it. The
-    reason is the intensity factors: they need ``\boldsymbol{B}``, not
-    ``\mathbb{H}``, so making ``\boldsymbol{B}`` the primary object avoids
-    inverting a rank-deficient order-4 tensor. The price is that the
-    normalization of ``\boldsymbol{B}`` must be stated explicitly — it is not
-    unique in the literature. The competing conventions are named and compared
-    in the section *Conventions* below.
+Echoes computes ``\mathbb{H}`` directly and never forms
+``\boldsymbol{B}``; `MeanFieldHom` computes ``\boldsymbol{B}`` first, because
+the intensity factors need it and reconstructing ``\mathbb{H}`` from it avoids
+inverting a rank-deficient order-4 tensor. The price: the normalization of
+``\boldsymbol{B}`` is not unique in the literature, so it is stated explicitly
+under *Conventions* below.
 
 ## Geometry
 
@@ -209,24 +205,16 @@ They coincide for the **penny crack** ``\eta=1``, which is why the discrepancy i
 invisible on the most common test case — and why a penny-only cross-check cannot
 detect a wrong ``\eta``-dependence.
 
-!!! note "Verified against Echoes, not merely asserted"
-    The relation above is measured, not inferred from the papers. Running
-    Echoes' `crack_compliance` on a flat *triaxial* ellipsoid
-    (``a = 1``, ``b = \eta``, ``c = 10^{-5}``) against
-    [`compliance_contribution`](@ref) on the corresponding `EllipticCrack` gives
-    a ratio equal to ``\eta`` to four decimal places at
-    ``\eta = 0.7, 0.5, 0.3, 0.1``, and exactly ``1`` at ``\eta = 1``:
+Measured, not inferred from the papers — Echoes' `crack_compliance` against
+[`compliance_contribution`](@ref) on a flat triaxial ellipsoid
+(``a = 1``, ``b = \eta``, ``c = 10^{-5}``):
 
-    | ``\eta`` | 1.0 | 0.7 | 0.5 | 0.3 | 0.1 |
-    | :-- | :-- | :-- | :-- | :-- | :-- |
-    | ``\mathbb{H}_{\text{Echoes}}/\mathbb{H}_{\texttt{MFH}}`` | 1.0000 | 0.7000 | 0.5000 | 0.3000 | 0.1000 |
+| ``\eta`` | 1.0 | 0.7 | 0.5 | 0.3 | 0.1 |
+| :-- | :-- | :-- | :-- | :-- | :-- |
+| ``\mathbb{H}_{\text{Echoes}}/\mathbb{H}_{\texttt{MFH}}`` | 1.0000 | 0.7000 | 0.5000 | 0.3000 | 0.1000 |
 
-    The check is `bench_crack_elliptic` in
-    `scripts/bench_echoes/benchmark.jl` (§ 2b). On the `MeanFieldHom` side the
-    ``3/4`` is ``\eta``-independent to machine precision
-    (``\mathbb{H}_{3333}/B_{33} = 0.750000`` for every ``\eta``), pinned by the
-    regression test *"B → H factor is η-independent"* in
-    `test/regression/test_crack_cases.jl`.
+On the `MeanFieldHom` side the ``3/4`` is ``\eta``-independent to machine
+precision (``\mathbb{H}_{3333}/B_{33} = 0.750000`` for every ``\eta``).
 
 !!! warning "``\boldsymbol{B}`` is the same, ``\mathbb{H}`` is not"
     All three sources normalize ``\boldsymbol{B}`` by the half-width ``b``, so
@@ -284,21 +272,12 @@ The three curves are straight lines of **slope 1**: the error decays like
 ([barthelemyIJSS2009](@cite)). That slope is the real content of the check — a
 single ``\omega`` would not distinguish a true limit from a coincidence.
 
-!!! note "What is pinned in the test suite"
-    `test/Cracks/test_H_oracle.jl` asserts the *ratio*
-    ``\text{err}(10^{-2})/\text{err}(10^{-3}) > 5`` rather than an absolute
-    tolerance, for isotropic, aligned-transversely-isotropic and fully triclinic
-    matrices at ``\eta = 1, 0.7, 0.5, 0.3``. The figure above shows only the
-    isotropic case, whose Hill tensor is analytical and therefore cheap to
-    rebuild on every documentation build.
-
-    Two practical limits, both observed rather than assumed. The Hill tensor is
-    validated down to ``\omega = 10^{-3}``
-    (`test/Elasticity/test_hill_nestedquadgk_oblate.jl`), which is where the
-    sweep stops; and the residue backend returns `NaN` on ellipsoids flatter
-    than about ``c \approx 10^{-3}``, so the anisotropic cases of the oracle use
-    `method = :nestedquadgk`. Neither affects [`cod_tensor`](@ref), which
-    resolves the limit analytically instead of flattening an ellipsoid.
+!!! note "Two limits of the flattening route"
+    The Hill tensor is validated down to ``\omega = 10^{-3}``, where the sweep
+    stops, and the residue backend returns `NaN` below about
+    ``c \approx 10^{-3}`` — hence `method = :nestedquadgk` for the anisotropic
+    cases. Neither affects [`cod_tensor`](@ref), which resolves the limit
+    analytically instead of flattening an ellipsoid.
 
 ## Closed forms of ``\boldsymbol{B}``
 

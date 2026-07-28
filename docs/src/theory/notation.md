@@ -115,13 +115,8 @@ matrix expressed in the ellipsoid's principal frame.
 
 ## Two rules this documentation follows
 
-!!! note "Every symbol is defined where it is used"
-    A page never relies on a symbol introduced only on another page. If
-    ``\boldsymbol{A}_\Omega`` and ``\boldsymbol{B}_\Omega`` appear in an
-    expression such as ``\boldsymbol{k}^{eq} = \boldsymbol{B}_\Omega\cdot
-    \boldsymbol{A}_\Omega^{-1}``, both are defined on that page — even if they
-    are also defined in the theory section. The same holds for the residual
-    ``F`` of a self-consistent fixed point, or for the aspect ratios above.
+**Every symbol is defined where it is used.** A page never relies on a symbol
+introduced only on another page, even at the cost of repeating a definition.
 
 !!! warning "No formula without a traceable source"
     Every expression in this documentation is either (i) accompanied by a

@@ -105,5 +105,4 @@ Reuss below, everything else in between. This is the central point of
 mean-field homogenization: the choice of scheme is not a numerical
 detail but a **modeling decision** about the microstructure's topology
 (matrix-inclusion vs. interpenetrating, dilute vs. dense, aligned vs.
-random). The rest of these tutorials explore that decision on
-increasingly realistic problems, starting with porous materials.
+random).

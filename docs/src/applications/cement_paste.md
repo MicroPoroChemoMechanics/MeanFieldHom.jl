@@ -13,13 +13,11 @@ The three ingredients are:
   inner/outer core-shell morphology;
 - a **Biot poromechanics correction** turning drained into undrained moduli.
 
-!!! note "Two-step Mori-Tanaka vs the composite sphere"
-    [sanahuja2007](@cite) embed a genuine *composite sphere* (anhydrous core +
-    inner-hydrate shell) in the outer matrix. A [`LayeredSphere`](@ref) can now
-    be used directly as an RVE phase — it enters the schemes through its
-    concentration tensors, as in [echoes](@cite) — so the model can be written
-    either way. The two-step form below is kept because it makes each scale
-    explicit; see the last section for the direct composite-sphere version.
+[sanahuja2007](@cite) embed a genuine *composite sphere* (anhydrous core +
+inner-hydrate shell) in the outer matrix. Both forms are available: a
+[`LayeredSphere`](@ref) enters the schemes directly through its concentration
+tensors (last section), while the two-step form below makes each scale
+explicit.
 
 ## Microstructural model
 

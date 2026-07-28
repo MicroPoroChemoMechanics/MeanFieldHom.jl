@@ -33,5 +33,3 @@ C₀ = TensISO{3}(3*(λ+2μ/3), 2μ)
 P  = hill_tensor(Ellipsoid(1.0), C₀)
 ```
 
-See the user manual for more examples and the developer documentation
-for guidance on extending the package.

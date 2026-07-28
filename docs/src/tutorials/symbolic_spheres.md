@@ -5,10 +5,8 @@ call `homogenize`, read off a number. But `TensND` — the tensor engine
 underneath `MeanFieldHom` — is generic in its element type: the very same
 tensor algebra (`⊡`, `inv`, projectors, …) runs identically whether the
 scalars are `Float64`, or symbols from **SymPy.jl** (`Sym`) or
-**Symbolics.jl** (`Num`). This page exploits that to derive the classical
-homogenization formulas **in closed form**, then substitutes numbers only at
-the very end — the reverse order of every previous tutorial, and a good way
-to see *why* those formulas look the way they do.
+**Symbolics.jl** (`Num`). The classical homogenization formulas therefore come
+out **in closed form**, with numbers substituted only at the very end.
 
 The running example is a single sphere in an isotropic matrix, in three
 regimes: a general inclusion, the **porous** limit (``k_i,\mu_i \to 0``), and

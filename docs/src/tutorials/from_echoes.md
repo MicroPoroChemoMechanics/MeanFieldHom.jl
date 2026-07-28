@@ -8,13 +8,9 @@ API table, and a worked example that calls **both** implementations —
 Echoes live from Julia via [PyCall.jl](https://github.com/JuliaPy/PyCall.jl)
 — to check that they agree.
 
-!!! note "Live vs. reference code on this page"
-    The `@example` blocks below are ordinary MFH/Julia code, executed when
-    this documentation is built. The Python and PyCall blocks are shown for
-    reference only — the documentation build has neither Echoes nor PyCall
-    installed. The Echoes numbers used for comparison further down were
-    obtained by running the exact PyCall snippet shown, in a Python
-    environment with Echoes 1.0 installed.
+The `@example` blocks run at build time; the Python and PyCall blocks are
+shown for reference, and the Echoes numbers below were captured by running
+them against Echoes 1.0.
 
 ## API translation table
 
@@ -159,7 +155,7 @@ Running this snippet against Echoes 1.0 returns
 `(33.46058186790858, 17.626741619570563)` at `φ = 0.3, scheme = "MT"`,
 matching the reference table below to solver tolerance. This is the same
 pattern used throughout
-`scripts/bench_echoes/` (see [Where to go next](@ref
+`scripts/bench_echoes/` (see [Production cross-checks](@ref
 from-echoes-where-next)) — a `py"""..."""` block defining a small helper,
 called from Julia like an ordinary function.
 
@@ -228,40 +224,18 @@ for name in ("MT", "DIFF", "SC")
 end
 ```
 
-`Mori-Tanaka` — a closed-form scheme with no iterative solve on either
-side — agrees to ``\sim 10^{-8}``, essentially the floor of both
-implementations' floating-point arithmetic. `Differential` integrates the
-same ODE (see [the differential-scheme tutorial](differential_paths.md))
-with independent step counts and quadrature on each side, so the two
-agree to sub-percent up to ``\varphi \approx 0.8`` and a few percent
-beyond — numerical-integration disagreement, not a modeling difference.
-`SelfConsistent` tracks Echoes closely up to ``\varphi \approx 0.4``, then
-**both** implementations collapse toward the numerical floor
-(``\sim 10^{-6}``) as the porous medium crosses its percolation threshold
-— exactly the behavior seen in
-[the porous-materials tutorial](porous_materials.md). Past that point
-the relative error reported above is not a meaningful measure of
-disagreement — both sides are comparing numbers at the edge of solver
-tolerance, not physically distinct predictions.
+| Scheme | Agreement | Source of the residual |
+| :--- | :--- | :--- |
+| `Mori-Tanaka` | ``\sim 10^{-8}`` | floating-point floor; closed form on both sides |
+| `Differential` | sub-percent to ``\varphi \approx 0.8``, a few percent beyond | independent step counts and quadrature on the same ODE |
+| `SelfConsistent` | close to ``\varphi \approx 0.4`` | past percolation both sides sit at solver tolerance (``\sim 10^{-6}``), so the relative error stops being meaningful |
 
-## [Where to go next](@id from-echoes-where-next)
+## [Production cross-checks](@id from-echoes-where-next)
 
-This page covers one benchmark by hand for the sake of a self-contained,
-reproducible example. `scripts/bench_echoes/` in the package repository
-holds the production cross-checks that exercise this same PyCall pattern
-systematically: Hill polarization tensors and crack compliance
-(`benchmark.jl`), the porous benchmark above at full resolution
-(`benchmark_porous.jl`), layered spheres (`benchmark_nlayers.jl`), the
-three-scale Pichler–Hellmich strength model (`benchmark_pichler.jl`), and
-``\partial\mathbb P/\partial\mathbb C`` sensitivities
-(`benchmark_hill_derivative.jl`) — see `scripts/bench_echoes/README.md`
-for the exact setup and expected tolerances.
+`scripts/bench_echoes/` runs the same PyCall pattern systematically; tolerances
+and measured agreement are in [Cross-validation](../developer/validation.md),
+timings in [Performance vs Echoes](../developer/benchmarks.md).
 
-If Echoes or PyCall is not available in your environment, every one of
-these cross-checks has a **PyCall-free counterpart**: committed
-`*_python.json` reference dumps, and pure-Julia transcriptions of
-specific Echoes benchmarks (e.g.
-`scripts/55_ageing_creep_dirichlet_chains.jl`, which reproduces an
-Echoes ageing-creep test without calling Python at all). Both routes
-validate the same claim — that MFH reproduces Echoes — one live, one
-frozen.
+Without Echoes or PyCall, each cross-check has a PyCall-free counterpart:
+committed `*_python.json` dumps, and pure-Julia transcriptions such as
+`scripts/55_ageing_creep_dirichlet_chains.jl`.

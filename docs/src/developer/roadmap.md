@@ -26,11 +26,7 @@
   (`NewtonRaphson`, `TrustRegion`, …) can solve `SelfConsistent` /
   `AsymmetricSelfConsistent`, through an implicit-function-theorem lift
   that keeps `derivative`/`gradient`/`jacobian` exact and free of nested
-  `ForwardDiff.Dual`s regardless of algorithm. The auto-resolving
-  `AutoNonlinear` marker uses a SciML algorithm when available and
-  falls back to the built-in `NewtonDefault` otherwise; `AndersonDefault`
-  (Picard) remains the scheme default for its robustness through the
-  porous-percolation bifurcation.
+  `ForwardDiff.Dual`s regardless of algorithm.
 
 ## Open
 

@@ -7,11 +7,9 @@
   `_A_and_Tn` / `_phi_cache` / `_qnn_pair_components` in
   `src/Core/green_helpers.jl`) are **pure functions returning `StaticArrays`**,
   and invert ``3\times 3`` matrices in closed form rather than through an LU
-  factorization. These run once per quadrature node, so allocation there
-  dominates everything else: `_qnn_pair_components` alone used to build ~10
-  heap `Matrix{T}` temporaries per α node, which is why moving it to `SMatrix`
-  cut `cod_tensor` allocations by 99.4 % on a triclinic matrix. Keep new
-  helpers on this path allocation-free and non-mutating.
+  factorization. They run once per quadrature node, so allocation there
+  dominates everything else: keep new helpers on this path allocation-free and
+  non-mutating.
 - The Hill-tensor builders return the **most specific** TensND type they can —
   `TensISO`, `TensTI{4}`, `TensOrtho` rather than a generic `Tens`. This is not
   cosmetic: the specificity propagates into the homogenization schemes, where it

@@ -115,7 +115,6 @@ ranking (percolating vs. isolated-pore topology) seen throughout the
 homogenization gives the moduli; automatic differentiation gives their
 sensitivities; together they yield a macroscopic strength criterion —
 with no closed-form derivative ever written by hand, and no assumption
-beyond the choice of scheme. This is as far as these tutorials go; for
-a full multi-scale strength model built the same way (three nested
-homogenization stages, one autodiff pass through all of them), see
+beyond the choice of scheme. For the same construction at three nested
+scales, see
 [Quasi-brittle strength of cement paste and mortar](../applications/strength.md).

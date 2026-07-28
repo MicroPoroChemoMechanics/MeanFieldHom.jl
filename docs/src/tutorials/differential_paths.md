@@ -84,5 +84,4 @@ added; adding the soft phase first has the opposite effect. Neither
 order is "more correct" in the abstract — the differential scheme
 encodes a **construction history**, and for a real composite the
 mixing or loading order is itself a physical modeling choice, not a
-numerical one. This closes the elastic-scheme arc of these tutorials;
-the next pages turn to cracks, viscoelasticity, and derivatives.
+numerical one.

@@ -359,12 +359,3 @@ with ISO ⊂ TI ⊂ ORTHO ⊂ generic. The types [`ALVKernelISO`](@ref),
 representations as `AbstractMatrix`, so they flow through generic Julia matrix
 code while preserving both the storage saving and the algebraic closure.
 
-## Where to go next
-
-- [Viscoelastic composites](../tutorials/viscoelasticity.md) — the non-ageing,
-  frequency-domain route via complex moduli.
-- [Frequency or time?](../tutorials/generated/freq_vs_time.md) — the two routes
-  computed on the same composite and compared.
-- [Ageing creep of solidifying materials](../applications/ageing_creep.md) — a
-  full application in which only the time-domain route exists.
-- [API — Viscoelasticity](../api/viscoelasticity.md) — the functions named above.

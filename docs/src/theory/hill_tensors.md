@@ -351,12 +351,11 @@ Implementation: `src/Elasticity/hill_3d_ti_coaxial.jl`.
 
 ### Anisotropic matrix, cylinder limit
 
-!!! note "Extension over Echoes"
-    `MeanFieldHom` exposes `Cylinder` as a first-class inclusion type. For an
-    arbitrarily anisotropic matrix the Masson residue algorithm is **not
-    applicable**: it rests on the six complex roots of the acoustic polynomial
-    along ``\underline{\xi}_3``, and at the cylinder limit one root escapes to
-    infinity, degenerating the polynomial.
+`Cylinder` is a first-class inclusion type here (extension over Echoes). For
+an arbitrarily anisotropic matrix the Masson residue algorithm does **not**
+apply: it rests on the six complex roots of the acoustic polynomial along
+``\underline{\xi}_3``, and at the cylinder limit one root escapes to infinity,
+degenerating the polynomial.
 
 The ``\underline{\zeta}`` form of the Willis integral degenerates cleanly
 instead. The axial component of ``\underline{\zeta}`` vanishes identically, so
@@ -383,11 +382,10 @@ plane-strain problem — the cylinder is the 3-D realization of the 2-D ellipse.
 
 ### 2-D plane strain
 
-!!! note "Extension over Echoes"
-    `MeanFieldHom` also handles the plane-strain problem directly, integrating
-    over the unit circle ``\underline{\xi}\in S^{1}`` with a ``1/(2\pi)``
-    prefactor in place of ``1/(4\pi)``. The isotropic case is analytical; the
-    anisotropic one uses the Masson residue reduction on the line integral.
+Plane strain is handled directly (extension over Echoes), integrating over
+the unit circle ``\underline{\xi}\in S^{1}`` with a ``1/(2\pi)`` prefactor in
+place of ``1/(4\pi)``. The isotropic case is analytical; the anisotropic one
+uses the Masson residue reduction on the line integral.
 
 ## Hill tensor in conductivity
 
