@@ -21,6 +21,14 @@ import ..Core
 using ..Core
 const MFH_Core = Core
 
+# `compliance_contribution` / `delta_compliance` / `delta_resistivity` are
+# Core-level generics (like `stiffness_contribution` & co.) so that *every*
+# inclusion family — including user-defined ones living outside this
+# sub-module — extends one single canonical function.  The crack methods
+# below therefore *extend*, they do not declare.
+import ..Core: compliance_contribution, delta_compliance, delta_resistivity,
+    compliance_and_stiffness_contribution
+
 include("geometry.jl")
 include("cod_H_bridge.jl")
 include("cod_analytical.jl")
@@ -42,13 +50,14 @@ export crack_basis, aspect_ratio, semi_major, semi_minor, crack_normal
 # ── COD / compliance ─────────────────────────────────────────────────────────
 export cod_tensor, B_tensor
 export cod_from_compliance, compliance_from_cod
-export compliance_contribution
+export crack_density_factor
 # Internal perf seam consumed by `Schemes` (not re-exported by MeanFieldHom).
 export compliance_and_stiffness_contribution
-export delta_compliance, delta_resistivity
-# (stiffness_contribution, conductivity_contribution, delta_stiffness,
-# delta_conductivity are Core-level generics; methods defined above in
-# compliance.jl are visible through Core's exports — nothing to re-export here.)
+# (`compliance_contribution`, `delta_compliance`, `delta_resistivity`,
+# `stiffness_contribution`, `conductivity_contribution`, `delta_stiffness`
+# and `delta_conductivity` are Core-level generics; the methods defined in
+# `compliance.jl` / `api.jl` attach to them and are visible through Core's
+# exports — nothing to re-export here.)
 
 # ── SIF / DIF ────────────────────────────────────────────────────────────────
 export sif, dif

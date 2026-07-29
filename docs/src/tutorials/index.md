@@ -34,6 +34,7 @@ and the one where the choice of scheme matters most.
 | [Imperfect interfaces: what they do to the local fields](generated/layered_spheroid_interfaces.md) | pointwise temperature and flux, streamlines, conductance sweep, 3-D view |
 | [Highly conducting interfaces](generated/layered_spheroid_hc.md) | equivalent conductivity of an HC-coated particle vs aspect ratio |
 | [Symmetrization](generated/symmetrization.md) | exact rotation-group average vs best-fit projection |
+| [The custom-inclusion contract](generated/custom_inclusion_contract.md) | plugging an arbitrary morphology into every scheme — the three entry gates, the density seam, free orientation averaging |
 
 Composite inclusions carry no Hill tensor at all: they enter the schemes through
 their volume-averaged concentration tensors instead.

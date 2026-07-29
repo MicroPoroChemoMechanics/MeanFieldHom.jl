@@ -41,10 +41,10 @@ bibliography.
 | [`MeanFieldHom.Elasticity`](@ref) | Hill polarization tensor for ellipsoidal inclusions and infinite cylinders (2D/3D, iso/aniso/TI-coaxial). |
 | [`MeanFieldHom.Cracks`](@ref) | Crack-opening-displacement (COD) tensor, compliance contribution, stress/displacement intensity factors. |
 | [`MeanFieldHom.Conductivity`](@ref) | Second-order Hill tensor for transport problems (diffusion, conduction, Darcy flow), closed form for any matrix anisotropy. |
-| `MeanFieldHom.LayeredSpheres` | `n`-layer composite spheres (Hervé–Zaoui, Christensen–Lo), five interface types, volume-average and pointwise localization. |
-| `MeanFieldHom.LayeredSpheroids` | `n`-layer confocal spheroids, conduction, Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
-| `MeanFieldHom.Schemes` | RVE container and `homogenize`; Voigt, Reuss, Dilute, Mori–Tanaka, Maxwell, PCW, self-consistent, asymmetric SC, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
-| `MeanFieldHom.Viscoelasticity` | Ageing linear viscoelasticity via Volterra operators — every scheme, cracks and layered spheres included. |
+| [`MeanFieldHom.LayeredSpheres`](@ref) | `n`-layer composite spheres (Hervé–Zaoui, Christensen–Lo), five interface types, volume-average and pointwise localization. |
+| [`MeanFieldHom.LayeredSpheroids`](@ref) | `n`-layer confocal spheroids, conduction, Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
+| [`MeanFieldHom.Schemes`](@ref) | RVE container and `homogenize`; Voigt, Reuss, Dilute, Mori–Tanaka, Maxwell, PCW, self-consistent, asymmetric SC, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
+| [`MeanFieldHom.Viscoelasticity`](@ref) | Ageing linear viscoelasticity via Volterra operators — every scheme, cracks and layered spheres included. |
 
 ## Quick example
 

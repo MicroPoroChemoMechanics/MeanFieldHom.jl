@@ -84,6 +84,8 @@ makedocs(;
             "manual/ellipsoidal_inclusions.md",
             "manual/cylindrical_inclusions.md",
             "manual/cracks.md",
+            "manual/custom_inclusions.md",
+            "manual/fe_inclusions.md",
             "manual/conductivity.md",
             "manual/schemes.md",
             "manual/viscoelasticity.md",
@@ -112,6 +114,7 @@ makedocs(;
                 "tutorials/generated/layered_spheroid_interfaces.md",
                 "tutorials/generated/layered_spheroid_hc.md",
                 "tutorials/generated/symmetrization.md",
+                "tutorials/generated/custom_inclusion_contract.md",
             ],
             "Beyond elasticity" => [
                 "tutorials/viscoelasticity.md",

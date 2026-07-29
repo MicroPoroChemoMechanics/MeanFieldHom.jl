@@ -11,13 +11,19 @@
 #     AbstractInclusion{T}
 #       ├── AbstractEllipsoidalInclusion{dim,T}   — ellipsoids (2D / 3D)
 #       ├── AbstractCrack{T}                      — flat cracks (3D)
-#       └── AbstractLayeredInclusion{dim,T}       — multi-layer (scaffold)
+#       ├── AbstractLayeredInclusion{dim,T}       — multi-layer (scaffold)
+#       └── AbstractCustomInclusion{T}            — user-supplied morphologies
 #
-#  The interface below (`dimension`, `element_type`, `inclusion_basis`,
-#  `shape_trait`) is the minimal contract every inclusion is expected to
-#  implement.  It is deliberately declared here as *stub* `function`
-#  definitions (no methods) so that sub-modules can add their own methods
-#  without ambiguities — the sub-module always does
+#  Of the accessors below, only `shape_trait` is actually *read* by a kernel
+#  (it keys the crack algebra in `Cracks/compliance.jl`); `dimension` and
+#  `inclusion_basis` are introspection accessors expected by convention, and
+#  `shape_tensor` is optional — it describes an equivalent ellipsoidal
+#  envelope, which not every morphology has.  See
+#  `docs/src/developer/adding_inclusion.md` for the full levelled contract.
+#
+#  They are deliberately declared here as *stub* `function` definitions (no
+#  methods) so that sub-modules can add their own methods without
+#  ambiguities — the sub-module always does
 #
 #      import ..Core: dimension, inclusion_basis, shape_trait
 #      Core.dimension(::MyInclusion) = …
@@ -68,6 +74,30 @@ anisotropic layers, excentered spheres) are tracked in
 """
 abstract type AbstractLayeredInclusion{dim, T} <: AbstractInclusion{T} end
 
+"""
+    AbstractCustomInclusion{T} <: AbstractInclusion{T}
+
+Supertype for **user-supplied inclusion morphologies** that do not fit any of
+the built-in families — non-ellipsoidal shapes, patterns whose response is
+obtained from an external solver (finite elements, series expansion, …), or
+hand-crafted approximate formulas.  It is the `MeanFieldHom` counterpart of
+the `user_inclusion` extension point of the C++/Python *echoes* codebase.
+
+Subtyping this abstract type is *not* mandatory — an inclusion may equally
+well subtype [`AbstractEllipsoidalInclusion`](@ref), [`AbstractCrack`](@ref)
+or [`AbstractLayeredInclusion`](@ref) when it genuinely belongs to that
+family, and will then inherit that family's dispatch rules.  What this branch
+buys is a neutral home for morphologies that belong to none of them: it is
+disjoint from the other three, so adding methods for it can never create a
+dispatch ambiguity, and [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor)
+accepts it directly (the ellipsoid-typed entry point does not).
+
+See the developer page *Adding a new inclusion* for the full interface
+contract, and [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion) for a
+ready-made concrete type driven by callbacks.
+"""
+abstract type AbstractCustomInclusion{T} <: AbstractInclusion{T} end
+
 # ─── Minimal interface ───────────────────────────────────────────────────────
 
 """
@@ -110,7 +140,14 @@ function shape_trait end
     shape_tensor(incl::AbstractInclusion) -> AbstractTens{2}
 
 Symmetric 2nd-order tensor encoding both the semi-axes and the
-orientation of the inclusion in the global (canonical) frame:
+orientation of an **equivalent ellipsoidal envelope** of the inclusion, in the
+global (canonical) frame.
+
+!!! note "Optional"
+    No kernel in the package reads it: an inclusion that supplies its own
+    response tensors owes nothing about its outer shape, and a morphology with
+    no ellipsoidal envelope simply has no `shape_tensor`. Implement it when
+    the notion is meaningful.
 
 ```math
 \\mathbf A = \\mathbf R \\; \\mathrm{diag}(a_1, a_2, \\dots) \\; \\mathbf R^{\\!T}
@@ -260,10 +297,30 @@ function conductivity_contribution end
     resistivity_contribution(incl, K₁, K₀; kw...) -> Tens{2,3}
 
 Size-independent resistivity contribution tensor of an inclusion
-(2nd-order analog of [`compliance_contribution`](@ref MeanFieldHom.Cracks.compliance_contribution) for solid
+(2nd-order analog of [`compliance_contribution`](@ref) for solid
 ellipsoids).
 """
 function resistivity_contribution end
+
+"""
+    compliance_contribution(incl, P₁, P₀; kw...) -> Tens
+    compliance_contribution(incl, P₀; kw...)     -> Tens
+
+Size-independent compliance contribution tensor `H` of an inclusion in a
+matrix `P₀`.  For a dilute family of volume fraction `f`:
+`ΔS_eff = f · H` (see [`delta_compliance`](@ref)).
+
+The **two-argument** form is the *flat-object* flavour used by cracks and,
+more generally, by any inclusion registered in an
+[`RVE`](@ref MeanFieldHom.Schemes.RVE) with a
+[`CrackDensity`](@ref MeanFieldHom.Schemes.CrackDensity) amount: the
+inclusion carries no property of its own, and the amount is applied
+afterwards by the three-argument [`delta_compliance`](@ref).
+
+Methods for the built-in cracks live in `Cracks/compliance.jl`; the generic
+three-argument method for solid inclusions lives in `src/contribution.jl`.
+"""
+function compliance_contribution end
 
 """
     delta_stiffness(N, f) -> Tens{4,3}
@@ -281,6 +338,34 @@ Dilute effective-conductivity correction `ΔK = f · N_K`.
 function delta_conductivity end
 
 """
+    delta_compliance(H, f)        -> Tens
+    delta_compliance(incl, H, ε)  -> Tens
+
+Dilute effective-compliance correction from the size-independent
+contribution tensor `H`.
+
+The **two-argument** form is the volume-fraction one, `ΔS = f · H`.  The
+**three-argument** form is the *amount × contribution* seam of flat objects:
+it carries the geometric prefactor relating a density-like amount to the
+effective correction (`4π/3` for an elliptical crack of Budiansky density
+`ε³ᵈ = N a b²`, `π` for a ribbon crack of `ε²ᵈ = N b²`).  Every inclusion
+meant to be registered with a
+[`CrackDensity`](@ref MeanFieldHom.Schemes.CrackDensity) amount must provide
+the three-argument methods of `delta_compliance`, [`delta_stiffness`](@ref),
+[`delta_conductivity`](@ref) and [`delta_resistivity`](@ref).
+"""
+function delta_compliance end
+
+"""
+    delta_resistivity(R, f)        -> Tens{2,3}
+    delta_resistivity(incl, R, ε)  -> Tens{2,3}
+
+Dilute effective-resistivity correction — 2nd-order analog of
+[`delta_compliance`](@ref), with the same two calling conventions.
+"""
+function delta_resistivity end
+
+"""
     loc_and_stiffness(incl, P₁, P₀; kw...) -> (A, N)
 
 Bundled evaluation of the dilute concentration tensor `A`
@@ -291,7 +376,7 @@ reference medium, sharing the single expensive Hill / recurrence solve.
 
 Both quantities are needed per phase by Mori-Tanaka and by the
 self-consistent kernels; computing them separately evaluates
-[`hill_tensor`](@ref) — the dominant cost — twice with byte-identical
+[`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor) — the dominant cost — twice with byte-identical
 arguments.
 
 !!! note "Contract"
@@ -315,3 +400,21 @@ solve.  Same bitwise contract as [`loc_and_stiffness`](@ref).
 Internal seam — not exported.
 """
 function loc_and_stress_average end
+
+"""
+    compliance_and_stiffness_contribution(incl, P₀; kw...) -> (H, N)
+
+Bundled two-argument contribution pair of a **flat** inclusion — the
+density-amount counterpart of [`loc_and_stiffness`](@ref), sharing whatever
+single expensive solve produces both (for a crack, one
+[`cod_tensor`](@ref MeanFieldHom.Cracks.cod_tensor)).
+
+Returns `(compliance_contribution, stiffness_contribution)` for a 4th-order
+`P₀` and `(compliance_contribution, conductivity_contribution)` for a
+2nd-order one.  Same bitwise contract as [`loc_and_stiffness`](@ref): the
+generic fallback in `src/contribution.jl` *is* that pair, and any
+specialization is a pure performance concern.
+
+Internal seam — not exported.
+"""
+function compliance_and_stiffness_contribution end

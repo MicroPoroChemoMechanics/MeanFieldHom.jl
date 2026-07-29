@@ -18,19 +18,26 @@ Tensors = "48a634ad-e948-5137-8d70-aa71f2a747f4"
 
 [weakdeps]
 DECUHR = "d5c0ea0e-a2e6-4e56-a5f3-17f3ec7c9d22"
+Ferrite = "c061ca5d-56c9-439f-9c0e-210fe06d3992"
+FerriteGmsh = "4f95f4f8-b27c-4ae5-9a39-ea55e634e36b"
+Gmsh = "705231aa-382f-11e9-3f0c-b7cb4346fdeb"
 Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"
 NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
 SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
 
 [extensions]
 MeanFieldHomDECUHRExt = ["DECUHR", "Integrals"]
+MeanFieldHomFerriteExt = ["Ferrite", "FerriteGmsh", "Gmsh"]
 MeanFieldHomNonlinearSolveExt = "NonlinearSolve"
 MeanFieldHomSymPyExt = "SymPy"
 
 [compat]
 DECUHR = "0.2"
 Elliptic = "1"
+Ferrite = "1.5"
+FerriteGmsh = "1.3"
 ForwardDiff = "1"
+Gmsh = "0.3"
 Integrals = "5"
 JSON3 = "1.14.3"
 LinearAlgebra = "1"

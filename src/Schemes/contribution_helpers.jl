@@ -274,14 +274,35 @@ end
 #   * a phase declaring an orientation distribution must have its property
 #     averaged over that distribution.
 
-_layer_voigt(sphere, ::TensND.AbstractTens{4, 3}) =
+#  Dispatch on the *geometry*, so that a heterogeneous inclusion which exposes
+#  no layer-wise average falls through to the informative error below rather
+#  than to a `MethodError` from three frames down.  (Keying the specificity on
+#  the tensor order instead would make the catch-all unreachable.)
+const _Layered = Union{LayeredSpheres.LayeredSphere, LayeredSpheroids.LayeredSpheroid}
+
+_layer_voigt(sphere::_Layered, ::TensND.AbstractTens{4, 3}) =
     layer_stiffness_average(sphere)
-_layer_voigt(sphere, ::TensND.AbstractTens{2, 3}) =
+_layer_voigt(sphere::_Layered, ::TensND.AbstractTens{2, 3}) =
     layer_conductivity_average(sphere)
-_layer_reuss(sphere, ::TensND.AbstractTens{4, 3}) =
+_layer_reuss(sphere::_Layered, ::TensND.AbstractTens{4, 3}) =
     layer_compliance_average(sphere)
-_layer_reuss(sphere, ::TensND.AbstractTens{2, 3}) =
+_layer_reuss(sphere::_Layered, ::TensND.AbstractTens{2, 3}) =
     layer_resistivity_average(sphere)
+
+_layer_voigt(geom, _ref) = _no_layer_average(geom, "Voigt")
+_layer_reuss(geom, _ref) = _no_layer_average(geom, "Reuss")
+
+_no_layer_average(geom, bound) = throw(
+    ArgumentError(
+        "the $bound bound needs a single phase property, but $(typeof(geom)) " *
+            "reports `is_homogeneous_inclusion == false` and exposes no " *
+            "layer-wise average. Implement `Schemes._layer_voigt` / " *
+            "`Schemes._layer_reuss` for it, or use a scheme that consumes " *
+            "contribution tensors instead. Note that `AsymmetricSelfConsistent` " *
+            "evaluates the Voigt bound internally, so it is subject to the " *
+            "same requirement."
+    )
+)
 
 """
     _phase_voigt_property(rve, name, prop, ref) -> AbstractTens

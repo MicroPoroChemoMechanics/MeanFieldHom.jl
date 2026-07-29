@@ -20,7 +20,8 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | 40–49 | Strength & multiscale (Pichler-Hellmich) |
 | 50–59 | Viscoelasticity & ALV |
 | 60–69 | ALV cracks, interfaces & cross-validations |
-| 70+   | Symmetrization showcases |
+| 70–79 | Symmetrization showcases |
+| 80–89 | Custom (user-defined) inclusions & finite-element coupling |
 
 ## Coverage map
 
@@ -99,6 +100,18 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `60_alv_cracks_interface.jl` | crack + interface creep | finite interface stiffness |
 | `61_freq_vs_time.jl` | Sanahuja (2013) trapezoidal Volterra | **published tutorial** — complex-modulus route vs. `homogenize_alv`, cross-checked through a forward Laplace-Carson transform; O(Δt²) agreement. Ported from echoes `creep/comparison_freq_time.py` |
 | `70_symmetrization_showcase.jl` | `symmetrize` / `.paramsym` | **exact rotation average vs best-fit projection** on a non-major-symmetric concentration tensor |
+
+### 80–89 Custom inclusions & finite-element coupling
+
+| Script | reference / topic | Notes |
+|---|---|---|
+| `80_custom_inclusion_contract.jl` | echoes `user_inclusion` | the three entry gates (Hill / localization / contribution) driven through every scheme — identical to the last digit; plus the density seam and free orientation averaging |
+| `81_fe_crack_eshelby.jl` | Adessina et al. (2017), IJES 119, 1-15 | elliptical crack by finite elements (`Ferrite` + `Gmsh`): mesh, first-order corrected boundary condition, `‖B_u‖ ∝ (a/R)³`, convergence and Richardson extrapolation vs the closed-form COD |
+| `82_fe_crack_schemes.jl` | — | the finite-element crack as a drop-in `EllipticCrack` in Dilute / MT / SC / Differential, with `IsoSymmetrize` and the memoization count |
+
+Scripts 81 and 82 need `Ferrite`, `FerriteGmsh` and `Gmsh` (weak dependencies
+of `MeanFieldHom`) and take a minute or so — they mesh a ball and factorize a
+~10⁵-dof system per case.
 
 ## Conventions worth knowing
 

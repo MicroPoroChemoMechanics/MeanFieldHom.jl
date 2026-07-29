@@ -27,8 +27,10 @@ const MFH_Core = Core
 # Forward declarations of inclusion types we touch from the other sub-modules
 # (loaded earlier than Schemes by `MeanFieldHom.jl`).
 import ..Elasticity: Ellipsoid, hill_tensor
-import ..Cracks: compliance_contribution, delta_compliance, delta_resistivity,
+import ..Core: compliance_contribution, delta_compliance, delta_resistivity,
     compliance_and_stiffness_contribution
+import ..LayeredSpheres
+import ..LayeredSpheroids
 import ..LayeredSpheres: layer_stiffness_average, layer_compliance_average,
     layer_conductivity_average, layer_resistivity_average
 

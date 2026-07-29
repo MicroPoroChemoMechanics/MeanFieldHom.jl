@@ -143,3 +143,27 @@ Dilute effective resistivity correction `ΔR = f × H_R`.  Generic
 `delta_resistivity(crack, R, ε)` with the Budiansky density prefactor.
 """
 delta_resistivity(H::TensND.AbstractTens{2, 3}, f) = f * H
+
+# =============================================================================
+#  Bundled two-argument contributions of a flat inclusion.
+#
+#  Generic fallback of the perf seam consumed by the density branch of
+#  Mori-Tanaka.  `Cracks` specializes it to share a single `cod_tensor` solve;
+#  any other flat morphology (a user-defined one, a finite-element crack, …)
+#  gets the correct — if not the fastest — behaviour for free.  Per the
+#  contract in the `Core` docstring, the fallback *is* the pair.
+# =============================================================================
+
+compliance_and_stiffness_contribution(
+    incl::AbstractInclusion, C₀::TensND.AbstractTens{4, 3}; kw...
+) = (
+    compliance_contribution(incl, C₀; kw...),
+    stiffness_contribution(incl, C₀; kw...),
+)
+
+compliance_and_stiffness_contribution(
+    incl::AbstractInclusion, K₀::TensND.AbstractTens{2, 3}; kw...
+) = (
+    compliance_contribution(incl, K₀; kw...),
+    conductivity_contribution(incl, K₀; kw...),
+)

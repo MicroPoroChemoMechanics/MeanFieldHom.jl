@@ -13,10 +13,30 @@ Sub-modules may *extend* (but not redefine) both `_resolve_algo` and
 
 ## Sub-module responsibilities
 
-| Sub-module       | Exports                                                                             |
-| ---------------- | ----------------------------------------------------------------------------------- |
-| `Core`           | abstractions, traits, Newton potentials, Green kernel helpers, moduli extractors    |
-| `Elasticity`     | `Ellipsoid`, auxiliary tensors, `hill_tensor` + 3D/2D kernels                        |
-| `Cracks`         | `EllipticCrack`, `RibbonCrack`, `cod_tensor`, `compliance_contribution`, `sif`, `dif` |
-| `Conductivity`   | additional `_kernel` methods for 2nd-order transport tensors                         |
-| `Schemes`        | placeholder (no public API yet)                                                      |
+| Sub-module         | Exports                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------- |
+| `Elliptic`         | type-generic elliptic integrals (`ell_K`, `ell_E`, `ell_F`, `ell_RF`, `ell_RD`)                     |
+| `Core`             | abstractions, traits, `_resolve_algo`, Newton potentials, Green kernel helpers, Kelvin dipole field, exact ISO/TI rotation averages, moduli extractors |
+| `Elasticity`       | `Ellipsoid`, `Cylinder`, auxiliary tensors, `hill_tensor` + 3D/2D kernels                           |
+| `Cracks`           | `EllipticCrack`, `RibbonCrack`, `cod_tensor`, `sif`, `dif`, and the crack methods of the contribution generics |
+| `Conductivity`     | additional `_kernel` methods for 2nd-order transport tensors                                        |
+| `LayeredSpheres`   | `LayeredSphere`, Hervé-Zaoui recurrences, five interface types, localization fields                 |
+| `LayeredSpheroids` | `LayeredSpheroid` (confocal, conduction)                                                            |
+| `Schemes`          | `RVE`/`Phase`, `homogenize`, every scheme type, exact symmetrization, ForwardDiff sensitivities     |
+| `Viscoelasticity`  | ageing linear viscoelasticity (Volterra pipeline, ALV variant of every scheme)                      |
+
+Two files sit at the **top level** rather than in a sub-module, and are loaded
+last on purpose: `localization.jl` and `contribution.jl` implement generics
+declared in `Core` whose methods need every sub-module's `_kernel` table to be
+visible. `custom_inclusion.jl` follows them, because its fallbacks `invoke`
+those generic methods.
+
+## Extension points
+
+Every generic an inclusion may implement is declared — as a bodyless `function`
+— in `Core/abstractions.jl`, so that sub-modules **and user code outside the
+package** attach their methods to one canonical function. Together with the
+open `_resolve_algo` / `_kernel` tables and the neutral
+[`AbstractCustomInclusion`](@ref) branch, that is the whole extension surface.
+See [Adding a new inclusion](@ref), [Adding a new algorithm](@ref) and
+[Adding a homogenization scheme](@ref).

@@ -63,7 +63,7 @@ strain `ε∞`:
 A_εε  = [𝕀 + ℙ(incl, C₀) : (C₁ - C₀)]⁻¹.
 ```
 
-Keyword arguments are forwarded to [`hill_tensor`](@ref).
+Keyword arguments are forwarded to [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor).
 
 See also [`stress_strain_loc`](@ref), [`strain_stress_loc`](@ref),
 [`stress_stress_loc`](@ref).
@@ -83,8 +83,16 @@ end
 """
     stress_strain_loc(incl, C₁, C₀; kw...) -> Tens{4,3}
 
-Dilute **stress-strain localization tensor** `A_σε = C₁ : A_εε`:
-`σ_inc = A_σε : ε∞`.
+Dilute **stress-strain localization tensor** `A_σε`: `σ_inc = A_σε : ε∞`.
+
+!!! warning "The generic method assumes a homogeneous inclusion"
+    It evaluates `A_σε = C₁ : A_εε`, which holds only when the inclusion
+    carries a **single uniform stiffness**. An internally heterogeneous
+    inclusion — one whose [`is_homogeneous_inclusion`](@ref) is `false` — has
+    no such `C₁`: its average stress has to be assembled from the local
+    fields, and the type **must** provide its own method (as `LayeredSphere`
+    does). [`stress_stress_loc`](@ref) is expressed in terms of this function,
+    so overriding it here fixes both.
 """
 function stress_strain_loc(
         incl::AbstractInclusion,
@@ -113,8 +121,14 @@ end
 """
     stress_stress_loc(incl, C₁, C₀; kw...) -> Tens{4,3}
 
-Dilute **stress-stress localization tensor** `A_σσ = C₁ : A_εε : S₀`:
+Dilute **stress-stress localization tensor** `A_σσ = A_σε : S₀`:
 `σ_inc = A_σσ : σ∞`.
+
+Derived from [`stress_strain_loc`](@ref) rather than from `A_εε` directly, so
+that a heterogeneous inclusion which supplies its own stress-side
+localization gets a correct `A_σσ` for free. For a homogeneous inclusion the
+two routes are the same expression (`⊡` is left-associative), hence bitwise
+identical.
 """
 function stress_stress_loc(
         incl::AbstractInclusion,
@@ -122,7 +136,7 @@ function stress_stress_loc(
         C₀::TensND.AbstractTens{4, 3};
         kw...
     )
-    return C₁ ⊡ strain_strain_loc(incl, C₁, C₀; kw...) ⊡ inv(C₀)
+    return stress_strain_loc(incl, C₁, C₀; kw...) ⊡ inv(C₀)
 end
 
 # =============================================================================
@@ -141,7 +155,7 @@ A_∇∇   = [𝟙 + ℙ(incl, K₀) · (K₁ - K₀)]⁻¹.
 ```
 
 Conductivity analog of [`strain_strain_loc`](@ref).  Keyword arguments
-are forwarded to [`hill_tensor`](@ref).
+are forwarded to [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor).
 """
 function gradient_gradient_loc(
         incl::AbstractInclusion,
@@ -158,8 +172,13 @@ end
 """
     flux_gradient_loc(incl, K₁, K₀; kw...) -> Tens{2,3}
 
-Dilute **flux-gradient localization tensor** `A_q∇ = K₁ · A_∇∇`:
-`q_inc = A_q∇ · ∇T∞`.
+Dilute **flux-gradient localization tensor** `A_q∇`: `q_inc = A_q∇ · ∇T∞`.
+
+!!! warning "The generic method assumes a homogeneous inclusion"
+    Transport counterpart of [`stress_strain_loc`](@ref): it evaluates
+    `A_q∇ = K₁ · A_∇∇`, valid only for a single uniform conductivity. A
+    heterogeneous inclusion must supply its own method; [`flux_flux_loc`](@ref)
+    then follows.
 """
 function flux_gradient_loc(
         incl::AbstractInclusion,
@@ -188,8 +207,11 @@ end
 """
     flux_flux_loc(incl, K₁, K₀; kw...) -> Tens{2,3}
 
-Dilute **flux-flux localization tensor** `A_qq = K₁ · A_∇∇ · R₀`:
+Dilute **flux-flux localization tensor** `A_qq = A_q∇ · R₀`:
 `q_inc = A_qq · q∞`.
+
+Derived from [`flux_gradient_loc`](@ref), for the reason given in
+[`stress_stress_loc`](@ref).
 """
 function flux_flux_loc(
         incl::AbstractInclusion,
@@ -197,7 +219,7 @@ function flux_flux_loc(
         K₀::TensND.AbstractTens{2, 3};
         kw...
     )
-    return K₁ ⋅ gradient_gradient_loc(incl, K₁, K₀; kw...) ⋅ inv(K₀)
+    return flux_gradient_loc(incl, K₁, K₀; kw...) ⋅ inv(K₀)
 end
 
 # =============================================================================

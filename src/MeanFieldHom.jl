@@ -67,29 +67,34 @@ using .Schemes
 using .Viscoelasticity
 
 # ─── Localization + contribution (top-level: need all sub-module APIs) ──────
-# Generics are declared in Core; Cracks already defines `compliance_contribution`,
-# `delta_compliance`, `delta_resistivity`.  Extend both via qualified imports so
-# that every method attaches to the same canonical function.
+# Every generic is declared in `Core`; sub-modules (and user code) extend them
+# via qualified imports so that all methods attach to the same canonical
+# function.
 import .Core: strain_strain_loc, stress_strain_loc, strain_stress_loc,
     stress_stress_loc, gradient_gradient_loc, flux_gradient_loc,
     gradient_flux_loc, flux_flux_loc,
     stiffness_contribution, conductivity_contribution,
-    resistivity_contribution, delta_stiffness, delta_conductivity,
-    loc_and_stiffness, loc_and_stress_average
-import .Cracks: compliance_contribution, delta_compliance, delta_resistivity
+    resistivity_contribution, compliance_contribution,
+    delta_stiffness, delta_conductivity, delta_compliance, delta_resistivity,
+    loc_and_stiffness, loc_and_stress_average,
+    compliance_and_stiffness_contribution
+import .Elasticity: hill_tensor
 
 include("localization.jl")
 include("contribution.jl")
+include("custom_inclusion.jl")
+include("fe_inclusions.jl")
 
 # ── Abstractions ─────────────────────────────────────────────────────────────
 export AbstractInclusion, AbstractEllipsoidalInclusion, AbstractCrack
-export AbstractLayeredInclusion
+export AbstractLayeredInclusion, AbstractCustomInclusion
 export AbstractAlgorithm, Analytical, Residue, DECUHR, NestedQuadGK,
     CylinderQuadrature, Auto
 export MaterialSymmetry, IsotropicSym, TransverselyIsotropicSym,
     OrthotropicSym, GeneralAnisotropicSym
 export material_symmetry, dimension, inclusion_basis, shape_trait, shape_tensor
 export eshelby_tensor
+export green_gradient_iso, dipole_displacement_iso
 
 # ── Elasticity ───────────────────────────────────────────────────────────────
 export Ellipsoid, Spheroid
@@ -107,16 +112,23 @@ export EllipticCrack, RibbonCrack, PennyCrack
 export crack_basis, aspect_ratio, semi_major, semi_minor, crack_normal
 export cod_tensor, B_tensor
 export cod_from_compliance, compliance_from_cod
-export compliance_contribution
-export delta_compliance, delta_resistivity
+export crack_density_factor
 export sif, dif
+
+# ── Custom (user-defined) inclusions ─────────────────────────────────────────
+export CustomInclusion, CustomShape, check_inclusion_interface
+
+# ── Finite-element inclusions (needs `MeanFieldHomFerriteExt`) ───────────────
+export FEEllipticCrack, FEMeshOptions, FECache
+export fe_assembly_count, fe_reset!, fe_cod_breakdown, fe_mesh_report
 
 # ── Localization & contribution (Eshelby dilute, Kachanov-Sevostianov) ───────
 export strain_strain_loc, stress_strain_loc, strain_stress_loc, stress_stress_loc
 export gradient_gradient_loc, flux_gradient_loc, gradient_flux_loc, flux_flux_loc
 export stiffness_contribution, conductivity_contribution, resistivity_contribution
+export compliance_contribution
 export is_homogeneous_inclusion
-export delta_stiffness, delta_conductivity
+export delta_stiffness, delta_conductivity, delta_compliance, delta_resistivity
 
 # ── LayeredSphere (Hervé-Zaoui / Hervé-Luanco / Gurtin-Murdoch / Kapitza) ────
 export LayeredSphere, AbstractInterface, PerfectInterface

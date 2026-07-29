@@ -13,6 +13,17 @@ import DECUHR, Integrals
 # (NonlinearSolve is a weak dependency of MeanFieldHom.)
 import NonlinearSolve
 
+# Load Ferrite / FerriteGmsh / Gmsh so the `MeanFieldHomFerriteExt` extension
+# activates: `test_ferrite_crack.jl` exercises the finite-element crack.  They
+# are weak dependencies, so a missing stack skips those tests rather than
+# failing the suite.
+const HAS_FERRITE = try
+    @eval import Ferrite, FerriteGmsh, Gmsh
+    true
+catch
+    false
+end
+
 # Several test files draw random operators (`test_ti_alv.jl`, `test_ortho_alv.jl`,
 # `test_volterra_inverse.jl`, …).  Seed once here so a CI failure is always
 # reproducible locally instead of depending on the draw.
@@ -28,6 +39,7 @@ Random.seed!(20260723)
         include("Core/test_rotational_average.jl")
         include("Core/test_newton.jl")
         include("Core/test_newton_cylinder.jl")
+        include("Core/test_green_dipole.jl")
     end
 
     @testset "Elasticity" begin
@@ -75,6 +87,25 @@ Random.seed!(20260723)
         include("Schemes/test_symmetrize.jl")
         include("Schemes/test_orientation.jl")
         include("Schemes/test_loc_bundles.jl")
+    end
+
+    # The user-defined-inclusion contract spans Core (the abstractions) and
+    # Schemes (every consumer), so it runs after both — the scheme kernels are
+    # already compiled by then, which keeps this testset cheap.
+    @testset "CustomInclusions" begin
+        include("Core/test_custom_inclusion.jl")
+    end
+
+    # Finite-element inclusions: skipped when the Ferrite stack is unavailable
+    # (it is a weak dependency), and slow when it is — each case meshes a ball
+    # and factorizes a ~10⁵-dof system.
+    if HAS_FERRITE
+        @testset "FiniteElementInclusions" begin
+            include("ext/test_ferrite_crack.jl")
+        end
+    else
+        @info "Ferrite / FerriteGmsh / Gmsh unavailable — skipping the " *
+            "finite-element inclusion tests."
     end
 
     @testset "LayeredSpheres" begin

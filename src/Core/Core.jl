@@ -17,6 +17,8 @@ Contents
 - `green_kernel.jl`       : closed-form 3×3 inverse (`_inv3`)
 - `green_residue.jl`      : Masson / Cauchy residue summation
 - `green_helpers.jl`      : quadrature-agnostic Green-function helpers
+- `green_dipole.jl`       : real-space Kelvin Green gradient and the dipole
+                             far field of a polarized inclusion (isotropic)
 - `quadrature.jl`         : DECUHR cubature backend seam
 - `dispatch.jl`           : central `_resolve_algo` mechanism
 """
@@ -41,12 +43,13 @@ include("newton_potential.jl")
 include("green_kernel.jl")
 include("green_residue.jl")
 include("green_helpers.jl")
+include("green_dipole.jl")
 include("quadrature.jl")
 include("dispatch.jl")
 
 # Abstractions
 export AbstractInclusion, AbstractEllipsoidalInclusion,
-    AbstractCrack, AbstractLayeredInclusion
+    AbstractCrack, AbstractLayeredInclusion, AbstractCustomInclusion
 export dimension, element_type, inclusion_basis, shape_trait, shape_tensor
 export eshelby_tensor
 export is_homogeneous_inclusion
@@ -70,10 +73,14 @@ export mandel66_minor, array_from_mandel66
 # Newton potentials (public — used downstream and in tests)
 export newton_potential_3d, newton_potential_2d, newton_potential_3d_cylinder
 
+# Real-space Kelvin Green gradient / dipole far field (isotropic matrix)
+export green_gradient_iso, dipole_displacement_iso
+
 # Localization & contribution (generics; methods added at top level and in Cracks)
 export strain_strain_loc, stress_strain_loc, strain_stress_loc, stress_stress_loc
 export gradient_gradient_loc, flux_gradient_loc, gradient_flux_loc, flux_flux_loc
 export stiffness_contribution, conductivity_contribution, resistivity_contribution
-export delta_stiffness, delta_conductivity
+export compliance_contribution
+export delta_stiffness, delta_conductivity, delta_compliance, delta_resistivity
 
 end # module

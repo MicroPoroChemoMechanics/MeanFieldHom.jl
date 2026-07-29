@@ -85,3 +85,8 @@ MFH_Core.eshelby_tensor(
     incl::MFH_Core.AbstractEllipsoidalInclusion, K₀::TensND.AbstractTens{2, 2};
     kw...
 ) = Elasticity.hill_tensor(incl, K₀; kw...) ⋅ K₀
+
+MFH_Core.eshelby_tensor(
+    incl::MFH_Core.AbstractCustomInclusion, K₀::TensND.AbstractTens{2, 3};
+    kw...
+) = Elasticity.hill_tensor(incl, K₀; kw...) ⋅ K₀

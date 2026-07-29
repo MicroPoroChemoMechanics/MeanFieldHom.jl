@@ -18,7 +18,18 @@
 - Exact rotation-group symmetrization (ISO / TI) of concentration tensors,
   preserving non-major-symmetric content (`TensTI{4,T,8}`), for arbitrary
   multi-axis orientation distributions inside every scheme kernel.
-- User-defined inclusions / algorithms via the open `_kernel` table.
+- User-defined inclusions and algorithms: a levelled, documented contract
+  ([Adding a new inclusion](@ref)), the neutral
+  [`AbstractCustomInclusion`](@ref) branch, the callback-driven
+  [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion), the
+  [`check_inclusion_interface`](@ref MeanFieldHom.check_inclusion_interface)
+  conformance checker, and `shape_trait`-based inheritance of the crack
+  algebra (a user crack needs only `cod_tensor`).
+- Real-space Kelvin Green gradient and dipole far field for an isotropic
+  matrix ([`green_gradient_iso`](@ref MeanFieldHom.Core.green_gradient_iso),
+  [`dipole_displacement_iso`](@ref MeanFieldHom.Core.dipole_displacement_iso)) —
+  the boundary correction that makes a finite numerical Eshelby cell behave
+  like an infinite medium.
 - ForwardDiff sensitivities across all elastic and ALV schemes (fractions,
   moduli, and inclusion geometry).
 - NonlinearSolve.jl backend for the self-consistent fixed point
@@ -40,3 +51,9 @@
   `AndersonDefault` (currently Picard with relaxation, memory = 1).
 - Optional structured `TensTI{4,T,8}` fast path for the ALV TI schemes.
 - Viscoelastic constitutive laws in the Laplace–Carson domain.
+- Finite-element inclusions (`MeanFieldHomFerriteExt`): elliptical crack with
+  the first-order corrected boundary conditions of
+  [Adessina et al. 2017](https://doi.org/10.1016/j.ijengsci.2017.03.015),
+  isotropic matrix. Open extensions — anisotropic matrix (Pan-Chou or
+  Barnett-Willis Green gradient), the general 6+6 solid-inclusion scheme and
+  its excentered-core sphere, and Fourier (axisymmetric) elements.

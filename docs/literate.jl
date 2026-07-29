@@ -41,7 +41,15 @@ const PUBLISHED_SCRIPTS = [
     "43_secant_elastoplasticity.jl" => "secant_elastoplasticity",
     "61_freq_vs_time.jl" => "freq_vs_time",
     "70_symmetrization_showcase.jl" => "symmetrization",
+    "80_custom_inclusion_contract.jl" => "custom_inclusion_contract",
 ]
+
+# `81_fe_crack_eshelby.jl` and `82_fe_crack_schemes.jl` are deliberately *not*
+# published: each meshes a ball and factorizes up to a 2·10⁵-dof system several
+# times over, so a gallery page would add minutes to every documentation build
+# and pull `gmsh_jll` into the docs environment.  They are standalone scripts,
+# run from `scripts/fe/`, and their content is covered by the hand-written
+# manual page `manual/fe_inclusions.md`.
 
 function build_tutorial_pages()
     mkpath(TUTORIAL_MD_DIR)

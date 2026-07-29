@@ -38,9 +38,30 @@ function hill_tensor(
         reltol::Float64 = 1.0e-6,
         maxiters::Int = 1_000_000
     )
+    return _hill_tensor_entry(ell, C₀, method, abstol, reltol, maxiters)
+end
+
+# User-defined morphologies (`Core.AbstractCustomInclusion`) reach the same
+# `_resolve_algo` / `_kernel` table as the built-in families.  This branch of
+# the hierarchy is disjoint from `AbstractEllipsoidalInclusion`, so the two
+# entry points can never be ambiguous.  A custom inclusion either registers
+# `Elasticity._kernel(::MyIncl, C₀, ::Analytical; kw...)` methods, or bypasses
+# the table altogether by defining `hill_tensor` on its own concrete type.
+function hill_tensor(
+        incl::MFH_Core.AbstractCustomInclusion,
+        C₀::TensND.AbstractTens;
+        method::Symbol = :auto,
+        abstol::Float64 = 1.0e-8,
+        reltol::Float64 = 1.0e-6,
+        maxiters::Int = 1_000_000
+    )
+    return _hill_tensor_entry(incl, C₀, method, abstol, reltol, maxiters)
+end
+
+function _hill_tensor_entry(incl, C₀, method::Symbol, abstol, reltol, maxiters)
     MFH_Core._bump!(MFH_Core.HILL_CALLS)
-    algo = MFH_Core._resolve_algo(Val(method), ell, C₀)
-    return _kernel(ell, C₀, algo; abstol = abstol, reltol = reltol, maxiters = maxiters)
+    algo = MFH_Core._resolve_algo(Val(method), incl, C₀)
+    return _kernel(incl, C₀, algo; abstol = abstol, reltol = reltol, maxiters = maxiters)
 end
 
 # ── 4th-order, 3D ────────────────────────────────────────────────────────────
@@ -119,5 +140,10 @@ MFH_Core.eshelby_tensor(
 
 MFH_Core.eshelby_tensor(
     incl::AbstractEllipsoidalInclusion, C₀::TensND.AbstractTens{4, 2};
+    kw...
+) = hill_tensor(incl, C₀; kw...) ⊡ C₀
+
+MFH_Core.eshelby_tensor(
+    incl::MFH_Core.AbstractCustomInclusion, C₀::TensND.AbstractTens{4, 3};
     kw...
 ) = hill_tensor(incl, C₀; kw...) ⊡ C₀
