@@ -13,6 +13,12 @@
 #    1. one assembly, one Cholesky factorization of the free-free block;
 #    2. three "traction" solves,  u|∂Ω = (𝕊₀:Σ⁽ⁱ⁾)·x  with Σ⁽ⁱ⁾·n̂ = eᵢ   → 𝐁ₛ
 #    3. three "dipole"   solves,  u|∂Ω = -∇G(x):Πₘ,  Πₘ = b·S_f·ℂ₀:(eₘ⊗ˢn̂) → 𝐁ᵤ
+#
+#  The minus in step 3 is *not* the one in `axi_solver.jl`, which imposes
+#  `+∇G:M`.  The universal rule is `u = +∇G:M` with `M` the polarization
+#  moment; the moment of a displacement discontinuity is `M = -S_f ℂ₀:(⟨[[u]]⟩⊗ˢn̂)`,
+#  and `Πₘ` above is its opposite, so the sign is carried here instead.  The
+#  two files agree; they just put the minus in different places.
 #    4. 𝐁∞ = (𝟏 - 𝐁ᵤ)⁻¹·𝐁ₛ
 #
 #  Step 3 is the correction: 𝐁ₛ is the COD of the *finite* cell, 𝐁ᵤ its

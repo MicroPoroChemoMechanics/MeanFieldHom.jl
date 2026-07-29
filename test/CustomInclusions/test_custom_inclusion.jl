@@ -356,12 +356,23 @@ end
     )
 
     # A heterogeneous inclusion with no layer-wise average has no property to
-    # enter the bounds — and `AsymmetricSelfConsistent` evaluates the Voigt
-    # bound internally, so it inherits the restriction.  Informative error
-    # rather than a `MethodError` three frames down.
-    for scheme in (Voigt(), Reuss(), AsymmetricSelfConsistent())
+    # enter the bounds: a bound averages the *constituent* properties, which
+    # takes the internal volume fractions the RVE does not carry.  Informative
+    # error rather than a `MethodError` three frames down.
+    for scheme in (Voigt(), Reuss())
         @test_throws ArgumentError homogenize(ok, scheme, :C)
+        @test !MeanFieldHom.Schemes.has_layer_average(het)
     end
+
+    # `AsymmetricSelfConsistent`, on the other hand, must *not* inherit that
+    # restriction: its iteration consumes the same two localization tensors as
+    # `SelfConsistent`, and only its branch-selection heuristic ever looked at a
+    # bound.  With none available it falls back to the dilute estimate and runs,
+    # reaching the same fixed point as `SelfConsistent`.
+    asc = homogenize(ok, AsymmetricSelfConsistent(), :C)
+    @test get_array(asc) ≈
+        get_array(homogenize(ref, AsymmetricSelfConsistent(), :C)) rtol = 1.0e-8
+    @test get_array(asc) ≈ get_array(homogenize(ok, SelfConsistent(), :C)) rtol = 1.0e-6
 
     # The root cause, isolated: the two stress-side localizations disagree.
     @test !isapprox(

@@ -225,6 +225,26 @@ for (i, bin) in enumerate(polar_orientation_bins(12))
 end
 ```
 
+**Gate B is complete for a heterogeneous inclusion too.** Supply *both*
+localization tensors (`strain_strain_loc` and `stress_strain_loc`, or their
+transport analogues) and the contribution tensors are derived from
+``\mathbb N = \mathbb A_{\sigma\varepsilon} - \mathbb C_0 :
+\mathbb A_{\varepsilon\varepsilon}``, which needs no single
+``\mathbb C_1``. Supply only the strain side, with
+`is_homogeneous_inclusion` still `true`, and the average stress is silently
+wrong — `check_inclusion_interface` is there to catch that.
+
+## Two worked examples in the package
+
+Both live in [`MeanFieldHom.FiniteElements`](@ref) and both take the same
+route: a finite-element resolution of the Eshelby problem, plugged in through
+the contract, with nothing downstream aware of it.
+
+| Page | Morphology | Gate |
+| :--- | :--- | :--- |
+| [Finite-element inclusions](@ref man-fe-inclusions) | elliptical crack, 3-D tetrahedra | the crack algebra, from `cod_tensor` alone |
+| [A recycled-concrete aggregate](@ref app-recycled-aggregate) | sphere with an off-centre core | B, both localization tensors |
+
 ## See also
 
 - [Adding a new inclusion](@ref) — the complete contract, level by level.

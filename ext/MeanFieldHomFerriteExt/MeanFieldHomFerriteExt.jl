@@ -26,10 +26,15 @@ using Gmsh: gmsh
 using Tensors
 using LinearAlgebra
 
-import MeanFieldHom: _fe_cod_tensor
+const FE = MeanFieldHom.FiniteElements
+
+import MeanFieldHom.FiniteElements: _fe_cod_tensor, _fe_axi_localization
 
 include("mesh.jl")
 include("solver.jl")
+include("axi_mesh.jl")
+include("axi_fourier.jl")
+include("axi_solver.jl")
 
 # ─── Frame handling ──────────────────────────────────────────────────────────
 #
@@ -112,7 +117,7 @@ function _fe_cod_tensor(
     C_loc = _local_stiffness(crack, C₀)
     key = _cache_key(C_loc)
 
-    B_loc = get!(crack.cache.cod, key) do
+    B_loc = get!(crack.cache.tensors, key) do
         _, _, B = _solve_cod_local(crack, C_loc, μ, ν)
         B
     end
@@ -136,7 +141,7 @@ wired correctly.
 
 Bypasses the cache.
 """
-function MeanFieldHom.fe_cod_breakdown(
+function FE.fe_cod_breakdown(
         crack::MeanFieldHom.FEEllipticCrack, C₀::TensND.AbstractTens{4, 3}
     )
 
@@ -158,7 +163,7 @@ Mesh diagnostics: cell and dof counts, number of welded crack-front node pairs,
 the two lip facet counts and their measured areas against the exact `πab`.
 Builds the discretization if it does not exist yet, and caches it.
 """
-function MeanFieldHom.fe_mesh_report(crack::MeanFieldHom.FEEllipticCrack)
+function FE.fe_mesh_report(crack::MeanFieldHom.FEEllipticCrack)
     s = _setup(crack)
     a, b = Float64(crack.a), Float64(crack.b)
     ip_geo = Ferrite.Lagrange{Ferrite.RefTetrahedron, 1}()

@@ -339,6 +339,9 @@ julia scripts/82_fe_crack_schemes.jl     # the crack inside the schemes
 
 ## See also
 
+- [A recycled-concrete aggregate](@ref app-recycled-aggregate) — the same
+  correction on a *solid* inclusion, in its general polarization-fixed-point
+  form, on a two-dimensional axisymmetric Fourier mesh.
 - [Custom inclusions](@ref man-custom-inclusions) — the contract this
   implements.
 - [Adding a new inclusion](@ref) — the full developer contract.

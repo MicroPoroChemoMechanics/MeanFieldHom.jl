@@ -51,9 +51,12 @@
   `AndersonDefault` (currently Picard with relaxation, memory = 1).
 - Optional structured `TensTI{4,T,8}` fast path for the ALV TI schemes.
 - Viscoelastic constitutive laws in the Laplace–Carson domain.
-- Finite-element inclusions (`MeanFieldHomFerriteExt`): elliptical crack with
-  the first-order corrected boundary conditions of
-  [Adessina et al. 2017](https://doi.org/10.1016/j.ijengsci.2017.03.015),
-  isotropic matrix. Open extensions — anisotropic matrix (Pan-Chou or
-  Barnett-Willis Green gradient), the general 6+6 solid-inclusion scheme and
-  its excentered-core sphere, and Fourier (axisymmetric) elements.
+- Finite-element inclusions (`MeanFieldHomFerriteExt`), both with the
+  first-order corrected boundary condition of
+  [Adessina et al. 2017](https://doi.org/10.1016/j.ijengsci.2017.03.015) and an
+  isotropic reference medium: the **elliptical crack** in 3-D tetrahedra
+  (3 + 3 crack declination) and the **sphere with an off-centre core** in
+  axisymmetric Fourier elements (the general polarization fixed point).
+  Open extensions — anisotropic reference medium (Pan-Chou or Barnett-Willis
+  Green gradient); more than one inclusion, or a non-spherical envelope, in the
+  axisymmetric cell; automatic differentiation through the solve.

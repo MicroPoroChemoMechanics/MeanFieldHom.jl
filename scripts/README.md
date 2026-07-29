@@ -108,10 +108,16 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `80_custom_inclusion_contract.jl` | echoes `user_inclusion` | the three entry gates (Hill / localization / contribution) driven through every scheme — identical to the last digit; plus the density seam and free orientation averaging |
 | `81_fe_crack_eshelby.jl` | Adessina et al. (2017), IJES 119, 1-15 | elliptical crack by finite elements (`Ferrite` + `Gmsh`): mesh, first-order corrected boundary condition, `‖B_u‖ ∝ (a/R)³`, convergence and Richardson extrapolation vs the closed-form COD |
 | `82_fe_crack_schemes.jl` | — | the finite-element crack as a drop-in `EllipticCrack` in Dilute / MT / SC / Differential, with `IsoSymmetrize` and the memoization count |
+| `83_fe_excentered_sphere.jl` | Adessina et al. (2017), IJES 119, 1-15 | the sphere with an off-centre core by **axisymmetric Fourier** elements: the concentric limit against Hervé-Zaoui, what the boundary correction buys in `R/a`, the eccentricity sweep, the schemes, and transport |
 
-Scripts 81 and 82 need `Ferrite`, `FerriteGmsh` and `Gmsh` (weak dependencies
-of `MeanFieldHom`) and take a minute or so — they mesh a ball and factorize a
-~10⁵-dof system per case.
+Scripts 81 to 83 need `Ferrite`, `FerriteGmsh` and `Gmsh` (weak dependencies of
+`MeanFieldHom`). 81 and 82 take a minute or so — they mesh a ball and factorize
+a ~10⁵-dof system per case; 83 is two-dimensional and runs in seconds.
+
+The two `scripts/fe/make_*_figures.jl` are maintenance scripts, run by hand,
+that regenerate the committed PNGs and result tables of the documentation pages
+`manual/fe_inclusions.md` and `applications/recycled_aggregate.md`. Nothing
+finite-element runs at documentation-build time.
 
 ## Conventions worth knowing
 

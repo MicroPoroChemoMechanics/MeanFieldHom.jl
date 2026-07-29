@@ -49,6 +49,7 @@ See [Custom inclusions](@ref man-custom-inclusions) for the tutorial and
 [Adding a new inclusion](@ref) for the full contract.
 
 ```@docs
+MeanFieldHom.CustomInclusions
 MeanFieldHom.Core.AbstractCustomInclusion
 MeanFieldHom.CustomInclusion
 MeanFieldHom.CustomShape
@@ -57,17 +58,44 @@ MeanFieldHom.check_inclusion_interface
 
 ## Finite-element inclusions
 
-Requires `Ferrite`, `FerriteGmsh` and `Gmsh` — see
-[Finite-element inclusions](@ref man-fe-inclusions).
+Requires `Ferrite`, `FerriteGmsh` and `Gmsh`. Two morphologies, one method —
+see [Finite-element inclusions](@ref man-fe-inclusions) for the elliptical
+crack and [A recycled-concrete aggregate](@ref app-recycled-aggregate) for the
+sphere with an off-centre core.
+
+```@docs
+MeanFieldHom.FiniteElements
+MeanFieldHom.FECache
+MeanFieldHom.fe_assembly_count
+MeanFieldHom.fe_reset!
+```
+
+### Elliptical crack (3-D)
 
 ```@docs
 MeanFieldHom.FEEllipticCrack
 MeanFieldHom.FEMeshOptions
-MeanFieldHom.FECache
 MeanFieldHom.fe_mesh_report
 MeanFieldHom.fe_cod_breakdown
-MeanFieldHom.fe_assembly_count
-MeanFieldHom.fe_reset!
+```
+
+### Sphere with an off-centre core (axisymmetric Fourier)
+
+```@docs
+MeanFieldHom.FEExcenteredSphere
+MeanFieldHom.FEAxiMeshOptions
+MeanFieldHom.fe_axi_localization
+MeanFieldHom.fe_axi_breakdown
+MeanFieldHom.fe_axi_mesh_report
+MeanFieldHom.FiniteElements.core_radius
+MeanFieldHom.FiniteElements.core_offset
+MeanFieldHom.FiniteElements.tensor_order
+MeanFieldHom.FiniteElements.ExcenteredSphereShape
+```
+
+### Green function of the corrected boundary condition
+
+```@docs
 MeanFieldHom.Core.green_gradient_iso
 MeanFieldHom.Core.dipole_displacement_iso
 ```

@@ -44,12 +44,14 @@ const PUBLISHED_SCRIPTS = [
     "80_custom_inclusion_contract.jl" => "custom_inclusion_contract",
 ]
 
-# `81_fe_crack_eshelby.jl` and `82_fe_crack_schemes.jl` are deliberately *not*
-# published: each meshes a ball and factorizes up to a 2·10⁵-dof system several
-# times over, so a gallery page would add minutes to every documentation build
-# and pull `gmsh_jll` into the docs environment.  They are standalone scripts,
-# run from `scripts/fe/`, and their content is covered by the hand-written
-# manual page `manual/fe_inclusions.md`.
+# `81_fe_crack_eshelby.jl`, `82_fe_crack_schemes.jl` and
+# `83_fe_excentered_sphere.jl` are deliberately *not* published: they mesh and
+# factorize (up to a 2·10⁵-dof system, several times over, for the crack), so a
+# gallery page would add minutes to every documentation build and pull
+# `gmsh_jll` into the docs environment.  They are standalone scripts, run from
+# `scripts/fe/`, and their content is covered by the hand-written manual pages
+# `manual/fe_inclusions.md` and
+# `applications/recycled_aggregate.md`.
 
 function build_tutorial_pages()
     mkpath(TUTORIAL_MD_DIR)

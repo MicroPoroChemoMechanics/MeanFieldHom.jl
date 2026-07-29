@@ -137,6 +137,7 @@ makedocs(;
             "applications/cement_paste_diffusion.md",
             "applications/strength.md",
             "applications/itz_concrete.md",
+            "applications/recycled_aggregate.md",
             "applications/bituminous.md",
             "applications/ageing_creep.md",
         ],

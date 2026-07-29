@@ -632,7 +632,11 @@ branch (the matrix-distinguished branch).
 Compliance form is selected when the matrix property is "stiffer"
 (in squared Frobenius norm) than the Voigt upper bound — the
 contractivity argument otherwise breaks down for high-contrast
-matrix-stiff systems.
+matrix-stiff systems. When an internally heterogeneous phase exposes no
+layer-wise average, so that no bound can be evaluated, the dilute estimate
+plays the same role: the branch heuristic is the only place a bound ever
+entered, and the iteration itself needs nothing beyond the localization
+tensors that `SelfConsistent` also requires.
 """
 function _evaluate(rve::RVE, asc::AsymmetricSelfConsistent, ::Val{p}; kw...) where {p}
     if _asc_use_stiffness(rve, p; kw...)
@@ -647,13 +651,21 @@ end
 # composite ; the Voigt heuristic above ignores them and may wrongly
 # select the stiffness form (which skips cracks → no degradation).
 # Force the compliance form whenever an RVE has at least one crack.
+#
+# The heuristic only has to answer "is the composite stiffer than the matrix?".
+# The Voigt bound is the C++ reference's answer and is kept whenever it can be
+# evaluated — but it needs the internal volume fractions of every heterogeneous
+# inclusion, which the *iteration* does not. When a phase cannot supply them
+# the dilute estimate answers the same question from the very tensors ASC
+# already requires, so the scheme stays available: nothing in the asymmetric
+# self-consistent algorithm itself depends on a bound.
 function _asc_use_stiffness(rve::RVE, prop::Symbol; kw...)
     if any(a isa CrackDensity for a in values(rve.amounts))
         return false
     end
     P₀ = matrix_property(rve, prop)
-    P_voigt = _evaluate(rve, Voigt(), Val(prop); kw...)
-    return _frob_sq(P_voigt) ≥ _frob_sq(P₀)
+    probe = _bounds_available(rve) ? Voigt() : Dilute()
+    return _frob_sq(_evaluate(rve, probe, Val(prop); kw...)) ≥ _frob_sq(P₀)
 end
 
 _frob_sq(t::TensND.AbstractTens) = sum(abs2, get_array(t))

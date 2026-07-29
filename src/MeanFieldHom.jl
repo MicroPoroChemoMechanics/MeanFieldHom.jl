@@ -22,8 +22,14 @@ inclusions, algorithms, and material symmetry classes.
   and DIF for elliptic and ribbon cracks.
 - `MeanFieldHom.Conductivity` — 2nd-order Hill tensor for conductivity /
   diffusion problems.
-- `MeanFieldHom.Schemes`      — placeholder for future mean-field
-  homogenization schemes (dilute, Mori–Tanaka, self-consistent, PCW, …).
+- `MeanFieldHom.Schemes`      — RVEs, amounts, symmetrization and the
+  homogenization schemes themselves (dilute, Mori–Tanaka, self-consistent,
+  PCW, Maxwell, differential).
+- `MeanFieldHom.CustomInclusions` — the user-defined inclusion contract:
+  `CustomInclusion` and `check_inclusion_interface`.
+- `MeanFieldHom.FiniteElements`   — inclusions whose response comes out of a
+  finite-element resolution of the Eshelby problem (`FEEllipticCrack`,
+  `FEExcenteredSphere`); the solvers live in `MeanFieldHomFerriteExt`.
 
 # Shared generic interface
 
@@ -77,13 +83,18 @@ import .Core: strain_strain_loc, stress_strain_loc, strain_stress_loc,
     resistivity_contribution, compliance_contribution,
     delta_stiffness, delta_conductivity, delta_compliance, delta_resistivity,
     loc_and_stiffness, loc_and_stress_average,
-    compliance_and_stiffness_contribution
+    compliance_and_stiffness_contribution, is_homogeneous_inclusion
 import .Elasticity: hill_tensor
 
 include("localization.jl")
 include("contribution.jl")
-include("custom_inclusion.jl")
-include("fe_inclusions.jl")
+
+# ─── Sub-modules that build on the generic algebra above ────────────────────
+include("CustomInclusions/CustomInclusions.jl")
+include("FiniteElements/FiniteElements.jl")
+
+using .CustomInclusions
+using .FiniteElements
 
 # ── Abstractions ─────────────────────────────────────────────────────────────
 export AbstractInclusion, AbstractEllipsoidalInclusion, AbstractCrack
@@ -119,8 +130,10 @@ export sif, dif
 export CustomInclusion, CustomShape, check_inclusion_interface
 
 # ── Finite-element inclusions (needs `MeanFieldHomFerriteExt`) ───────────────
-export FEEllipticCrack, FEMeshOptions, FECache
-export fe_assembly_count, fe_reset!, fe_cod_breakdown, fe_mesh_report
+export FECache, fe_assembly_count, fe_reset!
+export FEEllipticCrack, FEMeshOptions, fe_cod_breakdown, fe_mesh_report
+export FEExcenteredSphere, FEAxiMeshOptions
+export fe_axi_localization, fe_axi_breakdown, fe_axi_mesh_report
 
 # ── Localization & contribution (Eshelby dilute, Kachanov-Sevostianov) ───────
 export strain_strain_loc, stress_strain_loc, strain_stress_loc, stress_stress_loc

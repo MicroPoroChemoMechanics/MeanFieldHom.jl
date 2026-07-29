@@ -11,9 +11,9 @@
 #  the C++/Python `echoes` codebase, where the user overrides `build_all()`
 #  to return the concentration tensors by any means.
 #
-#  Loaded at MeanFieldHom top level, after `localization.jl` and
-#  `contribution.jl`, because the fallbacks below `invoke` the generic
-#  methods defined there.
+#  Loaded by the `CustomInclusions` sub-module, itself included after
+#  `localization.jl` and `contribution.jl`, because the fallbacks below
+#  `invoke` the generic methods defined there.
 # =============================================================================
 
 """
@@ -91,9 +91,11 @@ transport — a single callback may serve both by dispatching on its argument.
     makes the omission easy to miss.
 
     A heterogeneous inclusion also has no single property to feed the `Voigt`
-    and `Reuss` bounds; those are unavailable unless the type provides a
-    layer-wise average, and so is `AsymmetricSelfConsistent`, which evaluates
-    the Voigt bound internally to pick its branch.
+    and `Reuss` bounds — they need its internal volume fractions — so those are
+    unavailable unless the type supplies a layer-wise average
+    (`Schemes._layer_voigt` / `Schemes._layer_reuss`, plus
+    `Schemes.has_layer_average`). Every scheme that consumes localization or
+    contribution tensors is unaffected, `AsymmetricSelfConsistent` included.
 
 !!! warning "Gate C and the dilute concentration tensor"
     Contribution tensors alone do not determine `A`.  A **volume-fraction**

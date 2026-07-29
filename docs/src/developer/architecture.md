@@ -25,11 +25,15 @@ Sub-modules may *extend* (but not redefine) both `_resolve_algo` and
 | `Schemes`          | `RVE`/`Phase`, `homogenize`, every scheme type, exact symmetrization, ForwardDiff sensitivities     |
 | `Viscoelasticity`  | ageing linear viscoelasticity (Volterra pipeline, ALV variant of every scheme)                      |
 
+| `CustomInclusions` | the user-defined inclusion contract: `CustomInclusion`, `check_inclusion_interface` |
+| `FiniteElements`   | inclusions solved by finite elements (`FEEllipticCrack`, `FEExcenteredSphere`); the solvers live in `MeanFieldHomFerriteExt` |
+
 Two files sit at the **top level** rather than in a sub-module, and are loaded
-last on purpose: `localization.jl` and `contribution.jl` implement generics
-declared in `Core` whose methods need every sub-module's `_kernel` table to be
-visible. `custom_inclusion.jl` follows them, because its fallbacks `invoke`
-those generic methods.
+after every geometry sub-module on purpose: `localization.jl` and
+`contribution.jl` implement generics declared in `Core` whose methods need
+every sub-module's `_kernel` table to be visible. `CustomInclusions` and
+`FiniteElements` are included after *those*, because their fallbacks `invoke`
+the generic methods defined there.
 
 ## Extension points
 

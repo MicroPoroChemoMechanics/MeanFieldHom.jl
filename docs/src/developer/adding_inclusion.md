@@ -112,8 +112,27 @@ which presupposes a *single uniform* ``\mathbb C_1``. So:
 - **heterogeneous inclusion** (`is_homogeneous_inclusion == false`): there is
   no such ``\mathbb C_1``. The average stress has to be assembled from the
   local fields, so you **must** supply `stress_strain_loc` as well (and
-  `flux_gradient_loc` in transport). This is the route taken by
-  `LayeredSphere`, which implements all four.
+  `flux_gradient_loc` in transport). `LayeredSphere` and
+  [`FEExcenteredSphere`](@ref) both take that route; the finite-element one
+  gets the two tensors out of a single solve, which is the usual situation and
+  the reason [`fe_axi_localization`](@ref) returns them as a pair.
+
+Supplying that second tensor buys the **contribution tensors** as well: the
+generic `stiffness_contribution` and friends switch, when
+`is_homogeneous_inclusion` is `false`, to the identities
+
+```math
+\mathbb N = \mathbb A_{\sigma\varepsilon} - \mathbb C_0 : \mathbb A_{\varepsilon\varepsilon},
+\qquad
+\mathbb H = (\mathbb A_{\varepsilon\varepsilon}
+             - \mathbb S_0 : \mathbb A_{\sigma\varepsilon}) : \mathbb S_0 ,
+```
+
+which need no ``\mathbb C_1`` at all and reduce to `(C₁ - C₀) : A` whenever a
+uniform ``\mathbb C_1`` does exist. So gate B really is a complete entry point
+for a heterogeneous morphology — two tensors in, everything else derived. (A
+type may still override the contributions for speed or for an extra physical
+term, as `LayeredSphere` does to add its interface contributions.)
 
 Getting this wrong is silent, and the silence is well hidden: `Dilute` and
 `MoriTanaka` consume only ``(\mathbb A, \mathbb N)`` and stay exactly right,
@@ -122,11 +141,15 @@ consume the stress average — drift by several percent.
 `check_inclusion_interface` flags the omission.
 
 A heterogeneous inclusion also has no single property to enter the `Voigt` and
-`Reuss` bounds; those helpers dispatch to a layer-wise average, so the bounds
-are unavailable unless the type provides one — implement
-`Schemes._layer_voigt` / `Schemes._layer_reuss` for it, as `LayeredSphere`
-does. `AsymmetricSelfConsistent` evaluates the Voigt bound internally to pick
-its branch, so it inherits the same requirement.
+`Reuss` bounds: a bound averages the *constituent* properties over the
+inclusion, and that takes its internal volume fractions, which the `RVE` does
+not carry. The bounds are therefore unavailable unless the type supplies them —
+implement `Schemes._layer_voigt` / `Schemes._layer_reuss` and set
+`Schemes.has_layer_average` to `true`, as `LayeredSphere` and
+[`FEExcenteredSphere`](@ref) do. Nothing else is affected:
+`AsymmetricSelfConsistent` consults a bound only to choose between its
+stiffness and compliance iteration, and falls back to the dilute estimate when
+none is available.
 
 The remaining localizations are derived: `strain_stress_loc` and
 `gradient_flux_loc` are a change of driving variable (valid regardless of
@@ -271,4 +294,4 @@ kernel.
 4. Run `check_inclusion_interface`.
 5. Add at least one unit test under `test/<SubModule>/` — the strongest form
    is an **equivalence test** against a built-in geometry through every
-   scheme, as in `test/Core/test_custom_inclusion.jl`.
+   scheme, as in `test/CustomInclusions/test_custom_inclusion.jl`.

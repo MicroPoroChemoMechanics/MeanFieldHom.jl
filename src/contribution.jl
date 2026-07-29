@@ -28,6 +28,14 @@ in a matrix `C₀`.  For a dilute family of inclusions of volume fraction
 `f`, the effective stiffness correction is
 `ΔC_eff = f × N` — see [`delta_stiffness`](@ref).
 
+!!! note "Heterogeneous inclusions"
+    `(C₁ - C₀) : A_εε` presupposes a *single* stiffness inside the inclusion.
+    When [`is_homogeneous_inclusion`](@ref) is `false` the exact identity
+    `N = A_σε - C₀ : A_εε` is used instead — it needs no `C₁`, only the two
+    localization tensors, and reduces to the expression above whenever a
+    uniform `C₁` does exist. This is what lets a layered or finite-element
+    inclusion reach the schemes through gate B alone.
+
 See [Kachanov & Sevostianov (2018)](@cite kachanov2018).
 """
 function stiffness_contribution(
@@ -37,6 +45,7 @@ function stiffness_contribution(
         kw...
     )
     A = strain_strain_loc(incl, C₁, C₀; kw...)
+    is_homogeneous_inclusion(incl) || return stress_strain_loc(incl, C₁, C₀; kw...) - C₀ ⊡ A
     return (C₁ - C₀) ⊡ A
 end
 
@@ -47,6 +56,11 @@ Size-independent **compliance contribution tensor**
 `H = (S₁ - S₀) : A_σσ` for an `AbstractInclusion` of stiffness `C₁`
 in a matrix `C₀` (`S = C⁻¹`).  For a dilute family, the effective
 compliance correction is `ΔS_eff = f × H` — see [`delta_compliance`](@ref).
+
+!!! note "Heterogeneous inclusions"
+    As for [`stiffness_contribution`](@ref), `inv(C₁)` is meaningless when
+    [`is_homogeneous_inclusion`](@ref) is `false`; the exact identity
+    `H = A_εσ - S₀ : A_σσ = (A_εε - S₀ : A_σε) : S₀` is used instead.
 
 See [Kachanov & Sevostianov (2018)](@cite kachanov2018).
 """
@@ -62,6 +76,8 @@ function compliance_contribution(
     # and once again here.
     S₀ = inv(C₀)
     A_σε = stress_strain_loc(incl, C₁, C₀; kw...)
+    is_homogeneous_inclusion(incl) ||
+        return (strain_strain_loc(incl, C₁, C₀; kw...) - S₀ ⊡ A_σε) ⊡ S₀
     return (inv(C₁) - S₀) ⊡ (A_σε ⊡ S₀)
 end
 
@@ -96,6 +112,9 @@ Size-independent **conductivity contribution tensor**
 `N_K = (K₁ - K₀) · A_∇∇` for an `AbstractInclusion` of conductivity
 `K₁` in a matrix `K₀`.  Dilute effective correction:
 `ΔK_eff = f × N_K`.
+
+For a heterogeneous inclusion the exact `N_K = A_q∇ - K₀ · A_∇∇` is used
+instead — see [`stiffness_contribution`](@ref).
 """
 function conductivity_contribution(
         incl::AbstractInclusion,
@@ -104,6 +123,7 @@ function conductivity_contribution(
         kw...
     )
     A = gradient_gradient_loc(incl, K₁, K₀; kw...)
+    is_homogeneous_inclusion(incl) || return flux_gradient_loc(incl, K₁, K₀; kw...) - K₀ ⋅ A
     return (K₁ - K₀) ⋅ A
 end
 
@@ -113,6 +133,9 @@ end
 Size-independent **resistivity contribution tensor**
 `H_R = (R₁ - R₀) · A_qq` for an `AbstractInclusion` (with `R = K⁻¹`).
 Dilute effective correction: `ΔR_eff = f × H_R`.
+
+For a heterogeneous inclusion the exact `H_R = (A_∇∇ - R₀ · A_q∇) · R₀` is
+used instead — see [`compliance_contribution`](@ref).
 """
 function resistivity_contribution(
         incl::AbstractInclusion,
@@ -125,6 +148,8 @@ function resistivity_contribution(
     # and the `(R₁ - R₀)` factor.
     R₀ = inv(K₀)
     A_q∇ = flux_gradient_loc(incl, K₁, K₀; kw...)
+    is_homogeneous_inclusion(incl) ||
+        return (gradient_gradient_loc(incl, K₁, K₀; kw...) - R₀ ⋅ A_q∇) ⋅ R₀
     return (inv(K₁) - R₀) ⋅ (A_q∇ ⋅ R₀)
 end
 

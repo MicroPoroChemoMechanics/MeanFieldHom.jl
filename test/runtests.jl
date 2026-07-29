@@ -14,9 +14,9 @@ import DECUHR, Integrals
 import NonlinearSolve
 
 # Load Ferrite / FerriteGmsh / Gmsh so the `MeanFieldHomFerriteExt` extension
-# activates: `test_ferrite_crack.jl` exercises the finite-element crack.  They
-# are weak dependencies, so a missing stack skips those tests rather than
-# failing the suite.
+# activates: `test_ferrite_crack.jl` and `test_axi_excentered_sphere.jl`
+# exercise the finite-element inclusions.  They are weak dependencies, so a
+# missing stack skips those tests rather than failing the suite.
 const HAS_FERRITE = try
     @eval import Ferrite, FerriteGmsh, Gmsh
     true
@@ -93,15 +93,17 @@ Random.seed!(20260723)
     # Schemes (every consumer), so it runs after both — the scheme kernels are
     # already compiled by then, which keeps this testset cheap.
     @testset "CustomInclusions" begin
-        include("Core/test_custom_inclusion.jl")
+        include("CustomInclusions/test_custom_inclusion.jl")
     end
 
     # Finite-element inclusions: skipped when the Ferrite stack is unavailable
-    # (it is a weak dependency), and slow when it is — each case meshes a ball
-    # and factorizes a ~10⁵-dof system.
+    # (it is a weak dependency), and slow when it is — the crack cases mesh a
+    # ball and factorize a ~10⁵-dof system, while the axisymmetric ones are
+    # two-dimensional and cost a fraction of that.
     if HAS_FERRITE
         @testset "FiniteElementInclusions" begin
-            include("ext/test_ferrite_crack.jl")
+            include("FiniteElements/test_ferrite_crack.jl")
+            include("FiniteElements/test_axi_excentered_sphere.jl")
         end
     else
         @info "Ferrite / FerriteGmsh / Gmsh unavailable — skipping the " *

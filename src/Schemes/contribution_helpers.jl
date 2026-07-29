@@ -296,13 +296,32 @@ _no_layer_average(geom, bound) = throw(
     ArgumentError(
         "the $bound bound needs a single phase property, but $(typeof(geom)) " *
             "reports `is_homogeneous_inclusion == false` and exposes no " *
-            "layer-wise average. Implement `Schemes._layer_voigt` / " *
-            "`Schemes._layer_reuss` for it, or use a scheme that consumes " *
-            "contribution tensors instead. Note that `AsymmetricSelfConsistent` " *
-            "evaluates the Voigt bound internally, so it is subject to the " *
-            "same requirement."
+            "layer-wise average. A bound has to average the *constituent* " *
+            "properties over the inclusion, which takes the internal volume " *
+            "fractions — supply them by implementing `Schemes._layer_voigt` / " *
+            "`Schemes._layer_reuss` (and `Schemes.has_layer_average`) for your " *
+            "type, or use a scheme that consumes contribution tensors instead."
     )
 )
+
+"""
+    has_layer_average(geom) -> Bool
+
+Whether the bounds can be evaluated on `geom`: `true` for a homogeneous
+inclusion, whose declared phase property *is* the average, and for a
+heterogeneous one that implements [`_layer_voigt`](@ref) / [`_layer_reuss`](@ref).
+
+The point of asking is that a bound needs the internal volume fractions of an
+internally heterogeneous pattern, which the RVE does not carry. Schemes that
+merely *consult* a bound — `AsymmetricSelfConsistent` picks its iteration form
+from one — use this to fall back rather than to fail.
+"""
+has_layer_average(geom) = MFH_Core.is_homogeneous_inclusion(geom)
+has_layer_average(::_Layered) = true
+
+"Whether every inclusion phase of `rve` can enter a Voigt / Reuss bound."
+_bounds_available(rve::RVE) =
+    all(has_layer_average(rve.phases[n].geometry) for n in inclusion_phase_names(rve))
 
 """
     _phase_voigt_property(rve, name, prop, ref) -> AbstractTens

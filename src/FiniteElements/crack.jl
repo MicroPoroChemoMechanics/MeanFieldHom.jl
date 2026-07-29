@@ -1,17 +1,9 @@
 # =============================================================================
-#  fe_inclusions.jl
+#  crack.jl — the flat elliptical crack solved by 3-D finite elements.
 #
-#  Inclusions whose response is obtained from a finite-element resolution of
-#  the Eshelby problem rather than from a closed form.
-#
-#  Only the *type* and its geometric interface live here; the mesh generation
-#  and the solve live in the package extension `MeanFieldHomFerriteExt`, loaded
-#  when `Ferrite`, `FerriteGmsh` and `Gmsh` are available.  Without them the
-#  stub below errors informatively.
-#
-#  Method — the "finite Eshelby cell with a first-order corrected boundary
+#  Method: the "finite Eshelby cell with a first-order corrected boundary
 #  condition" of Adessina, Barthélémy, Lavergne & Ben Fraj, *Int. J. Eng. Sci.*
-#  119 (2017) 1-15, in the crack declination used in the `SifAniso` study:
+#  119 (2017) 1-15, in the crack declination used in the `SifAniso` study —
 #  the infinite matrix is truncated to a ball of radius `R = radius_ratio · a`
 #  and the truncation bias is removed by adding the dipole far field of the
 #  open crack to the imposed boundary displacement.  See
@@ -49,30 +41,6 @@ struct FEMeshOptions
         return new(Float64(radius_ratio), Float64(htipdiv), Int(order))
     end
 end
-
-"""
-    FECache()
-
-Mutable side-store of a finite-element inclusion: the assembled discretization
-(built once, on first use) and the COD tensors already computed, keyed on the
-reference medium.
-
-A finite-element evaluation costs one assembly, one Cholesky factorization and
-six solves, while iterative schemes (self-consistent, differential) ask for the
-same tensors again at every iteration with a *slightly* different `C₀`.
-Memoizing on `C₀` is what keeps those schemes usable; one-shot schemes (dilute,
-Mori-Tanaka, Maxwell, PCW) only ever hit one key.
-
-`assemblies` counts the actual factorizations performed — used by the tests to
-prove the cache works.
-"""
-mutable struct FECache
-    setup::Any
-    cod::Dict{Any, Any}
-    assemblies::Int
-end
-
-FECache() = FECache(nothing, Dict{Any, Any}(), 0)
 
 """
     FEEllipticCrack(a, b; euler_angles = (), radius_ratio = 5.0,
@@ -155,34 +123,13 @@ function FEEllipticCrack(
 end
 
 Core.shape_trait(::FEEllipticCrack{T, S}) where {T, S} = S
+_fe_cache(c::FEEllipticCrack) = c.cache
 
 function Core.shape_tensor(c::FEEllipticCrack{T}) where {T}
     D = zeros(T, 3, 3)
     D[1, 1] = c.a
     D[2, 2] = c.b
     return TensND.Tens(D, c.basis)
-end
-
-"""
-    fe_assembly_count(crack) -> Int
-
-Number of finite-element assemblies (equivalently, factorizations) actually
-performed for `crack` so far. Every distinct reference medium costs one; a
-repeat costs none. Useful to check that the memoization of
-[`FECache`](@ref) is doing its job.
-"""
-fe_assembly_count(c::FEEllipticCrack) = c.cache.assemblies
-
-"""
-    fe_reset!(crack) -> crack
-
-Drop the cached discretization and every memoized COD tensor.
-"""
-function fe_reset!(c::FEEllipticCrack)
-    c.cache.setup = nothing
-    empty!(c.cache.cod)
-    c.cache.assemblies = 0
-    return c
 end
 
 # ─── Extension seam ──────────────────────────────────────────────────────────
