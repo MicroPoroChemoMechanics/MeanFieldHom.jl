@@ -1,4 +1,4 @@
-# API — Localization & contribution
+# [API — Localization & contribution](@id api-localization)
 
 ## Localization tensors
 
@@ -82,15 +82,17 @@ MeanFieldHom.GridapBackend
 
 ### Writing a backend
 
-A backend is these nine methods and nothing else. The Fourier operators, the
-boundary data, the fixed point of the corrected boundary condition and the
-memoization are shared, and the driver closes the strain operator and the
-azimuthal projection over the mode before handing them over — so an
-implementation never sees a Fourier mode or a physics, only "this many scalar
-fields, this operator, this projection".
+A backend is sixteen methods and nothing else — nine for the axisymmetric
+solve, seven for the crack. The Fourier operators, the boundary data, the fixed
+point of the corrected boundary condition and the memoization are shared, and
+the driver closes the strain operator and the azimuthal projection over the
+mode before handing them over, so an implementation never sees a Fourier mode
+or a physics: only "this many scalar fields, this operator, this projection".
 
-`ext/MeanFieldHomGridapExt/` is the shorter of the two implementations, at
-about 280 lines, and is the one to read first.
+`ext/MeanFieldHomGridapExt/` is the shorter of the two implementations and the
+one to read first.
+
+### The axisymmetric solve
 
 ```@docs
 MeanFieldHom.FiniteElements._build_gmsh_axi_model
@@ -103,6 +105,20 @@ MeanFieldHom.FiniteElements.fe_axi_set_dirichlet!
 MeanFieldHom.FiniteElements.fe_axi_stiffness
 MeanFieldHom.FiniteElements.fe_axi_average
 MeanFieldHom.FiniteElements._resolve_backend
+```
+
+### The crack
+
+```@docs
+MeanFieldHom.FiniteElements._build_gmsh_crack_model
+MeanFieldHom.FiniteElements._weld_msh_crack_front
+MeanFieldHom.FiniteElements.fe_crack_grid
+MeanFieldHom.FiniteElements.fe_crack_counts
+MeanFieldHom.FiniteElements.fe_crack_space
+MeanFieldHom.FiniteElements.fe_crack_dof_split
+MeanFieldHom.FiniteElements.fe_crack_set_dirichlet!
+MeanFieldHom.FiniteElements.fe_crack_stiffness
+MeanFieldHom.FiniteElements.fe_crack_mean_jump
 ```
 
 ### Elliptical crack (3-D)

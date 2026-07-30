@@ -1,4 +1,4 @@
-# Homogenization schemes
+# [Homogenization schemes](@id th-homogenization)
 
 `MeanFieldHom.Schemes` computes the *effective* property tensor of a
 multi-phase medium from (i) the phase geometries, (ii) the phase properties and

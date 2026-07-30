@@ -7,7 +7,6 @@ lcov.info
 /scripts/Manifest.toml
 /docs/Manifest.toml
 /docs/build/
-/docs/src/gallery/generated/
 /docs/generated_notebooks/
 /docs/generated_scripts/
 /build/

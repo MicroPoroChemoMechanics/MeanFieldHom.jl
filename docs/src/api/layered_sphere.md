@@ -1,4 +1,4 @@
-# API — LayeredSphere
+# [API — LayeredSphere](@id api-layered-sphere)
 
 ```@docs
 MeanFieldHom.LayeredSpheres

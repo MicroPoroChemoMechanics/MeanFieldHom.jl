@@ -1,4 +1,4 @@
-# API — Core
+# [API — Core](@id api-core)
 
 ```@docs
 MeanFieldHom.Core

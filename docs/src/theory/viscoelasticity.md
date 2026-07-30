@@ -1,4 +1,4 @@
-# Ageing linear viscoelasticity (ALV)
+# [Ageing linear viscoelasticity (ALV)](@id th-viscoelasticity)
 
 Everything in the elastic part of this documentation — the Eshelby problem, the
 Hill polarization tensor, the concentration and contribution tensors, the
@@ -336,7 +336,7 @@ per-layer localization kernels and the imperfect-interface transfers. The
 composite sphere then enters the schemes exactly as in elasticity — through its
 volume-averaged concentration kernel, having no Hill tensor of its own.
 
-## Symmetry classes and structured storage
+## [Symmetry classes and structured storage](@id th-visco-classes)
 
 ALV operators inherit the symmetry classes of their elastic counterparts, and
 those classes are **closed** under Volterra product and inverse. That closure is

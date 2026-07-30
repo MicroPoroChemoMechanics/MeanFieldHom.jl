@@ -1,4 +1,4 @@
-# From Echoes to MeanFieldHom
+# [From Echoes to MeanFieldHom](@id man-from-echoes)
 
 `MeanFieldHom` (MFH) is a Julia port of **Echoes** [echoes](@cite), the C++
 mean-field homogenization library (with a Python interface) developed at

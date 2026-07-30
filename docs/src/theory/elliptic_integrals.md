@@ -1,4 +1,4 @@
-# Elliptic integrals
+# [Elliptic integrals](@id th-elliptic-integrals)
 
 The [`MeanFieldHom.Elliptic`](@ref MeanFieldHom.Elliptic) submodule provides
 type-generic Legendre and Carlson integrals that flow end-to-end through

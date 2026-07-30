@@ -1,4 +1,4 @@
-# Tutorials
+# [Tutorials](@id tut-index)
 
 Mean-field homogenization replaces a heterogeneous microstructure — a matrix
 carrying inclusions, pores, or cracks — by an equivalent homogeneous medium with
@@ -59,5 +59,6 @@ their volume-averaged concentration tensors instead.
 
 | Page | What it shows |
 | :--- | :--- |
-| [From Echoes to MeanFieldHom](from_echoes.md) | translate Echoes (C++/Python) scripts; cross-check live via PyCall |
+| [Validating a finite-element crack](fe_crack.md) | what the corrected boundary condition buys, and convergence to the closed-form COD |
+| [Transport properties](transport.md) | 2nd-order homogenization: diffusivity of a porous medium, anisotropy from oriented pores |
 | [Symbolic spheres](symbolic_spheres.md) | the same tensor algebra on `SymPy` / `Symbolics` expressions: Eshelby/Hill tensors and the closed-form estimates |

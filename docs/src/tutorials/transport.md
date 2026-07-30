@@ -1,4 +1,4 @@
-# Transport properties
+# [Transport properties](@id tut-transport)
 
 Transport properties — diffusivity, permeability, thermal or electrical
 conductivity — are described by **2nd-order** symmetric tensors. They are

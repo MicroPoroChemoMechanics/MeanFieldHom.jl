@@ -1,4 +1,4 @@
-# Conductivity
+# [Conductivity](@id man-conductivity)
 
 Everything the elastic API does, the conduction API does with order-2 tensors
 instead of order-4. Heat conduction, mass diffusion, electric conduction and
@@ -126,5 +126,5 @@ and [highly conducting interfaces](../tutorials/generated/layered_spheroid_hc.md
 Conduction and elasticity are not independent — a microstructure that stiffens a
 material also changes how it conducts. Explicit cross-property correlations for
 two-phase composites are given in [sevostianov2002](@cite); the
-[Transport properties](../applications/transport.md) application page works
+[Transport properties](../tutorials/transport.md) application page works
 through one.

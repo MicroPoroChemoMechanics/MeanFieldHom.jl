@@ -1,4 +1,4 @@
-# Localization and contribution tensors
+# [Localization and contribution tensors](@id th-localization)
 
 MeanFieldHom exposes the four **dilute localization tensors** of the
 Eshelby problem, together with the size-independent **stiffness and

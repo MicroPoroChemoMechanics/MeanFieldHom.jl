@@ -1,4 +1,4 @@
-# Quasi-brittle strength of cement paste and mortar
+# [Quasi-brittle strength of cement paste and mortar](@id app-strength)
 
 This chapter implements the multi-scale strength-upscaling model of
 [pichler2011](@cite) — and mirrors the corresponding chapter of the Echoes book

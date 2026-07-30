@@ -1,4 +1,4 @@
-# The differential scheme and path dependence
+# [The differential scheme and path dependence](@id tut-differential-paths)
 
 The differential (or incremental) scheme builds a composite the way
 some real materials are actually made: by adding inclusions a little

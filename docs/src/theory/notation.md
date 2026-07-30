@@ -1,4 +1,4 @@
-# Notation and conventions
+# [Notation and conventions](@id th-notation)
 
 This page fixes the notation used throughout the documentation. It is
 deliberately short: every symbol that is *not* listed here is redefined on the

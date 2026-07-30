@@ -1,4 +1,4 @@
-# Ageing creep of solidifying cementitious materials
+# [Ageing creep of solidifying cementitious materials](@id app-ageing-creep)
 
 The ageing-creep model of [sanahuja2013](@cite): one phase **solidifies
 progressively** — as C-S-H does during hydration — so ``\mathbb R^{\rm hom}(t,

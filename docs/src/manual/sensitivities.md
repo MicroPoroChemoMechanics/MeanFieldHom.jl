@@ -1,4 +1,4 @@
-# Sensitivities — autodiff via ForwardDiff
+# [Sensitivities — autodiff via ForwardDiff](@id man-sensitivities)
 
 `MeanFieldHom` differentiates `homogenize(rve, scheme)` with respect to any
 scalar input — physical (stiffness coefficients, conductivities), geometric

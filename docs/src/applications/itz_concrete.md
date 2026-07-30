@@ -1,4 +1,4 @@
-# The interfacial transition zone in concrete
+# [The interfacial transition zone in concrete](@id app-itz-concrete)
 
 Around every aggregate in a concrete there is a thin shell of cement paste that
 is **more porous than the bulk paste**: packing of cement grains against a rigid

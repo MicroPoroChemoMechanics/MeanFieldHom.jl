@@ -33,14 +33,19 @@
   - `FerriteBackend` (`MeanFieldHomFerriteExt`, needs `Ferrite`, `FerriteGmsh`,
     `Gmsh`) serves both morphologies.
   - `GridapBackend` (`MeanFieldHomGridapExt`, needs `Gridap`, `GridapGmsh`)
-    serves the axisymmetric one, stating the weak form directly rather than
-    looping over elements.
+    serves both as well, stating the weak form directly rather than looping
+    over elements: `∫( ε(v) ⊙ (σ∘ε(u)) )dΩ` for the crack,
+    `∫( Eᵐ(v) ⋅ (D ⋅ Eᵐ(u)) * ρ )dΩ` for the axisymmetric modes.
+  - The crack front weld — the merge of the node pairs gmsh's `Crack` plugin
+    duplicates in spite of `OpenBoundaryPhysicalGroup` — moved from
+    `Ferrite.Grid` surgery to a renumbering of the written `.msh`, so both
+    backends read the same welded mesh.
   - `AutoBackend`, the default, resolves at the **first solve** and is then
     pinned: an inclusion can be built and stored in an `RVE` with no
     finite-element package loaded.
-  - The two backends build the same discrete system and agree to round-off
-    (≈ 10⁻¹⁴ on every tensor, both physics), which `test_axi_gridap.jl`
-    asserts at 10⁻⁸.
+  - The two backends build the same discrete system and agree to round-off —
+    ≈ 10⁻¹⁴ on every tensor, both physics, both morphologies — which
+    `test_gridap_backend.jl` asserts at 10⁻⁸.
 - **Isotropic Kelvin dipole field** in `Core`: `green_gradient_iso`,
   `dipole_displacement_iso` — the far field a polarized inclusion radiates,
   and the ingredient of the corrected boundary condition.
@@ -74,6 +79,17 @@
   `differential_path` rather than compared at `τ = 1` only.
 
 ### Changed
+
+- **Documentation reorganized along the Theory / Manual / Tutorials /
+  Applications boundary**, with a stable anchor (`@id`) on every page. Two
+  pages change section, so their URLs move: `applications/transport.md` →
+  `tutorials/transport.md` (it demonstrates the API rather than reproducing a
+  published study, unlike the seven pages that remain in Applications) and
+  `tutorials/from_echoes.md` → `manual/from_echoes.md` (an API correspondence
+  table, not a guided walk-through). The finite Eshelby cell, previously
+  derived twice, is now stated once in
+  [theory/corrected_cell.md](docs/src/theory/corrected_cell.md) and cited from
+  the manual, the tutorial and the application.
 
 - **`method = :auto` no longer selects the residue algorithm for a 3D
   anisotropic elastic reference.** It now picks a cubature — `DECUHR` when its
@@ -171,12 +187,14 @@
   iterative scheme can never feed back a reference isotropic to machine
   precision. Relaxed to `1e-4`; genuine anisotropy is orders of magnitude
   larger.
-- **Endpoints of the axisymmetric mesh's boundary curves are now declared.** A
-  gmsh physical group has a dimension, so a group of curves does not carry its
-  own bounding points — three dofs on the outer sphere and six on the axis were
-  left free by a backend that reads boundary conditions off entity labels
-  rather than off mesh facets. Cost: one order of convergence, under the
-  appearance of discretization error.
+- **The boundary entities of the meshes are now fully declared.** A gmsh
+  physical group has a dimension, so a group of curves does not carry its own
+  bounding points and a group of surfaces does not carry its edges. A backend
+  that reads boundary conditions off entity labels rather than off mesh facets
+  therefore left dofs free: three on the outer sphere and six on the axis of
+  the axisymmetric cell, eleven on the sphere of the crack cell. Cost on the
+  axisymmetric cell: one order of convergence, under the appearance of
+  discretization error.
 - **Analytic sensitivity through a finite-element geometry is refused instead
   of returning zero.** `_replace_geom_field` copies non-numeric fields by
   reference, so the perturbed inclusion shared the original's `FECache` — whose

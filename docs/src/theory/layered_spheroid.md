@@ -1,4 +1,4 @@
-# Layered spheroid — confocal harmonic series
+# [Layered spheroid — confocal harmonic series](@id th-layered-spheroid)
 
 [`LayeredSpheroid`](@ref) is an ``N``-layer confocal spheroidal composite
 inclusion — a core plus concentric confocal shells — embedded in an infinite

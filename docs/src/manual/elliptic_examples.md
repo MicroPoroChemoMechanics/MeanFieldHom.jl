@@ -1,4 +1,4 @@
-# Elliptic integrals — examples
+# [Elliptic integrals — examples](@id man-elliptic-examples)
 
 `MeanFieldHom` re-exports the five entry points of the
 [`MeanFieldHom.Elliptic`](@ref) submodule: `ell_K`, `ell_E`, `ell_F`,

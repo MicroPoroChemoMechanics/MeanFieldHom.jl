@@ -1,4 +1,4 @@
-# Derivatives and sensitivities
+# [Derivatives and sensitivities](@id tut-sensitivities)
 
 Every scheme in `MeanFieldHom` is ordinary, generic Julia code — no
 finite differences, no symbolic engine, no hand-written Jacobians. That

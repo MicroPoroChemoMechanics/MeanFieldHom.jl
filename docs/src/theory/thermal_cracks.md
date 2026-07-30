@@ -1,4 +1,4 @@
-# Thermal cracks — COD scalar and resistivity contribution
+# [Thermal cracks — COD scalar and resistivity contribution](@id th-thermal-cracks)
 
 Transposition of
 [Crack opening displacement and compliance tensors](cod_tensors.md) to the

@@ -1,4 +1,4 @@
-# Installation
+# [Installation](@id man-installation)
 
 `MeanFieldHom` is not (yet) in the General registry; install it directly from
 GitHub:

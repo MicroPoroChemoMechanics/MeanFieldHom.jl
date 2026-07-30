@@ -1,4 +1,4 @@
-# Roadmap
+# [Roadmap](@id dev-roadmap)
 
 ## Shipped
 
@@ -54,12 +54,10 @@
 - Finite-element inclusions, behind the `FEBackend` contract
   (`MeanFieldHomFerriteExt`, `MeanFieldHomGridapExt`), both with the
   first-order corrected boundary condition of
-  [Adessina et al. 2017](https://doi.org/10.1016/j.ijengsci.2017.03.015) and an
+  [adessinaIJES2017](@cite) and an
   isotropic reference medium: the **elliptical crack** in 3-D tetrahedra
   (3 + 3 crack declination) and the **sphere with an off-centre core** in
   axisymmetric Fourier elements (the general polarization fixed point).
   Open extensions — anisotropic reference medium (Pan-Chou or Barnett-Willis
   Green gradient); more than one inclusion, or a non-spherical envelope, in the
-  axisymmetric cell; automatic differentiation through the solve; **the crack
-  under `GridapBackend`**, which needs the front welding that follows gmsh's
-  `Crack` plugin to be expressed on the mesh rather than on a `Ferrite.Grid`.
+  axisymmetric cell; automatic differentiation through the solve.

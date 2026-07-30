@@ -1,4 +1,4 @@
-# A first homogenization
+# [A first homogenization](@id tut-first-estimate)
 
 Every `MeanFieldHom` computation starts from the same three ingredients:
 a **representative volume element** (RVE) describing the phases, their

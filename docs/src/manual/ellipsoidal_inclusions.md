@@ -1,4 +1,4 @@
-# Ellipsoidal inclusions
+# [Ellipsoidal inclusions](@id man-ellipsoidal-inclusions)
 
 ```julia
 using MeanFieldHom, TensND

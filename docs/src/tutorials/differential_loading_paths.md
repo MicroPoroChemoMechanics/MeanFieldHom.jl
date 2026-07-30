@@ -1,4 +1,4 @@
-# Comparing loading-path trajectories
+# [Comparing loading-path trajectories](@id tut-differential-loading-paths)
 
 [The differential scheme and path dependence](differential_paths.md) shows
 *that* the incorporation order matters, through the endpoint `k_eff` of a

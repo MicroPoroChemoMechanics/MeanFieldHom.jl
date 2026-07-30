@@ -1,4 +1,4 @@
-# API — Sensitivities
+# [API — Sensitivities](@id api-sensitivities)
 
 Public lenses and autodiff entry points provided by
 `MeanFieldHom.Schemes`.  `ForwardDiff` is a **strong dependency** of

@@ -1,4 +1,4 @@
-# Nonlinear solvers for the self-consistent fixed point
+# [Nonlinear solvers for the self-consistent fixed point](@id tut-nonlinear-solvers)
 
 The [self-consistent scheme](bounds_and_schemes.md) is a fixed point
 ``\mathbb C = \mathrm{step}(\mathbb C)``. Three solver families are available

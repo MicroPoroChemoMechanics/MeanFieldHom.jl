@@ -40,7 +40,7 @@ A gallery of full micromechanical models built on the package —
 hydrating cement paste, chloride diffusivity, the interfacial transition
 zone in concrete, quasi-brittle strength, bituminous mixtures, ageing
 creep — lives under [`docs/src/applications/`](docs/src/applications)
-and the [Applications](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/applications/transport/)
+and the [Applications](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/applications/cement_paste/)
 section of the docs.
 
 ## Features
@@ -86,9 +86,10 @@ Five package extensions activate on weak dependencies, each optional:
 - `SymPy.jl` — symbolic closed forms for the elliptic integrals.
 - `Ferrite.jl` + `FerriteGmsh.jl` + `Gmsh.jl` — the reference finite-element
   backend, serving both `FEEllipticCrack` and `FEExcenteredSphere`.
-- `Gridap.jl` + `GridapGmsh.jl` — a second backend for `FEExcenteredSphere`.
-  The two share the mesh and the physics and agree to round-off; Ferrite is
-  the faster, Gridap states the weak form directly and is the easier to adapt.
+- `Gridap.jl` + `GridapGmsh.jl` — a second backend, serving both morphologies
+  as well. The two share the mesh and the physics and agree to round-off;
+  Ferrite is the faster to run, Gridap states the weak form directly and is the
+  easier to adapt.
 
 Type-generic elliptic integrals themselves are always bundled, as the
 `MeanFieldHom.Elliptic` submodule.
@@ -141,7 +142,7 @@ roughly in reading order:
 | [Theory](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/theory/) | the Eshelby/Hill chain — polarization tensor → localization → schemes — and its specializations (cracks, layered inclusions, viscoelasticity). |
 | [Manual](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/manual/installation/) | installation and a topic-by-topic reference for each inclusion family. |
 | [Tutorials](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/tutorials/) | worked examples: bounds and schemes, layered spheres/spheroids, viscoelasticity, sensitivities, symbolic computation. |
-| [Applications](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/applications/transport/) | full micromechanical models — cement paste, ITZ concrete, bituminous mixtures, strength, ageing creep. |
+| [Applications](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/applications/cement_paste/) | full micromechanical models — cement paste, ITZ concrete, bituminous mixtures, strength, ageing creep. |
 | [Developer guide](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/developer/architecture/) | architecture, dispatch, and how to add an inclusion / algorithm / scheme. |
 | [API reference](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/api/elliptic/) | every public docstring, grouped by sub-module. |
 

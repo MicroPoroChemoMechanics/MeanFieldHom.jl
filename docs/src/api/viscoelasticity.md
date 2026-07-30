@@ -1,4 +1,4 @@
-# API — Viscoelasticity
+# [API — Viscoelasticity](@id api-viscoelasticity)
 
 ```@meta
 CurrentModule = MeanFieldHom.Viscoelasticity

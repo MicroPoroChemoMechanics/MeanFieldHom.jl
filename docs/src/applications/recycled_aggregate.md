@@ -3,8 +3,7 @@
 Recycling concrete means crushing it, and what comes out is not a clean
 aggregate: each grain is an **old natural aggregate wrapped in a shell of
 adhered old mortar**, of uncertain and generally poor quality, and the old
-aggregate is not centred in its shell. Adessina, Barthélémy, Lavergne & Ben
-Fraj, *Int. J. Eng. Sci.* **119** (2017) 1-15, homogenized that morphology by
+aggregate is not centred in its shell. [adessinaIJES2017](@cite) homogenized that morphology by
 generalizing the Eshelby problem to an inclusion of arbitrary internal
 structure, solved by finite elements. This page reproduces their study with
 [`FEExcenteredSphere`](@ref), and improves on it in one respect.
@@ -167,102 +166,19 @@ Projecting on the Kelvin basis of the mode turns those averages directly into
 the modal blocks of ``\mathbb A`` and ``\mathbb B``, and the blocks reassemble
 into the ``6\times6`` Kelvin matrix of a transversely isotropic tensor.
 
-## The corrected boundary condition, in general
+## The corrected boundary condition
 
 The truncated cell is the same problem as for the crack, and has the same
-answer. The exact infinite-medium solution is
+answer: the polarization fixed point of
+[The finite Eshelby cell](@ref th-corrected-cell). Only one thing is specific
+here — each fixed point lives *inside* one Fourier mode, since the dipole of a
+modal polarization radiates in the same mode, so ``\mathbb X`` is ``2\times2``
+for mode 0 and a scalar for modes 1 and 2.
 
-```math
-u(x) = E\cdot x + \int_{\mathcal D}\nabla G(x - x') : p(x')\,\mathrm d\Omega',
-\qquad p = \sigma - \mathbb C_0 : \varepsilon ,
-```
-
-whose far field, since ``\nabla G(x-x') \to \nabla G(x)`` when
-``\|x\| \gg a``, collapses to a single **force dipole**:
-
-```math
-u(x) \;\approx\; E\cdot x + \nabla G(x) : \Bigl(V_{\mathcal D}\,
-      \langle p\rangle_{\mathcal D}\Bigr),
-\qquad
-\frac{\bigl\|V_{\mathcal D}\,\nabla G(x):\langle p\rangle\bigr\|}
-     {\|E\cdot x\|} = O\!\left(\frac{V_{\mathcal D}}{\|x\|^{3}}\right).
-```
-
-Imposing ``u = E\cdot x`` on a sphere of radius ``R`` therefore leaves an
-``O\bigl((a/R)^3\bigr)`` bias — the ``(a/R)^3`` line on the convergence figure
-below. Adding the dipole term removes it, at the price of a fixed point,
-because ``\langle p\rangle`` is *itself* an output of the problem.
-
-Split by linearity into two boundary-value problems on the truncated cell:
-
-```math
-\begin{aligned}
-u|_{\partial\Omega} &= E\cdot x
-  &&\Longrightarrow&
-  \langle\varepsilon^E\rangle_{\mathcal D} &= \mathbb A^E : E, &
-  \langle\sigma^E\rangle_{\mathcal D} &= \mathbb B^E : E, \\
-u|_{\partial\Omega} &= \nabla G(x) : (V_{\mathcal D}\,P)
-  &&\Longrightarrow&
-  \langle\varepsilon^p\rangle_{\mathcal D} &= \mathbb A^p : P, &
-  \langle\sigma^p\rangle_{\mathcal D} &= \mathbb B^p : P .
-\end{aligned}
-```
-
-Superposing and demanding that ``P`` be the polarization it generates,
-
-```math
-P = \langle\sigma - \mathbb C_0 : \varepsilon\rangle_{\mathcal D}
-  = (\mathbb B^E - \mathbb C_0 : \mathbb A^E) : E
-  + (\mathbb B^p - \mathbb C_0 : \mathbb A^p) : P ,
-```
-
-which is *linear* in ``P`` and solves in closed form:
-
-```math
-\boxed{\;
-\mathbb X = \bigl[\mathbb I - (\mathbb B^p - \mathbb C_0 : \mathbb A^p)\bigr]^{-1}
-            : (\mathbb B^E - \mathbb C_0 : \mathbb A^E),
-\qquad
-\mathbb A = \mathbb A^E + \mathbb A^p : \mathbb X,
-\qquad
-\mathbb B = \mathbb B^E + \mathbb B^p : \mathbb X. \;}
-```
-
-Both fixed points live *inside* one Fourier mode, since the dipole of a modal
-polarization radiates in the same mode — so ``\mathbb X`` is a ``2\times2``
-matrix for mode 0 and a scalar for modes 1 and 2.
-
-!!! note "The crack is the degenerate case"
-    The [elliptical crack](@ref man-fe-inclusions) runs the same algebra in
-    3 + 3 form: there the inclusion has no volume, its polarization is carried
-    entirely by the opening, and the fixed point closes on the crack-opening
-    tensor itself, ``\mathbf B_\infty = (1 - \mathbf B_u)^{-1}\mathbf B_s``.
-
-### The dipole fields
-
-For an isotropic reference medium both Green functions are closed forms, so the
-boundary data costs nothing. With ``r = \|x\|``, ``\hat n = x/r`` and
-``M = V_{\mathcal D} P`` the polarization **moment**, the elastic field is
-[`dipole_displacement_iso`](@ref MeanFieldHom.Core.dipole_displacement_iso):
-
-```math
-u(x) = \frac{\partial G_{ij}}{\partial x_k}(x)\,M_{jk}
-     = \frac{1}{16\pi\mu(1-\nu)r^{2}}
-       \Bigl[-2(1-2\nu)\,M\!\cdot\!\hat n + \mathrm{tr}(M)\,\hat n
-             - 3(\hat n\!\cdot\! M\!\cdot\!\hat n)\,\hat n\Bigr],
-```
-
-and the transport one, with ``G = 1/(4\pi k_0 r)``,
-
-```math
-T(x) = \frac{\partial G}{\partial x_k}(x)\,M_k
-     = -\frac{M\cdot x}{4\pi k_0 r^{3}} .
-```
-
-Both are resolved on the cylindrical basis mode by mode. Each branch vanishes
-on the axis exactly where the modal axis conditions require it, so the outer
-and the axis conditions never contradict each other at the poles — a small
-thing, but it is what allows the two prescribed sets to be merged without
+The two dipole fields are resolved on the cylindrical basis mode by mode. Each
+branch vanishes on the axis exactly where the modal axis conditions require it,
+so the outer and the axis conditions never contradict each other at the poles —
+a small thing, but it is what lets the two prescribed sets be merged without
 arbitration.
 
 ### What is solved
@@ -516,7 +432,7 @@ pinned once solved: comparing the two means building two inclusions.
 | | [`FerriteBackend`](@ref) | [`GridapBackend`](@ref) |
 |---|---|---|
 | Loads | `Ferrite, FerriteGmsh, Gmsh` | `Gridap, GridapGmsh` |
-| Morphologies | crack **and** sphere | sphere only |
+| States the problem as | an element assembly loop | a weak form |
 | Discretization | explicit element loop | weak form, `∫( Eᵐ(v) ⋅ D ⋅ Eᵐ(u) ρ )dΩ` |
 | Speed | ≈ 5× faster | slower |
 

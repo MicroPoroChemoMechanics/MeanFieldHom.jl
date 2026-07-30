@@ -1,4 +1,4 @@
-# Performance vs Echoes
+# [Performance vs Echoes](@id dev-benchmarks)
 
 Timings from `scripts/bench_echoes/benchmark.jl`: `@belapsed` on both sides,
 same machine, Echoes called through its Python API. `t(E)/t(J)` > 1 means

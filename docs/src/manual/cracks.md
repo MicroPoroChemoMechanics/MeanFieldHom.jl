@@ -1,4 +1,4 @@
-# Cracks
+# [Cracks](@id man-cracks)
 
 ```julia
 using MeanFieldHom, TensND

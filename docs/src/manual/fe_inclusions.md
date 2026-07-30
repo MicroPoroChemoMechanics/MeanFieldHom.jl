@@ -11,17 +11,9 @@ using MeanFieldHom
 import Ferrite, FerriteGmsh, Gmsh      # activates MeanFieldHomFerriteExt
 ```
 
-Unlike the axisymmetric inclusion of
-[A recycled-concrete aggregate](@ref app-recycled-aggregate), which runs on
-either backend, this one is **Ferrite-only** — and the reason is the mesh
-rather than the solver. The crack is a zero-thickness discontinuity produced by
-gmsh's `Crack` plugin, which duplicates the nodes of the crack *front* along
-with those of the lips; undoing that (see [The mesh](#The-mesh) below) is
-surgery on the grid data structure, not something the shared geometry code can
-express. Porting it is tracked in the roadmap.
-
-Without those three packages the type still exists but every solve raises an
-informative error.
+Either backend serves it — `import Gridap, GridapGmsh` and
+`backend = GridapBackend()` instead. With neither loaded the type still exists,
+but every solve raises an informative error.
 
 !!! note "This page is static"
     Nothing here is computed at documentation-build time. The figures and the
@@ -29,126 +21,13 @@ informative error.
     committed; the live demonstrations are `scripts/81_fe_crack_eshelby.jl` and
     `scripts/82_fe_crack_schemes.jl`.
 
-## The finite-size bias
+## The method
 
-We want the response of an **infinite** medium, but we can only mesh a
-**finite** ball ``\Omega`` of radius ``R``. The obvious boundary condition is
-the remote field itself,
-
-```math
-\mathbf u\big|_{\partial\Omega} = \mathbf E\cdot\mathbf x ,
-\qquad \mathbf E = \mathbb S_0 : \boldsymbol\Sigma ,
-```
-
-but it *clamps* the perturbation radiated by the crack: the boundary is not
-allowed to move the way the infinite medium would let it. The apparent opening
-therefore carries a bias of order ``O\bigl((a/R)^3\bigr)``, which is why an
-uncorrected computation needs `R/a` between 10 and 40 before it can be trusted.
-
-## The crack radiates as an elastic dipole
-
-A displacement discontinuity ``[\![\mathbf u]\!]`` across a surface ``S`` of
-normal ``\hat{\mathbf n}`` is mechanically equivalent to a distribution of
-**force dipoles** of density ``\mathbb C_0 : (\hat{\mathbf n}
-\stackrel{s}{\otimes} [\![\mathbf u]\!])``. Seen from far away the whole crack
-is therefore a single point dipole of intensity
-
-```math
-\boldsymbol\Pi = \int_S \mathbb C_0 : \bigl(\hat{\mathbf n}\stackrel{s}{\otimes}[\![\mathbf u]\!]\bigr)\,\mathrm dS
-   = b\,S_f\; \mathbb C_0 : \bigl(\hat{\mathbf n}\stackrel{s}{\otimes}\mathbf U\bigr),
-\qquad \mathbf U = \frac{\langle[\![\mathbf u]\!]\rangle}{b},
-\quad S_f = \pi a b ,
-```
-
-with ``b`` the semi-minor axis — the normalization `cod_tensor` uses. The field
-it generates is that dipole contracted with the gradient of the Green function,
-so the *correct* far field is
-
-```math
-\mathbf u(\mathbf x)\;\underset{\|\mathbf x\|\to\infty}{\approx}\;
-  \mathbf E\cdot\mathbf x
-  \;-\; b\,S_f\,\bigl(\nabla\mathbb G(\mathbf x):\mathbb C_0\cdot\hat{\mathbf n}\bigr)\cdot\mathbf U .
-```
-
-The idea of [Adessina et al. (2017)](https://doi.org/10.1016/j.ijengsci.2017.03.015)
-is to put that second term **into the boundary data**.
-
-## Closing the loop: a 3 + 3 self-consistent scheme
-
-The dipole intensity ``\mathbf U`` is itself unknown — it *is* what we are
-trying to compute. Linearity resolves the circularity. Writing
-``\langle[\![\mathbf u]\!]\rangle/b = \mathbf B\cdot\mathbf t`` with
-``\mathbf t = \boldsymbol\Sigma\cdot\hat{\mathbf n}``, solve two families of
-three problems on the same mesh:
-
-| Family | Boundary condition | Yields |
-|---|---|---|
-| **traction**, ``\boldsymbol\Sigma^{(i)}\cdot\hat{\mathbf n} = \mathbf e_i`` | ``\mathbf u\big\|_{\partial\Omega} = (\mathbb S_0:\boldsymbol\Sigma^{(i)})\cdot\mathbf x`` | columns of ``\mathbf B_s`` |
-| **dipole**, unit intensity ``\mathbf e_m`` | ``\mathbf u\big\|_{\partial\Omega} = -b\,S_f\bigl(\nabla\mathbb G:\mathbb C_0\cdot\hat{\mathbf n}\bigr)\cdot\mathbf e_m`` | columns of ``\mathbf B_u`` |
-
-``\mathbf B_s`` is the COD tensor of the *truncated* cell; ``\mathbf B_u`` is
-its response to the crack's own far field. Superposing,
-
-```math
-\mathbf U = \mathbf B_s\cdot\mathbf t + \mathbf B_u\cdot\mathbf U
-\qquad\Longrightarrow\qquad
-\mathbf U = (\mathbf 1 - \mathbf B_u)^{-1}\,\mathbf B_s\cdot\mathbf t ,
-```
-
-so the infinite-medium COD tensor follows in **one step** — no iteration:
-
-```math
-\boxed{\;\mathbf B_\infty = (\mathbf 1 - \mathbf B_u)^{-1}\cdot\mathbf B_s\;}
-```
-
-### The Green-function gradient
-
-For an isotropic matrix ``\nabla\mathbb G`` is the Kelvin solution in closed
-form. With ``r = \|\mathbf x\|``, ``\hat{\mathbf n} = \mathbf x/r`` and
-``A = 1/\bigl(16\pi\mu(1-\nu)\bigr)``,
-
-```math
-G_{ij}(\mathbf x) = \frac{A}{r}\bigl[(3-4\nu)\,\delta_{ij} + n_i n_j\bigr],
-\qquad
-\frac{\partial G_{ij}}{\partial x_k}
-  = \frac{A}{r^{2}}\bigl[-(3-4\nu)\,\delta_{ij}n_k + \delta_{ik}n_j + \delta_{jk}n_i - 3\,n_i n_j n_k\bigr],
-```
-
-and the contraction with a symmetric ``\boldsymbol\Pi`` collapses to a single
-matrix-vector product,
-
-```math
-u_i = \frac{\partial G_{ij}}{\partial x_k}\Pi_{jk}
-    = \frac{1}{16\pi\mu(1-\nu)r^{2}}
-      \Bigl[-2(1-2\nu)\,\boldsymbol\Pi\!\cdot\!\hat{\mathbf n}
-            + \operatorname{tr}(\boldsymbol\Pi)\,\hat{\mathbf n}
-            - 3\,(\hat{\mathbf n}\!\cdot\!\boldsymbol\Pi\!\cdot\!\hat{\mathbf n})\,\hat{\mathbf n}\Bigr]_i .
-```
-
-That is [`green_gradient_iso`](@ref MeanFieldHom.Core.green_gradient_iso) and
-[`dipole_displacement_iso`](@ref MeanFieldHom.Core.dipole_displacement_iso),
-and it is why the matrix must currently be isotropic. For arbitrary anisotropy
-``\nabla\mathbb G`` would come from the Willis angular integral, or from the
-Pan–Chou closed form in the transversely isotropic case — neither is
-implemented here.
-
-### What is solved
-
-Pure linear elasticity, ``\int_\Omega \boldsymbol\sigma(\mathbf u):
-\boldsymbol\varepsilon(\mathbf v)\,\mathrm d\Omega = 0``, no body force. The
-crack is a **zero-thickness discontinuity** — duplicated nodes — whose lips are
-traction-free *naturally*: no interface term, no multiplier, no contact
-condition. Only the outer sphere carries a Dirichlet condition, and its value
-is the whole method.
-
-Per evaluation: **one** assembly and **one** Cholesky factorization of the
-free-free block, reused for all six right-hand sides. The mean opening is then
-measured as a surface integral of the jump over each lip, with no assumption on
-the opening profile:
-
-```math
-\mathbf U = \frac{1}{S_f\,b}\left(\int_{\Gamma^+}\mathbf u\,\mathrm dS - \int_{\Gamma^-}\mathbf u\,\mathrm dS\right).
-```
+The finite-size bias, the dipole correction and the 3 + 3 fixed point this
+type runs are stated once in
+[The finite Eshelby cell with a corrected boundary condition](@ref th-corrected-cell).
+What that buys, measured, is in
+[Validating a finite-element crack](@ref tut-fe-crack).
 
 ## The mesh
 
@@ -229,74 +108,6 @@ fe_cod_breakdown(crack, C₀)   # B_s, B_u, B_inf — bypasses the cache
 fe_assembly_count(crack)      # factorizations actually performed
 fe_reset!(crack)              # drop the mesh and the memoized tensors
 ```
-
-## Validation
-
-### The correction is the ``(a/R)^3`` dipole
-
-``\|\mathbf B_u\|`` measures the truncation bias being removed. If the boundary
-term really is the elastic dipole, it must fall like the cube of the domain
-radius — and it does, over a decade:
-
-![Weight of the boundary correction](../assets/fe/dipole_scaling.png)
-
-| R/a | ‖B_u‖ |
-|---|---|
-| 3 | 5.273e-03 |
-| 5 | 1.159e-03 |
-| 7 | 4.240e-04 |
-| 10 | 1.458e-04 |
-
-Fitted log-log slope: **−2.98** against a theoretical −3. This is the sharpest
-available check that the dipole boundary condition has the right magnitude
-*and* the right sign — a sign error would not merely change the exponent, it
-would send ``\mathbf B_\infty`` the wrong way.
-
-Note how *small* the correction is at `R = 5a` (≈ 0.1 % on `B`). That is the
-whole point: it is what makes so small a domain legitimate, at the cost of
-three extra solves that share the existing factorization.
-
-### Convergence to the closed form
-
-The crack front carries a square-root displacement field, so a fixed-order
-element converges slowly — in practice **first order in the element size**
-``h \propto 1/\texttt{htipdiv}``. That regularity is what makes Richardson
-extrapolation to ``h\to 0`` legitimate, and it turns a few-percent raw error
-into a sub-percent verdict.
-
-![Convergence](../assets/fe/convergence.png)
-
-Isotropic matrix, ``E = 1``, ``\nu = 0.3``, `radius_ratio = 5`.
-
-**Penny-shaped crack** (`b/a = 1`), closed form
-`diag(B) = [1.81749, 1.81749, 1.54486]`:
-
-| h at the front | dofs | diag(B) | relative error (%) |
-|---|---|---|---|
-| b/4 | 14 865 | [1.55789, 1.56444, 1.37630] | [−14.28, −13.92, −10.91] |
-| b/6 | 21 954 | [1.65089, 1.65308, 1.43537] | [−9.17, −9.05, −7.09] |
-| b/9 | 43 515 | [1.70740, 1.70724, 1.47413] | [−6.06, −6.07, −4.58] |
-| b/12 | 86 784 | [1.73522, 1.73483, 1.49067] | [−4.53, −4.55, −3.51] |
-| **h → 0** (Richardson) | — | **[1.81867, 1.81760, 1.54029]** | **[+0.06, +0.01, −0.30]** |
-
-**Elliptical crack** (`b/a = 1/4`), closed form
-`diag(B) = [3.09055, 2.33845, 2.26304]`:
-
-| h at the front | dofs | diag(B) | relative error (%) |
-|---|---|---|---|
-| b/6 | 61 941 | [2.91496, 2.14285, 2.13865] | [−5.68, −8.36, −5.50] |
-| b/9 | 117 516 | [2.97504, 2.21003, 2.18140] | [−3.74, −5.49, −3.61] |
-| b/12 | 220 176 | [2.99958, 2.23898, 2.19927] | [−2.94, −4.25, −2.82] |
-| **h → 0** (Richardson) | — | **[3.07321, 2.32582, 2.25291]** | **[−0.56, −0.54, −0.45]** |
-
-The raw finite-element opening sits a few percent **below** the closed form,
-and for two compounding reasons that both push the same way: a truncated cell
-is stiffer than an infinite medium, and a fixed-order element under-resolves
-the front. The extrapolated values land within a percent — the residual is
-discretization, not a modelling error.
-
-For reference, the FEniCSx implementation of the same scheme in the `SifAniso`
-study reports ±5 % on ``\mathbf B_\infty`` at `htipdiv = 12` with P3 elements.
 
 ## Cost and memoization
 

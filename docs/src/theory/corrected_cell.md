@@ -1,0 +1,218 @@
+# [The finite Eshelby cell with a corrected boundary condition](@id th-corrected-cell)
+
+When a morphology has no closed-form Eshelby solution, its response can be
+computed on a **finite** cell — the inclusion inside a ball of matrix of radius
+``R`` — and fed to the schemes through the
+[custom-inclusion contract](@ref man-custom-inclusions). The difficulty is that
+Eshelby's problem is posed on an *infinite* medium. This page states the
+first-order correction of [adessinaIJES2017](@cite), which removes the
+truncation bias, in the general form and in the two declinations the package
+implements.
+
+## The finite-size bias
+
+We want the response of an **infinite** medium, but we can only mesh a
+**finite** ball ``\Omega`` of radius ``R``. The obvious boundary condition is
+the remote field itself,
+
+```math
+\mathbf u\big|_{\partial\Omega} = \mathbf E\cdot\mathbf x ,
+\qquad \mathbf E = \mathbb S_0 : \boldsymbol\Sigma ,
+```
+
+but it *clamps* the perturbation radiated by the crack: the boundary is not
+allowed to move the way the infinite medium would let it. The apparent opening
+therefore carries a bias of order ``O\bigl((a/R)^3\bigr)``, which is why an
+uncorrected computation needs `R/a` between 10 and 40 before it can be trusted.
+
+## The general fixed point
+
+The exact infinite-medium solution is
+
+```math
+u(x) = E\cdot x + \int_{\mathcal D}\nabla G(x - x') : p(x')\,\mathrm d\Omega',
+\qquad p = \sigma - \mathbb C_0 : \varepsilon ,
+```
+
+whose far field, since ``\nabla G(x-x') \to \nabla G(x)`` when
+``\|x\| \gg a``, collapses to a single **force dipole**:
+
+```math
+u(x) \;\approx\; E\cdot x + \nabla G(x) : \Bigl(V_{\mathcal D}\,
+      \langle p\rangle_{\mathcal D}\Bigr),
+\qquad
+\frac{\bigl\|V_{\mathcal D}\,\nabla G(x):\langle p\rangle\bigr\|}
+     {\|E\cdot x\|} = O\!\left(\frac{V_{\mathcal D}}{\|x\|^{3}}\right).
+```
+
+Imposing ``u = E\cdot x`` on a sphere of radius ``R`` therefore leaves an
+``O\bigl((a/R)^3\bigr)`` bias. Adding the dipole term removes it, at the price of a fixed point,
+because ``\langle p\rangle`` is *itself* an output of the problem.
+
+Split by linearity into two boundary-value problems on the truncated cell:
+
+```math
+\begin{aligned}
+u|_{\partial\Omega} &= E\cdot x
+  &&\Longrightarrow&
+  \langle\varepsilon^E\rangle_{\mathcal D} &= \mathbb A^E : E, &
+  \langle\sigma^E\rangle_{\mathcal D} &= \mathbb B^E : E, \\
+u|_{\partial\Omega} &= \nabla G(x) : (V_{\mathcal D}\,P)
+  &&\Longrightarrow&
+  \langle\varepsilon^p\rangle_{\mathcal D} &= \mathbb A^p : P, &
+  \langle\sigma^p\rangle_{\mathcal D} &= \mathbb B^p : P .
+\end{aligned}
+```
+
+Superposing and demanding that ``P`` be the polarization it generates,
+
+```math
+P = \langle\sigma - \mathbb C_0 : \varepsilon\rangle_{\mathcal D}
+  = (\mathbb B^E - \mathbb C_0 : \mathbb A^E) : E
+  + (\mathbb B^p - \mathbb C_0 : \mathbb A^p) : P ,
+```
+
+which is *linear* in ``P`` and solves in closed form:
+
+```math
+\boxed{\;
+\mathbb X = \bigl[\mathbb I - (\mathbb B^p - \mathbb C_0 : \mathbb A^p)\bigr]^{-1}
+            : (\mathbb B^E - \mathbb C_0 : \mathbb A^E),
+\qquad
+\mathbb A = \mathbb A^E + \mathbb A^p : \mathbb X,
+\qquad
+\mathbb B = \mathbb B^E + \mathbb B^p : \mathbb X. \;}
+```
+
+Two declinations are implemented, and they differ only in what carries the
+polarization:
+
+| | solid inclusion | crack |
+| :--- | :--- | :--- |
+| unknown | ``\mathbb X`` on the Kelvin basis | ``\mathbf B_\infty`` |
+| solves | 6 + 6, or 2 + 2 per Fourier mode | 3 + 3 |
+| closes on | ``\mathbb A = \mathbb A^E + \mathbb A^p:\mathbb X`` | ``\mathbf B_\infty = (1 - \mathbf B_u)^{-1}\mathbf B_s`` |
+| used by | [`FEExcenteredSphere`](@ref app-recycled-aggregate) | [`FEEllipticCrack`](@ref man-fe-inclusions) |
+
+In the axisymmetric case each fixed point lives *inside* one Fourier mode,
+since the dipole of a modal polarization radiates in the same mode — so
+``\mathbb X`` is ``2\times2`` for mode 0 and a scalar for modes 1 and 2.
+
+
+## The dipole fields, in closed form
+
+For an isotropic reference medium both Green functions are closed forms, so the
+boundary data costs nothing. With ``r = \|x\|``, ``\hat n = x/r`` and
+``M = V_{\mathcal D} P`` the polarization **moment**, the elastic field is
+[`dipole_displacement_iso`](@ref MeanFieldHom.Core.dipole_displacement_iso):
+
+```math
+u(x) = \frac{\partial G_{ij}}{\partial x_k}(x)\,M_{jk}
+     = \frac{1}{16\pi\mu(1-\nu)r^{2}}
+       \Bigl[-2(1-2\nu)\,M\!\cdot\!\hat n + \mathrm{tr}(M)\,\hat n
+             - 3(\hat n\!\cdot\! M\!\cdot\!\hat n)\,\hat n\Bigr],
+```
+
+and the transport one, with ``G = 1/(4\pi k_0 r)``,
+
+```math
+
+Written out for a symmetric moment, the gradient of the Kelvin solution is
+
+```math
+G_{ij}(\mathbf x) = \frac{A}{r}\bigl[(3-4\nu)\,\delta_{ij} + n_i n_j\bigr],
+\qquad
+\frac{\partial G_{ij}}{\partial x_k}
+  = \frac{A}{r^{2}}\bigl[-(3-4\nu)\,\delta_{ij}n_k + \delta_{ik}n_j + \delta_{jk}n_i - 3\,n_i n_j n_k\bigr],
+\qquad A = \frac{1}{16\pi\mu(1-\nu)} ,
+```
+
+and the transport one, with ``G = 1/(4\pi k_0 r)``,
+
+```math
+T(\mathbf x) = \frac{\partial G}{\partial x_k}(\mathbf x)\,M_k
+     = -\frac{\boldsymbol M\cdot\mathbf x}{4\pi k_0 r^{3}} .
+```
+
+These are [`green_gradient_iso`](@ref MeanFieldHom.Core.green_gradient_iso) and
+[`dipole_displacement_iso`](@ref MeanFieldHom.Core.dipole_displacement_iso).
+They are also why the reference medium must be **isotropic**: for arbitrary
+anisotropy ``\nabla\mathbb G`` would come from the Willis angular integral, or
+from the Pan–Chou closed form in the transversely isotropic case, neither of
+which is implemented.
+
+## The crack declination (3 + 3)
+
+### The crack radiates as an elastic dipole
+
+A displacement discontinuity ``[\![\mathbf u]\!]`` across a surface ``S`` of
+normal ``\hat{\mathbf n}`` is mechanically equivalent to a distribution of
+**force dipoles** of density ``\mathbb C_0 : (\hat{\mathbf n}
+\stackrel{s}{\otimes} [\![\mathbf u]\!])``. Seen from far away the whole crack
+is therefore a single point dipole of intensity
+
+```math
+\boldsymbol\Pi = \int_S \mathbb C_0 : \bigl(\hat{\mathbf n}\stackrel{s}{\otimes}[\![\mathbf u]\!]\bigr)\,\mathrm dS
+   = b\,S_f\; \mathbb C_0 : \bigl(\hat{\mathbf n}\stackrel{s}{\otimes}\mathbf U\bigr),
+\qquad \mathbf U = \frac{\langle[\![\mathbf u]\!]\rangle}{b},
+\quad S_f = \pi a b ,
+```
+
+with ``b`` the semi-minor axis — the normalization `cod_tensor` uses. The field
+it generates is that dipole contracted with the gradient of the Green function,
+so the *correct* far field is
+
+```math
+\mathbf u(\mathbf x)\;\underset{\|\mathbf x\|\to\infty}{\approx}\;
+  \mathbf E\cdot\mathbf x
+  \;-\; b\,S_f\,\bigl(\nabla\mathbb G(\mathbf x):\mathbb C_0\cdot\hat{\mathbf n}\bigr)\cdot\mathbf U .
+```
+
+The idea of [adessinaIJES2017](@cite) is to put that second term **into the boundary data**.
+
+### Closing the loop
+
+The dipole intensity ``\mathbf U`` is itself unknown — it *is* what we are
+trying to compute. Linearity resolves the circularity. Writing
+``\langle[\![\mathbf u]\!]\rangle/b = \mathbf B\cdot\mathbf t`` with
+``\mathbf t = \boldsymbol\Sigma\cdot\hat{\mathbf n}``, solve two families of
+three problems on the same mesh:
+
+| Family | Boundary condition | Yields |
+|---|---|---|
+| **traction**, ``\boldsymbol\Sigma^{(i)}\cdot\hat{\mathbf n} = \mathbf e_i`` | ``\mathbf u\big\|_{\partial\Omega} = (\mathbb S_0:\boldsymbol\Sigma^{(i)})\cdot\mathbf x`` | columns of ``\mathbf B_s`` |
+| **dipole**, unit intensity ``\mathbf e_m`` | ``\mathbf u\big\|_{\partial\Omega} = -b\,S_f\bigl(\nabla\mathbb G:\mathbb C_0\cdot\hat{\mathbf n}\bigr)\cdot\mathbf e_m`` | columns of ``\mathbf B_u`` |
+
+``\mathbf B_s`` is the COD tensor of the *truncated* cell; ``\mathbf B_u`` is
+its response to the crack's own far field. Superposing,
+
+```math
+\mathbf U = \mathbf B_s\cdot\mathbf t + \mathbf B_u\cdot\mathbf U
+\qquad\Longrightarrow\qquad
+\mathbf U = (\mathbf 1 - \mathbf B_u)^{-1}\,\mathbf B_s\cdot\mathbf t ,
+```
+
+so the infinite-medium COD tensor follows in **one step** — no iteration:
+
+```math
+\boxed{\;\mathbf B_\infty = (\mathbf 1 - \mathbf B_u)^{-1}\cdot\mathbf B_s\;}
+```
+
+### What is solved for a crack
+
+Pure linear elasticity, ``\int_\Omega \boldsymbol\sigma(\mathbf u):
+\boldsymbol\varepsilon(\mathbf v)\,\mathrm d\Omega = 0``, no body force. The
+crack is a **zero-thickness discontinuity** — duplicated nodes — whose lips are
+traction-free *naturally*: no interface term, no multiplier, no contact
+condition. Only the outer sphere carries a Dirichlet condition, and its value
+is the whole method.
+
+Per evaluation: **one** assembly and **one** Cholesky factorization of the
+free-free block, reused for all six right-hand sides. The mean opening is then
+measured as a surface integral of the jump over each lip, with no assumption on
+the opening profile:
+
+```math
+\mathbf U = \frac{1}{S_f\,b}\left(\int_{\Gamma^+}\mathbf u\,\mathrm dS - \int_{\Gamma^-}\mathbf u\,\mathrm dS\right).
+```
+

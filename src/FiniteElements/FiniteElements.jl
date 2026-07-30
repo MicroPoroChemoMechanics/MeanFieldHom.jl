@@ -22,11 +22,11 @@ corrected boundary condition all live here. What a package extension supplies
 is only the **discretization** — a mesh, scalar Lagrange spaces, an assembly
 and a quadrature — through the nine generics of [`FEBackend`](@ref).
 
-Two backends exist. [`FerriteBackend`](@ref) (`import Ferrite, FerriteGmsh,
-Gmsh`) serves both inclusions; [`GridapBackend`](@ref) (`import Gridap,
-GridapGmsh`) serves the axisymmetric one. An inclusion built without naming a
-backend takes [`AutoBackend`](@ref) and picks one at its first solve; with
-neither loaded, that solve errors informatively.
+Two backends exist, and both serve both morphologies:
+[`FerriteBackend`](@ref) (`import Ferrite, FerriteGmsh, Gmsh`) and
+[`GridapBackend`](@ref) (`import Gridap, GridapGmsh`). An inclusion built
+without naming one takes [`AutoBackend`](@ref) and picks at its first solve;
+with neither loaded, that solve errors informatively.
 
 See `docs/src/manual/fe_inclusions.md` and
 `docs/src/applications/recycled_aggregate.md`.

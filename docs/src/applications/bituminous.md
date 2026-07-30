@@ -1,4 +1,4 @@
-# Viscoelastic complex modulus of a bituminous mixture
+# [Viscoelastic complex modulus of a bituminous mixture](@id app-bituminous)
 
 The **complex modulus** ``E^*(\omega)`` of a bituminous mixture through three
 nested scales, following [someCBM2022](@cite). The bitumen is viscoelastic

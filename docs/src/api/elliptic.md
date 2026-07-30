@@ -1,4 +1,4 @@
-# Elliptic integrals — API
+# [Elliptic integrals — API](@id api-elliptic)
 
 The [`MeanFieldHom.Elliptic`](@ref) submodule. All five public names
 are re-exported at the top level (`using MeanFieldHom` brings them

@@ -1,9 +1,9 @@
-# Cross-validation against Echoes
+# [Cross-validation against Echoes](@id dev-validation)
 
 `MeanFieldHom` is a port of the C++ [`Echoes`](@cite echoes) code, so nearly
 every quantity has an independent reference. The cross-checks live in
 `scripts/bench_echoes/` and call Echoes through `PyCall`
-(setup: [From Echoes to MeanFieldHom](../tutorials/from_echoes.md)); the ALV
+(setup: [From Echoes to MeanFieldHom](../manual/from_echoes.md)); the ALV
 ones also ship `*_python.json` dumps so they run without an Echoes install.
 
 ## Cross-checks

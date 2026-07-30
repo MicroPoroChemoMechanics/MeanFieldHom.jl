@@ -367,12 +367,16 @@ function FE.fe_crack_space(::GB, model, order::Int)
     coord(k) = get_free_dof_values(
         interpolate(x -> VectorValue(x[k], x[k], x[k]), V)
     )
-    comp = round.(Int, get_free_dof_values(
+    comp = round.(
+        Int, get_free_dof_values(
             interpolate(_ -> VectorValue(1.0, 2.0, 3.0), V)
-        ))
+        )
+    )
 
-    outer = _boundary_dofs(V, model, reffe,
-        [FE.SET_OUTER, FE.SET_OUTER_EDGES, FE.SET_OUTER_PTS])
+    outer = _boundary_dofs(
+        V, model, reffe,
+        [FE.SET_OUTER, FE.SET_OUTER_EDGES, FE.SET_OUTER_PTS]
+    )
     presc = sort!(outer)
     free = setdiff(1:ndofs, presc)
     return GridapCrackSpace(

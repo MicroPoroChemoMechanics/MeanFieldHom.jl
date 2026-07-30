@@ -1,4 +1,4 @@
-# Crack opening displacement and compliance
+# [Crack opening displacement and compliance](@id th-cod-tensors)
 
 A crack has no volume, so it cannot be described by a volume fraction and a
 stiffness. It is described instead by **how much it opens** under a given remote

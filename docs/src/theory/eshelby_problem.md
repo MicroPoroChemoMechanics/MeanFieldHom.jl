@@ -1,4 +1,4 @@
-# The Eshelby inclusion problem
+# [The Eshelby inclusion problem](@id th-eshelby-problem)
 
 Everything in this section rests on one result. This page states it, and defines
 the three tensors it produces — ``\mathbb{P}``, ``\mathbb{S}``, ``\mathbb{Q}``.
@@ -95,19 +95,7 @@ dispatch on the order of the property tensor passed in: an order-4
 ``\mathbb{C}`` selects the elastic path, an order-2 ``\boldsymbol{K}`` the
 transport one.
 
-```julia
-using MeanFieldHom, TensND
-
-sphere = Ellipsoid(1.0)
-
-C₀ = TensISO{3}(3 * 70.0, 2 * 30.0)   # order 4: elasticity
-P₄ = hill_tensor(sphere, C₀)          # → order-4 tensor
-S₄ = eshelby_tensor(sphere, C₀)       # = P₄ : C₀
-
-K₀ = TensISO{3}(2.5)                  # order 2: conduction
-P₂ = hill_tensor(sphere, K₀)          # → order-2 tensor
-s₂ = eshelby_tensor(sphere, K₀)       # = P₂ ⋅ K₀
-```
+See [Conduction and diffusion](@ref man-conductivity) for the call.
 
 ## Why this matters for a real material
 

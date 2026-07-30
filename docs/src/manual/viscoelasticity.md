@@ -1,4 +1,4 @@
-# Viscoelastic homogenization — user manual
+# [Viscoelastic homogenization — user manual](@id man-viscoelasticity)
 
 The ALV (ageing linear viscoelastic) pipeline reuses the [`RVE`](@ref)
 machinery of the elastic side: replace each phase property by a
@@ -318,11 +318,9 @@ When all phases share an iso / TI / ortho symmetry with compatible
 axes, [`homogenize_alv`](@ref) automatically routes through a fast
 path that solves the scheme algebra in the **structured** domain :
 
-| Path  | Components       | Storage      | Volterra inverse cost                |
-|-------|------------------|--------------|--------------------------------------|
-| ISO   | (α, β)           | 2 n²         | 2 × scalar `n × n` forward solves    |
-| TI    | (ℓ₁, …, ℓ₆)      | 6 n²         | (2n × 2n) block + 2 scalar solves    |
-| ORTHO | (o₁, …, o₁₂)     | 12 n²        | (3n × 3n) block + 3 scalar solves    |
+The classes, their stored components and the cost of each closure operation
+are tabulated in [Symmetry classes and structured
+storage](../theory/viscoelasticity.md#th-visco-classes).
 
 Detection is heuristic (`_is_iso_block` / `_is_ti_block` /
 `_is_ortho_block`) — the user never asks for a fast path explicitly,

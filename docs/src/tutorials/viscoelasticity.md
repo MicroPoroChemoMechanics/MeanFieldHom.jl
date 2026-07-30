@@ -1,4 +1,4 @@
-# Viscoelastic composites
+# [Viscoelastic composites](@id tut-viscoelasticity)
 
 Every scheme seen so far takes an elastic stiffness tensor and returns
 an elastic stiffness tensor. The **correspondence principle** extends

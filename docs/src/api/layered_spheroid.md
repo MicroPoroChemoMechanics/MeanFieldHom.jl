@@ -1,4 +1,4 @@
-# API — LayeredSpheroid
+# [API — LayeredSpheroid](@id api-layered-spheroid)
 
 `layer_count`, `layer_modulus`, `layer_interface` and
 `layer_volume_fraction` are shared generics extended from

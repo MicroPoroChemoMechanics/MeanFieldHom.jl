@@ -1,4 +1,4 @@
-# Theory — reading path
+# [Theory — reading path](@id th-index)
 
 `MeanFieldHom` computes effective properties of heterogeneous materials by
 mean-field homogenization. This section states the theory it implements, in the
@@ -24,6 +24,8 @@ Everything else in this section is a specialization of that chain:
 
 | Page | Specialization |
 | :--- | :------------- |
+| [The finite Eshelby cell](corrected_cell.md) | when no closed form exists: the inclusion is solved on a *finite* cell and the truncation bias removed by its own dipole far field |
+| [Differential scheme](differential_scheme.md) | incorporation as an ODE in a fictitious time, and what a crack — which has no volume to replace — does to it |
 | [Crack opening displacement](cod_tensors.md) | the flat-inclusion limit: a crack has no volume, so it is described by ``\boldsymbol{B}`` and ``\mathbb{H}`` instead of a volume fraction |
 | [Thermal cracks](thermal_cracks.md) | the same limit for scalar transport |
 | [Layered sphere](layered_sphere.md) | a *composite* inclusion: no Hill tensor exists, the response is assembled by a radial recurrence |

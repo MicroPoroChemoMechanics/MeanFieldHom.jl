@@ -1,4 +1,4 @@
-# API — Elasticity
+# [API — Elasticity](@id api-elasticity)
 
 ```@docs
 MeanFieldHom.Elasticity

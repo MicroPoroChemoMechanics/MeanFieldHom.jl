@@ -1,4 +1,4 @@
-# Architecture
+# [Architecture](@id dev-architecture)
 
 `MeanFieldHom` is organized around a single principle:
 

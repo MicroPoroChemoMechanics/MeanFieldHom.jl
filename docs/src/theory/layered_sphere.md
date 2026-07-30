@@ -1,4 +1,4 @@
-# Layered sphere — bulk + shear recurrences and imperfect interfaces
+# [Layered sphere — bulk + shear recurrences and imperfect interfaces](@id th-layered-sphere)
 
 [`LayeredSphere`](@ref) is an `n`-layer isotropic spherical composite
 inclusion in an infinite isotropic matrix, with per-layer localization, global

@@ -1,4 +1,4 @@
-# Cylindrical inclusions
+# [Cylindrical inclusions](@id man-cylindrical-inclusions)
 
 Infinite cylinders are handled by the dedicated `Cylinder` type —
 a subtype of `AbstractEllipsoidalInclusion{3, T}` that stores only

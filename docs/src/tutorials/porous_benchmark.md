@@ -1,4 +1,4 @@
-# Porous benchmark: all schemes
+# [Porous benchmark: all schemes](@id tut-porous-benchmark)
 
 A solid matrix with spherical pores, porosity sweeping the *entire* range
 ``\varphi \in [0, 1]``, run through every scheme `MeanFieldHom` implements —

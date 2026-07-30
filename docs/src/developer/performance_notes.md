@@ -1,4 +1,4 @@
-# Performance notes
+# [Performance notes](@id dev-performance-notes)
 
 ## What the hot paths do
 

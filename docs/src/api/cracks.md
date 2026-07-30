@@ -1,4 +1,4 @@
-# API — Cracks
+# [API — Cracks](@id api-cracks)
 
 `compliance_contribution`, `delta_compliance` and `delta_resistivity` are
 `Core`-level generics shared with every other inclusion family; they are

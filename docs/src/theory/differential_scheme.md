@@ -1,4 +1,4 @@
-# The differential scheme
+# [The differential scheme](@id th-differential-scheme)
 
 The differential (or incremental) scheme builds the composite by
 *repeated dilute incorporation*: an infinitesimal amount of each
@@ -291,44 +291,24 @@ isotropic reference, and the reference of the differential scheme is its
 
 ## Numerical resolution
 
-The ODE is integrated by the SciML stack
-(`OrdinaryDiffEq.solve`), with an adaptive 5th-order Runge-Kutta
-(`Tsit5`) by default. The algorithm and its parameters are user-facing:
+The ODE is integrated by `OrdinaryDiffEq.solve`, adaptive `Tsit5` by default;
+the algorithm and its tolerances are user-facing — see
+[Homogenization schemes](@ref man-schemes) for the keywords.
 
-```julia
-DifferentialScheme(; alg = Vern9(), abstol = 1e-12, reltol = 1e-10)
-DifferentialScheme(; maxiters = 10^7)     # any other kwarg reaches `solve`
-```
+Two things about it are theory rather than plumbing.
 
-The ODE state is the canonical components of the running estimate, in
-the smallest symmetry class that estimate can stay in — two numbers for
-an isotropic medium, five to eight for a transversely isotropic one, the
-full Mandel matrix otherwise. That class is not the matrix's: a phase
-whose contribution is less symmetric drags the running estimate out of
-it at the first step (a crack, or simply an aligned spheroid, whose
-``\mathbb A_\mathrm{dil}`` is transversely isotropic even between two
-isotropic materials). The scheme therefore probes each phase's
-contribution once before integrating and sizes the state accordingly.
+*The state is sized by the running estimate, not by the matrix.* It carries the
+canonical components in the smallest symmetry class that estimate can stay in —
+two numbers for an isotropic medium, five to eight for a transversely isotropic
+one, the full Mandel matrix otherwise. A phase whose contribution is less
+symmetric drags the estimate out of the matrix's class at the first step (a
+crack, or simply an aligned spheroid, whose ``\mathbb A_\mathrm{dil}`` is
+transversely isotropic even between two isotropic materials), so the scheme
+probes each contribution once before integrating.
 
-When the running estimate is fully anisotropic from the first step —
-aligned *triaxial* ellipsoids, or a solid phase combined with an
-*aligned* crack family — the Hill tensors are evaluated by cubature.
-This is what `method = :auto` selects for an anisotropic reference (see
-[Hill tensors](hill_tensors.md)): the residue algorithm would be ~3×
-faster, but its acoustic polynomial degenerates precisely at the
-isotropic starting point of the integration, so it is only used on an
-explicit `method = :residues`. Passing that explicitly on such an RVE
-raises an error saying so.
-
-`nsteps` does **not** set the integration step — it only sets the
-density of saved points along `τ`, which [`differential_path`](@ref)
-returns:
-
-```julia
-τ, Cs = differential_path(rve, DifferentialScheme(; nsteps = 200), :C)
-```
-
-Implicit algorithms must be given a non-AD Jacobian
-(`Rosenbrock23(autodiff = AutoFiniteDiff())`): the RHS calls the
-Hill-tensor backends, which are not differentiable with respect to the
-ODE state.
+*The residue algorithm cannot be used here.* When the running estimate is
+anisotropic from the first step, the Hill tensors are evaluated by cubature:
+the acoustic polynomial of the residue method degenerates precisely at the
+isotropic starting point of the integration. That is what `method = :auto`
+selects, and an explicit `method = :residues` on such an RVE raises an error
+saying so.

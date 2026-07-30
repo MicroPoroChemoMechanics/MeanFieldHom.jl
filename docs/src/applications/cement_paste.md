@@ -1,4 +1,4 @@
-# Multiscale elasticity of a hydrating cement paste
+# [Multiscale elasticity of a hydrating cement paste](@id app-cement-paste)
 
 Following [sanahuja2007](@cite) — and mirroring the corresponding chapter of
 the Echoes book [echoes](@cite) — this page builds a **two-scale micromechanical

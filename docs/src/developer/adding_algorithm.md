@@ -1,4 +1,4 @@
-# Adding a new algorithm
+# [Adding a new algorithm](@id dev-adding-algorithm)
 
 An *algorithm* here means a way of evaluating the Hill tensor, or a crack
 quantity, for a given inclusion and a given matrix symmetry — closed form,

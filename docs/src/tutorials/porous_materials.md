@@ -1,4 +1,4 @@
-# Porous materials and the self-consistent trap
+# [Porous materials and the self-consistent trap](@id tut-porous-materials)
 
 Porosity is the simplest microstructure that breaks naive intuition: a
 pore is not "just a very soft inclusion" — it is an inclusion whose

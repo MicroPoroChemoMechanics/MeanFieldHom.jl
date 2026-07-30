@@ -117,7 +117,7 @@ Random.seed!(20260723)
             include("FiniteElements/test_ferrite_crack.jl")
             include("FiniteElements/test_axi_excentered_sphere.jl")
             if HAS_GRIDAP
-                include("FiniteElements/test_axi_gridap.jl")
+                include("FiniteElements/test_gridap_backend.jl")
             else
                 @info "Gridap / GridapGmsh unavailable — skipping the " *
                     "cross-backend finite-element tests."

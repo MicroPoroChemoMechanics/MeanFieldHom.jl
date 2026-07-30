@@ -1,4 +1,4 @@
-# Adding a homogenization scheme
+# [Adding a homogenization scheme](@id dev-adding-scheme)
 
 `MeanFieldHom.Schemes` ships Voigt/Reuss, dilute (direct and dual),
 Mori-Tanaka, Maxwell, Ponte-Castañeda–Willis, self-consistent (symmetric and

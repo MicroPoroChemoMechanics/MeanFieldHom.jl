@@ -1,9 +1,9 @@
 # =============================================================================
-#  test_axi_gridap.jl
+#  test_gridap_backend.jl
 #
-#  The Gridap backend of the axisymmetric Fourier solve.  Requires the Gridap
-#  stack *and* the Ferrite one, since the point of the file is the comparison;
-#  `runtests.jl` skips it unless both are available.
+#  The Gridap backend, on both morphologies.  Requires the Gridap stack *and*
+#  the Ferrite one, since the point of the file is the comparison; `runtests.jl`
+#  skips it unless both are available.
 #
 #  The two backends share the mesh, the Fourier operators, the boundary data
 #  and the fixed point, and differ only in the discretization layer — so they
@@ -147,4 +147,52 @@ end
     Cv = homogenize(rve, Voigt(), :C)
     Cr = homogenize(rve, Reuss(), :C)
     @test gx_bulk(gx_mandel(Cr)) < gx_bulk(gx_mandel(Cmt)) < gx_bulk(gx_mandel(Cv))
+end
+
+
+# ═══ The flat crack ══════════════════════════════════════════════════════════
+
+@testset "The two backends mesh the same crack" begin
+    rf = fe_mesh_report(FEEllipticCrack(1.0, 0.5; backend = FerriteBackend()))
+    rg = fe_mesh_report(FEEllipticCrack(1.0, 0.5; backend = GridapBackend()))
+    @test rf.ncells == rg.ncells
+    @test rf.nnodes == rg.nnodes
+    @test rf.ndofs == rg.ndofs
+    # Both lips carry the same number of facets and the same area: the `Crack`
+    # plugin split the surface cleanly and the front weld did not glue it back.
+    @test rf.nfacets_up == rg.nfacets_up == rf.nfacets_dn == rg.nfacets_dn
+    @test rf.area_up ≈ rg.area_up rtol = 1.0e-12
+    @test rf.area_up ≈ rf.area_exact rtol = 2.0e-3
+    @test rf.area_dn ≈ rf.area_exact rtol = 2.0e-3
+end
+
+@testset "The crack boundary is fully constrained in both backends" begin
+    # The seam curves and poles of the OCC sphere belong to entities of their
+    # own, which the surface physical group does not cover. Eleven nodes here —
+    # enough to skew the opening, not enough to look like a bug.
+    FE = MeanFieldHom.FiniteElements
+    n = Int[]
+    for b in (FerriteBackend(), GridapBackend())
+        s = FE._crack_setup(FEEllipticCrack(1.0, 0.5; backend = b))
+        nd, free, presc = FE.fe_crack_dof_split(b, s.space)
+        @test nd == length(free) + length(presc)
+        push!(n, length(presc))
+    end
+    @test n[1] == n[2]
+end
+
+@testset "Crack: Ferrite and Gridap agree to round-off" begin
+    C₀ = iso_stiffness(10.0, 6.0)
+    Bf = TensND.components_canon(
+        cod_tensor(FEEllipticCrack(1.0, 0.5; backend = FerriteBackend()), C₀)
+    )
+    Bg = TensND.components_canon(
+        cod_tensor(FEEllipticCrack(1.0, 0.5; backend = GridapBackend()), C₀)
+    )
+    @test gx_rel(Bf, Bg) < 1.0e-8
+
+    # …and both stay within the documented few percent of the closed form.
+    Ba = TensND.components_canon(cod_tensor(EllipticCrack(1.0, 0.5), C₀))
+    @test Bg[1, 1] ≈ Ba[1, 1] rtol = 5.0e-2
+    @test Bg[3, 3] ≈ Ba[3, 3] rtol = 5.0e-2
 end

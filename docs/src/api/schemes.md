@@ -1,4 +1,4 @@
-# API — Schemes
+# [API — Schemes](@id api-schemes)
 
 ```@docs
 MeanFieldHom.Schemes

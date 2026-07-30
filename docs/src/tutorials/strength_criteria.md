@@ -1,4 +1,4 @@
-# From derivatives to a strength criterion
+# [From derivatives to a strength criterion](@id tut-strength-criteria)
 
 This capstone tutorial combines the last three pages — porous
 materials, scheme comparison, and automatic differentiation — into a

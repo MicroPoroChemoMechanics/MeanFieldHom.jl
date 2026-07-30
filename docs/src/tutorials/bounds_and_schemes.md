@@ -1,4 +1,4 @@
-# Bounds and classical schemes
+# [Bounds and classical schemes](@id tut-bounds-and-schemes)
 
 The dilute and Mori–Tanaka estimates of the previous tutorial are two
 points in a much larger family. This page places every classical

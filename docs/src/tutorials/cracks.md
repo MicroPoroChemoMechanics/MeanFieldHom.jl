@@ -1,4 +1,4 @@
-# Cracks and crack density
+# [Cracks and crack density](@id tut-cracks)
 
 Cracks are inclusions with **zero volume** — a pore flattened to a
 surface. `MeanFieldHom` handles them with the same [`RVE`](@ref)/

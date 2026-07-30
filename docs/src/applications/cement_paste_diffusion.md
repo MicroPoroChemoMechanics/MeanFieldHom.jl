@@ -1,4 +1,4 @@
-# Cement paste: chloride diffusivity and elasticity
+# [Cement paste: chloride diffusivity and elasticity](@id app-cement-paste-diffusion)
 
 Following [achourCBM2020](@cite) — and mirroring the corresponding chapter of
 the Echoes book [echoes](@cite) — this page builds a multi-scale micromechanical

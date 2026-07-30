@@ -1,4 +1,4 @@
-# Adding a new inclusion
+# [Adding a new inclusion](@id dev-adding-inclusion)
 
 This page is the **contract**: everything an inclusion must provide for the
 homogenization schemes to accept it, in elasticity and in transport. It applies

@@ -1,4 +1,4 @@
-# Symbolic spheres: closed forms with SymPy and Symbolics.jl
+# [Symbolic spheres: closed forms with SymPy and Symbolics.jl](@id tut-symbolic-spheres)
 
 `TensND` is generic in its element type: the same tensor algebra (`⊡`, `inv`,
 projectors, …) runs on `Float64`, on **SymPy.jl** `Sym` and on **Symbolics.jl**

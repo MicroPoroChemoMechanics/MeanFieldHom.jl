@@ -47,7 +47,7 @@ struct AutoBackend <: FEBackend end
 
 Solve with [Ferrite.jl](https://ferrite-fem.github.io/Ferrite.jl); needs
 `import Ferrite, FerriteGmsh, Gmsh`. The reference implementation, and the
-only backend for [`FEEllipticCrack`](@ref).
+faster of the two to run.
 """
 struct FerriteBackend <: FEBackend end
 
@@ -58,10 +58,9 @@ Solve with [Gridap.jl](https://gridap.github.io/Gridap.jl); needs
 `import Gridap, GridapGmsh` (GridapGmsh carries its own `gmsh`, so `Gmsh.jl`
 is not required on this path).
 
-Available for [`FEExcenteredSphere`](@ref) only. Gridap states the weak form
-directly — `∫( Bᵐ(v)' * D * Bᵐ(u) * ρ )dΩ` — which makes it the easier of the
-two to read and to modify; Ferrite's explicit assembly loop is the faster of
-the two to run.
+Gridap states the weak form directly — `∫( ε(v) ⊙ (σ∘ε(u)) )dΩ` for the crack,
+`∫( Bᵐ(v)' * D * Bᵐ(u) * ρ )dΩ` for the axisymmetric modes — which makes it the
+easier of the two to read and to modify.
 """
 struct GridapBackend <: FEBackend end
 
@@ -232,7 +231,7 @@ fe_axi_average(b::FEBackend, mode, Dmap, u, Bop, proj, sets) =
 #
 #  Seven more methods, the flat-crack counterpart of the nine above.  The
 #  problem is simpler — one vector field, one material, Dirichlet on the outer
-#  sphere only — so the seam is narrower.
+#  sphere and nothing else — so the seam is narrower.
 
 """
     fe_crack_grid(backend, crack)

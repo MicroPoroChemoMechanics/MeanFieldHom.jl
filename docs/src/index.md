@@ -28,7 +28,7 @@ bibliography.
 | understand the theory before using the code | [Theory](theory/index.md) — the Eshelby/Hill chain, in the order it is built |
 | install the package and run the first example | [Installation](manual/installation.md) |
 | learn the API by worked example, topic by topic | [Tutorials](tutorials/index.md) |
-| see full micromechanical models of real materials | [Applications](applications/transport.md) — cement paste, concrete, bituminous mixtures |
+| see full micromechanical models of real materials | [Applications](applications/cement_paste.md) — cement paste, concrete, bituminous mixtures |
 | look up a function's docstring | [API reference](api/elliptic.md) |
 | extend the package (new inclusion, algorithm, scheme) | [Developer guide](developer/architecture.md) |
 

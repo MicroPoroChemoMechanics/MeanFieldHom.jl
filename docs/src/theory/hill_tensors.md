@@ -1,4 +1,4 @@
-# Hill polarization tensors
+# [Hill polarization tensors](@id th-hill-tensors)
 
 The [Eshelby problem](eshelby_problem.md) reduces to computing one object, the
 Hill polarization tensor ``\mathbb{P}(\boldsymbol{A},\mathbb{C})``. This page
