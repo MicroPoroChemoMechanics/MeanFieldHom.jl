@@ -28,7 +28,7 @@ flavour. A new scheme slots in beside them:
    when you need two objects per phase: they share the single expensive solve.
 6. Consider what your kernel *requires* of an inclusion. Needing only the
    contribution tensors keeps the scheme usable with inclusions entered through
-   gate C of the [inclusion contract](@ref "Adding a new inclusion"); needing
+   gate C of the [inclusion contract](@ref dev-adding-inclusion); needing
    the concentration tensor restricts it.
 7. Export through `src/Schemes/Schemes.jl` and re-export from
    `src/MeanFieldHom.jl`.

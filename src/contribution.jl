@@ -30,7 +30,7 @@ in a matrix `C₀`.  For a dilute family of inclusions of volume fraction
 
 !!! note "Heterogeneous inclusions"
     `(C₁ - C₀) : A_εε` presupposes a *single* stiffness inside the inclusion.
-    When [`is_homogeneous_inclusion`](@ref) is `false` the exact identity
+    When [`is_homogeneous_inclusion`](@ref MeanFieldHom.Core.is_homogeneous_inclusion) is `false` the exact identity
     `N = A_σε - C₀ : A_εε` is used instead — it needs no `C₁`, only the two
     localization tensors, and reduces to the expression above whenever a
     uniform `C₁` does exist. This is what lets a layered or finite-element
@@ -59,7 +59,7 @@ compliance correction is `ΔS_eff = f × H` — see [`delta_compliance`](@ref).
 
 !!! note "Heterogeneous inclusions"
     As for [`stiffness_contribution`](@ref), `inv(C₁)` is meaningless when
-    [`is_homogeneous_inclusion`](@ref) is `false`; the exact identity
+    [`is_homogeneous_inclusion`](@ref MeanFieldHom.Core.is_homogeneous_inclusion) is `false`; the exact identity
     `H = A_εσ - S₀ : A_σσ = (A_εε - S₀ : A_σε) : S₀` is used instead.
 
 See [Kachanov & Sevostianov (2018)](@cite kachanov2018).

@@ -16,7 +16,7 @@ This is the counterpart of the `user_inclusion` mechanism of the C++/Python
   **callbacks** — the quick option for prototyping.
 
 Both go through the same contract, spelled out in full on the developer page
-[Adding a new inclusion](@ref). This page shows how to use it.
+[Adding a new inclusion](@ref dev-adding-inclusion). This page shows how to use it.
 
 ## The idea in one line
 
@@ -247,7 +247,7 @@ the contract, with nothing downstream aware of it.
 
 ## See also
 
-- [Adding a new inclusion](@ref) — the complete contract, level by level.
+- [Adding a new inclusion](@ref dev-adding-inclusion) — the complete contract, level by level.
 - [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion),
   [`check_inclusion_interface`](@ref MeanFieldHom.check_inclusion_interface).
 - `scripts/27_user_inclusion_sensitivity.jl` — sensitivities through a

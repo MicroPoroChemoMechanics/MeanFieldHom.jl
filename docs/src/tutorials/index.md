@@ -28,6 +28,7 @@ and the one where the choice of scheme matters most.
 
 | Page | What it shows |
 | :--- | :--- |
+| [Hill polarization tensors in practice](generated/hill_tensors.md) | `hill_tensor` on four geometries; residues vs cubature on an anisotropic matrix; the Eshelby tensor against its closed form; `P` → a dilute estimate |
 | [Cracks and crack density](cracks.md) | volume fraction → crack density; the COD tensor |
 | [Layered spheres](generated/layered_sphere.md) | Hervé–Zaoui `n`-layer localization and layer averages |
 | [Layered spheroids: geometry and effective conductivity](generated/layered_spheroid_effective.md) | the confocal `n`-layer spheroid, the equivalent particle, harmonic-series accuracy |
@@ -45,6 +46,8 @@ their volume-averaged concentration tensors instead.
 | :--- | :--- |
 | [Viscoelastic composites](viscoelasticity.md) | complex moduli in the frequency domain; a first taste of ageing creep |
 | [Frequency or time?](generated/freq_vs_time.md) | the complex-modulus and time-domain ALV routes, cross-checked on the same non-ageing composite |
+| [Ageing viscoelastic schemes side by side](generated/alv_schemes.md) | Dilute / Mori-Tanaka / Maxwell / PCW on one creep test; the aspect ratio; where the distribution shape decides the answer |
+| [Derivatives through the ageing-viscoelastic pipeline](generated/alv_sensitivities.md) | `ForwardDiff` through the Volterra assembly: the `set_param` lens for RVE parameters, closure capture for moduli and relaxation times |
 
 ## Differentiation and solvers
 

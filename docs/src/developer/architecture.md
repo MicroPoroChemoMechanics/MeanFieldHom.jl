@@ -42,5 +42,5 @@ Every generic an inclusion may implement is declared — as a bodyless `function
 package** attach their methods to one canonical function. Together with the
 open `_resolve_algo` / `_kernel` tables and the neutral
 [`AbstractCustomInclusion`](@ref) branch, that is the whole extension surface.
-See [Adding a new inclusion](@ref), [Adding a new algorithm](@ref) and
-[Adding a homogenization scheme](@ref).
+See [Adding a new inclusion](@ref dev-adding-inclusion), [Adding a new algorithm](@ref dev-adding-algorithm) and
+[Adding a homogenization scheme](@ref dev-adding-scheme).

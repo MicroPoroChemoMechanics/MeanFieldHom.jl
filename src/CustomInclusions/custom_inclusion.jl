@@ -57,7 +57,7 @@ defining a new type.
 | `dim` | `3` | spatial dimension, when `semi_axes` is not given |
 | `basis` | from `euler_angles` | local frame; for a flat object column 3 is the normal |
 | `euler_angles` | `()` | ZYZ angles, ignored when `basis` is given |
-| `homogeneous` | `true` | value returned by [`is_homogeneous_inclusion`](@ref) |
+| `homogeneous` | `true` | value returned by [`is_homogeneous_inclusion`](@ref MeanFieldHom.Core.is_homogeneous_inclusion) |
 | `density_factor` | `nothing` | prefactor of the *amount × contribution* seam; set it (e.g. `4π/3`) to register the phase with a [`CrackDensity`](@ref MeanFieldHom.Schemes.CrackDensity) amount |
 
 # Callbacks — pick **one** entry gate

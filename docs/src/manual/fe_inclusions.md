@@ -164,4 +164,4 @@ julia scripts/82_fe_crack_schemes.jl     # the crack inside the schemes
   form, on a two-dimensional axisymmetric Fourier mesh.
 - [Custom inclusions](@ref man-custom-inclusions) — the contract this
   implements.
-- [Adding a new inclusion](@ref) — the full developer contract.
+- [Adding a new inclusion](@ref dev-adding-inclusion) — the full developer contract.

@@ -73,7 +73,7 @@ Two ways to supply it:
    every matrix-symmetry class where a closed form exists, plus
    `::Residue` / `::DECUHR` / `::NestedQuadGK` fallbacks, and — if your
    inclusion needs a specialized rule — a `_resolve_algo` method (see
-   [Adding a new algorithm](@ref)). This works for
+   [Adding a new algorithm](@ref dev-adding-algorithm)). This works for
    `AbstractEllipsoidalInclusion` and `AbstractCustomInclusion`, whose
    `hill_tensor` entry points both route into the `_kernel` table.
 2. **Override `hill_tensor` directly** on your concrete type. Simplest when

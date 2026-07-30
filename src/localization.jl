@@ -88,7 +88,7 @@ Dilute **stress-strain localization tensor** `A_σε`: `σ_inc = A_σε : ε∞`
 !!! warning "The generic method assumes a homogeneous inclusion"
     It evaluates `A_σε = C₁ : A_εε`, which holds only when the inclusion
     carries a **single uniform stiffness**. An internally heterogeneous
-    inclusion — one whose [`is_homogeneous_inclusion`](@ref) is `false` — has
+    inclusion — one whose [`is_homogeneous_inclusion`](@ref MeanFieldHom.Core.is_homogeneous_inclusion) is `false` — has
     no such `C₁`: its average stress has to be assembled from the local
     fields, and the type **must** provide its own method (as `LayeredSphere`
     does). [`stress_stress_loc`](@ref) is expressed in terms of this function,

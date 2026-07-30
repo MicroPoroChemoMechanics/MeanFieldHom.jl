@@ -669,10 +669,11 @@ function _homogenize_alv_dispatch(
         C_0, C_phases, A_duts, contribs,
         H_phases, fractions, f_M; kw...
     )
-    # Default distribution shape: spherical (matches the elastic Maxwell
-    # default in `Schemes.maxwell`).
+    # The Hill kernel is built on the RVE's *distribution shape*, as in the
+    # elastic `Schemes.maxwell` — not on a hard-coded sphere, which would make
+    # the same scheme answer differently on the elastic and the ALV path.
     C_M_law = matrix_property(rve, :C)
-    H_0 = hill_kernel(Spheroid(1.0), C_M_law, times)
+    H_0 = hill_kernel(rve.distribution_shape.shape, C_M_law, times)
     if !_has_cracks(kw)
         iso_contribs = _try_iso_pairs(contribs)
         if iso_contribs !== nothing && _is_iso_block(C_0) && _is_iso_block(H_0)

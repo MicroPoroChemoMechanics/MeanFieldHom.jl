@@ -1,11 +1,11 @@
 # [API — Viscoelasticity](@id api-viscoelasticity)
 
-```@meta
-CurrentModule = MeanFieldHom.Viscoelasticity
-```
-
 ```@docs
 MeanFieldHom.Viscoelasticity
+```
+
+```@meta
+CurrentModule = MeanFieldHom.Viscoelasticity
 ```
 
 ## Constitutive laws

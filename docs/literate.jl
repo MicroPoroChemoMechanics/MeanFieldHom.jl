@@ -34,12 +34,15 @@ const NOTEBOOK_DIR = joinpath(@__DIR__, "generated_notebooks")
 const CLEAN_SCRIPT_DIR = joinpath(@__DIR__, "generated_scripts")
 
 const PUBLISHED_SCRIPTS = [
+    "02_hill_elasticity.jl" => "hill_tensors",
     "30_average_nlayers.jl" => "layered_sphere",
     "32_spheroid_effective_conductivity.jl" => "layered_spheroid_effective",
     "35_spheroid_interfaces.jl" => "layered_spheroid_interfaces",
     "37_spheroid_hc_conductivity.jl" => "layered_spheroid_hc",
     "43_secant_elastoplasticity.jl" => "secant_elastoplasticity",
+    "59_alv_sensitivities.jl" => "alv_sensitivities",
     "61_freq_vs_time.jl" => "freq_vs_time",
+    "62_alv_schemes.jl" => "alv_schemes",
     "70_symmetrization_showcase.jl" => "symmetrization",
     "80_custom_inclusion_contract.jl" => "custom_inclusion_contract",
 ]

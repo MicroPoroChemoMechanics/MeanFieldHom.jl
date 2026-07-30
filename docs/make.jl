@@ -111,6 +111,7 @@ makedocs(;
                 "tutorials/differential_loading_paths.md",
             ],
             "Inclusions, geometries and orientation" => [
+                "tutorials/generated/hill_tensors.md",
                 "tutorials/cracks.md",
                 "tutorials/fe_crack.md",
                 "tutorials/generated/layered_sphere.md",
@@ -123,6 +124,8 @@ makedocs(;
             "Beyond elasticity" => [
                 "tutorials/viscoelasticity.md",
                 "tutorials/generated/freq_vs_time.md",
+                "tutorials/generated/alv_schemes.md",
+                "tutorials/generated/alv_sensitivities.md",
             ],
             "Differentiation and solvers" => [
                 "tutorials/sensitivities.md",

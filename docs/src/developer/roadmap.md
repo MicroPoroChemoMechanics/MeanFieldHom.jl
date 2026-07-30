@@ -19,7 +19,7 @@
   preserving non-major-symmetric content (`TensTI{4,T,8}`), for arbitrary
   multi-axis orientation distributions inside every scheme kernel.
 - User-defined inclusions and algorithms: a levelled, documented contract
-  ([Adding a new inclusion](@ref)), the neutral
+  ([Adding a new inclusion](@ref dev-adding-inclusion)), the neutral
   [`AbstractCustomInclusion`](@ref) branch, the callback-driven
   [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion), the
   [`check_inclusion_interface`](@ref MeanFieldHom.check_inclusion_interface)

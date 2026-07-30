@@ -44,7 +44,7 @@ Two conventions worth flagging for a smooth transition:
 - **Both `stiff_kmu`/`iso_stiffness` take *physical* `(k, μ)`.** Where they
   differ is in what the resulting tensor *stores*: MFH's raw
   `TensISO{3}(a, b)` constructor takes the pair `(3k, 2μ)`, not `(k, μ)` —
-  see [the first tutorial](first_estimate.md#A-storage-convention-worth-knowing).
+  see [the first tutorial](../tutorials/first_estimate.md#A-storage-convention-worth-knowing).
   Building with `iso_stiffness(k, μ)` (as in the table above) sidesteps
   this entirely.
 - **Symbol-string vs. type-instance schemes.** Echoes selects a scheme via

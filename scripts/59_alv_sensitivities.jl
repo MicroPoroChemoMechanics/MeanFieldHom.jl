@@ -1,31 +1,23 @@
-# =============================================================================
-#  59_alv_sensitivities.jl
+# # Derivatives through the ageing-viscoelastic pipeline
 #
-#  Autodiff sensitivities (`ForwardDiff.derivative`, `gradient`) of an ALV
-#  effective property w.r.t. RVE parameters.  Mirrors the elastic
-#  `Schemes/sensitivities` machinery (see `scripts/26_sensitivities.jl`)
-#  for the time-domain pipeline.
+# [Derivatives and sensitivities](@ref tut-sensitivities) differentiates an
+# *elastic* homogenization. Nothing in that story is specific to elasticity: the
+# ALV path is built from the same generic Julia code, so `ForwardDiff` propagates
+# a `Dual` straight through the Volterra assembly, the block inversions and the
+# scheme, and returns ``\partial \mu^{\hom}/\partial p`` for free — no adjoint,
+# no hand-written derivative, no finite difference.
 #
-#  Two patterns are demonstrated :
+# Two patterns cover every case, and every derivative below is validated against
+# a central finite difference.
 #
-#  (1) **`set_param` lens — recommended.**  Build the RVE once with
-#      `Float64` placeholders, then differentiate by substituting a
-#      `Dual` value via `set_param(rve, AmountParameter(...), value)`.
-#      Works for **all** schemes (Voigt, Reuss, Dilute, MT, Maxwell, PCW,
-#      …) and does not allocate a fresh RVE outside the differentiation.
+# | Pattern | When | How |
+# |---|---|---|
+# | `set_param` lens | the parameter lives on the **RVE** — a volume fraction, a crack density | build once with `Float64`, substitute a `Dual` through [`set_param`](@ref) |
+# | closure capture | the parameter lives inside the **`ViscoLaw`** — a modulus, a relaxation time | close it into the kernel; it lifts to `Dual` on its own |
 #
-#  (2) **Closure-captured material parameter.**  When the dependence is
-#      on a continuous parameter inside the `ViscoLaw` itself (e.g. a
-#      bulk / shear modulus, a relaxation time), close the parameter
-#      into the kernel function and differentiate.  The parameter
-#      automatically lifts to `Dual` through the closure.
-#
-#  Comparison vs central finite differences validates each derivative.
-#  Reference : @sanahuja2013 §4 ; @barthelemyIJES2019 §3 ; analogous to
-#  the elastic-side @bessoIJSS2024 sensitivity pipeline.
-#
-#  Usage : julia --project scripts/59_alv_sensitivities.jl
-# =============================================================================
+# The first allocates nothing outside the differentiation and works for every
+# scheme; the second is the only route to a material parameter, because the
+# kernel is a user function the package never inspects.
 
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
@@ -36,7 +28,12 @@ using ForwardDiff
 using LinearAlgebra
 using Printf
 
-# ─── Common ALV setup ──────────────────────────────────────────────────────
+# ## §0 A common ALV setup
+#
+# An isotropic Maxwell matrix whose bulk and shear kernels relax with distinct
+# times, parametrized by ``(k_M, \mu_M, \tau_K, \tau_\mu)``, and elastic
+# spherical inclusions. `build_law_M` returns a **fresh** `ViscoLaw` per call —
+# that is what lets a `Dual` reach the kernel in patterns 2 to 4.
 
 const N_TIMES = 8
 const TIMES = collect(range(0.0, 2.0; length = N_TIMES))
@@ -52,7 +49,6 @@ function build_law_M(k_M, μ_M, τ_K = 1.0, τ_μ = 0.5)
     return ViscoLaw(R_iso, :relaxation)
 end
 
-# Inclusion : elastic spheres with (k, μ) = (10, 4).
 const C_INC = TensISO{3}(3 * 10.0, 2 * 4.0)
 
 function build_rve_base(f::Real)
@@ -66,18 +62,21 @@ function build_rve_base(f::Real)
     return rve
 end
 
-# Final-time effective shear `μ(t_n,t_n) = β[end,end] / 2`.
+# The scalar being differentiated is the effective shear modulus at the last
+# instant, ``\mu^{\hom}(t_n, t_n) = \beta_{nn}/2``, read off the isotropic
+# blocks of the effective relaxation operator.
+
 function effective_mu_final(rve, scheme)
     R̃ = homogenize_alv(rve, scheme, :C; times = TIMES)
     _, β = iso_params_from_blocks(R̃)
     return β[end, end] / 2
 end
 
-# ─── Pattern (1) : `set_param` lens — derivative wrt volume fraction ──────
-
-println("="^78)
-println(" 1)  d μ_eff(t_n) / df      — `set_param` + `AmountParameter`")
-println("="^78)
+# ## §1 The `set_param` lens — ``\partial \mu^{\hom} / \partial f``
+#
+# The RVE is built once, outside the differentiated function; `set_param`
+# substitutes the `Dual` fraction into a copy. Every scheme accepts it,
+# including the two bounds.
 
 const RVE_BASE_F = build_rve_base(0.2)
 
@@ -98,12 +97,11 @@ for (sch, name) in zip(SCHEMES, SCHEME_NAMES)
     @printf "  %-12s  AD = %+.6e   FD = %+.6e   rel_err = %.2e\n" name dμ_df_AD dμ_df_FD rel_err
 end
 
-# ─── Pattern (2) : material-parameter sensitivity via closure ──────────────
-
-println()
-println("="^78)
-println(" 2)  d μ_eff(t_n) / dμ_M   — closure-captured matrix shear modulus")
-println("="^78)
+# ## §2 Closure capture — ``\partial \mu^{\hom} / \partial \mu_M``
+#
+# A matrix modulus is not an RVE field but an argument of the relaxation kernel.
+# Closing it into `build_law_M` is enough: `ForwardDiff` lifts it to a `Dual`
+# and the whole Volterra assembly follows.
 
 function eff_mu_vs_μM(μ_M::Real)
     rve = RVE(:M)
@@ -121,12 +119,11 @@ h = 1.0e-5
 dμ_dμM_FD = (eff_mu_vs_μM(μM₀ + h) - eff_mu_vs_μM(μM₀ - h)) / (2h)
 @printf "  AD = %+.6e   FD = %+.6e   rel_err = %.2e\n" dμ_dμM_AD dμ_dμM_FD abs(dμ_dμM_AD - dμ_dμM_FD) / abs(dμ_dμM_FD)
 
-# ─── Pattern (3) : gradient over multiple parameters ──────────────────────
-
-println()
-println("="^78)
-println(" 3)  ∇ μ_eff   wrt   (f, k_M, μ_M)   — joint gradient via ForwardDiff")
-println("="^78)
+# ## §3 Both at once — the joint gradient ``\nabla_{(f,\,k_M,\,\mu_M)}\,\mu^{\hom}``
+#
+# The two patterns compose: one geometric parameter through the lens, two
+# material ones through the closure, in a single `ForwardDiff.gradient` — and
+# in a single forward sweep rather than three.
 
 function eff_mu_vs_fkμ(p::AbstractVector)
     f, k_M, μ_M = p
@@ -154,12 +151,12 @@ for (i, name) in enumerate(("f", "k_M", "μ_M"))
     @printf "  ∂μ/∂%-3s   AD = %+.6e   FD = %+.6e   rel_err = %.2e\n" name ∇AD[i] ∇FD[i] abs(∇AD[i] - ∇FD[i]) / abs(∇FD[i])
 end
 
-# ─── Pattern (4) : relaxation-time sensitivity (closure parameter) ─────────
-
-println()
-println("="^78)
-println(" 4)  d μ_eff(t_n) / dτ_K   — relaxation-time inside the kernel")
-println("="^78)
+# ## §4 A relaxation time — ``\partial \mu^{\hom} / \partial \tau_K``
+#
+# The derivative that has no elastic counterpart: ``\tau_K`` sets *when* the
+# bulk kernel relaxes, and it enters only through an exponential inside the
+# user's own kernel function. The package never sees it, and differentiates it
+# anyway.
 
 function eff_mu_vs_τK(τ_K::Real)
     rve = RVE(:M)
@@ -177,6 +174,8 @@ h = 1.0e-5
 dμ_dτK_FD = (eff_mu_vs_τK(τK₀ + h) - eff_mu_vs_τK(τK₀ - h)) / (2h)
 @printf "  AD = %+.6e   FD = %+.6e   rel_err = %.2e\n" dμ_dτK_AD dμ_dτK_FD abs(dμ_dτK_AD - dμ_dτK_FD) / abs(dμ_dτK_FD)
 
-println()
-println("All sensitivities agree with central finite differences to ≤ 1e-7 ")
-println("(machine precision modulo the FD truncation error h²·f‴/6 ≈ 1e-10).")
+# Every relative error above sits at ``10^{-7}`` or below — which is the
+# accuracy of the *finite difference*, not of the AD: with ``h = 10^{-5}`` the
+# central-difference truncation error is ``h^2 f'''/6``. The automatic
+# derivative is exact to machine precision; the finite difference is the
+# approximation being checked against it.

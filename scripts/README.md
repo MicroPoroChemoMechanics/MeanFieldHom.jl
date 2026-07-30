@@ -31,7 +31,7 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | Script | reference / topic | Notes |
 |---|---|---|
 | `01_auxiliary_tensors.jl` | — | geometric tensors `tens_IA/UA/VA` |
-| `02_hill_elasticity.jl` | `eshelby`/`hill` API | Hill P, elasticity |
+| `02_hill_elasticity.jl` | `eshelby`/`hill` API | **published tutorial** — `hill_tensor` on sphere / prolate / oblate / triaxial, `:residues` vs `:nestedquadgk` on a cubic matrix, the Eshelby tensor against Eshelby (1957), and a dilute estimate checked three ways |
 | `03_hill_conductivity.jl` | 2nd-order `hill` | conductivity Hill |
 | `04_forwarddiff.jl` | — | AD through Hill tensors |
 | `05_symbolic.jl` | — | SymPy genericity |
@@ -92,13 +92,14 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `56_ageing_creep_order2.jl` | order-2 creep | order-2 ALV |
 | `57_ageing_creep_cracks.jl` | crack creep | ALV crack creep |
 | `58_alv_kernel_types.jl` | — | structured ALV kernel types |
-| `59_alv_sensitivities.jl` | — | AD through the ALV pipeline |
+| `59_alv_sensitivities.jl` | — | **published tutorial** — `ForwardDiff` through the ALV pipeline: `set_param` lens vs closure capture, joint gradient, relaxation-time sensitivity, all validated against central finite differences |
 
 ### 60+ ALV cracks, cross-validations / symmetrization
 | Script | reference / topic | Notes |
 |---|---|---|
 | `60_alv_cracks_interface.jl` | crack + interface creep | finite interface stiffness |
 | `61_freq_vs_time.jl` | Sanahuja (2013) trapezoidal Volterra | **published tutorial** — complex-modulus route vs. `homogenize_alv`, cross-checked through a forward Laplace-Carson transform; O(Δt²) agreement. Ported from echoes `creep/comparison_freq_time.py` |
+| `62_alv_schemes.jl` | Barthélémy et al. (2019), IJES 144, 103104 | **published tutorial** — Dilute / Mori-Tanaka / Maxwell / PCW on one ageing creep test; the aspect-ratio sweep at fixed fraction; the collapse MT = Maxwell = PCW when the distribution shape equals the inclusion shape, and the PCW admissibility limit when it does not |
 | `70_symmetrization_showcase.jl` | `symmetrize` / `.paramsym` | **exact rotation average vs best-fit projection** on a non-major-symmetric concentration tensor |
 
 ### 80–89 Custom inclusions & finite-element coupling

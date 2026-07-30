@@ -285,3 +285,49 @@ end
     K_dual = homogenize_alv(rve_alv, sch(:compliance), :K; times = times)
     @test isapprox(K_alv, K_dual; rtol = 1.0e-8, atol = 1.0e-8)
 end
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Regression: `Maxwell` must read the RVE's distribution shape on the ALV path
+#  as it does on the elastic one.  The dispatcher used to build its Hill kernel
+#  on a hard-coded `Spheroid(1.0)`, so a non-spherical `distribution_shape` was
+#  silently ignored and the ALV answer diverged from the elastic one.  Every
+#  pre-existing test used the spherical default, which is why it went unseen.
+# ─────────────────────────────────────────────────────────────────────────────
+@testset "Maxwell/PCW ALV honour distribution_shape" begin
+    C_M = TensISO{3}(3 * 5.0, 2 * 2.0)
+    C_I = TensISO{3}(3 * 30.0, 2 * 12.0)
+    times = collect(range(0.0, 1.0; length = 5))
+    n = length(times)
+
+    function build(dist; alv)
+        rve = RVE(:M; distribution_shape = UniformDistribution(dist))
+        add_matrix!(rve, Ellipsoid(1.0), Dict(:C => alv ? heaviside_law(C_M) : C_M))
+        add_phase!(
+            rve, :I, Ellipsoid(1.0, 1.0, 0.1),
+            Dict(:C => alv ? heaviside_law(C_I) : C_I);
+            fraction = 0.3, symmetrize = :iso
+        )
+        return rve
+    end
+
+    # Unit strain step: the effective modulus is the row sum of the ALV blocks.
+    step_response(R, comp) =
+        sum(R[6 * (n - 1) + comp, 6 * (j - 1) + comp] for j in 1:n)
+
+    for dist in (Ellipsoid(1.0), Ellipsoid(1.0, 1.0, 0.1))
+        for sch in (Maxwell(), PonteCastanedaWillis())
+            C_el = TensND.components_canon(homogenize(build(dist; alv = false), sch, :C))
+            R_alv = homogenize_alv(build(dist; alv = true), sch, :C; times = times)
+            @test isapprox(step_response(R_alv, 1), C_el[1, 1, 1, 1]; rtol = 1.0e-10)
+            @test isapprox(step_response(R_alv, 3), C_el[3, 3, 3, 3]; rtol = 1.0e-10)
+        end
+    end
+
+    # An oblate envelope must give a different answer from a spherical one —
+    # otherwise the field is being ignored again.
+    R_sph = homogenize_alv(build(Ellipsoid(1.0); alv = true), Maxwell(), :C; times = times)
+    R_obl = homogenize_alv(
+        build(Ellipsoid(1.0, 1.0, 0.1); alv = true), Maxwell(), :C; times = times
+    )
+    @test !isapprox(step_response(R_sph, 1), step_response(R_obl, 1); rtol = 1.0e-3)
+end

@@ -3,7 +3,7 @@
 `compliance_contribution`, `delta_compliance` and `delta_resistivity` are
 `Core`-level generics shared with every other inclusion family; they are
 documented under
-[API — Localization & contribution](@ref "API — Localization & contribution").
+[API — Localization & contribution](@ref api-localization).
 
 ```@docs
 MeanFieldHom.Cracks

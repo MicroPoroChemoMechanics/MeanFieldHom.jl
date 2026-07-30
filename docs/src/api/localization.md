@@ -46,7 +46,7 @@ MeanFieldHom.compliance_and_stiffness_contribution
 ## Custom (user-defined) inclusions
 
 See [Custom inclusions](@ref man-custom-inclusions) for the tutorial and
-[Adding a new inclusion](@ref) for the full contract.
+[Adding a new inclusion](@ref dev-adding-inclusion) for the full contract.
 
 ```@docs
 MeanFieldHom.CustomInclusions

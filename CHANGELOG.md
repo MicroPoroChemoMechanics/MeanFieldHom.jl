@@ -77,6 +77,27 @@
   a τ-resolved companion to the existing path-dependence tutorial — four
   trajectories to the same target fractions, plotted through
   `differential_path` rather than compared at `τ = 1` only.
+- **New tutorial: [Ageing viscoelastic schemes side by side](scripts/62_alv_schemes.jl)**
+  (`scripts/62_alv_schemes.jl`, published as `tutorials/generated/alv_schemes.md`).
+  Dilute, Mori-Tanaka, Maxwell and PCW on one ageing creep test, after
+  [barthelemyIJES2019]: the collapse `MT = Maxwell = PCW` when the distribution
+  shape equals the inclusion shape, the aspect-ratio sweep at fixed volume
+  fraction, and the volume fraction beyond which the Maxwell/PCW estimate
+  leaves the admissible domain of Ponte Castañeda & Willis.
+- **`02_hill_elasticity.jl` promoted to a tutorial**
+  (`tutorials/generated/hill_tensors.md`): no tutorial called
+  [`hill_tensor`](@ref) as its subject, though it is the object every scheme is
+  built on. Four geometries against their closed forms, two independent
+  algorithms on an anisotropic matrix, the Eshelby tensor against
+  [eshelby1957], and the step from `P` to a dilute estimate — checked against
+  both the analytical dilute formula and `homogenize(rve, Dilute(), :C)`.
+- **`59_alv_sensitivities.jl` promoted to a tutorial**
+  (`tutorials/generated/alv_sensitivities.md`): `ForwardDiff` through the
+  Volterra assembly, the two patterns that cover every case — the `set_param`
+  lens for a parameter carried by the RVE, closure capture for one living
+  inside the `ViscoLaw` — a joint gradient combining both, and a
+  relaxation-time derivative that has no elastic counterpart. Every value
+  validated against a central finite difference.
 
 ### Changed
 
@@ -166,6 +187,17 @@
   bituminous application, have been corrected.
 
 ### Fixed
+
+- **`Maxwell()` ignored the RVE's distribution shape on the ageing-viscoelastic
+  path.** `_homogenize_alv_dispatch(::Maxwell, …)` built its Hill kernel on a
+  hard-coded `Spheroid(1.0)`, while the elastic `Schemes.maxwell` reads
+  `rve.distribution_shape` and the ALV `PonteCastanedaWillis` — algebraically
+  the same formula — read it too. The same scheme on the same RVE therefore
+  answered differently depending on which path it was called through, and the
+  ALV answer silently ignored a modeling choice the user had made. Unnoticed
+  because every test used the spherical default. On a 30 % / 10:1 oblate
+  composite the error on `C₁₁₁₁` was 7.7 %; after the fix the ALV and elastic
+  results agree to the last bit in the non-ageing limit.
 
 - **A heterogeneous inclusion no longer contributes zero.** The generic
   contribution tensors (`stiffness_contribution` and its three siblings) went

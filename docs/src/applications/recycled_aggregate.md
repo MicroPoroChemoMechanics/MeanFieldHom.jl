@@ -460,7 +460,7 @@ the solver to another morphology is a one-line change there and a new mesh.
 
 The inclusion is **heterogeneous** ([`is_homogeneous_inclusion`](@ref) is
 `false`), so it enters through gate B of the
-[inclusion contract](@ref Adding-a-new-inclusion) with *both* localization
+[inclusion contract](@ref dev-adding-inclusion) with *both* localization
 tensors — the strain-side ``\mathbb A_{\varepsilon\varepsilon}`` and the
 stress-side ``\mathbb A_{\sigma\varepsilon}``. They come out of the same solve,
 so asking for one and then the other costs one solve, not two.
@@ -560,4 +560,4 @@ julia --project=. -e 'using MeanFieldHom, Ferrite, FerriteGmsh, Gmsh,
   the same correction in its 3 + 3 crack form
 - [Custom inclusions](@ref man-custom-inclusions) — the contract this type
   satisfies
-- [Adding a new inclusion](@ref) — the developer reference
+- [Adding a new inclusion](@ref dev-adding-inclusion) — the developer reference

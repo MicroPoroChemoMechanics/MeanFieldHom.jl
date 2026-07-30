@@ -431,7 +431,7 @@ a central finite difference at `rtol ≤ 1e-7`.
 | :--- | :--- | :--- |
 | `53_ageing_creep_solid.jl` | multi-phase Maxwell + solidifying Maxwell + pore (ECHOES C++ manual) | — |
 | `57_ageing_creep_cracks.jl` | seven crack-aware ALV schemes, penny-crack RVE | — |
-| `52_rabotnov_mittag_leffler.jl` | Rabotnov / Mittag-Leffler closed form, @barthelemyIJES2019 §5 | `rtol ≤ 1.3e-3` at `n_times = 200` |
+| `52_rabotnov_mittag_leffler.jl` | Rabotnov / Mittag-Leffler closed form, [barthelemyIJES2019](@cite) §5 | `rtol ≤ 1.3e-3` at `n_times = 200` |
 
 An external Python module exposing a Mittag-Leffler / Rabotnov kernel is
 callable from Julia via PyCall :
