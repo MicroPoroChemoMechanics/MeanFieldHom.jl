@@ -4,6 +4,66 @@
 
 ### Added
 
+- **Inclusions whose response is a trained neural network**,
+  `MeanFieldHom.NeuralInclusions` — a fourth route into the custom-inclusion
+  contract, after the analytic families, the layered patterns and the
+  finite-element solves:
+  - `NeuralHillInclusion` (gate A, the Hill tensor) and
+    `NeuralLocalizationInclusion` (gate B, both localization tensors, for a
+    heterogeneous morphology that has none). Gate A keeps the contrast
+    dependence and the `ℂ₁ = ℂ₀ ⟹ 𝔸 = 𝕀` limit **exact**, so the fit error is
+    confined to a single tensor.
+  - What a surrogate buys that the other routes cannot: it is **differentiable
+    in the morphology**. `derivative(rve, scheme, geometry(:phase, :field))`
+    reaches an aspect ratio, where the finite-element inclusions refuse the
+    request outright because their solve would silently return zero. Smooth
+    activations only (`tanh`, `softplus`, never a piecewise-linear one), so
+    second derivatives exist too.
+  - Enforced rather than fitted: the symmetry class and the major symmetry
+    (a structured TensND type from the right number of components), homogeneity
+    in the reference moduli (`ℙ(λℂ₀) = ℙ(ℂ₀)/λ`), and frame indifference.
+    `AffineHill` goes further and removes `ν₀` from the inputs altogether, using
+    the exact affine structure `ℙ = d·𝕌ᴬ + 𝕎ᴬ/μ₀` of the isotropic-matrix Hill
+    tensor — one input fewer and an order of magnitude more accurate than
+    `DimensionlessHill` at equal network size.
+  - The learning system: `SampleBox` + Halton low-discrepancy sampling (no RNG
+    state, so a dataset is reproducible), `generate_dataset` with a
+    two-callback teacher (`geometry`, `response` — the only morphology-dependent
+    part), `fit_scaling`, `train_surrogate`, `validate_surrogate`,
+    `report_surrogate`.
+  - `Provenance` travelling with every model — teacher, sample counts, held-out
+    error — and a **domain guard** that refuses (or warns on) an evaluation
+    outside the box the model was trained on. Test tolerances are derived from
+    the recorded error rather than hard-coded, so a retraining cannot silently
+    loosen a threshold.
+  - Four models committed under `src/NeuralInclusions/models/` as reviewable
+    JSON, validated against the analytic ellipsoid; `scripts/nn/train_models.jl`
+    regenerates them and `scripts/84_neural_inclusion_ellipsoid.jl` is the
+    published tutorial. Nothing is trained at test or documentation-build time.
+- **`MeanFieldHomLuxExt`** (`Lux` + `Optimisers` + `Zygote`, weak dependencies) —
+  the optimizer, and the only part of the surrogate pipeline that needs one. It
+  writes its result back into a dependency-free `MLP`, so evaluating a trained
+  model needs nothing beyond the package.
+
+### Fixed
+
+- **The order-2 (transport) Hill tensor lost the orientation of a rotated
+  inclusion.** `_hill_order2_3d_iso` read the Newton-potential components in the
+  inclusion's own basis and wrapped them into a *canonical* `Tens`, so
+  `hill_tensor(ell, K₀)` returned the tensor of the **unrotated** inclusion —
+  exactly, hence silently. Both the ellipsoid and the cylinder kernels were
+  affected, in the isotropic-matrix branch only; the anisotropic branch always
+  built the shape tensor with the rotation in it, and elasticity was never
+  affected. Consequence: any transport homogenization with *oriented*
+  non-spherical inclusions was wrong off-axis, and an orientation distribution
+  collapsed to a single orientation. The existing `s = ℙ·K₀` consistency test
+  could not catch it — both sides dropped the rotation identically — so the new
+  guard in `test/Conductivity/test_hill_order2.jl` tests rotation
+  **equivariance** and cross-checks the isotropic kernel against the independent
+  anisotropic derivation.
+
+### Added
+
 - **Inclusions solved by finite elements**, `MeanFieldHom.FiniteElements`, both
   using the finite Eshelby cell with the first-order corrected boundary
   condition of

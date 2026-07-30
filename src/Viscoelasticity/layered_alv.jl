@@ -917,7 +917,7 @@ that picks the linear combination matching unit far-field
 amplitude block extracted from the combined inside state.
 
 Reference : ECHOES manual ch07 §"n-layer ALV shear recurrence" ;
-Hervé-Zaoui 1993 generalized to ALV via [@sanahuja2013].
+Hervé-Zaoui 1993 generalized to ALV via [sanahuja2013](@cite).
 """
 function shear_localization_alv(
         sphere::LayeredSphere{T, N},

@@ -1341,7 +1341,7 @@ uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
 version = "2.28.1010+0"
 
 [[deps.MeanFieldHom]]
-deps = ["Elliptic", "ForwardDiff", "JSON3", "LinearAlgebra", "OrdinaryDiffEq", "PolynomialRoots", "Polynomials", "QuadGK", "StaticArrays", "TensND", "Tensors"]
+deps = ["Dates", "Elliptic", "ForwardDiff", "JSON3", "LinearAlgebra", "OrdinaryDiffEq", "PolynomialRoots", "Polynomials", "Printf", "QuadGK", "Random", "StaticArrays", "TensND", "Tensors"]
 path = "../.."
 uuid = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 version = "0.1.0"
@@ -1349,6 +1349,8 @@ version = "0.1.0"
     [deps.MeanFieldHom.extensions]
     MeanFieldHomDECUHRExt = ["DECUHR", "Integrals"]
     MeanFieldHomFerriteExt = ["Ferrite", "FerriteGmsh", "Gmsh"]
+    MeanFieldHomGridapExt = ["Gridap", "GridapGmsh"]
+    MeanFieldHomLuxExt = ["Lux", "Optimisers", "Zygote"]
     MeanFieldHomNonlinearSolveExt = "NonlinearSolve"
     MeanFieldHomSymPyExt = "SymPy"
 
@@ -1357,9 +1359,14 @@ version = "0.1.0"
     Ferrite = "c061ca5d-56c9-439f-9c0e-210fe06d3992"
     FerriteGmsh = "4f95f4f8-b27c-4ae5-9a39-ea55e634e36b"
     Gmsh = "705231aa-382f-11e9-3f0c-b7cb4346fdeb"
+    Gridap = "56d4f2e9-7ea1-5844-9cf6-b9c51ca7ce8e"
+    GridapGmsh = "3025c34a-b394-11e9-2a55-3fee550c04c8"
     Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"
+    Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
     NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"
+    Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
     SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
+    Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [[deps.Measures]]
 git-tree-sha1 = "b513cedd20d9c914783d8ad83d08120702bf2c77"

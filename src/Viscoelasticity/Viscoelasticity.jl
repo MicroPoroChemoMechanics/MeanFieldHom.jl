@@ -12,22 +12,23 @@ Ageing linear viscoelastic (ALV) homogenization.  Provides:
   * [`volterra_inverse`](@ref) — block forward-substitution that takes
     a discrete relaxation kernel to the corresponding creep kernel
     (and vice versa).
-  * [`visco_param`](@ref) / [`visco_assemble`](@ref) — conversions
-    between symmetry-structured per-component scalar matrices and the
-    full `6n×6n` block matrix.
+  * [`iso_params_from_blocks`](@ref) / [`iso_blocks_from_params`](@ref)
+    and their `ti_` / `ortho_` counterparts — conversions between
+    symmetry-structured per-component scalar matrices and the full
+    `6n×6n` block matrix.
   * `hill_kernel` — discrete ALV Hill polarization tensor for an
     ellipsoidal inclusion, isotropic-matrix branch using the
     time-space decoupling formula
-    [@barthelemyIJSS2016, App. *ALV Hill kernel*].
+    ([barthelemyIJSS2016](@cite), App. *ALV Hill kernel*).
   * Time-domain viscoelastic homogenization schemes (Voigt, Reuss,
     Dilute, DiluteDual, Mori-Tanaka, Maxwell, Self-Consistent),
-    plugged into the existing [`MeanFieldHom.homogenize`](@ref)
+    plugged into the existing [`homogenize`](@ref Schemes.homogenize)
     dispatcher whenever a phase carries a `ViscoLaw` property.
 
 All ALV operators are stored as dense `Matrix{T}` of size `(B·n)×(B·n)`
 (`B = 6` for 4-tensor, `B = 1` for scalar) with explicit zeros above
 the block diagonal — this is the convention of
-[@sanahuja2013] and the C++ ECHOES reference.
+[sanahuja2013](@cite) and the C++ ECHOES reference.
 """
 module Viscoelasticity
 

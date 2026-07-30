@@ -19,6 +19,11 @@ using TensND
 using Printf
 using Plots
 
+# Room for the axis labels: in a composed (multi-panel) figure GR shrinks each
+# panel's drawing area but gives the outer frame no margin, so the labels of the
+# leftmost and bottom panels would be clipped off the canvas.
+default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
+
 # ── Material moduli ───────────────────────────────────────────────────────
 const k_s, μ_s = 72.0, 32.0       # solid moduli
 const k_p, μ_p = 1.0e-6, 1.0e-6   # pore moduli (numerical regularization)

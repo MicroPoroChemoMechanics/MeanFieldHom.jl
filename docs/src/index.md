@@ -21,6 +21,71 @@ codebase; see [From Echoes to MeanFieldHom](@ref man-from-echoes) for the transl
 and [Theory — reading path](theory/index.md) for the shared conventions and
 bibliography.
 
+## The chain, in one picture
+
+Everything the package does is one pipeline read left to right. The **grey**
+boxes are what you supply, the **blue** ones what the package computes, and the
+**green** ones the three places where you can plug in your own physics without
+touching the library.
+
+The source of this diagram is the text of this page — edit it in
+`docs/src/index.md` and it re-renders.
+
+```mermaid
+flowchart LR
+    subgraph IN["you supply"]
+        direction TB
+        C0["reference medium<br/>ℂ₀ or 𝐊₀"]
+        SHAPE["inclusion shape<br/>+ orientation"]
+        AMOUNT["amount<br/>fraction f or density ε"]
+        PROP["phase properties<br/>ℂᵣ or 𝐊ᵣ"]
+    end
+
+    P["Hill tensor ℙ<br/><i>Elasticity, Conductivity</i>"]
+    A["localization 𝔸 = [𝕀 + ℙ:(ℂᵣ−ℂ₀)]⁻¹<br/><i>localization.jl</i>"]
+    N["contribution ℕ, ℍ<br/><i>contribution.jl</i>"]
+    S["scheme<br/><i>Schemes</i>"]
+    EFF["effective ℂ or 𝐊<br/>+ ∂/∂parameters"]
+
+    C0 --> P
+    SHAPE --> P
+    P --> A
+    PROP --> A
+    A --> N
+    N --> S
+    AMOUNT --> S
+    S --> EFF
+
+    GA["gate A<br/>hill_tensor"]:::ext -.-> P
+    GB["gate B<br/>strain_strain_loc<br/>stress_strain_loc"]:::ext -.-> A
+    GC["gate C<br/>stiffness_contribution<br/>compliance_contribution"]:::ext -.-> N
+
+    classDef ext fill:#d7f2d7,stroke:#2e7d32,color:#1b5e20
+    classDef inbox fill:#eceff1,stroke:#78909c,color:#263238
+    classDef comp fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+    class C0,SHAPE,AMOUNT,PROP inbox
+    class P,A,N,S,EFF comp
+```
+
+**The three green gates are the extension mechanism.** A morphology
+`MeanFieldHom` knows nothing about becomes a first-class citizen of *every*
+scheme by answering one of them — implement the lowest you can reach and the
+package derives the rest algebraically. Four routes already use them:
+
+| Route | Gate | Where the answer comes from |
+| :--- | :---: | :--- |
+| ellipsoids, cylinders, cracks | A | closed forms, quadrature or residues |
+| [composite spheres and spheroids](@ref MeanFieldHom.LayeredSpheres) | B | the Hervé–Zaoui recurrences — a layered pattern has no Hill tensor |
+| [finite elements](@ref man-fe-inclusions) | B / COD | a `Ferrite` or `Gridap` solve of the Eshelby problem |
+| [neural surrogates](@ref man-neural-inclusions) | A / B | a trained network, differentiable in the morphology |
+| [your own](@ref man-custom-inclusions) | A, B or C | a formula, a solver, a table — anything callable |
+
+Cracks and flat objects follow the same chain with ``\mathbb H`` in place of
+``\mathbb N`` and a density in place of a volume fraction; transport is the same
+picture at tensor order 2, and ageing viscoelasticity the same picture with
+Volterra products in place of tensor products. The contract is written up in
+[Adding a new inclusion](@ref dev-adding-inclusion).
+
 ## Where to start
 
 | If you want to… | Go to |
@@ -45,6 +110,9 @@ bibliography.
 | [`MeanFieldHom.LayeredSpheroids`](@ref) | `n`-layer confocal spheroids, conduction, Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
 | [`MeanFieldHom.Schemes`](@ref) | RVE container and `homogenize`; Voigt, Reuss, Dilute, Mori–Tanaka, Maxwell, PCW, self-consistent, asymmetric SC, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
 | [`MeanFieldHom.Viscoelasticity`](@ref) | Ageing linear viscoelasticity via Volterra operators — every scheme, cracks and layered spheres included. |
+| [`MeanFieldHom.CustomInclusions`](@ref) | The user-defined inclusion contract: `CustomInclusion` (callback-driven) and `check_inclusion_interface`. |
+| [`MeanFieldHom.FiniteElements`](@ref) | Inclusions whose response comes out of a finite-element solve of the Eshelby problem, behind a backend contract (`Ferrite` or `Gridap`). |
+| [`MeanFieldHom.NeuralInclusions`](@ref) | Inclusions whose response comes out of a trained network, with the sampling and fitting machinery; differentiable in the morphology. |
 
 ## Quick example
 

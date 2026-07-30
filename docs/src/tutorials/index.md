@@ -36,6 +36,7 @@ and the one where the choice of scheme matters most.
 | [Highly conducting interfaces](generated/layered_spheroid_hc.md) | equivalent conductivity of an HC-coated particle vs aspect ratio |
 | [Symmetrization](generated/symmetrization.md) | exact rotation-group average vs best-fit projection |
 | [The custom-inclusion contract](generated/custom_inclusion_contract.md) | plugging an arbitrary morphology into every scheme — the three entry gates, the density seam, free orientation averaging |
+| [An inclusion whose response is a neural network](generated/neural_inclusion.md) | a trained surrogate as an inclusion: what stays exact whatever the fit, accuracy against the closed form, every scheme, and the derivative with respect to the *morphology* |
 
 Composite inclusions carry no Hill tensor at all: they enter the schemes through
 their volume-averaged concentration tensors instead.

@@ -1,5 +1,9 @@
 using Documenter
 using DocumenterCitations
+# Renders the ```mermaid blocks of the home page. The diagram's source is the
+# page itself, so the architecture picture is edited by editing text — no
+# regenerated asset to keep in sync.
+using DocumenterMermaid
 using MeanFieldHom
 
 # GR needs a headless display driver on CI runners; without this the figures in
@@ -36,7 +40,10 @@ makedocs(;
                 MeanFieldHom.LayeredSpheres,
                 MeanFieldHom.LayeredSpheroids,
                 MeanFieldHom.Schemes,
-                MeanFieldHom.Viscoelasticity],
+                MeanFieldHom.Viscoelasticity,
+                MeanFieldHom.CustomInclusions,
+                MeanFieldHom.FiniteElements,
+                MeanFieldHom.NeuralInclusions],
     remotes  = nothing,
     authors  = "Jean-François Barthélémy",
     sitename = "MeanFieldHom.jl",
@@ -87,6 +94,7 @@ makedocs(;
             "manual/cracks.md",
             "manual/custom_inclusions.md",
             "manual/fe_inclusions.md",
+            "manual/neural_inclusions.md",
             "manual/from_echoes.md",
             "manual/conductivity.md",
             "manual/schemes.md",
@@ -120,6 +128,7 @@ makedocs(;
                 "tutorials/generated/layered_spheroid_hc.md",
                 "tutorials/generated/symmetrization.md",
                 "tutorials/generated/custom_inclusion_contract.md",
+                "tutorials/generated/neural_inclusion.md",
             ],
             "Beyond elasticity" => [
                 "tutorials/viscoelasticity.md",

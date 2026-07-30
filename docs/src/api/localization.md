@@ -150,3 +150,112 @@ MeanFieldHom.FiniteElements.ExcenteredSphereShape
 MeanFieldHom.Core.green_gradient_iso
 MeanFieldHom.Core.dipole_displacement_iso
 ```
+
+## Neural-surrogate inclusions
+
+The fourth route into the contract: the response comes out of a trained network.
+See [Neural-surrogate inclusions](@ref man-neural-inclusions) for the tutorial.
+Evaluating needs nothing beyond the package; *training* needs
+`import Lux, Optimisers, Zygote`.
+
+```@docs
+MeanFieldHom.NeuralInclusions
+MeanFieldHom.NeuralHillInclusion
+MeanFieldHom.NeuralLocalizationInclusion
+MeanFieldHom.NeuralInclusions.NeuralShape
+```
+
+### The surrogate
+
+```@docs
+MeanFieldHom.NeuralSurrogate
+MeanFieldHom.Provenance
+MeanFieldHom.worst_error
+MeanFieldHom.NeuralInclusions.check_domain
+MeanFieldHom.NeuralInclusions.predict_components
+```
+
+### What the network predicts
+
+The symmetry class, the major symmetry, the homogeneity in the reference moduli
+and the frame are *enforced* by these types rather than fitted — see
+[What is exact, and what is fitted](@ref man-neural-inclusions).
+
+```@docs
+MeanFieldHom.NeuralInclusions.AbstractHillClass
+MeanFieldHom.HillISO
+MeanFieldHom.HillTI
+MeanFieldHom.HillOrtho
+MeanFieldHom.HillISO2
+MeanFieldHom.HillTI2
+MeanFieldHom.NeuralInclusions.AbstractOutputSpec
+MeanFieldHom.DimensionlessHill
+MeanFieldHom.AffineHill
+MeanFieldHom.NeuralInclusions.ncomponents
+MeanFieldHom.NeuralInclusions.tensor_order
+MeanFieldHom.NeuralInclusions.nterms
+MeanFieldHom.NeuralInclusions.noutputs
+MeanFieldHom.NeuralInclusions.needs_nu
+MeanFieldHom.NeuralInclusions.build
+MeanFieldHom.NeuralInclusions.components
+MeanFieldHom.NeuralInclusions.decode
+MeanFieldHom.NeuralInclusions.material_coeffs
+MeanFieldHom.NeuralInclusions.dimensionless_scale
+MeanFieldHom.NeuralInclusions.hill_class
+MeanFieldHom.NeuralInclusions.output_spec
+MeanFieldHom.NeuralInclusions.apply_transform
+MeanFieldHom.NeuralInclusions.invert_transform
+MeanFieldHom.NeuralInclusions._feature
+MeanFieldHom.NeuralInclusions.raw_features
+MeanFieldHom.NeuralInclusions._class_frame
+MeanFieldHom.NeuralInclusions._canonical_axes
+MeanFieldHom.NeuralInclusions._spheroid_axis_index
+```
+
+### Sampling and labelling
+
+```@docs
+MeanFieldHom.SampleBox
+MeanFieldHom.Dataset
+MeanFieldHom.generate_dataset
+MeanFieldHom.NeuralInclusions.sample_box
+MeanFieldHom.NeuralInclusions.grid_box
+MeanFieldHom.NeuralInclusions.halton
+MeanFieldHom.NeuralInclusions.feature_index
+MeanFieldHom.fit_scaling
+MeanFieldHom.validate_surrogate
+MeanFieldHom.report_surrogate
+MeanFieldHom.component_labels
+```
+
+### Training
+
+`train_surrogate` is the seam of the `MeanFieldHomLuxExt` extension: the method
+below is the fallback that raises when the extension is not loaded.
+
+```@docs
+MeanFieldHom.TrainingOptions
+MeanFieldHom.train_surrogate
+MeanFieldHom.assemble_surrogate
+MeanFieldHom.NeuralInclusions.network_widths
+```
+
+### The network, and its serialization
+
+```@docs
+MeanFieldHom.NeuralInclusions.MLP
+MeanFieldHom.NeuralInclusions.NNDense
+MeanFieldHom.NeuralInclusions.glorot_mlp
+MeanFieldHom.NeuralInclusions.softplus
+MeanFieldHom.NeuralInclusions.activation
+MeanFieldHom.NeuralInclusions.activation_name
+MeanFieldHom.NeuralInclusions.layer_widths
+MeanFieldHom.NeuralInclusions.layer_activations
+MeanFieldHom.NeuralInclusions.nparams
+MeanFieldHom.save_surrogate
+MeanFieldHom.load_surrogate
+MeanFieldHom.model_path
+MeanFieldHom.shipped_models
+MeanFieldHom.NeuralInclusions.SURROGATE_FORMAT
+MeanFieldHom.NeuralInclusions.MODEL_DIR
+```

@@ -26,6 +26,11 @@ using TensND
 using Printf
 using Plots
 
+# Room for the axis labels: in a composed (multi-panel) figure GR shrinks each
+# panel's drawing area but gives the outer frame no margin, so the labels of the
+# leftmost and bottom panels would be clipped off the canvas.
+default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
+
 # ── Constants (shared with the full model) ─────────────────────────────────
 const ρ_w = 1.0
 const ρ_clin = 3.15;  const d_clin = ρ_clin / ρ_w

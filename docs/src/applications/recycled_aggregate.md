@@ -29,20 +29,34 @@ it.
 
 ## The morphology
 
+![Definition of the morphology and its symbols](../assets/fe/axi_schematic.png)
+
+Meridian section, drawn at ``w = 0.5`` (hence ``a_c/a = 0.794``), the value used
+throughout this page. Left to right: the concentric limit, an intermediate
+eccentricity, and the tangency limit that *defines* the normalization of
+``\alpha``.
+
 | Symbol | Meaning |
 | :--- | :--- |
-| ``a`` | radius of the whole inclusion |
+| ``a`` | radius of the whole inclusion (`a`, the first constructor argument) |
 | ``w`` | volume fraction of the core *inside* the inclusion (`core_fraction`) |
 | ``a_c = a\,w^{1/3}`` | core radius, fixed by ``w`` |
-| ``\alpha`` | eccentricity (`eccentricity`), normalized so that ``\alpha = 1`` is tangency |
-| ``d = \alpha\,(a - a_c)`` | offset of the core centre along the symmetry axis |
+| ``d`` | offset of the core centre along the symmetry axis ``z`` |
+| ``\alpha = \dfrac{d}{a - a_c}`` | **eccentricity** (`eccentricity`): the offset as a fraction of the largest one the geometry admits |
 | ``R`` | radius of the surrounding ball of matrix (`radius_ratio`, in units of ``a``) |
+| ``\mathbb C_1,\ \mathbb C_2`` | stiffness of the core and of the shell (`props`, in that order) |
+| ``\mathbb C_0`` | stiffness of the reference medium, the fresh paste |
+
+The normalization is what makes ``\alpha`` readable: ``a - a_c`` is the distance
+the core centre can travel before the core touches the outer surface, so
+``\alpha`` runs over ``[0, 1]`` whatever ``w`` is, and ``\alpha = 1`` is tangency
+by construction. Values above 1 are geometrically impossible and rejected.
 
 ``\alpha = 0`` is the concentric two-layer sphere, for which
 [`LayeredSphere`](@ref MeanFieldHom.LayeredSpheres.LayeredSphere) gives the
 exact Hervé-Zaoui answer — the reference everything below is checked against.
-The response is transversely isotropic about the eccentricity axis, and
-isotropic at ``\alpha = 0``.
+The response is transversely isotropic about ``z``, and isotropic at
+``\alpha = 0``.
 
 ## Fourier expansion in the azimuth
 
@@ -197,6 +211,9 @@ material term, to absorb the ``\rho`` weight.
 
 ![Meridian mesh, concentric and eccentric](../assets/fe/axi_mesh.png)
 
+``w = 0.5``, ``R = 4a``; `nradial = 14` on the left panel and `nradial = 22` on
+the two zooms, P2 triangles.
+
 The half-plane ``\rho \ge 0``, meshed with straight triangles: the core in red,
 the adhered mortar in blue, the surrounding matrix in grey. A node of this mesh
 stands for a whole circle of the three-dimensional body, and the axis on the
@@ -256,6 +273,10 @@ agree except the correctness of the whole construction.
 
 ![Error against the cell radius](../assets/fe/axi_convergence.png)
 
+``\alpha = 0``, ``w = 0.5``, ``E_1 = 70``, ``E_2 = 2``, ``E_0 = 20`` GPa, all
+Poisson ratios 0.2, `nradial = 24`. Reference: the exact Hervé-Zaoui composite
+sphere.
+
 The uncorrected cell follows the predicted ``(a/R)^3`` line. The corrected one
 is flat: its residual is discretization error, not truncation, and it is
 already reached at ``R = 2a``. The practical consequence is the one the paper
@@ -263,7 +284,8 @@ reports — convergence at ``R/a \approx 4`` instead of ten or more, which on a
 three-dimensional mesh is the difference between ``10^5`` and ``2\cdot10^4``
 degrees of freedom.
 
-Relative error on ``\mathbb A`` (%), same materials as above, `nradial = 24`.
+Relative error on ``\mathbb A`` (%) against Hervé-Zaoui, same parameters as the
+figure (``E_2/E_0 = 0.1``, a badly degraded adhered mortar).
 
 | ``R/a`` | ``\mathbb J``, ``u = E\!\cdot\!x`` | ``\mathbb J``, corrected | ``\mathbb K``, ``u = E\!\cdot\!x`` | ``\mathbb K``, corrected |
 | ---: | ---: | ---: | ---: | ---: |
@@ -305,6 +327,11 @@ not carry. From ``R = 4a`` on, both are at the mesh floor.
 
 ![Effective modulus against the mortar contrast](../assets/fe/axi_contrast.png)
 
+Mori-Tanaka, aggregate volume fraction ``f = 0.4``, ``w = 0.5``,
+``E_1/E_0 = 3.5``, all Poisson ratios 0.2, ``R = 4a``, `nradial = 20`. The
+abscissa ``E_2/E_0`` sweeps the quality of the adhered mortar over a decade and
+a half.
+
 The engineering question of the paper: a recycled aggregate is an old natural
 aggregate wrapped in a shell of old mortar of uncertain, generally poor,
 quality. Holding the old-aggregate fraction fixed and softening the adhered
@@ -342,6 +369,9 @@ the induced ``\mathbb A_{33}/\mathbb A_{11} - 1`` stays below ``10^{-4}``.
 ### Equivalent conductivity of the composite particle
 
 ![Equivalent conductivity](../assets/fe/axi_conductivity.png)
+
+``w = 0.5``, ``k_1/k_2 = 10`` (core over shell), ``R = 4a``, `nradial = 24`; the
+abscissa sweeps the reference medium ``k_0/k_2`` over four decades.
 
 The transport counterpart, reading the equivalent conductivity of the particle
 off ``\langle q\rangle = k^{\rm eq}\langle\nabla T\rangle``. The flat black

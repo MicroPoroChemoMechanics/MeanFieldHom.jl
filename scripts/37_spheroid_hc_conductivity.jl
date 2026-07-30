@@ -136,7 +136,11 @@ function _panel(ϖs, curves, ttl, ylab; xlog = true)
     plt = plot(;
         xscale = xlog ? :log10 : :identity, yscale = :log10,
         xlabel = "aspect ratio ϖ = ρ_a / ρ_t", ylabel = ylab, title = ttl,
-        legend = :best, size = (620, 460), left_margin = 6Plots.mm,
+        legend = :best, size = (620, 460),
+        # Wider than the usual 5 mm: the decade tick labels of the axial panels
+        # (`10^-0.5`) push the y-label further out than 6 mm leaves room for, and
+        # in the 2×2 composition below it would be clipped off the canvas.
+        left_margin = 10Plots.mm, bottom_margin = 5Plots.mm,
     )
     for (i, β) in enumerate(BETAS)
         plot!(plt, ϖs, curves[β]; label = "β = $β", lw = 2, color = i)

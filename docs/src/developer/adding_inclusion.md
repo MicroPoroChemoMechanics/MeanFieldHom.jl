@@ -9,6 +9,15 @@ For the user-facing tutorial (including the ready-made
 [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion) callback type), see
 [Custom inclusions](@ref man-custom-inclusions).
 
+Where the answer comes from is free. Four routes already use this contract: the
+analytic families (gate A), the layered patterns and the
+[finite-element inclusions](@ref man-fe-inclusions) (gate B — neither has a Hill
+tensor), and the [neural surrogates](@ref man-neural-inclusions) (gate A or B,
+from a trained network). A surrogate is worth knowing about while reading this
+page for one reason: it is the only route that is **differentiable in the
+morphology**, so it is how an expensive gate-B solver becomes usable inside an
+iterative scheme and inside the sensitivity API.
+
 The contract has **four levels**. Implement the lowest one you can reach:
 everything above it is derived algebraically by the package.
 

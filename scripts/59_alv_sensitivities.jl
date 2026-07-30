@@ -19,8 +19,8 @@
 # scheme; the second is the only route to a material parameter, because the
 # kernel is a user function the package never inspects.
 
-import Pkg
-Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
+import Pkg                                                          #jl
+Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
 using MeanFieldHom
 using TensND

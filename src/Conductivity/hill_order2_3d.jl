@@ -26,9 +26,14 @@ function _hill_order2_3d_iso(ell::Ellipsoid{3}, K₀)
     T = promote_type(eltype(ell.semi_axes), eltype(K₀))
     k = K₀.data[1]
     IA = tens_IA(ell)
+    # `IA[i, j]` reads the components in the *ellipsoid's own* basis, so wrapping
+    # them straight into a canonical `Tens` would silently drop the orientation:
+    # a rotated spheroid would return the tensor of the unrotated one. Convert to
+    # canonical components first, as the anisotropic kernel below already does.
+    IA_can = TensND.components_canon(IA)
     P_arr = zeros(T, 3, 3)
     for i in 1:3, j in 1:3
-        P_arr[i, j] = T(IA[i, j]) / k
+        P_arr[i, j] = T(IA_can[i, j]) / k
     end
     return TensND.Tens(P_arr)
 end
@@ -101,9 +106,12 @@ function _hill_order2_3d_iso(cyl::Cylinder, K₀)
     T = promote_type(eltype(cyl.semi_axes), eltype(K₀))
     k = K₀.data[1]
     IA = tens_IA(cyl)
+    # As for the ellipsoid: canonical components, or the cylinder's orientation
+    # is lost.
+    IA_can = TensND.components_canon(IA)
     P_arr = zeros(T, 3, 3)
     for i in 1:3, j in 1:3
-        P_arr[i, j] = T(IA[i, j]) / k
+        P_arr[i, j] = T(IA_can[i, j]) / k
     end
     return TensND.Tens(P_arr)
 end

@@ -21,7 +21,7 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | 50–59 | Viscoelasticity & ALV |
 | 60–69 | ALV cracks, interfaces & cross-validations |
 | 70–79 | Symmetrization showcases |
-| 80–89 | Custom (user-defined) inclusions & finite-element coupling |
+| 80–89 | Custom (user-defined) inclusions, finite-element and neural-surrogate coupling |
 
 ## Coverage map
 
@@ -102,7 +102,7 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `62_alv_schemes.jl` | Barthélémy et al. (2019), IJES 144, 103104 | **published tutorial** — Dilute / Mori-Tanaka / Maxwell / PCW on one ageing creep test; the aspect-ratio sweep at fixed fraction; the collapse MT = Maxwell = PCW when the distribution shape equals the inclusion shape, and the PCW admissibility limit when it does not |
 | `70_symmetrization_showcase.jl` | `symmetrize` / `.paramsym` | **exact rotation average vs best-fit projection** on a non-major-symmetric concentration tensor |
 
-### 80–89 Custom inclusions & finite-element coupling
+### 80–89 Custom inclusions, finite elements & neural surrogates
 
 | Script | reference / topic | Notes |
 |---|---|---|
@@ -110,6 +110,12 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `81_fe_crack_eshelby.jl` | Adessina et al. (2017), IJES 119, 1-15 | elliptical crack by finite elements (`Ferrite` + `Gmsh`): mesh, first-order corrected boundary condition, `‖B_u‖ ∝ (a/R)³`, convergence and Richardson extrapolation vs the closed-form COD |
 | `82_fe_crack_schemes.jl` | — | the finite-element crack as a drop-in `EllipticCrack` in Dilute / MT / SC / Differential, with `IsoSymmetrize` and the memoization count |
 | `83_fe_excentered_sphere.jl` | Adessina et al. (2017), IJES 119, 1-15 | the sphere with an off-centre core by **axisymmetric Fourier** elements: the concentric limit against Hervé-Zaoui, what the boundary correction buys in `R/a`, the eccentricity sweep, the schemes, and transport |
+| `84_neural_inclusion_ellipsoid.jl` | — | **published tutorial** (`neural_inclusion`): a trained network as an inclusion. What stays exact whatever the fit (zero contrast, homogeneity, symmetry class, frame), accuracy against the closed form, the `AffineHill` factorization that makes ν₀ exact, every scheme, and `ForwardDiff` on the aspect ratio. Loads the committed models — no ML dependency, nothing trained at build time |
+
+Script 84 needs nothing beyond the package: it loads the surrogates committed
+under `src/NeuralInclusions/models/`. *Training* them is
+`scripts/nn/train_models.jl`, which activates its own `scripts/nn/` environment
+carrying `Lux`, `Optimisers` and `Zygote` (weak dependencies).
 
 Scripts 81 to 83 need `Ferrite`, `FerriteGmsh` and `Gmsh` (weak dependencies of
 `MeanFieldHom`). 81 and 82 take a minute or so — they mesh a ball and factorize

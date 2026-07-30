@@ -13,6 +13,7 @@
 #  Outputs (committed):
 #      docs/src/assets/fe/mesh_crack_plane.png
 #      docs/src/assets/fe/mesh_slice.png
+#      docs/src/assets/fe/mesh_3d.png
 #      docs/src/assets/fe/convergence.png
 #      docs/src/assets/fe/dipole_scaling.png
 #      docs/src/assets/fe/results.md      (tables, pasted into the page)
@@ -31,7 +32,14 @@ using Plots
 import Ferrite, FerriteGmsh, Gmsh
 
 gr()
-default(; fontfamily = "sans-serif", framestyle = :box, grid = true, legendfontsize = 8)
+#  The margins are load-bearing, not cosmetic: in a composed (multi-panel)
+#  figure GR shrinks each panel's drawing area but gives the outer frame no
+#  margin, so the y-label of the leftmost panel and the x-labels of the bottom
+#  row get clipped off the canvas.
+default(;
+    fontfamily = "sans-serif", framestyle = :box, grid = true, legendfontsize = 8,
+    left_margin = 5Plots.mm, bottom_margin = 5Plots.mm,
+)
 
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "fe"))
 mkpath(OUT)
@@ -42,9 +50,18 @@ const C₀ = iso_stiffness(Em / (3 * (1 - 2νm)), Em / (2 * (1 + νm)))
 diag3(B) = diag(Matrix(get_array(B)))
 
 # The plotting needs the discretization itself, which is an implementation
-# detail of the extension rather than public API — this is a maintenance
-# script, so it reaches in deliberately.
+# detail rather than public API — this is a maintenance script, so it reaches in
+# deliberately. Since the `src/FiniteElements` reorganization the mesh and the
+# facet-set names belong to the package, and only the lip split is the backend's.
+const FE = MeanFieldHom.FiniteElements
 const EXT = Base.get_extension(MeanFieldHom, :MeanFieldHomFerriteExt)
+
+"Grid of a crack, and the `+` lip facets of its crack plane."
+function crack_mesh(crack)
+    grid = FE._crack_setup(crack).grid
+    lip_up, _ = EXT.split_crack_lips(grid)
+    return grid, lip_up
+end
 
 # ─── Figure 1 — the mesh in the crack plane ──────────────────────────────────
 
@@ -54,16 +71,16 @@ elements shrink towards the elliptical front, where the displacement field has
 a square-root singularity.
 """
 function figure_crack_plane(crack; kw...)
-    s = EXT._setup(crack)
+    grid, lip_up = crack_mesh(crack)
     a, b = crack.a, crack.b
     plt = plot(;
         aspect_ratio = 1, xlabel = "x / a", ylabel = "y / a",
         title = "Crack plane z = 0 — upper lip", legend = false, kw...,
     )
-    for fi in s.lip_up
-        cell = s.grid.cells[fi[1]]
+    for fi in lip_up
+        cell = grid.cells[fi[1]]
         nodes = Ferrite.facets(cell)[fi[2]]
-        pts = [Ferrite.getnodes(s.grid, n).x for n in nodes]
+        pts = [Ferrite.getnodes(grid, n).x for n in nodes]
         push!(pts, pts[1])
         plot!(
             plt, [p[1] / a for p in pts], [p[2] / a for p in pts];
@@ -97,14 +114,14 @@ Section `y = 0` of the ball of matrix: the radial grading, from `h_tip` at the
 crack front out to `R/3` on the outer boundary.
 """
 function figure_slice(crack; zoom = nothing, kw...)
-    s = EXT._setup(crack)
+    grid, _ = crack_mesh(crack)
     a = crack.a
     plt = plot(;
         aspect_ratio = 1, xlabel = "x / a", ylabel = "z / a",
         legend = false, kw...,
     )
-    for cid in 1:Ferrite.getncells(s.grid)
-        poly = tet_slice(Ferrite.getcoordinates(s.grid, cid))
+    for cid in 1:Ferrite.getncells(grid)
+        poly = tet_slice(Ferrite.getcoordinates(grid, cid))
         length(poly) < 3 && continue
         xs = [q[1] / a for q in poly]
         zs = [q[2] / a for q in poly]
@@ -142,7 +159,7 @@ red. Everything is drawn as a single NaN-separated polyline per colour, which
 keeps GR fast.
 """
 function figure_3d(crack; half = nothing, outer = true, slice = true, kw...)
-    s = EXT._setup(crack)
+    grid, lip_up = crack_mesh(crack)
     a = crack.a
     inbox(pts) = half === nothing ||
         all(abs(p[1]) ≤ half && abs(p[2]) ≤ half && abs(p[3]) ≤ half for p in pts)
@@ -150,9 +167,9 @@ function figure_3d(crack; half = nothing, outer = true, slice = true, kw...)
     # Outer sphere: the far half only, so the near side does not veil the crack.
     Xo, Yo, Zo = Float64[], Float64[], Float64[]
     if outer
-        for fi in Ferrite.getfacetset(s.grid, EXT.SET_OUTER)
-            nodes = Ferrite.facets(s.grid.cells[fi[1]])[fi[2]]
-            pts = [Ferrite.getnodes(s.grid, n).x ./ a for n in nodes]
+        for fi in Ferrite.getfacetset(grid, FE.SET_OUTER)
+            nodes = Ferrite.facets(grid.cells[fi[1]])[fi[2]]
+            pts = [Ferrite.getnodes(grid, n).x ./ a for n in nodes]
             sum(p[2] for p in pts) / length(pts) ≤ 0 || continue
             push_loop!(Xo, Yo, Zo, pts)
         end
@@ -161,8 +178,8 @@ function figure_3d(crack; half = nothing, outer = true, slice = true, kw...)
     # Cut face y = 0, on the far side of the crack only (y ≤ 0 is behind it).
     Xc, Yc, Zc = Float64[], Float64[], Float64[]
     if slice
-        for cid in 1:Ferrite.getncells(s.grid)
-            poly = tet_slice(Ferrite.getcoordinates(s.grid, cid))
+        for cid in 1:Ferrite.getncells(grid)
+            poly = tet_slice(Ferrite.getcoordinates(grid, cid))
             length(poly) < 3 && continue
             pts3 = [(q[1] / a, 0.0, q[2] / a) for q in poly]
             inbox(pts3) || continue
@@ -172,9 +189,9 @@ function figure_3d(crack; half = nothing, outer = true, slice = true, kw...)
 
     # The crack itself, in full: an ellipse floating in the ball.
     Xk, Yk, Zk = Float64[], Float64[], Float64[]
-    for fi in s.lip_up
-        nodes = Ferrite.facets(s.grid.cells[fi[1]])[fi[2]]
-        pts = [Ferrite.getnodes(s.grid, n).x ./ a for n in nodes]
+    for fi in lip_up
+        nodes = Ferrite.facets(grid.cells[fi[1]])[fi[2]]
+        pts = [Ferrite.getnodes(grid, n).x ./ a for n in nodes]
         push_loop!(Xk, Yk, Zk, pts)
     end
 
@@ -215,8 +232,10 @@ savefig(
             title = "the crack inside the ball of matrix", size = (460, 440)
         ),
         figure_3d(
+            # Kept short on purpose: a title wider than its panel overflows the
+            # canvas, and unlike the axis labels no margin can rescue it.
             mesh_crack; half = 1.8, outer = false,
-            title = "zoom: crack (red) and the y = 0 cut behind it", size = (460, 440)
+            title = "zoom: crack and the cut behind it", size = (460, 440)
         );
         layout = (1, 2), size = (980, 460)
     ),

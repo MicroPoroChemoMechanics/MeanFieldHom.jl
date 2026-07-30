@@ -31,6 +31,10 @@ inclusions, algorithms, and material symmetry classes.
   finite-element resolution of the Eshelby problem (`FEEllipticCrack`,
   `FEExcenteredSphere`); the discretization comes from a backend extension,
   `MeanFieldHomFerriteExt` or `MeanFieldHomGridapExt`.
+- `MeanFieldHom.NeuralInclusions` — inclusions whose response comes out of a
+  trained neural network (`NeuralHillInclusion`, `NeuralLocalizationInclusion`),
+  together with the sampling and fitting machinery; the optimizer comes from
+  `MeanFieldHomLuxExt`, evaluation needs no extra dependency.
 
 # Shared generic interface
 
@@ -93,9 +97,11 @@ include("contribution.jl")
 # ─── Sub-modules that build on the generic algebra above ────────────────────
 include("CustomInclusions/CustomInclusions.jl")
 include("FiniteElements/FiniteElements.jl")
+include("NeuralInclusions/NeuralInclusions.jl")
 
 using .CustomInclusions
 using .FiniteElements
+using .NeuralInclusions
 
 # ── Abstractions ─────────────────────────────────────────────────────────────
 export AbstractInclusion, AbstractEllipsoidalInclusion, AbstractCrack
@@ -136,6 +142,16 @@ export FEBackend, AutoBackend, FerriteBackend, GridapBackend
 export FEEllipticCrack, FEMeshOptions, fe_cod_breakdown, fe_mesh_report
 export FEExcenteredSphere, FEAxiMeshOptions
 export fe_axi_localization, fe_axi_breakdown, fe_axi_mesh_report
+
+# ── Neural-network (surrogate) inclusions ────────────────────────────────────
+export NeuralHillInclusion, NeuralLocalizationInclusion, NeuralShape
+export NeuralSurrogate, Provenance, worst_error
+export save_surrogate, load_surrogate, model_path, shipped_models
+export HillISO, HillTI, HillOrtho, HillISO2, HillTI2
+export DimensionlessHill, AffineHill
+export SampleBox, Dataset, generate_dataset, fit_scaling
+export TrainingOptions, train_surrogate, assemble_surrogate
+export validate_surrogate, report_surrogate, component_labels
 
 # ── Localization & contribution (Eshelby dilute, Kachanov-Sevostianov) ───────
 export strain_strain_loc, stress_strain_loc, strain_stress_loc, stress_stress_loc

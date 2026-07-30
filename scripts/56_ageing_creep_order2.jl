@@ -28,6 +28,11 @@ using LinearAlgebra
 using Printf
 using Plots
 
+# Room for the axis labels: in a composed (multi-panel) figure GR shrinks each
+# panel's drawing area but gives the outer frame no margin, so the labels of the
+# leftmost and bottom panels would be clipped off the canvas.
+default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
+
 # ─── Dirichlet creep kernels (same parameters as the Python script) ────────
 
 function build_R(r0, r1, r2, τ1, τ2, fag, finst)

@@ -26,9 +26,16 @@ end
     K0 = TensISO{3}(2.0)
     for (a, b, k1) in ((3.0, 1.0, 5.0), (0.5, 2.0, 5.0), (0.3, 1.5, 0.5), (10.0, 0.3, 8.0), (0.05, 3.0, 8.0))
         K1 = TensISO{3}(k1)
-        prolate = a > b
-        ax = prolate ? (1.0, 0.0, 0.0) : (0.0, 0.0, 1.0)
-        s = LayeredSpheroid((a,), (b,), (K1,); Nseries = 6, axis = ax)
+        # `Spheroid(ω) == Ellipsoid(1, 1, ω)`, whose symmetry axis is `e₃` for
+        # *both* families — prolate included, since the constructor sorts the
+        # semi-axes and permutes the basis to match (see its docstring). So the
+        # comparison spheroid must be built about `e₃` in both branches.
+        #
+        # This used to read `ax = a > b ? (1, 0, 0) : (0, 0, 1)` and passed only
+        # because the isotropic order-2 Hill kernel dropped the inclusion's
+        # orientation, which for a sorted prolate put the distinct value back on
+        # slot 1. Two compensating errors; fixing the kernel exposed this one.
+        s = LayeredSpheroid((a,), (b,), (K1,); Nseries = 6, axis = (0.0, 0.0, 1.0))
         ell = Spheroid(a / b)
         P = hill_tensor(ell, K0)
         A_classic = inv(TensISO{3}(1.0) + P ⋅ (K1 - K0))
@@ -101,7 +108,10 @@ end
 
     # Single layer still reduces exactly to the Eshelby result.
     K0 = TensISO{3}(2.0)
-    s1 = layered_spheroid_from_fractions(3.0, 3.0, (1.0,), (K1,); Nseries = 6, axis = (1.0, 0.0, 0.0))
+    # About `e₃`, as `Spheroid(3.0)` is — see the comment above.
+    s1 = layered_spheroid_from_fractions(
+        3.0, 3.0, (1.0,), (K1,); Nseries = 6, axis = (0.0, 0.0, 1.0)
+    )
     A = gradient_gradient_loc(s1, K1, K0)
     ell = Spheroid(3.0)
     P = hill_tensor(ell, K0)

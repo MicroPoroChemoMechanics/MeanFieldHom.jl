@@ -36,6 +36,18 @@ catch
     false
 end
 
+# Load Lux / Optimisers / Zygote so the `MeanFieldHomLuxExt` extension activates.
+# Only *training* a neural surrogate needs them: loading a committed model,
+# running it through every scheme and differentiating it need nothing beyond the
+# package, so almost all of `test_neural_inclusion.jl` runs unconditionally and
+# only the short end-to-end fit is guarded by this flag.
+const NN_HAS_LUX = try
+    @eval import Lux, Optimisers, Zygote
+    true
+catch
+    false
+end
+
 # Several test files draw random operators (`test_ti_alv.jl`, `test_ortho_alv.jl`,
 # `test_volterra_inverse.jl`, …).  Seed once here so a CI failure is always
 # reproducible locally instead of depending on the draw.
@@ -106,6 +118,14 @@ Random.seed!(20260723)
     # already compiled by then, which keeps this testset cheap.
     @testset "CustomInclusions" begin
         include("CustomInclusions/test_custom_inclusion.jl")
+    end
+
+    # Neural surrogates are another client of that same contract, so they run
+    # straight after it. The committed models under
+    # `src/NeuralInclusions/models/` are loaded, not retrained, which is what
+    # keeps this testset deterministic and independent of the Lux stack.
+    @testset "NeuralInclusions" begin
+        include("NeuralInclusions/test_neural_inclusion.jl")
     end
 
     # Finite-element inclusions: skipped when the Ferrite stack is unavailable

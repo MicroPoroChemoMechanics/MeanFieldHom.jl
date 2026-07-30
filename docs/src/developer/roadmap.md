@@ -60,4 +60,14 @@
   axisymmetric Fourier elements (the general polarization fixed point).
   Open extensions — anisotropic reference medium (Pan-Chou or Barnett-Willis
   Green gradient); more than one inclusion, or a non-spherical envelope, in the
-  axisymmetric cell; automatic differentiation through the solve.
+  axisymmetric cell.
+- Neural-surrogate inclusions (`NeuralHillInclusion`,
+  `NeuralLocalizationInclusion`), with the sampling, fitting and serialization
+  machinery; the optimizer is the weak-dependency extension
+  `MeanFieldHomLuxExt`, evaluation needs nothing extra. Four models ship,
+  validated against the analytic ellipsoid. This is also the answer to
+  "automatic differentiation through the solve", which the finite-element
+  inclusions cannot offer: a surrogate *is* differentiable in the morphology.
+  Open extensions — a surrogate trained on `fe_axi_localization` (gate B, the
+  heterogeneous case the second type exists for); an anisotropic reference
+  medium, which needs a feature set describing it.
