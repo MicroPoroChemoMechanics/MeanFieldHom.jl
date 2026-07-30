@@ -53,6 +53,10 @@ include("backends.jl")
 include("crack.jl")
 include("excentered_sphere.jl")
 
+# The flat crack: shared gmsh geometry and the 3 + 3 driver.
+include("crack_gmsh_geometry.jl")
+include("crack_driver.jl")
+
 # The axisymmetric solver: geometry, Fourier operators, algebra, driver.
 include("axi_gmsh_geometry.jl")
 include("axi_fourier.jl")

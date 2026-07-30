@@ -103,13 +103,15 @@ struct FEEllipticCrack{T <: Number, S, B <: TensND.AbstractBasis} <: Core.Abstra
     basis::B
     mesh::FEMeshOptions
     cache::FECache
+    backend::FEBackend
 end
 
 function FEEllipticCrack(
         a::Ta, b::Tb;
         euler_angles::Tuple{Vararg{Real}} = (),
         basis::Union{Nothing, TensND.AbstractBasis} = nothing,
-        radius_ratio = 5.0, htipdiv = 12.0, order = 2
+        radius_ratio = 5.0, htipdiv = 12.0, order = 2,
+        backend::FEBackend = AutoBackend()
     ) where {Ta <: Real, Tb <: Real}
     T = Core._floatlike(promote_type(Ta, Tb))
     bas = basis === nothing ? Core._default_basis(T, euler_angles) : basis
@@ -119,7 +121,7 @@ function FEEllipticCrack(
     )
     S = Cracks._classify_crack(T, a_, b_)
     opts = FEMeshOptions(; radius_ratio, htipdiv, order)
-    return FEEllipticCrack{T, S, typeof(bas)}(a_, b_, bas, opts, FECache())
+    return FEEllipticCrack{T, S, typeof(bas)}(a_, b_, bas, opts, FECache(), backend)
 end
 
 Core.shape_trait(::FEEllipticCrack{T, S}) where {T, S} = S
@@ -131,45 +133,6 @@ function Core.shape_tensor(c::FEEllipticCrack{T}) where {T}
     D[2, 2] = c.b
     return TensND.Tens(D, c.basis)
 end
-
-# ─── Extension seam ──────────────────────────────────────────────────────────
-
-"""
-    _fe_cod_tensor(crack, C₀; kw...)
-
-Backend seam of the finite-element COD tensor. The implementation lives in the
-package extension `MeanFieldHomFerriteExt`; this fallback is hit when the
-extension is not loaded and raises an informative error.
-"""
-_fe_cod_tensor(args...; kwargs...) = error(
-    "`FEEllipticCrack` needs the Ferrite extension: run " *
-        "`import Ferrite, FerriteGmsh, Gmsh` first."
-)
-
-"""
-    fe_cod_breakdown(crack, C₀) -> NamedTuple
-
-Diagnostic view of the corrected finite-element solve — the COD tensor of the
-truncated cell, the response to the crack's own dipole far field, and the
-infinite-medium result. Implemented in `MeanFieldHomFerriteExt`; see its
-docstring once the extension is loaded.
-"""
-fe_cod_breakdown(args...; kwargs...) = error(
-    "`fe_cod_breakdown` needs the Ferrite extension: run " *
-        "`import Ferrite, FerriteGmsh, Gmsh` first."
-)
-
-"""
-    fe_mesh_report(crack) -> NamedTuple
-
-Mesh diagnostics of a finite-element inclusion (cell/dof counts, welded
-crack-front pairs, lip areas against the exact `πab`). Implemented in
-`MeanFieldHomFerriteExt`.
-"""
-fe_mesh_report(args...; kwargs...) = error(
-    "`fe_mesh_report` needs the Ferrite extension: run " *
-        "`import Ferrite, FerriteGmsh, Gmsh` first."
-)
 
 Cracks.cod_tensor(
     crack::FEEllipticCrack, C₀::TensND.AbstractTens{4, 3};

@@ -4,6 +4,46 @@
 
 ### Added
 
+- **Inclusions solved by finite elements**, `MeanFieldHom.FiniteElements`, both
+  using the finite Eshelby cell with the first-order corrected boundary
+  condition of
+  [Adessina et al. 2017](https://doi.org/10.1016/j.ijengsci.2017.03.015):
+  - `FEEllipticCrack` — flat elliptical crack in 3-D tetrahedra, whose COD
+    tensor comes out of the solve. Declaring `shape_trait` and supplying
+    `cod_tensor` is enough for ℍ, ℕ, 𝐑, 𝐍_K, the bundled pair and the four
+    `delta_*` to be inherited, so it drops into every scheme, `symmetrize`
+    included.
+  - `FEExcenteredSphere` — sphere with an off-centre spherical core, solved by
+    **axisymmetric Fourier elements** (modes 0/1/2 in elasticity, 0/1 in
+    transport). Three assemblies and eight solves in two dimensions where the
+    three-dimensional formulation needs six solves on a mesh two orders of
+    magnitude larger. Heterogeneous, so it enters through gate B with both
+    localization tensors measured in one pass; it also supplies exact `Voigt`
+    and `Reuss` bounds, since the geometry fixes its internal volume fractions.
+  - Memoization on the reference medium in the inclusion's local frame:
+    under `IsoSymmetrize` / `TISymmetrize` a whole family of orientations
+    shares a single solve. `fe_assembly_count` / `fe_reset!` to inspect it.
+  - Diagnostics `fe_mesh_report`, `fe_cod_breakdown`, `fe_axi_mesh_report`,
+    `fe_axi_breakdown` — the last returning the **uncorrected** tensors beside
+    the corrected ones, which is how the correction is shown to work.
+- **A two-backend contract for the finite-element solves.** The physics —
+  Fourier operators, boundary data, the polarization fixed point, the
+  memoization — lives in `src/FiniteElements/`; a backend supplies only the
+  discretization, through nine generics (`FEBackend`, `backends.jl`).
+  - `FerriteBackend` (`MeanFieldHomFerriteExt`, needs `Ferrite`, `FerriteGmsh`,
+    `Gmsh`) serves both morphologies.
+  - `GridapBackend` (`MeanFieldHomGridapExt`, needs `Gridap`, `GridapGmsh`)
+    serves the axisymmetric one, stating the weak form directly rather than
+    looping over elements.
+  - `AutoBackend`, the default, resolves at the **first solve** and is then
+    pinned: an inclusion can be built and stored in an `RVE` with no
+    finite-element package loaded.
+  - The two backends build the same discrete system and agree to round-off
+    (≈ 10⁻¹⁴ on every tensor, both physics), which `test_axi_gridap.jl`
+    asserts at 10⁻⁸.
+- **Isotropic Kelvin dipole field** in `Core`: `green_gradient_iso`,
+  `dipole_displacement_iso` — the far field a polarized inclusion radiates,
+  and the ingredient of the corrected boundary condition.
 - **Compliance formulation of the differential scheme.**
   `DifferentialScheme(; formulation = :compliance)` integrates the dual ODE
   `dS/dτ = Σ φ̇ᵢ ℍᵢ(S)` and inverts the result, instead of
@@ -110,6 +150,39 @@
   bituminous application, have been corrected.
 
 ### Fixed
+
+- **A heterogeneous inclusion no longer contributes zero.** The generic
+  contribution tensors (`stiffness_contribution` and its three siblings) went
+  through `(C₁ − C₀) : 𝔸`, which is meaningless when the inclusion has no
+  single `C₁` — and evaluated to zero for `FEExcenteredSphere`. They now switch
+  to the exact identities `ℕ = 𝔸_σε − ℂ₀ : 𝔸_εε` and
+  `ℍ = (𝔸_εε − 𝕊₀ : 𝔸_σε) : 𝕊₀` when `is_homogeneous_inclusion` is false, which
+  makes gate B a complete entry point for a heterogeneous morphology.
+- **`AsymmetricSelfConsistent` no longer depends on the bounds.** Nothing in
+  the asymmetric algorithm needs one; only the heuristic that chooses once
+  between the stiffness and the compliance form evaluated `Voigt`. It now falls
+  back to the dilute estimate when the phases expose no layer-wise average, so
+  the scheme is available wherever `SelfConsistent` is. New predicate
+  `Schemes.has_layer_average` in place of a `try`/`catch`.
+- **The isotropy guard of the axisymmetric solver was too tight.** At `rtol =
+  1e-8` it refused `SelfConsistent` and `AsymmetricSelfConsistent` on a
+  perfectly legitimate isotropic problem: the tensors the solver *returns* are
+  isotropic only to the discretization error, a few parts in a million, so an
+  iterative scheme can never feed back a reference isotropic to machine
+  precision. Relaxed to `1e-4`; genuine anisotropy is orders of magnitude
+  larger.
+- **Endpoints of the axisymmetric mesh's boundary curves are now declared.** A
+  gmsh physical group has a dimension, so a group of curves does not carry its
+  own bounding points — three dofs on the outer sphere and six on the axis were
+  left free by a backend that reads boundary conditions off entity labels
+  rather than off mesh facets. Cost: one order of convergence, under the
+  appearance of discretization error.
+- **Analytic sensitivity through a finite-element geometry is refused instead
+  of returning zero.** `_replace_geom_field` copies non-numeric fields by
+  reference, so the perturbed inclusion shared the original's `FECache` — whose
+  key is the reference medium alone — and served back the unperturbed tensors.
+  The derivative came out as exactly zero, with no warning. Use a finite
+  difference over freshly constructed inclusions.
 
 - **`method = :nestedquadgk` no longer raises a method ambiguity on an
   isotropic reference.** The `TensISO` disambiguation rules existed for

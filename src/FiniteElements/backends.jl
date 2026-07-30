@@ -227,3 +227,88 @@ The azimuthal integration has already been performed analytically inside
 """
 fe_axi_average(b::FEBackend, mode, Dmap, u, Bop, proj, sets) =
     _no_backend_method("fe_axi_average", b)
+
+# ─── The crack contract ──────────────────────────────────────────────────────
+#
+#  Seven more methods, the flat-crack counterpart of the nine above.  The
+#  problem is simpler — one vector field, one material, Dirichlet on the outer
+#  sphere only — so the seam is narrower.
+
+"""
+    fe_crack_grid(backend, crack)
+
+Backend-native mesh of the ball holding the crack, with the boundary sets
+`"outer"` (the sphere) and `"crack"` (both lips, whose nodes the gmsh `Crack`
+plugin has duplicated). The crack front must already be welded — see
+[`_weld_msh_crack_front`](@ref).
+"""
+fe_crack_grid(b::FEBackend, crack) = _no_backend_method("fe_crack_grid", b)
+
+"""
+    fe_crack_counts(backend, grid) -> (; ncells, nnodes, nfacets_up, nfacets_dn,
+                                         area_up, area_dn)
+
+Mesh diagnostics: cell and node counts, and the facet count and area of each
+lip. The two areas must both equal `πab` — that is what says the plugin split
+the surface cleanly and the front weld did not glue the lips back together.
+"""
+fe_crack_counts(b::FEBackend, grid) = _no_backend_method("fe_crack_counts", b)
+
+"""
+    fe_crack_space(backend, grid, order) -> space
+
+A vector-valued Lagrange space of degree `order` over the whole mesh, with a
+quadrature exact to degree `2 * order` and **no** Dirichlet elimination — the
+driver splits the dofs itself so that one factorization serves all six
+right-hand sides.
+
+The lips need no special treatment: they are traction-free naturally, because
+their nodes are distinct. There is no interface term, no multiplier and no
+contact condition anywhere in this problem.
+"""
+fe_crack_space(b::FEBackend, grid, order) = _no_backend_method("fe_crack_space", b)
+
+"""
+    fe_crack_dof_split(backend, space) -> (ndofs, free, presc)
+
+Total dof count and the two index vectors, `presc` being the dofs of the outer
+sphere.
+"""
+fe_crack_dof_split(b::FEBackend, space) = _no_backend_method("fe_crack_dof_split", b)
+
+"""
+    fe_crack_set_dirichlet!(backend, space, u, f) -> u
+
+Write `u[d] = f(x_d)[k]` for every dof `d` of the outer sphere, `x_d` its node
+and `k` its component. Called once per right-hand side; must not touch the
+matrix.
+"""
+fe_crack_set_dirichlet!(b::FEBackend, space, u, f) =
+    _no_backend_method("fe_crack_set_dirichlet!", b)
+
+"""
+    fe_crack_stiffness(backend, space, C) -> AbstractMatrix
+
+Stiffness of linear elasticity, `∫ ε(v) : ℂ : ε(u) dΩ`, over the whole dof
+numbering.
+
+`C` is a `Tensors.SymmetricTensor{4,3}` and is **isotropic**: the corrected
+boundary condition uses the closed-form Kelvin dipole field, so the driver
+refuses anything else long before reaching here. A backend may therefore work
+from `(λ, μ)` instead of from the full tensor.
+"""
+fe_crack_stiffness(b::FEBackend, space, C) = _no_backend_method("fe_crack_stiffness", b)
+
+"""
+    fe_crack_mean_jump(backend, space, u, S_f, b) -> Vector{3}
+
+`⟨[[u]]⟩ / b`, the opening averaged over the crack surface and normalized by
+the semi-minor axis — the convention of `cod_tensor`.
+
+Measured as a surface integral of the trace of `u` on each lip, with no
+assumption on the opening profile. The two lips are told apart by the sign of
+`n ⋅ e₃`, `n` being the outward normal of the adjacent element: the lip whose
+element sits above the crack carries `n = -e₃` and contributes `+u`.
+"""
+fe_crack_mean_jump(bk::FEBackend, space, u, S_f, b) =
+    _no_backend_method("fe_crack_mean_jump", bk)

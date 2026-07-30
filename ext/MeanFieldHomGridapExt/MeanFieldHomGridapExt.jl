@@ -35,9 +35,12 @@ using Gridap
 using Gridap.FESpaces: get_cell_dof_ids
 using Gridap.Geometry: num_nodes
 using Gridap.MultiField: MultiFieldFESpace
+# `⊙` is exported by both Gridap and TensND; the explicit import settles it.
+using Gridap.TensorValues: ⊙
 using GridapGmsh
 using GridapGmsh: gmsh
 using LinearAlgebra
+using Tensors
 
 const FE = MeanFieldHom.FiniteElements
 const GB = FE.GridapBackend
@@ -273,6 +276,146 @@ function FE.fe_axi_average(::GB, ms::GridapAxiMode, Dmap, u, Bop, proj, sets)
         V += sum(∫(ρ)dΩ)
     end
     return prim ./ V, dual ./ V, 2π * V
+end
+
+# ═══ The flat crack ══════════════════════════════════════════════════════════
+#
+#  The crack is a zero-thickness discontinuity: the gmsh `Crack` plugin
+#  duplicates the nodes of the lips, and `GmshDiscreteModel` carries them
+#  through untouched — same node and cell counts as the Ferrite import — so
+#  each lip face belongs to exactly one tetrahedron and is a genuine boundary
+#  face. Nothing has to be said about the lips: they are traction-free because
+#  the mesh says so.
+
+"Vector-valued space of the crack problem, plus what the seam needs."
+struct GridapCrackSpace{S, T, O, M, N}
+    V::S
+    U::T
+    ndofs::Int
+    dΩ::O                                    # the ball
+    Γ::M                                     # both lips
+    dΓ::N
+    up::Vector{Float64}                      # -(n⋅e₃) per face: +1 on the upper lip
+    coords::NTuple{3, Vector{Float64}}       # (x, y, z) of every dof
+    comp::Vector{Int}                        # which component each dof carries
+    outer::Vector{Int}
+    presc::Vector{Int}
+    free::Vector{Int}
+end
+
+const _E3 = VectorValue(0.0, 0.0, 1.0)
+
+function FE.fe_crack_grid(::GB, crack::MeanFieldHom.FEEllipticCrack)
+    a, b = Float64(crack.a), Float64(crack.b)
+    opts = crack.mesh
+    path = joinpath(mktempdir(), "mfh_crack.msh")
+    gmsh.initialize()
+    try
+        gmsh.option.setNumber("General.Terminal", 0)
+        FE._build_gmsh_crack_model(gmsh, a, b, opts.radius_ratio * a, opts.htipdiv)
+        gmsh.write(path)
+    finally
+        gmsh.finalize()
+    end
+    nweld = FE._weld_msh_crack_front(path, a, b)
+    nweld == 0 && @warn "no crack-front node pair was welded — the crack front " *
+        "may be split, which overestimates the opening" a b
+    return redirect_stdout(devnull) do
+        GmshDiscreteModel(path)
+    end
+end
+
+"Sign that tells the two lips apart: `-(n⋅e₃)`, one value per crack face."
+function _lip_sign(Γ, dΓ)
+    vals = (get_normal_vector(Γ) ⋅ _E3)(get_cell_points(dΓ))
+    return [-first(v) for v in vals]
+end
+
+function FE.fe_crack_counts(::GB, model)
+    Γ = BoundaryTriangulation(model, tags = FE.SET_CRACK)
+    dΓ = Measure(Γ, 2)
+    up = _lip_sign(Γ, dΓ)
+    n = get_normal_vector(Γ)
+    # `n⋅e₃` is exactly ∓1 on a flat crack, so these two integrands are the
+    # indicator functions of the lips.
+    area_up = sum(∫((1 - n ⋅ _E3) / 2)dΓ)
+    area_dn = sum(∫((1 + n ⋅ _E3) / 2)dΓ)
+    return (;
+        ncells = num_cells(model),
+        nnodes = num_nodes(model),
+        nfacets_up = count(>(0), up),
+        nfacets_dn = count(<(0), up),
+        area_up, area_dn,
+    )
+end
+
+function FE.fe_crack_space(::GB, model, order::Int)
+    reffe = ReferenceFE(lagrangian, VectorValue{3, Float64}, order)
+    V = TestFESpace(model, reffe; conformity = :H1)      # no Dirichlet tags
+    U = TrialFESpace(V)
+    ndofs = num_free_dofs(V)
+
+    Ω = Triangulation(model)
+    dΩ = Measure(Ω, 2 * order)
+    Γ = BoundaryTriangulation(model, tags = FE.SET_CRACK)
+    dΓ = Measure(Γ, 2 * order)
+
+    # Dof geometry, read off interpolations: on a nodal Lagrange space,
+    # interpolating a function stores its value in each dof's own slot. Feeding
+    # the same coordinate to all three components gives that dof's abscissa
+    # whatever component it carries; feeding (1,2,3) gives the component index.
+    coord(k) = get_free_dof_values(
+        interpolate(x -> VectorValue(x[k], x[k], x[k]), V)
+    )
+    comp = round.(Int, get_free_dof_values(
+            interpolate(_ -> VectorValue(1.0, 2.0, 3.0), V)
+        ))
+
+    outer = _boundary_dofs(V, model, reffe,
+        [FE.SET_OUTER, FE.SET_OUTER_EDGES, FE.SET_OUTER_PTS])
+    presc = sort!(outer)
+    free = setdiff(1:ndofs, presc)
+    return GridapCrackSpace(
+        V, U, ndofs, dΩ, Γ, dΓ, _lip_sign(Γ, dΓ),
+        (collect(coord(1)), collect(coord(2)), collect(coord(3))),
+        comp, outer, presc, free
+    )
+end
+
+FE.fe_crack_dof_split(::GB, s::GridapCrackSpace) = (s.ndofs, s.free, s.presc)
+
+function FE.fe_crack_set_dirichlet!(::GB, s::GridapCrackSpace, u, f)
+    xs, ys, zs = s.coords
+    for d in s.outer
+        u[d] = f((xs[d], ys[d], zs[d]))[s.comp[d]]
+    end
+    return u
+end
+
+"""
+    fe_crack_stiffness(GridapBackend(), space, C)
+
+`∫ ε(v) : ℂ : ε(u) dΩ`, written in Lamé form. The driver's isotropy guard has
+already refused any other reference medium — the corrected boundary condition
+needs the closed-form Kelvin dipole — so reading `(λ, μ)` off `C` is exact, not
+an approximation.
+"""
+function FE.fe_crack_stiffness(
+        ::GB, s::GridapCrackSpace, C::Tensors.SymmetricTensor{4, 3, Float64}
+    )
+    λ, μ = C[1, 1, 2, 2], C[1, 2, 1, 2]
+    σ(e) = λ * tr(e) * one(e) + 2μ * e
+    a(u, v) = ∫(ε(v) ⊙ (σ ∘ ε(u)))s.dΩ
+    return assemble_matrix(a, s.U, s.V)
+end
+
+function FE.fe_crack_mean_jump(
+        ::GB, s::GridapCrackSpace, u::Vector{Float64}, S_f::Float64, b::Float64
+    )
+    uh = FEFunction(s.U, u)
+    n = get_normal_vector(s.Γ)
+    acc = sum(∫((-(n ⋅ _E3)) * uh)s.dΓ)
+    return collect(Tuple(acc)) ./ (S_f * b)
 end
 
 end # module
