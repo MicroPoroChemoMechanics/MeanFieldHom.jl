@@ -186,6 +186,7 @@ component_labels(::HillISO) = [:α, :β]
 component_labels(::HillTI) = [:ℓ₁, :ℓ₂, :ℓ₃, :ℓ₅, :ℓ₆]
 component_labels(::HillISO2) = [:p]
 component_labels(::HillTI2) = [:a, :b]
+component_labels(::Union{StrainLocTI, StressLocTI}) = [:ℓ₁, :ℓ₂, :ℓ₃, :ℓ₄, :ℓ₅, :ℓ₆]
 component_labels(::HillOrtho) =
     [:C₁₁, :C₂₂, :C₃₃, :C₁₂, :C₁₃, :C₂₃, :C₄₄, :C₅₅, :C₆₆]
 
@@ -193,7 +194,7 @@ component_labels(::HillOrtho) =
     component_labels(spec::AbstractOutputSpec) -> Vector{Symbol}
 
 Names of the network's outputs. For [`AffineHill`](@ref) the class labels are
-repeated once per shape tensor, suffixed `𝕌` and `𝕎`.
+repeated once per shape tensor, suffixed `𝕌` and `𝕍`.
 """
 component_labels(spec::DimensionlessHill) = component_labels(spec.class)
 
@@ -202,6 +203,6 @@ function component_labels(spec::AffineHill)
     nterms(spec) == 1 && return base
     return vcat(
         [Symbol(b, "(𝕌)") for b in base],
-        [Symbol(b, "(𝕎)") for b in base],
+        [Symbol(b, "(𝕍)") for b in base],
     )
 end

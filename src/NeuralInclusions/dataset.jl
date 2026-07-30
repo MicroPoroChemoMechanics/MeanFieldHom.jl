@@ -251,7 +251,7 @@ What the labels are depends on `spec`:
   medium built from the sampled `ν₀` (elasticity) or at unit conductivity
   (transport); the target is `scale · ℙ`.
 - [`AffineHill`](@ref) — two `response` calls per sample at two different
-  Poisson ratios, and the shape tensors `𝕌ᴬ`, `𝕎ᴬ` are recovered by solving the
+  Poisson ratios, and the shape tensors `𝕌ᴬ`, `𝕍ᴬ` are recovered by solving the
   exact 2×2 affine system componentwise. `ν₀` must *not* be in the box: the
   whole point is that it is not a degree of freedom.
 """
@@ -325,7 +325,7 @@ function _label_one(response, spec::AffineHill, _box::SampleBox, geom, frame, _x
     class = spec.class
     nc = ncomponents(class)
     if tensor_order(class) == 2
-        # A single term: ℙ_K = 𝕎ᴬ/k₀, so one call at unit conductivity is exact.
+        # A single term: ℙ_K = 𝕍ᴬ/k₀, so one call at unit conductivity is exact.
         K₀ = TensND.TensISO{3}(1.0)
         return collect(Float64, components(class, response(geom, K₀), frame))
     end
@@ -345,7 +345,7 @@ function _label_one(response, spec::AffineHill, _box::SampleBox, geom, frame, _x
     z = Vector{Float64}(undef, 2nc)
     for i in 1:nc
         z[i] = (m_b * c_a[i] - m_a * c_b[i]) / det          # 𝕌ᴬ component
-        z[i + nc] = (d_a * c_b[i] - d_b * c_a[i]) / det     # 𝕎ᴬ component
+        z[i + nc] = (d_a * c_b[i] - d_b * c_a[i]) / det     # 𝕍ᴬ component
     end
     return z
 end
@@ -435,7 +435,7 @@ passes through zero — the Walpole `ℓ₃` of a near-spherical inclusion — d
 report an unbounded error. When a component is **identically** zero over the
 whole set the floor falls back to the global RMS instead, which turns a `0/0`
 into the honest statement "this component is that fraction of the tensor's
-magnitude". A structurally-vanishing component is not a rarity: `𝕎ᴬ` has no `ℓ₃`
+magnitude". A structurally-vanishing component is not a rarity: `𝕍ᴬ` has no `ℓ₃`
 at all, since the analytic kernel gives `p₃ = d·u₃` with no `1/μ₀` term.
 """
 function validate_surrogate(s::NeuralSurrogate, data::Dataset)

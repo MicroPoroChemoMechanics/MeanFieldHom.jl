@@ -72,7 +72,7 @@ Halton sample with a held-out set drawn from the same sequence; `ω` is the
 | `spheroid_hill_iso_elastic` | `2μ₀ℙ`, `TensTI{4,·,5}` | `log_aspect`, `nu0` | `ω ∈ [1/20, 20]`, `ν₀ ∈ [0, 0.49]` | 2→48→48→5 | 6000 / 1500 | `3.1e-3` |
 | `spheroid_hill_iso_conduction` | `k₀ℙ_K`, `TensTI{2,·,2}` | `log_aspect` | `ω ∈ [1/20, 20]` | 1→32→32→2 | 3000 / 800 | `2.1e-4` |
 | `triaxial_hill_iso_elastic` | `2μ₀ℙ`, `TensOrtho` | `log_r2`, `log_r32`, `nu0` | `a₂/a₁, a₃/a₂ ∈ [1/20, 1/1.05]`, `ν₀ ∈ [0, 0.49]` | 3→64→64→9 | 12000 / 3000 | `6.7e-3` |
-| `spheroid_hill_iso_affine` | `𝕌ᴬ` and `𝕎ᴬ`, `TensTI{4,·,5}` | `log_aspect` | `ω ∈ [1/20, 20]`, **any** `ν₀` | 1→48→48→10 | 6000 / 1500 | `2.6e-4` |
+| `spheroid_hill_iso_affine` | `𝕌ᴬ` and `𝕍ᴬ`, `TensTI{4,·,5}` | `log_aspect` | `ω ∈ [1/20, 20]`, **any** `ν₀` | 1→48→48→10 | 6000 / 1500 | `2.6e-4` |
 
 "Worst error" is `worst_error(s.provenance)`: the largest error over the held-out
 set, in the ∞-norm of the component vector relative to its own magnitude. It is
@@ -170,8 +170,10 @@ trained:
 - **Zero contrast.** Gate A supplies `ℙ`, and the package evaluates
   `𝔸_εε = [𝕀 + ℙ:(ℂ₁−ℂ₀)]⁻¹` exactly, so `ℂ₁ = ℂ₀ ⟹ 𝔸 = 𝕀`. The eight
   localization tensors also stay exactly consistent with one another — which a
-  surrogate predicting `𝔸` could not guarantee, `𝔸` having no major symmetry (8
-  transversely isotropic components rather than 5).
+  surrogate predicting `𝔸` could not guarantee. `𝔸_εε` has **no major symmetry**,
+  so it needs the 6-component transversely isotropic form where `ℙ` needs 5; for
+  an oblate spheroid its major-symmetry defect is around 10 %, and forcing it onto
+  the 5-component form loses a few percent.
 - **Homogeneity.** `ℙ(λℂ₀) = ℙ(ℂ₀)/λ`. The network never sees an absolute
   modulus, only the shape and `ν₀`.
 - **Symmetry class, major symmetry and frame.** The decoder emits a structured
@@ -180,15 +182,26 @@ trained:
 
 ### [Removing `ν₀` from the inputs](@id man-neural-affine)
 
-For an isotropic reference medium the Hill tensor is exactly affine in two
-material scalars,
+This is the **shape/moduli factorization** of
+[Hill polarization tensors](@ref th-hill-tensors), regrouped. That page states
 
 ```math
-\mathbb P = d\,\mathbb U^{\mathbf A} + \frac{1}{\mu_0}\,\mathbb W^{\mathbf A},
+\mathbb P\bigl(\boldsymbol A,\, 3\lambda_0\mathbb I + 2\mu_0\mathbb K\bigr)
+= \frac{1}{\lambda_0 + 2\mu_0}\,\mathbb U^{\boldsymbol A}
++ \frac{1}{\mu_0}\bigl(\mathbb V^{\boldsymbol A} - \mathbb U^{\boldsymbol A}\bigr),
+```
+
+with the geometric auxiliaries
+[`tens_UA`](@ref MeanFieldHom.tens_UA) and
+[`tens_VA`](@ref MeanFieldHom.tens_VA) depending on the **shape alone**.
+Collecting the two terms on `𝕌ᴬ` and `𝕍ᴬ` gives
+
+```math
+\mathbb P = d\,\mathbb U^{\boldsymbol A} + \frac{1}{\mu_0}\,\mathbb V^{\boldsymbol A},
 \qquad d = \frac{1}{\lambda_0 + 2\mu_0} - \frac{1}{\mu_0},
 ```
 
-with `𝕌ᴬ` and `𝕎ᴬ` functions of the shape alone.
+which is affine in the two material scalars `(d, 1/μ₀)`.
 [`AffineHill`](@ref MeanFieldHom.AffineHill) exploits it: the network predicts
 those two tensors — twice the components, one fewer input — and the decoder
 contracts them with the exact coefficients. The whole material dependence becomes

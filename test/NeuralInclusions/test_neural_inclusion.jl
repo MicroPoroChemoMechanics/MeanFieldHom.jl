@@ -492,6 +492,148 @@ end
     end
 end
 
+@testset "NeuralInclusions — the localization classes carry six components" begin
+    # A localization tensor is not major-symmetric, so it needs the 6-component
+    # transversely isotropic form where a Hill tensor needs 5 — and not the
+    # 8-component one, whose `ℓ₇`, `ℓ₈` are antisymmetric in an index pair and
+    # vanish for anything mapping symmetric strains to symmetric stresses.
+    axis = (0.0, 0.0, 1.0)
+    ell = Ellipsoid(1.0, 1.0, 0.4)
+    P = hill_tensor(ell, NN_C_M)
+    A = strain_strain_loc(ell, NN_C_I, NN_C_M)
+
+    _major_defect(t) = let M = Array(TensND.components_canon(t))
+        maximum(abs, M .- permutedims(M, (3, 4, 1, 2))) / maximum(abs, M)
+    end
+
+    @testset "ℙ is major-symmetric, 𝔸_εε is not" begin
+        @test _major_defect(P) < 1.0e-14
+        @test _major_defect(A) > 1.0e-3          # ~11 % for this contrast
+    end
+
+    @testset "component counts" begin
+        @test NI.ncomponents(NI.StrainLocTI()) == 6
+        @test NI.ncomponents(NI.StressLocTI()) == 6
+        @test NI.tensor_order(NI.StrainLocTI()) == 4
+        @test length(NI.components(NI.StrainLocTI(), A, axis)) == 6
+        # The 5-component form genuinely loses something.
+        @test_throws ArgumentError NI.components(NI.HillTI(), A, axis)
+    end
+
+    @testset "build ∘ components is the identity on a TI localization tensor" begin
+        c = NI.components(NI.StrainLocTI(), A, axis)
+        rebuilt = NI.build(NI.StrainLocTI(), collect(c), axis)
+        @test Array(TensND.components_canon(rebuilt)) ≈
+            Array(TensND.components_canon(A)) atol = 1.0e-12
+        @test length(TensND.get_data(rebuilt)) == 6
+    end
+
+    @testset "the antisymmetric couplings vanish" begin
+        for t in (P, A, stress_strain_loc(ell, NN_C_I, NN_C_M))
+            l8 = TensND.get_ℓ8(MeanFieldHom.transverse_isotropify(t, axis))
+            @test abs(l8[7]) < 1.0e-14
+            @test abs(l8[8]) < 1.0e-14
+        end
+    end
+
+    @testset "the two differ only by their dimension" begin
+        # 𝔸_εε is of degree 0 in the moduli, 𝔸_σε of degree +1.
+        @test NI.dimensionless_scale(NI.StrainLocTI(), NN_C_M) == 1
+        @test NI.dimensionless_scale(NI.StressLocTI(), NN_C_M) ≈
+            inv(TensND.get_data(NN_C_M)[2])
+    end
+
+    @testset "no affine factorization for a localization tensor" begin
+        # `ℙ = d·𝕌ᴬ + 𝕎ᴬ/μ₀` belongs to the Hill tensor, not to 𝔸.
+        @test_throws ArgumentError NI.material_coeffs(NI.StrainLocTI(), NN_C_M)
+    end
+end
+
+@testset "NeuralInclusions — morphology parameters as features" begin
+    box = NI.SampleBox(
+        [:eccentricity, :core_fraction, :log_mu_ratio_2],
+        [0.0, 0.2, log(0.1)], [0.8, 0.7, log(2.0)]
+    )
+    sA = _nn_untrained(NI.DimensionlessHill(NI.StrainLocTI()), box)
+    sB = _nn_untrained(NI.DimensionlessHill(NI.StressLocTI()), box; seed = 5)
+    C2 = iso_stiffness(4.0, 1.5)
+
+    incl = NeuralLocalizationInclusion(
+        (1.0, 1.0, 1.0); strain = sA, stress = sB,
+        shape_params = (; eccentricity = 0.4, core_fraction = 0.5),
+        fractions = (0.5, 0.5), properties = (NN_C_I, C2), guard = :none
+    )
+
+    @testset "the features are read off the morphology and the contrast" begin
+        x = NI.raw_features(incl, sA, NN_C_M)
+        @test x[1] ≈ 0.4
+        @test x[2] ≈ 0.5
+        @test x[3] ≈ log(k_mu(C2)[2] / k_mu(NN_C_M)[2])
+    end
+
+    @testset "an unnamed parameter is refused" begin
+        bad = NI.SampleBox([:not_a_parameter], [0.0], [1.0])
+        s = _nn_untrained(NI.DimensionlessHill(NI.StrainLocTI()), bad)
+        i2 = NeuralLocalizationInclusion(
+            (1.0, 1.0, 1.0); strain = s, stress = s, guard = :none
+        )
+        @test_throws ArgumentError strain_strain_loc(i2, NN_C_I, NN_C_M)
+    end
+
+    @testset "a contrast feature needs the constituents" begin
+        i3 = NeuralLocalizationInclusion(
+            (1.0, 1.0, 1.0); strain = sA, stress = sB,
+            shape_params = (; eccentricity = 0.4, core_fraction = 0.5), guard = :none
+        )
+        @test_throws ArgumentError strain_strain_loc(i3, NN_C_I, NN_C_M)
+    end
+
+    @testset "the pair answers, and the contributions take the exact branch" begin
+        A = strain_strain_loc(incl, NN_C_I, NN_C_M)
+        B = stress_strain_loc(incl, NN_C_I, NN_C_M)
+        @test length(TensND.get_data(A)) == 6
+        @test length(TensND.get_data(B)) == 6
+        N = stiffness_contribution(incl, NN_C_I, NN_C_M)
+        @test get_array(N) ≈ get_array(B - NN_C_M ⊡ A) atol = 1.0e-12
+        @test check_inclusion_interface(incl; verbose = false)
+    end
+
+    @testset "ForwardDiff reaches a morphology parameter" begin
+        # The capability the finite-element inclusion refuses. `shape_params`
+        # carries its own type parameter precisely so that perturbing it does not
+        # have to perturb the semi-axes too.
+        idx = C -> get_array(C)[1, 1, 1, 1]
+        function rve_of(α)
+            i = NeuralLocalizationInclusion(
+                (1.0, 1.0, 1.0); strain = sA, stress = sB,
+                shape_params = (; eccentricity = α, core_fraction = 0.5),
+                fractions = (0.5, 0.5), properties = (NN_C_I, C2), guard = :none
+            )
+            r = RVE(:M)
+            add_matrix!(r, Ellipsoid(1.0), Dict(:C => NN_C_M))
+            add_phase!(r, :I, i, Dict(:C => NN_C_M); fraction = 0.3)
+            return r
+        end
+        d = derivative(
+            rve_of(0.4), MoriTanaka(), geometry(:I, :shape_params, 1); indexer = idx
+        )
+        h = 1.0e-6
+        fd = (
+            idx(homogenize(rve_of(0.4 + h), MoriTanaka())) -
+                idx(homogenize(rve_of(0.4 - h), MoriTanaka()))
+        ) / (2h)
+        @test d ≈ fd rtol = 1.0e-5
+        @test abs(d) > 1.0e-6                    # not accidentally zero
+    end
+
+    @testset "shape parameters must be numbers" begin
+        @test_throws ArgumentError NeuralLocalizationInclusion(
+            (1.0, 1.0, 1.0); strain = sA, stress = sB,
+            shape_params = (; eccentricity = "a lot"), guard = :none
+        )
+    end
+end
+
 @testset "NeuralInclusions — constructor guard rails" begin
     s4 = _nn_untrained(NI.DimensionlessHill(NI.HillTI()), _NN_SPHEROID_BOX4)
     s2 = _nn_untrained(NI.DimensionlessHill(NI.HillTI2()), _NN_SPHEROID_BOX2)

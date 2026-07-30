@@ -129,6 +129,7 @@ makedocs(;
                 "tutorials/generated/symmetrization.md",
                 "tutorials/generated/custom_inclusion_contract.md",
                 "tutorials/generated/neural_inclusion.md",
+                "tutorials/generated/neural_excentered_sphere.md",
             ],
             "Beyond elasticity" => [
                 "tutorials/viscoelasticity.md",

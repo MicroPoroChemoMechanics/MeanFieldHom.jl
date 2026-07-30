@@ -148,6 +148,7 @@ export NeuralHillInclusion, NeuralLocalizationInclusion, NeuralShape
 export NeuralSurrogate, Provenance, worst_error
 export save_surrogate, load_surrogate, model_path, shipped_models
 export HillISO, HillTI, HillOrtho, HillISO2, HillTI2
+export StrainLocTI, StressLocTI
 export DimensionlessHill, AffineHill
 export SampleBox, Dataset, generate_dataset, fit_scaling
 export TrainingOptions, train_surrogate, assemble_surrogate

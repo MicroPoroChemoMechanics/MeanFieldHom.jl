@@ -76,3 +76,34 @@ code:not([class]) {
     .content table thead tr { background-color: #2a5a8a; }
     .content table tbody tr:nth-child(even) { background-color: rgba(91, 164, 232, 0.08); }
 }
+
+/* ── Mermaid diagrams ──────────────────────────────────────────────────────
+ * DocumenterMermaid emits an <svg> carrying the intrinsic width mermaid
+ * computed from the text, which on a wide flowchart is a fraction of the
+ * column: the diagram renders correct but unreadably small. Letting it take
+ * the full content width and scale its height with it is what makes the
+ * architecture and pipeline figures legible.
+ */
+.mermaid {
+    width: 100%;
+    margin: 1.5rem 0;
+    text-align: center;
+}
+
+.mermaid svg {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* A wide flowchart is allowed to scroll rather than shrink further on a narrow
+ * screen — legibility beats fitting. */
+@media (max-width: 900px) {
+    .mermaid {
+        overflow-x: auto;
+    }
+    .mermaid svg {
+        width: auto !important;
+        min-width: 780px;
+    }
+}

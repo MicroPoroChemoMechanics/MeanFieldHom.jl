@@ -23,7 +23,7 @@
     (a structured TensND type from the right number of components), homogeneity
     in the reference moduli (`ℙ(λℂ₀) = ℙ(ℂ₀)/λ`), and frame indifference.
     `AffineHill` goes further and removes `ν₀` from the inputs altogether, using
-    the exact affine structure `ℙ = d·𝕌ᴬ + 𝕎ᴬ/μ₀` of the isotropic-matrix Hill
+    the exact affine structure `ℙ = d·𝕌ᴬ + 𝕍ᴬ/μ₀` of the isotropic-matrix Hill
     tensor — one input fewer and an order of magnitude more accurate than
     `DimensionlessHill` at equal network size.
   - The learning system: `SampleBox` + Halton low-discrepancy sampling (no RNG

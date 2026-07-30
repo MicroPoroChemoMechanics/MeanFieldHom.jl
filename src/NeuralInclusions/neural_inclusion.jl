@@ -113,12 +113,62 @@ _feature(::Val{:nu0}, _incl, P₀::TensND.AbstractTens) = throw(
     )
 )
 
-_feature(::Val{name}, _incl, _P₀) where {name} = throw(
+# Contrast ratios, on the shear modulus.  A heterogeneous morphology carries its
+# constituents inside itself, so `𝔸` depends on `ℂ₀` only through the *contrast*:
+# scaling the reference medium and every constituent together leaves `𝔸_εε`
+# unchanged and multiplies `𝔸_σε` by the factor. Ratios are therefore the complete
+# and minimal material parametrization — and the reason a gate-B surrogate cannot
+# reuse the `ℙ(λℂ₀) = ℙ(ℂ₀)/λ` homogeneity of gate A.
+for k in 1:4
+    @eval function _feature(::Val{$(QuoteNode(Symbol(:log_mu_ratio_, k)))}, incl, P₀)
+        return log(_constituent_mu(incl, $k) / _matrix_mu(P₀))
+    end
+end
+
+_matrix_mu(C₀::TensND.TensISO{4, 3}) = Elasticity.k_mu(C₀)[2]
+
+_matrix_mu(P₀::TensND.AbstractTens) = throw(
     ArgumentError(
-        "unknown surrogate feature :$name — add a `_feature(::Val{:$name}, incl, P₀)` " *
-            "method for the geometry that defines it"
+        "a contrast feature needs an isotropic reference medium and got a " *
+            "$(nameof(typeof(P₀)))"
     )
 )
+
+function _constituent_mu(incl, k::Int)
+    props = _constituents(incl)
+    props === nothing && throw(
+        ArgumentError(
+            "this inclusion declares no constituents, so it has no contrast " *
+                "feature. Pass `properties = (ℂ₁, ℂ₂, …)` at construction."
+        )
+    )
+    k ≤ length(props) || throw(
+        ArgumentError(
+            "feature :log_mu_ratio_$k asks for constituent $k but the inclusion " *
+                "carries $(length(props))"
+        )
+    )
+    return Elasticity.k_mu(props[k])[2]
+end
+
+_constituents(_incl) = nothing
+
+# A morphology parameter the surrogate names — `:eccentricity`, `:core_fraction`,
+# anything the type chose to expose. Looked up before giving up, so that adding a
+# parameter is a constructor argument rather than a new method.
+_shape_param(_incl, ::Symbol) = nothing
+
+function _feature(::Val{name}, incl, _P₀) where {name}
+    v = _shape_param(incl, name)
+    v === nothing && throw(
+        ArgumentError(
+            "unknown surrogate feature :$name — either name it in the inclusion's " *
+                "`shape_params`, or add a `_feature(::Val{:$name}, incl, P₀)` method " *
+                "for the geometry that defines it"
+        )
+    )
+    return v
+end
 
 """
     raw_features(incl, s::NeuralSurrogate, P₀) -> Vector
@@ -335,7 +385,15 @@ complete entry point.
 |---|---|
 | `strain` / `stress` | the order-4 pair, `𝔸_εε` and `𝔸_σε` |
 | `gradient` / `flux` | the order-2 pair, `𝔸_∇∇` and `𝔸_q∇` |
-| `fractions` / `properties` | internal volume fractions and constituent properties; supplying them unlocks the `Voigt` and `Reuss` bounds, which a heterogeneous inclusion cannot otherwise serve |
+| `shape_params` | named morphology parameters, e.g. `(; eccentricity = 0.4, core_fraction = 0.5)`. They are the surrogate's features *and* the fields the sensitivity API differentiates, so every value must be a `Number` |
+| `fractions` / `properties` | internal volume fractions and constituent properties; supplying them unlocks the `Voigt` and `Reuss` bounds, which a heterogeneous inclusion cannot otherwise serve. `properties` also backs the `:log_mu_ratio_k` contrast features |
+
+A gate-B surrogate's features are the morphology parameters and the **contrast
+ratios** — never absolute moduli. The reason is that the constituents live inside
+the inclusion, so scaling `ℂ₀` alone changes the contrast: the exact invariance is
+under a *simultaneous* scaling of the reference medium and of every constituent,
+which leaves `𝔸_εε` unchanged and multiplies `𝔸_σε` by the factor. The
+`ℙ(λℂ₀) = ℙ(ℂ₀)/λ` homogeneity that gate A exploits does not transfer.
 
 Supplying only one tensor of a pair is refused at construction: the omission is
 silent otherwise — `Dilute` and `MoriTanaka` stay right while `SelfConsistent`
@@ -348,12 +406,19 @@ drift by several percent.
     against an equivalent gate-A inclusion; no trained model ships for it yet.
 """
 struct NeuralLocalizationInclusion{
-        dim, T <: Number, B <: TensND.AbstractBasis, S4, S2, F, P,
+        dim, T <: Number, TS <: Number, B <: TensND.AbstractBasis, S4, S2, NS, F, P,
     } <: Core.AbstractCustomInclusion{T}
     semi_axes::NTuple{dim, T}
     basis::B
-    elastic::S4                  # (strain, stress) or nothing
-    transport::S2                # (gradient, flux) or nothing
+    elastic::S4                   # (strain, stress) or nothing
+    transport::S2                 # (gradient, flux) or nothing
+    ## `TS` is deliberately *not* `T`: the sensitivity API perturbs one field at a
+    ## time, so differentiating a morphology parameter hands the constructor
+    ## `Dual` shape parameters beside `Float64` semi-axes. Sharing one type
+    ## parameter would make that combination unconstructible — and the failure
+    ## would be a `MethodError` from inside `_replace_geom_field`, far from here.
+    shape_params::NTuple{NS, TS}  # differentiable morphology parameters
+    shape_names::NTuple{NS, Symbol}
     fractions::F
     properties::P
     guard::Symbol
@@ -365,6 +430,7 @@ function NeuralLocalizationInclusion(
         stress::Union{Nothing, NeuralSurrogate} = nothing,
         gradient::Union{Nothing, NeuralSurrogate} = nothing,
         flux::Union{Nothing, NeuralSurrogate} = nothing,
+        shape_params::NamedTuple = NamedTuple(),
         fractions::Union{Nothing, Tuple{Vararg{Number}}} = nothing,
         properties::Union{Nothing, Tuple} = nothing,
         basis::Union{Nothing, TensND.AbstractBasis} = nothing,
@@ -401,15 +467,33 @@ function NeuralLocalizationInclusion(
             ArgumentError("the internal volume fractions must sum to 1, got $(sum(fractions))")
         )
     end
+    all(v -> v isa Number, values(shape_params)) || throw(
+        ArgumentError(
+            "every `shape_params` value must be a `Number`: they are the fields the " *
+                "sensitivity API differentiates, and `Schemes._replace_geom_field` " *
+                "rebuilds the struct by reflection over them"
+        )
+    )
     T = Core._floatlike(promote_type(typeof.(semi_axes)...))
     b0 = basis === nothing ? Core._default_basis(T, euler_angles) : basis
     axes_, b = _canonical_axes(map(T, semi_axes), b0)
     el = strain === nothing ? nothing : (strain, stress)
     tr = gradient === nothing ? nothing : (gradient, flux)
+    vals = values(shape_params)
+    TS = isempty(vals) ? T : Core._floatlike(promote_type(typeof.(vals)...))
+    sp = map(TS, vals)
+    sn = keys(shape_params)
     return NeuralLocalizationInclusion{
-        length(axes_), T, typeof(b), typeof(el), typeof(tr),
+        length(axes_), T, TS, typeof(b), typeof(el), typeof(tr), length(sp),
         typeof(fractions), typeof(properties),
-    }(axes_, b, el, tr, fractions, properties, guard)
+    }(axes_, b, el, tr, sp, sn, fractions, properties, guard)
+end
+
+_constituents(i::NeuralLocalizationInclusion) = i.properties
+
+function _shape_param(i::NeuralLocalizationInclusion, name::Symbol)
+    k = findfirst(==(name), i.shape_names)
+    return k === nothing ? nothing : i.shape_params[k]
 end
 
 NeuralLocalizationInclusion(semi_axes::Number...; kw...) =

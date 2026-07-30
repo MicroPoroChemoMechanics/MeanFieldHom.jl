@@ -145,7 +145,7 @@ want("elastic") && train_and_save(
 
 # ─── 2. Spheroid, transport — one feature, and materially exact ──────────────
 #
-#  The 2nd-order Hill tensor is exactly `𝕎ᴬ/k₀`, so the conductivity is divided
+#  The 2nd-order Hill tensor is exactly `𝕍ᴬ/k₀`, so the conductivity is divided
 #  out and the surrogate is a function of the shape alone.  One input, two
 #  outputs: the easiest of the three, and the sharpest check that the decode is
 #  right.
@@ -188,7 +188,7 @@ want("triaxial") && train_and_save(
 # ─── 4. Spheroid, elasticity, affine factorization ───────────────────────────
 #
 #  The same physics as model 1, but ν₀ is removed from the inputs and the
-#  network predicts the two shape tensors 𝕌ᴬ and 𝕎ᴬ instead — ten outputs from
+#  network predicts the two shape tensors 𝕌ᴬ and 𝕍ᴬ instead — ten outputs from
 #  one input.  The material dependence then costs nothing and is exact.
 #  Trained here to be compared against model 1 in script 84.
 
@@ -200,8 +200,8 @@ want("affine") && train_and_save(
     "hill_tensor(Ellipsoid spheroid, TensISO{4}) — analytic, two reference media",
     6000, 1500,
     NI.TrainingOptions(; hidden = [48, 48], epochs = 6000, batchsize = 256),
-    notes = "shape tensors 𝕌ᴬ and 𝕎ᴬ of a spheroid; ν₀ is not an input — the " *
-        "affine decomposition ℙ = d·𝕌ᴬ + (1/μ₀)·𝕎ᴬ is applied exactly at decode",
+    notes = "shape tensors 𝕌ᴬ and 𝕍ᴬ of a spheroid; ν₀ is not an input — the " *
+        "affine decomposition ℙ = d·𝕌ᴬ + (1/μ₀)·𝕍ᴬ is applied exactly at decode",
 )
 
 # ─── The learning curve, for the tutorial page ───────────────────────────────

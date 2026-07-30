@@ -112,7 +112,9 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `83_fe_excentered_sphere.jl` | Adessina et al. (2017), IJES 119, 1-15 | the sphere with an off-centre core by **axisymmetric Fourier** elements: the concentric limit against Hervé-Zaoui, what the boundary correction buys in `R/a`, the eccentricity sweep, the schemes, and transport |
 | `84_neural_inclusion_ellipsoid.jl` | — | **published tutorial** (`neural_inclusion`): a trained network as an inclusion, both phases. §1 how one is trained — Mermaid schematics of the network and of the fitting loop, the recipe (shown, not run) and the committed learning curve; §2 onwards how one is used — what stays exact whatever the fit (zero contrast, homogeneity, symmetry class, frame), accuracy against the closed form, the `AffineHill` factorization that makes ν₀ exact, every scheme, and `ForwardDiff` on the aspect ratio. Loads the committed models: no ML dependency, nothing trained at build time |
 
-Script 84 needs nothing beyond the package: it loads the surrogates committed
+| `85_neural_excentered_sphere.jl` | Adessina et al. (2017), IJES 119, 1-15 | **published tutorial** (`neural_excentered_sphere`): a surrogate trained on the *finite-element* localization tensors of `FEExcenteredSphere`. Gate B with the 6-component TI pair, why the features are contrast ratios and not the gate-A homogeneity, accuracy and speed-up against the finite elements, and `ForwardDiff` on the eccentricity — which the finite-element type refuses. Trained by `scripts/nn/train_excentered.jl` (~1500 solves), compared by `scripts/nn/make_excentered_figures.jl`; the page loads the committed models |
+
+Scripts 84 and 85 need nothing beyond the package: it loads the surrogates committed
 under `src/NeuralInclusions/models/`. *Training* them is
 `scripts/nn/train_models.jl`, which activates its own `scripts/nn/` environment
 carrying `Lux`, `Optimisers` and `Zygote` (weak dependencies).

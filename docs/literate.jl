@@ -46,6 +46,7 @@ const PUBLISHED_SCRIPTS = [
     "70_symmetrization_showcase.jl" => "symmetrization",
     "80_custom_inclusion_contract.jl" => "custom_inclusion_contract",
     "84_neural_inclusion_ellipsoid.jl" => "neural_inclusion",
+    "85_neural_excentered_sphere.jl" => "neural_excentered_sphere",
 ]
 
 # `81_fe_crack_eshelby.jl`, `82_fe_crack_schemes.jl` and

@@ -10,8 +10,10 @@
 #    TensND type — `TensISO`, `TensTI{4,·,5}`, `TensOrtho` — from the right
 #    number of components, so `ℙ` cannot come out of the wrong class, and it
 #    cannot come out non-major-symmetric.  This is why the surrogate predicts
-#    `ℙ` and not `𝔸`: `𝔸` has no major symmetry (8 TI components rather than 5),
-#    and the exactness of `𝔸 = 𝕀` at zero contrast would be lost.
+#    `ℙ` and not `𝔸`.  `ℙ` *is* major-symmetric, so 5 transversely isotropic
+#    components describe it exactly; `𝔸_εε` is not (`ℓ₃ ≠ ℓ₄`) and needs 6. On
+#    top of that, a surrogate for `𝔸` would lose the exactness of `𝔸 = 𝕀` at
+#    zero contrast.
 #  * **Homogeneity in the reference moduli.**  `ℙ(λℂ₀) = ℙ(ℂ₀)/λ` exactly, so
 #    the network never sees an absolute modulus: only the *shape* and, for
 #    elasticity, `ν₀`.
@@ -20,16 +22,18 @@
 #    global frame. The network is never asked to learn a rotation.
 #
 #  On top of that, [`AffineHill`](@ref) removes `ν₀` from the inputs too, using
-#  the exact affine structure of the isotropic-matrix Hill tensor
-#  (`Elasticity._hill_3d_iso`):
+#  the shape/moduli factorization of the isotropic-matrix Hill tensor — the one
+#  the theory page states and `Elasticity._hill_3d_iso` implements:
 #
-#      ℙ = d · 𝕌ᴬ + (1/μ₀) · 𝕎ᴬ,      d = 1/(λ₀+2μ₀) − 1/μ₀,
+#      ℙ = 𝕌ᴬ/(λ₀+2μ₀) + (𝕍ᴬ − 𝕌ᴬ)/μ₀ = d · 𝕌ᴬ + 𝕍ᴬ/μ₀,   d = 1/(λ₀+2μ₀) − 1/μ₀,
 #
-#  where `𝕌ᴬ` and `𝕎ᴬ` depend on the *shape alone*.  Nothing shape-specific is
+#  which is nothing but a regrouping of the two terms.  `𝕌ᴬ` and `𝕍ᴬ` are the
+#  auxiliary geometric tensors `tens_UA` and `tens_VA`, functions of the *shape
+#  alone*.  Nothing shape-specific is
 #  reimplemented to exploit this: both live in the same symmetry class as `ℙ`,
 #  so the network simply predicts twice as many components and the decoder
 #  contracts them with the two material coefficients.  In transport the
-#  decomposition has a single term (`ℙ_K = 𝕎ᴬ/k₀`), so the material dependence
+#  decomposition has a single term (`ℙ_K = 𝕍ᴬ/k₀`), so the material dependence
 #  is exact with no material input at all.
 # =============================================================================
 
@@ -70,9 +74,39 @@ transport Hill tensor of a spheroid.
 """
 struct HillTI2 <: AbstractHillClass end
 
+"""
+Transversely isotropic 4th-order tensor **without major symmetry**: the six
+Walpole components `(ℓ₁, …, ℓ₆)` of `TensTI{4,·,6}`, for the *strain-side*
+localization tensor `𝔸_εε` of a morphology axisymmetric about `n`.
+
+Six and not five, because a localization tensor is genuinely not
+major-symmetric: `𝔸_εε = [𝕀 + ℙ:(ℂ₁−ℂ₀)]⁻¹` is the inverse of a product of two
+major-symmetric tensors, which does not commute. For an oblate spheroid at a
+contrast of 2 the defect reaches 10 % and `ℓ₃ ≠ ℓ₄` outright, so projecting onto
+the five-component form would lose a few percent.
+
+Six and not eight, because `TensTI{4,·,8}` also carries the couplings `ℓ₇`, `ℓ₈`
+that are *antisymmetric* in an index pair. A tensor mapping symmetric strains to
+symmetric stresses has `ℓ₇ = ℓ₈ = 0` identically — measured, not assumed.
+
+`𝔸_εε` is dimensionless, so no scale divides out: see
+[`dimensionless_scale`](@ref).
+"""
+struct StrainLocTI <: AbstractHillClass end
+
+"""
+Same six-component transversely isotropic form as [`StrainLocTI`](@ref), for the
+*stress-side* localization tensor `𝔸_σε`.
+
+The two differ only in their physical dimension, and therefore in what makes
+them dimensionless: `𝔸_εε` is of degree 0 in the moduli, `𝔸_σε` of degree +1.
+"""
+struct StressLocTI <: AbstractHillClass end
+
 const _CLASS_NAMES = Dict{Symbol, AbstractHillClass}(
     :iso => HillISO(), :ti => HillTI(), :ortho => HillOrtho(),
     :iso2 => HillISO2(), :ti2 => HillTI2(),
+    :loc_ti => StrainLocTI(), :stress_loc_ti => StressLocTI(),
 )
 const _NAMES_CLASS = Dict{Any, Symbol}(typeof(v) => k for (k, v) in _CLASS_NAMES)
 
@@ -104,6 +138,7 @@ ncomponents(::HillTI) = 5
 ncomponents(::HillOrtho) = 9
 ncomponents(::HillISO2) = 1
 ncomponents(::HillTI2) = 2
+ncomponents(::Union{StrainLocTI, StressLocTI}) = 6
 
 """
     tensor_order(class) -> Int
@@ -112,7 +147,7 @@ ncomponents(::HillTI2) = 2
 generics are declared per order, so this is what decides which physics a
 surrogate serves.
 """
-tensor_order(::Union{HillISO, HillTI, HillOrtho}) = 4
+tensor_order(::Union{HillISO, HillTI, HillOrtho, StrainLocTI, StressLocTI}) = 4
 tensor_order(::Union{HillISO2, HillTI2}) = 2
 
 """
@@ -141,6 +176,9 @@ build(::HillISO, c, _frame) = TensND.TensISO{3}(c[1], c[2])
 build(::HillTI, c, axis) = TensND.TensTI{4}(c[1], c[2], c[3], c[4], c[5], axis)
 build(::HillISO2, c, _frame) = TensND.TensISO{3}(c[1])
 build(::HillTI2, c, axis) = TensND.TensTI{2}(c[1], c[2], axis)
+
+build(::Union{StrainLocTI, StressLocTI}, c, axis) =
+    TensND.TensTI{4}(c[1], c[2], c[3], c[4], c[5], c[6], axis)
 
 build(::HillOrtho, c, frame) = Core._make_ortho(
     eltype(c), c[1], c[2], c[3], c[4], c[5], c[6], c[7], c[8], c[9], nothing, frame
@@ -188,6 +226,22 @@ end
 _project(::Union{HillISO, HillISO2}, P, _frame) = TensND.proj_tens(Val(:ISO), P)
 _project(::Union{HillTI, HillTI2}, P, axis) = TensND.proj_tens(Val(:TI), P, axis)
 _project(::HillOrtho, P, frame) = TensND.proj_tens(Val(:ORTHO), P, frame)
+
+# `proj_tens(Val(:TI), …)` returns the *five*-component major-symmetric form, so
+# it cannot serve a localization tensor. `Core.transverse_isotropify` is the exact
+# rotation-group average about the axis and keeps the non-major-symmetric content
+# (`TensTI{4,·,8}`); dropping `ℓ₇`, `ℓ₈` — which vanish identically for a tensor
+# with the minor symmetries — leaves the six components wanted. The residual is
+# measured explicitly, in canonical components so that two different bases cannot
+# be compared by accident.
+function _project(::Union{StrainLocTI, StressLocTI}, P, axis)
+    l = TensND.get_ℓ8(Core.transverse_isotropify(P, axis))
+    B = TensND.TensTI{4}(l[1], l[2], l[3], l[4], l[5], l[6], axis)
+    ref = Array(TensND.components_canon(P))
+    d = maximum(abs, Array(TensND.components_canon(B)) .- ref)
+    nrm = maximum(abs, ref)
+    return B, d, nrm > 0 ? d / nrm : d
+end
 
 # ─── Geometry → frame ────────────────────────────────────────────────────────
 #
@@ -253,6 +307,17 @@ _class_frame(::HillOrtho, geom) = Core.inclusion_basis(geom)
 _class_frame(::Union{HillTI, HillTI2}, geom) =
     Core._basis_col(Core.inclusion_basis(geom), _spheroid_axis_index(_axes(geom)))
 
+# A localization pair does *not* get its axis from the semi-axes: the morphology
+# it describes may well be a sphere (`FEExcenteredSphere` is one) whose response
+# is transversely isotropic about a direction the outer shape says nothing about.
+# The convention is therefore the package's usual one — **column 3 of the
+# inclusion basis is the axis** — the same column `FEExcenteredSphere` solves
+# about (`FiniteElements._axi_frame`) and the same one that carries a crack's
+# normal. A wrong choice here does not pass silently: `components` measures the
+# projection residual.
+_class_frame(::Union{StrainLocTI, StressLocTI}, geom) =
+    Core._basis_col(Core.inclusion_basis(geom), 3)
+
 # ─── Material coefficients ───────────────────────────────────────────────────
 
 """
@@ -262,8 +327,8 @@ Coefficients of the exact affine decomposition of the Hill tensor on the
 shape-only tensors, for an **isotropic** reference medium:
 
 - order 4: `(d, 1/μ₀)` with `d = 1/(λ₀+2μ₀) − 1/μ₀`, so that
-  `ℙ = d·𝕌ᴬ + (1/μ₀)·𝕎ᴬ`;
-- order 2: `(1/k₀,)`, so that `ℙ_K = 𝕎ᴬ/k₀`.
+  `ℙ = d·𝕌ᴬ + (1/μ₀)·𝕍ᴬ`;
+- order 2: `(1/k₀,)`, so that `ℙ_K = 𝕍ᴬ/k₀`.
 
 Used by [`AffineHill`](@ref). The number of entries is the number of terms the
 network has to predict per component.
@@ -292,6 +357,21 @@ dimensionless_scale(::Union{HillISO, HillTI, HillOrtho}, C₀::TensND.TensISO{4,
 dimensionless_scale(::Union{HillISO2, HillTI2}, K₀::TensND.TensISO{2, 3}) =
     only(TensND.get_data(K₀))
 
+# The localization pair. `𝔸_εε` is already dimensionless — degree 0 in the moduli
+# — so nothing divides out; `𝔸_σε` is of degree +1, so `𝔸_σε/(2μ₀)` is the
+# dimensionless quantity.
+#
+# The invariance at work here is *not* the one gate A uses. `ℙ(λℂ₀) = ℙ(ℂ₀)/λ`
+# holds because `ℙ` sees only the reference medium. A heterogeneous morphology
+# carries its constituents inside itself, so scaling `ℂ₀` alone changes the
+# contrast and changes `𝔸`; what is exact is the **simultaneous** scaling of the
+# reference medium and of every constituent (measured to 3·10⁻¹⁵ and 9·10⁻¹⁴ on
+# `FEExcenteredSphere`). Which is exactly why the features of such a surrogate
+# have to be contrast *ratios* rather than absolute moduli.
+dimensionless_scale(::StrainLocTI, ::TensND.TensISO{4, 3}) = 1
+dimensionless_scale(::StressLocTI, C₀::TensND.TensISO{4, 3}) =
+    inv(TensND.get_data(C₀)[2])
+
 _iso_only(P₀) = throw(
     ArgumentError(
         "the ellipsoid surrogates are trained for an **isotropic** reference " *
@@ -300,6 +380,15 @@ _iso_only(P₀) = throw(
             "anisotropic reference needs a surrogate trained on the corresponding " *
             "feature set. Under `IsoSymmetrize`/`TISymmetrize` the scheme " *
             "pre-projects the reference medium, which is one way to get there."
+    )
+)
+
+material_coeffs(::Union{StrainLocTI, StressLocTI}, ::TensND.AbstractTens) = throw(
+    ArgumentError(
+        "a localization tensor has no affine decomposition on shape-only tensors: " *
+            "the structure `ℙ = d·𝕌ᴬ + 𝕍ᴬ/μ₀` belongs to the Hill tensor of an " *
+            "ellipsoid in an isotropic matrix. Use `DimensionlessHill` for a " *
+            ":loc_ti / :stress_loc_ti surrogate."
     )
 )
 
@@ -378,7 +467,7 @@ end
 """
     AffineHill(class)
 
-The network predicts the components of the shape-only tensors `𝕌ᴬ` and `𝕎ᴬ` —
+The network predicts the components of the shape-only tensors `𝕌ᴬ` and `𝕍ᴬ` —
 `nterms(class) · ncomponents(class)` numbers — and the decoder contracts them
 with [`material_coeffs`](@ref). The whole material dependence is then exact:
 `ν₀` is *not* an input, and the surrogate is a function of the shape alone.
