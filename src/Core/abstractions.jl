@@ -93,7 +93,7 @@ dispatch ambiguity, and [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor
 accepts it directly (the ellipsoid-typed entry point does not).
 
 See the developer page *Adding a new inclusion* for the full interface
-contract, and [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion) for a
+contract, and [`CustomInclusion`](@ref man-custom-inclusions) for a
 ready-made concrete type driven by callbacks.
 """
 abstract type AbstractCustomInclusion{T} <: AbstractInclusion{T} end
