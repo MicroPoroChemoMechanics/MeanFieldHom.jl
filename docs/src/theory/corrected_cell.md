@@ -113,10 +113,6 @@ u(x) = \frac{\partial G_{ij}}{\partial x_k}(x)\,M_{jk}
              - 3(\hat n\!\cdot\! M\!\cdot\!\hat n)\,\hat n\Bigr],
 ```
 
-and the transport one, with ``G = 1/(4\pi k_0 r)``,
-
-```math
-
 Written out for a symmetric moment, the gradient of the Kelvin solution is
 
 ```math
