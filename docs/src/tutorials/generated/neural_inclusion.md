@@ -268,7 +268,7 @@ end
 ````
 
 The transport tensor is the easy case, and the sharpest check that the decode
-is right: the second-order Hill tensor is exactly ``\mathbb W^{\mathbf A}/k_0``,
+is right: the second-order Hill tensor is exactly ``\mathbb V^{\mathbf A}/k_0``,
 so the conductivity divides out and the surrogate is a function of the shape
 alone — one input, no material feature.
 
@@ -305,16 +305,24 @@ end
 
 ## §5 Removing ν₀ from the inputs altogether
 
-For an isotropic reference medium the Hill tensor is exactly affine in two
-material scalars:
+Nothing new is needed here: it is the **shape/moduli factorization** the theory
+page already states for an isotropic matrix,
 
 ```math
-\mathbb P = d\,\mathbb U^{\mathbf A} + \frac{1}{\mu_0}\,\mathbb W^{\mathbf A},
+\mathbb P\bigl(\boldsymbol A,\, 3\lambda_0\mathbb I + 2\mu_0\mathbb K\bigr)
+= \frac{1}{\lambda_0 + 2\mu_0}\,\mathbb U^{\boldsymbol A}
++ \frac{1}{\mu_0}\bigl(\mathbb V^{\boldsymbol A} - \mathbb U^{\boldsymbol A}\bigr),
+```
+
+with the geometric auxiliaries `tens_UA` and `tens_VA` — functions of the
+*shape alone*. Collecting the two terms,
+
+```math
+\mathbb P = d\,\mathbb U^{\boldsymbol A} + \frac{1}{\mu_0}\,\mathbb V^{\boldsymbol A},
 \qquad d = \frac{1}{\lambda_0 + 2\mu_0} - \frac{1}{\mu_0},
 ```
 
-where ``\mathbb U^{\mathbf A}`` and ``\mathbb W^{\mathbf A}`` depend on the
-*shape alone*. `AffineHill` exploits it: the network predicts those two
+which is affine in ``(d, 1/\mu_0)``. `AffineHill` exploits it: the network predicts those two
 tensors — twice the components, one fewer input — and the decoder contracts
 them with the exact coefficients, so the entire material dependence becomes
 algebra.
