@@ -37,7 +37,7 @@ prefactor, [`crack_density_factor`](@ref MeanFieldHom.Cracks.crack_density_facto
 ## Inclusion traits and bundled seams
 
 ```@docs
-MeanFieldHom.is_homogeneous_inclusion
+MeanFieldHom.Core.is_homogeneous_inclusion
 MeanFieldHom.loc_and_stiffness
 MeanFieldHom.loc_and_stress_average
 MeanFieldHom.compliance_and_stiffness_contribution

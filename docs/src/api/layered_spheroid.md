@@ -6,6 +6,7 @@
 for their docstrings; they apply unchanged to `LayeredSpheroid`.
 
 ```@docs
+MeanFieldHom.LayeredSpheroids
 MeanFieldHom.LayeredSpheroids.LayeredSpheroid
 MeanFieldHom.LayeredSpheroids.layered_spheroid_from_fractions
 MeanFieldHom.LayeredSpheroids.layer_q

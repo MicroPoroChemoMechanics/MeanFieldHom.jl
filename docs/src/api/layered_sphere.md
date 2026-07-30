@@ -1,6 +1,7 @@
 # API — LayeredSphere
 
 ```@docs
+MeanFieldHom.LayeredSpheres
 MeanFieldHom.LayeredSpheres.LayeredSphere
 MeanFieldHom.LayeredSpheres.AbstractInterface
 MeanFieldHom.LayeredSpheres.PerfectInterface

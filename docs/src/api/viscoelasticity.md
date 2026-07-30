@@ -4,6 +4,10 @@
 CurrentModule = MeanFieldHom.Viscoelasticity
 ```
 
+```@docs
+MeanFieldHom.Viscoelasticity
+```
+
 ## Constitutive laws
 
 ```@docs
@@ -66,6 +70,12 @@ pcw_alv
 differential_alv
 dilute_concentration_alv
 dilute_contribution_alv
+```
+
+### Internal guards
+
+```@docs
+_alv_diff_keeps_iso
 ```
 
 ## Schemes — iso fast path

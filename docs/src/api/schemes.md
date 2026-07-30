@@ -1,6 +1,8 @@
 # API — Schemes
 
-Public types and functions of `MeanFieldHom.Schemes`.
+```@docs
+MeanFieldHom.Schemes
+```
 
 ## RVE / Phase / Amount
 
