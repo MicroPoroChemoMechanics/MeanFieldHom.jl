@@ -111,7 +111,8 @@ end
 
 """
     train_surrogate(spec, box, train, validation; options = TrainingOptions(),
-                    teacher_name = "", notes = "") -> NeuralSurrogate
+                    teacher_name = "", notes = "", history = nothing)
+        -> NeuralSurrogate
 
 Fit a surrogate of output specification `spec` over the sampling `box`, on the
 datasets produced by [`generate_dataset`](@ref), and return it with its
@@ -127,6 +128,11 @@ before calling. Without them this fallback method raises: evaluation of an
 already-trained surrogate needs none of the three, so they are weak
 dependencies rather than dependencies (`scripts/nn/` carries an environment
 that has them).
+
+Pass a `Vector` as `history` to have the learning curve recorded into it, one
+`(; epoch, train, validation)` per epoch — which is how the committed training
+figure of the documentation is produced without anything being fitted at
+build time.
 """
 train_surrogate(args...; kwargs...) = error(
     "training a neural surrogate requires the Lux extension: run " *

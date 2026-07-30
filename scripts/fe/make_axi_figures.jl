@@ -36,10 +36,6 @@ using Plots
 import Ferrite, FerriteGmsh, Gmsh
 
 gr()
-#  The margins are load-bearing, not cosmetic: in a composed (multi-panel)
-#  figure GR shrinks each panel's drawing area but gives the outer frame no
-#  margin, so the y-label of the leftmost panel and the x-labels of the bottom
-#  row get clipped off the canvas.
 default(;
     fontfamily = "sans-serif", framestyle = :box, grid = true, legendfontsize = 8,
     left_margin = 5Plots.mm, bottom_margin = 5Plots.mm,

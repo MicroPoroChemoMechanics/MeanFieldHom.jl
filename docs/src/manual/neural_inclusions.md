@@ -88,7 +88,9 @@ capacity fitting a dependence that is exactly known. See
 
 ## Training your own
 
-Four decisions, then one call.
+Four decisions, then one call. The
+[tutorial](@ref tut-index) walks the same ground with a schematic of the network
+and of the fitting loop, and shows the recorded learning curve.
 
 **1. Which tensor, and therefore which gate.** `ℙ` (gate A) whenever the
 morphology has one: the contrast dependence and the `ℂ₁ = ℂ₀ ⟹ 𝔸 = 𝕀` limit then
@@ -274,4 +276,5 @@ JSON, which is what keeps the suite deterministic and the doc build free of Lux.
 - [Finite-element inclusions](@ref man-fe-inclusions) — the expensive teacher a
   surrogate is meant to replace
 - [An inclusion whose response is a neural network](@ref tut-index) — the worked
-  pilot, validated against the closed form
+  pilot: both phases, with the network schematic and the learning curve,
+  validated against the closed form

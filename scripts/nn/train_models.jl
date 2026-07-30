@@ -24,6 +24,13 @@ Pkg.instantiate(; io = devnull)
 using MeanFieldHom
 using TensND
 using Printf
+using Plots
+
+gr()
+default(;
+    fontfamily = "sans-serif", framestyle = :box, grid = true, legendfontsize = 8,
+    left_margin = 5Plots.mm, bottom_margin = 5Plots.mm,
+)
 
 import Lux, Optimisers, Zygote           # loads MeanFieldHomLuxExt
 
@@ -79,6 +86,10 @@ function record(name, s, val, labels)
     return nothing
 end
 
+# The learning curves, kept so the documentation can show one without fitting
+# anything at build time.
+const CURVES = Dict{String, Vector{Any}}()
+
 function train_and_save(
         name, spec, box, geometry, response, teacher_name, n, nval, opts; notes = ""
     )
@@ -86,10 +97,12 @@ function train_and_save(
     println("training `$name`")
     println("="^78)
     train, val = NI.generate_dataset(geometry, response, spec, box, n; nvalidation = nval)
+    history = Any[]
     s = NI.train_surrogate(
         spec, box, train, val;
-        options = opts, teacher_name, notes
+        options = opts, teacher_name, notes, history
     )
+    CURVES[name] = history
     v = NI.report_surrogate(s, val; labels = NI.component_labels(spec))
     path = NI.save_surrogate(joinpath(OUT, name * ".json"), s)
     println("wrote ", path)
@@ -190,6 +203,39 @@ want("affine") && train_and_save(
     notes = "shape tensors 𝕌ᴬ and 𝕎ᴬ of a spheroid; ν₀ is not an input — the " *
         "affine decomposition ℙ = d·𝕌ᴬ + (1/μ₀)·𝕎ᴬ is applied exactly at decode",
 )
+
+# ─── The learning curve, for the tutorial page ───────────────────────────────
+#
+#  Committed as a PNG on purpose: the tutorial shows how training goes without
+#  running a single epoch at documentation-build time.
+
+if length(CURVES) ≥ 2
+    ASSET = normpath(joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "nn"))
+    mkpath(ASSET)
+    plt = plot(;
+        xlabel = "epoch", ylabel = "mean squared error (standardized targets)",
+        yscale = :log10, legend = :topright, size = (760, 460),
+        title = "Learning curves of two shipped surrogates\n" *
+            "spheroid, isotropic matrix; Adam, batch 256, 48+48 hidden, tanh",
+        titlefontsize = 10,
+    )
+    for (name, col) in (
+            ("spheroid_hill_iso_elastic", :steelblue),
+            ("spheroid_hill_iso_affine", :firebrick),
+        )
+        h = get(CURVES, name, nothing)
+        h === nothing && continue
+        ep = [r.epoch for r in h]
+        short = replace(name, "spheroid_hill_iso_" => "")
+        plot!(plt, ep, [r.train for r in h]; lc = col, lw = 1.6, label = "$short — train")
+        plot!(
+            plt, ep, [r.validation for r in h];
+            lc = col, lw = 1.6, ls = :dash, label = "$short — held out"
+        )
+    end
+    savefig(plt, joinpath(ASSET, "training_curve.png"))
+    println("\nwrote ", joinpath(ASSET, "training_curve.png"))
+end
 
 # ─── The table, for the manual page ──────────────────────────────────────────
 

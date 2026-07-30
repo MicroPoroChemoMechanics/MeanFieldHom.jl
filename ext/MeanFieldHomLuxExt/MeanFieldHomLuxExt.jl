@@ -108,6 +108,7 @@ function NI.train_surrogate(
         options::NI.TrainingOptions = NI.TrainingOptions(),
         teacher_name::AbstractString = "",
         notes::AbstractString = "",
+        history::Union{Nothing, AbstractVector} = nothing,
     )
     NI.nsamples(train) ≥ 2 ||
         throw(ArgumentError("training needs at least 2 samples"))
@@ -163,6 +164,10 @@ function NI.train_surrogate(
         end
 
         vloss = _mse(first(Lux.apply(chain, Xv, ps, st)), Yv)
+        if history !== nothing
+            tloss = _mse(first(Lux.apply(chain, Xt, ps, st)), Yt)
+            push!(history, (; epoch, train = Float64(tloss), validation = Float64(vloss)))
+        end
         if vloss < best_loss * (1 - 1.0e-4)
             best_loss, best_epoch, since_best = vloss, epoch, 0
             best_ps = deepcopy(ps)

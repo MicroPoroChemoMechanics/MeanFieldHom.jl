@@ -37,13 +37,7 @@ using TensND
 using Printf
 using Plots
 gr()
-````
 
-Room for the axis labels: in a composed (multi-panel) figure GR shrinks each
-panel's drawing area but gives the outer frame no margin, so the labels of the
-leftmost and bottom panels would be clipped off the canvas.
-
-````@example layered_spheroid_interfaces
 default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
 ````
 

@@ -17,7 +17,7 @@
 #
 # | | analytic ellipsoid | finite elements | surrogate |
 # |---|---|---|---|
-# | accuracy | exact | discretization error | fit error, a few `10⁻⁴` here |
+# | accuracy | exact | discretization error | fit error, a few parts in `10⁴` to `10³` here |
 # | cost per evaluation | microseconds | seconds | microseconds |
 # | derivative w.r.t. the morphology | yes | **refused** | **yes** |
 #
@@ -42,13 +42,99 @@ using Plots
 
 gr()
 
-# Room for the axis labels: in a composed figure GR shrinks each panel's drawing
-# area but gives the outer frame no margin.
 default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
 
 const NI = MeanFieldHom.NeuralInclusions
 
-# ## §1 The shipped models
+# ## §1 The two phases
+#
+# ### What the network is
+#
+# Not much: a three-layer perceptron with smooth activations, wrapped in the
+# algebra that makes the answer a *tensor*. Everything outside the dashed box is
+# exact and enforced — the standardization, the inverse component transform, and
+# a decode that puts the components into a structured TensND type in the
+# inclusion's own frame, with the dependence on the reference moduli applied
+# analytically. The network is only asked for what is genuinely unknown: how the
+# dimensionless components vary with the *shape*.
+#
+# ```mermaid
+# flowchart LR
+#     GEO["geometry<br/>semi-axes + basis"] --> FEAT["features<br/>log ω, ν₀"]
+#     REF["reference medium<br/>ℂ₀"] --> FEAT
+#     FEAT --> STD["standardize"]
+#     subgraph NET["the fitted part"]
+#         direction LR
+#         STD --> L1["Dense 48<br/>tanh"] --> L2["Dense 48<br/>tanh"] --> L3["Dense 5<br/>identity"]
+#     end
+#     L3 --> INV["un-standardize +<br/>inverse per-component transform"]
+#     INV --> DEC["decode<br/>components → TensTI{4,·,5}<br/>exact scale and ν₀ algebra"]
+#     REF --> DEC
+#     DEC --> OUT["ℙ, global frame"]
+#
+#     classDef fit fill:#fde8e8,stroke:#c62828,stroke-dasharray:4 3,color:#7f1d1d
+#     classDef ex fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+#     class L1,L2,L3 fit
+#     class FEAT,STD,INV,DEC,OUT ex
+# ```
+#
+# Smooth activations are not a detail: a kink in the activation is a kink in
+# ``\mathbb P``, hence a wrong curvature and a discontinuous sensitivity. The
+# activation table offers `tanh` and `softplus` and deliberately no ReLU.
+#
+# ### How it is trained
+#
+# ```mermaid
+# flowchart LR
+#     BOX["SampleBox<br/>= the validity domain"] --> HAL["Halton sampling<br/>train + held out"]
+#     HAL --> GEOM["geometry(x)"]
+#     GEOM --> RESP["response(geom, ℂ₀)<br/><b>the teacher</b>"]
+#     RESP --> LAB["components in the class frame<br/>+ projection residual check"]
+#     LAB --> FIT["fit_scaling → Adam<br/>keep the best epoch"]
+#     FIT --> VAL["validate_surrogate<br/>held-out error → Provenance"]
+#     VAL --> SAVE["save_surrogate<br/>JSON"]
+#
+#     classDef you fill:#d7f2d7,stroke:#2e7d32,color:#1b5e20
+#     class GEOM,RESP you
+# ```
+#
+# The two green boxes are the only morphology-dependent part. `response` is where
+# a finite-element solve goes instead of a closed form — and because the frame in
+# which the labels are read is derived from `geometry` through the same code path
+# the inclusion uses at evaluation time, the two cannot disagree.
+#
+# The call itself, for the record — **not run here**, since fitting needs `Lux`,
+# `Optimisers` and `Zygote` and this page must not train anything:
+#
+# ```julia
+# import Lux, Optimisers, Zygote                    # activates MeanFieldHomLuxExt
+#
+# geometry(x) = Ellipsoid(1.0, 1.0, exp(x[1]))      # shape features → morphology
+# response(g, C₀) = hill_tensor(g, C₀)              # what is to be learned
+#
+# spec = DimensionlessHill(HillTI())
+# box = SampleBox([:log_aspect, :nu0], [-log(20), 0.0], [log(20), 0.49])
+#
+# train, val = generate_dataset(geometry, response, spec, box, 6000; nvalidation = 1500)
+# s = train_surrogate(spec, box, train, val; teacher_name = "analytic Hill tensor")
+#
+# report_surrogate(s, val; labels = component_labels(spec))
+# save_surrogate("my_model.json", s)
+# ```
+#
+# `scripts/nn/train_models.jl` is that script for the four shipped models. It
+# also records the learning curves, which is where this figure comes from:
+#
+# ![Learning curves](../../assets/nn/training_curve.png)
+#
+# Held-out and training error stay together — a network this small over a
+# two-dimensional box has no room to overfit — and the steps are the plateau
+# schedule dropping the Adam step. The red pair is the `AffineHill` model, which
+# settles an order of magnitude lower than the blue `DimensionlessHill` one for
+# the same architecture: it does not spend capacity on a dependence that is
+# exactly known (§5).
+#
+# ## §2 The shipped models
 #
 # Each carries its own provenance: what generated its labels, how many samples,
 # and the per-component error measured on a held-out set. That last number is not
@@ -87,7 +173,7 @@ nn_spheroid(ω; kw...) = NeuralHillInclusion(
 println()
 check_inclusion_interface(nn_spheroid(0.4))
 
-# ## §2 What is exact regardless of the fit
+# ## §3 What is exact regardless of the fit
 #
 # A surrogate should only ever learn what is genuinely unknown. Three properties
 # of the Hill tensor are exact, and all three are enforced by construction rather
@@ -140,7 +226,7 @@ rot = nn_spheroid(0.4; euler_angles = (0.3, 0.7, 0.2))
     maximum(abs, collect(get_data(hill_tensor(rot, C₀))) .- collect(get_data(P)))
 )
 
-# ## §3 Accuracy against the closed form
+# ## §4 Accuracy against the closed form
 #
 # Over two decades of aspect ratio either side of the sphere, and across the
 # Poisson range. The oblate side is the harder one: several Walpole components
@@ -196,7 +282,7 @@ for (r2, r3) in ((0.9, 0.8), (0.8, 0.5), (0.6, 0.2), (0.5, 0.1), (0.2, 0.08))
     @printf("  %7.2f  %7.2f      %9.2e\n", r2, r3, maximum(abs, Pn .- Pe) / maximum(abs, Pe))
 end
 
-# ## §4 Removing ν₀ from the inputs altogether
+# ## §5 Removing ν₀ from the inputs altogether
 #
 # For an isotropic reference medium the Hill tensor is exactly affine in two
 # material scalars:
@@ -267,7 +353,7 @@ figpath = joinpath(figdir, "84_neural_inclusion.png")                  #jl
 savefig(plt, figpath)                                                  #jl
 @printf "\nSaved : %s\n" figpath                                       #jl
 
-# ## §5 In every scheme
+# ## §6 In every scheme
 #
 # Gate A means there is nothing left to implement: the surrogate is a drop-in
 # `Ellipsoid`, in elasticity and in transport. The inclusion is tilted, so the
@@ -387,7 +473,7 @@ C_nn = homogenize(oriented(nn_at, 12, 0.2), MoriTanaka(), :C)
     maximum(abs, get_array(C_nn) .- get_array(C_ref)) / maximum(abs, get_array(C_ref))
 )
 
-# ## §6 The derivative with respect to the morphology
+# ## §7 The derivative with respect to the morphology
 #
 # This is what the surrogate is really for. A network is a smooth function of its
 # inputs, so `ForwardDiff` flows from a semi-axis through the features, the
@@ -435,7 +521,7 @@ d2_ad = ForwardDiff.derivative(a -> ForwardDiff.derivative(f, a), 0.5)
     d2_ad, d2_fd
 )
 
-# ## §7 Cost
+# ## §8 Cost
 #
 # For the ellipsoid the closed form wins, and by a wide margin — a surrogate is
 # five dense matrix-vector products where the analytic kernel is a handful of

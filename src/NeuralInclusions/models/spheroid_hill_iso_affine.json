@@ -29,7 +29,7 @@
             2.8928760273311468e-5,
             1.3114641147543944e-5
         ],
-        "created": "2026-07-30 13:08",
+        "created": "2026-07-30 14:25",
         "notes": "shape tensors 𝕌ᴬ and 𝕎ᴬ of a spheroid; ν₀ is not an input — the affine decomposition ℙ = d·𝕌ᴬ + (1/μ₀)·𝕎ᴬ is applied exactly at decode"
     },
     "format": "1.1.0",

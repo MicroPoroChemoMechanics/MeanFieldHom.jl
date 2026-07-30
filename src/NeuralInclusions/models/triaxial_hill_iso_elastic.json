@@ -27,7 +27,7 @@
             5.332713531048629e-5,
             0.0001350213566874314
         ],
-        "created": "2026-07-30 13:07",
+        "created": "2026-07-30 14:24",
         "notes": "2μ₀ℙ of a triaxial ellipsoid; (a₂/a₁, a₃/a₂) with axes sorted descending, so the admissible set is a box"
     },
     "format": "1.1.0",

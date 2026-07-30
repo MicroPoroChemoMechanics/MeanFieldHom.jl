@@ -32,10 +32,6 @@ using Plots
 import Ferrite, FerriteGmsh, Gmsh
 
 gr()
-#  The margins are load-bearing, not cosmetic: in a composed (multi-panel)
-#  figure GR shrinks each panel's drawing area but gives the outer frame no
-#  margin, so the y-label of the leftmost panel and the x-labels of the bottom
-#  row get clipped off the canvas.
 default(;
     fontfamily = "sans-serif", framestyle = :box, grid = true, legendfontsize = 8,
     left_margin = 5Plots.mm, bottom_margin = 5Plots.mm,
@@ -232,8 +228,6 @@ savefig(
             title = "the crack inside the ball of matrix", size = (460, 440)
         ),
         figure_3d(
-            # Kept short on purpose: a title wider than its panel overflows the
-            # canvas, and unlike the axis labels no margin can rescue it.
             mesh_crack; half = 1.8, outer = false,
             title = "zoom: crack and the cut behind it", size = (460, 440)
         );
