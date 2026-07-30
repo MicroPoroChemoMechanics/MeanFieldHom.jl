@@ -51,7 +51,8 @@
   `AndersonDefault` (currently Picard with relaxation, memory = 1).
 - Optional structured `TensTI{4,T,8}` fast path for the ALV TI schemes.
 - Viscoelastic constitutive laws in the Laplace–Carson domain.
-- Finite-element inclusions (`MeanFieldHomFerriteExt`), both with the
+- Finite-element inclusions, behind the `FEBackend` contract
+  (`MeanFieldHomFerriteExt`, `MeanFieldHomGridapExt`), both with the
   first-order corrected boundary condition of
   [Adessina et al. 2017](https://doi.org/10.1016/j.ijengsci.2017.03.015) and an
   isotropic reference medium: the **elliptical crack** in 3-D tetrahedra
@@ -59,4 +60,6 @@
   axisymmetric Fourier elements (the general polarization fixed point).
   Open extensions — anisotropic reference medium (Pan-Chou or Barnett-Willis
   Green gradient); more than one inclusion, or a non-spherical envelope, in the
-  axisymmetric cell; automatic differentiation through the solve.
+  axisymmetric cell; automatic differentiation through the solve; **the crack
+  under `GridapBackend`**, which needs the front welding that follows gmsh's
+  `Crack` plugin to be expressed on the mesh rather than on a `Ferrite.Grid`.

@@ -39,7 +39,7 @@ default(; fontfamily = "sans-serif", framestyle = :box, grid = true, legendfonts
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "fe"))
 mkpath(OUT)
 
-const EXT = Base.get_extension(MeanFieldHom, :MeanFieldHomFerriteExt)
+const FE = MeanFieldHom.FiniteElements
 
 mand(T) = MeanFieldHom.Core.mandel66_minor(MeanFieldHom.Core._C_array(T))
 kelvin_J(M) = (M[1, 1] + 2M[1, 2]) / 3        # 𝕁-eigenvalue of a TI/iso tensor
@@ -70,7 +70,7 @@ the core, the shell and the surrounding matrix in three colours. A node of this
 mesh stands for a whole circle of the three-dimensional body.
 """
 function figure_mesh(incl; zoom = nothing, kw...)
-    grid = EXT._axi_setup(incl).grid
+    grid = FE._axi_setup(incl).grid
     plt = plot(;
         aspect_ratio = 1, xlabel = "ρ / a", ylabel = "z / a",
         legend = :topright, kw...
@@ -79,9 +79,9 @@ function figure_mesh(incl; zoom = nothing, kw...)
         plot!(plt; xlims = (-0.05, zoom), ylims = (-zoom, zoom))
     end
     for (setname, col, lab) in (
-            (EXT.AXI_SET_MATRIX, :grey85, "matrix"),
-            (EXT.AXI_SET_SHELL, :steelblue, "shell (old mortar)"),
-            (EXT.AXI_SET_CORE, :firebrick, "core (old aggregate)"),
+            (FE.AXI_SET_MATRIX, :grey85, "matrix"),
+            (FE.AXI_SET_SHELL, :steelblue, "shell (old mortar)"),
+            (FE.AXI_SET_CORE, :firebrick, "core (old aggregate)"),
         )
         xs, ys = Float64[], Float64[]
         for ci in Ferrite.getcellset(grid, setname)

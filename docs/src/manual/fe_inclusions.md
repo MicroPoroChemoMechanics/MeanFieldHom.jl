@@ -11,6 +11,15 @@ using MeanFieldHom
 import Ferrite, FerriteGmsh, Gmsh      # activates MeanFieldHomFerriteExt
 ```
 
+Unlike the axisymmetric inclusion of
+[A recycled-concrete aggregate](@ref app-recycled-aggregate), which runs on
+either backend, this one is **Ferrite-only** — and the reason is the mesh
+rather than the solver. The crack is a zero-thickness discontinuity produced by
+gmsh's `Crack` plugin, which duplicates the nodes of the crack *front* along
+with those of the lips; undoing that (see [The mesh](#The-mesh) below) is
+surgery on the grid data structure, not something the shared geometry code can
+express. Porting it is tracked in the roadmap.
+
 Without those three packages the type still exists but every solve raises an
 informative error.
 

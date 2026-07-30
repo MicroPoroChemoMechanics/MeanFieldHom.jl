@@ -1,0 +1,278 @@
+"""
+    MeanFieldHomGridapExt
+
+Second finite-element backend of the axisymmetric Fourier solve, activated by
+`import Gridap, GridapGmsh`.
+
+Implements the nine methods of the [`MeanFieldHom.FEBackend`](@ref) contract
+for [`MeanFieldHom.GridapBackend`](@ref), and nothing else: the Fourier
+operators, the boundary data, the fixed point of the corrected boundary
+condition and the memoization all live in `MeanFieldHom.FiniteElements`, shared
+with the Ferrite backend.
+
+The point of having two is partly cross-validation — two unrelated
+discretizations agreeing to a fraction of a percent is a much stronger
+statement than one converging — and partly readability. Where Ferrite writes
+an explicit element loop, Gridap states the weak form:
+
+```julia
+a(u, v) = ∫( Eᵐ(v) ⋅ (D ⋅ Eᵐ(u)) * ρ )dΩ
+```
+
+which is the equation of the axisymmetric problem, transcribed. Someone
+adapting this to another morphology has one line of physics to change.
+
+`GridapGmsh` carries its own copy of the gmsh API over the same `gmsh_jll`, so
+`Gmsh.jl` is not needed on this path. The mesh itself is built by the shared
+`MeanFieldHom.FiniteElements._build_gmsh_axi_model`, written to a temporary
+`.msh` file and read back by `GmshDiscreteModel`.
+"""
+module MeanFieldHomGridapExt
+
+using MeanFieldHom
+using TensND
+using Gridap
+using Gridap.FESpaces: get_cell_dof_ids
+using Gridap.Geometry: num_nodes
+using Gridap.MultiField: MultiFieldFESpace
+using GridapGmsh
+using GridapGmsh: gmsh
+using LinearAlgebra
+
+const FE = MeanFieldHom.FiniteElements
+const GB = FE.GridapBackend
+
+# ─── Mesh ────────────────────────────────────────────────────────────────────
+
+function FE.fe_axi_grid(::GB, incl::MeanFieldHom.FEExcenteredSphere)
+    a = Float64(incl.a)
+    a_core = Float64(FE.core_radius(incl))
+    d = Float64(FE.core_offset(incl))
+    opts = incl.mesh
+    R = opts.radius_ratio * a
+    h_in = a / opts.nradial
+    h_out = opts.coarsening * h_in
+
+    path = joinpath(mktempdir(), "mfh_axi.msh")
+    gmsh.initialize()
+    try
+        gmsh.option.setNumber("General.Terminal", 0)
+        FE._build_gmsh_axi_model(gmsh, a, a_core, d, R, h_in, h_out)
+        gmsh.write(path)
+    finally
+        gmsh.finalize()
+    end
+    # `GmshDiscreteModel` runs its own gmsh session, hence the round trip
+    # through a file rather than a handover of the live model; that session
+    # also reports on stdout, which is why it is muted here.
+    return redirect_stdout(devnull) do
+        GmshDiscreteModel(path)
+    end
+end
+
+FE.fe_axi_grid_counts(::GB, model) = (;
+    ncells = num_cells(model),
+    nnodes = num_nodes(model),
+    ncells_by_set = Dict(
+        s => num_cells(Triangulation(model, tags = s)) for
+            s in (FE.AXI_SET_CORE, FE.AXI_SET_SHELL, FE.AXI_SET_MATRIX)
+    ),
+)
+
+function FE.fe_axi_region_volume(::GB, model, set)
+    Ω = Triangulation(model, tags = set)
+    dΩ = Measure(Ω, 3)
+    ρ = CellField(x -> x[1], Ω)
+    return 2π * sum(∫(ρ)dΩ)
+end
+
+# ─── One mode ────────────────────────────────────────────────────────────────
+
+"""
+One Fourier mode, discretized with Gridap.
+
+The scalar space carries **no** Dirichlet tags: every dof is free, and the
+driver performs the free/prescribed split itself so that a single
+factorization serves every right-hand side. The prescribed dofs are therefore
+identified geometrically, from the cell-wise dof ids of the boundary
+triangulations, and their coordinates read off two interpolations — exact on a
+nodal Lagrange space, where interpolating `x -> x[1]` stores the abscissa of
+each dof in that dof's slot.
+
+Fields are stacked component-major by `MultiFieldFESpace`, so component `c`
+occupies `(c-1) * nd1 .+ (1:nd1)` — the layout the generalized-strain operator
+expects.
+"""
+struct GridapAxiMode{S, T, M, C}
+    ncomp::Int
+    nd1::Int
+    ndofs::Int
+    V::S
+    U::T
+    meas::M                                  # set name => (Measure, ρ CellField)
+    coords::C                                # (ρ, z) of every scalar dof
+    outer::Vector{Int}                       # scalar dofs on the outer boundary
+    axis::Vector{Int}                        # global dofs pinned on the axis
+    presc::Vector{Int}
+    free::Vector{Int}
+end
+
+"""
+    _boundary_dofs(V, model, reffe, tag) -> Vector{Int}
+
+Indices, in the **unconstrained** numbering of `V`, of the scalar dofs lying on
+the boundary set `tag`.
+
+Two traps here. `get_cell_dof_ids(V, BoundaryTriangulation(...))` returns every
+dof of each cell *adjacent* to the boundary, which would pin a whole layer of
+elements to the analytical field instead of the boundary alone; the reliable
+route is a throwaway space tagged on that set — Gridap numbers its constrained
+dofs negatively — compared cell by cell with the untagged space, whose local
+dof ordering is identical because the reference element is.
+
+And `tags` is plural because Gridap tags *entities*: the endpoints of a tagged
+curve belong to point entities of their own and are not covered by the curve's
+group, so the mesh declares them separately (`"outer_pts"`, `"axis_pts"`) and
+both names must be passed.
+"""
+function _boundary_dofs(V, model, reffe, tags)
+    Vd = TestFESpace(model, reffe; conformity = :H1, dirichlet_tags = tags)
+    ids = Int[]
+    for (free, tagged) in zip(get_cell_dof_ids(V), get_cell_dof_ids(Vd))
+        for (i, t) in zip(free, tagged)
+            t < 0 && push!(ids, i)
+        end
+    end
+    return sort!(unique!(ids))
+end
+
+"Quadrature and the cylindrical radius `ρ` as a field, over one region."
+function _region_measure(model, set, order)
+    Ω = Triangulation(model, tags = set)
+    return (Measure(Ω, 2 * order + 1), CellField(x -> x[1], Ω))
+end
+
+function FE.fe_axi_mode(::GB, model, order::Int, ncomp::Int, axis_zeros)
+    reffe = ReferenceFE(lagrangian, Float64, order)
+    V1 = TestFESpace(model, reffe; conformity = :H1)     # no Dirichlet tags
+    nd1 = num_free_dofs(V1)
+
+    V = MultiFieldFESpace([V1 for _ in 1:ncomp])
+    U = MultiFieldFESpace([TrialFESpace(V1) for _ in 1:ncomp])
+
+    meas = Dict(
+        s => _region_measure(model, s, order) for
+            s in (FE.AXI_SET_CORE, FE.AXI_SET_SHELL, FE.AXI_SET_MATRIX)
+    )
+
+    ρd = get_free_dof_values(interpolate(x -> x[1], V1))
+    zd = get_free_dof_values(interpolate(x -> x[2], V1))
+
+    outer = _boundary_dofs(V1, model, reffe, [FE.AXI_SET_OUTER, FE.AXI_SET_OUTER_PTS])
+    axis_scalar = isempty(axis_zeros) ? Int[] :
+        _boundary_dofs(V1, model, reffe, [FE.AXI_SET_AXIS, FE.AXI_SET_AXIS_PTS])
+    axis = Int[i + (c - 1) * nd1 for c in axis_zeros for i in axis_scalar]
+
+    presc = sort!(unique!(vcat([outer .+ (c - 1) * nd1 for c in 1:ncomp]..., axis)))
+    free = setdiff(1:(ncomp * nd1), presc)
+    return GridapAxiMode(
+        ncomp, nd1, ncomp * nd1, V, U, meas,
+        (collect(ρd), collect(zd)), outer, axis, presc, free
+    )
+end
+
+FE.fe_axi_dof_split(::GB, ms::GridapAxiMode) = (ms.ndofs, ms.free, ms.presc)
+
+function FE.fe_axi_set_dirichlet!(::GB, ms::GridapAxiMode, u, f)
+    ρd, zd = ms.coords
+    for i in ms.outer
+        val = f((ρd[i], zd[i]))
+        for c in 1:ms.ncomp
+            u[i + (c - 1) * ms.nd1] = val[c]
+        end
+    end
+    u[ms.axis] .= 0.0                        # the axis wins at the poles
+    return u
+end
+
+# ─── The weak form ───────────────────────────────────────────────────────────
+#
+#  `Bop(N, dNρ, dNz, ρ)` returns an `nrow × ncomp` matrix whose column `c` is
+#  the generalized strain produced by component `c`.  Because it is R-linear in
+#  `(N, dNρ, dNz)`, applying it to a whole trial function and keeping column
+#  `c` gives that component's contribution, and the total strain is their sum.
+#  No element `B` matrix is ever formed.
+
+# A `VectorValue` is a `Number` in Gridap, so `collect` on one yields a 0-d
+# array, not a vector; `Tuple` is the way back to plain Julia values.
+_vec(v) = collect(Tuple(v))
+
+"Column `c` of the generalized-strain operator, applied to a scalar field."
+function _bcol(Bop, nrow, c, N, ∇N, ρ)
+    B = Bop(N, ∇N[1], ∇N[2], ρ)
+    return VectorValue(ntuple(r -> B[r, c], nrow))
+end
+
+"""
+    _bfield(w, Bop, nrow, c, ρ)
+
+Contribution of the single scalar field `w`, taken as component `c`, to the
+generalized strain — a `VectorValue{nrow}`-valued `CellField`.
+"""
+_bfield(w, Bop, nrow, c, ρ) =
+    Operation((N, ∇N, r) -> _bcol(Bop, nrow, c, N, ∇N, r))(w, ∇(w), ρ)
+
+"Generalized strain of a multi-field **function**, as a `VectorValue{nrow}` field."
+_strain(ms::GridapAxiMode, w, Bop, nrow, ρ) =
+    sum(_bfield(w[c], Bop, nrow, c, ρ) for c in 1:ms.ncomp)
+
+_tensor(D) = TensorValue(D)
+
+"""
+    fe_axi_stiffness(GridapBackend(), mode, Dmap, Bop)
+
+The weak form is written out as one term per (region, test component, trial
+component) triple rather than as `E(v) ⋅ D ⋅ E(u)` over the summed strains.
+
+That is deliberate. Summing the *bases* `v[1] + v[2] + …` before multiplying
+mixes multi-field blocks that Gridap tracks separately, and the assembled
+operator comes out subtly non-symmetric — a fraction of a percent, enough to
+be mistaken for discretization error. Expanding the double sum keeps every
+term a plain one-field-against-one-field product, which is the case Gridap's
+block assembly is built for. `_strain` above may sum freely because it is only
+ever applied to an `FEFunction`, where the sum is a genuine field sum.
+"""
+function FE.fe_axi_stiffness(::GB, ms::GridapAxiMode, Dmap, Bop)
+    nrow = size(last(first(Dmap)), 1)
+    terms = [
+        (ms.meas[set]..., _tensor(D), ci, cj) for (set, D) in Dmap
+            for ci in 1:ms.ncomp for cj in 1:ms.ncomp
+    ]
+    energy(u, v, ρ, Dt, ci, cj) =
+        _bfield(v[ci], Bop, nrow, ci, ρ) ⋅ (Dt ⋅ _bfield(u[cj], Bop, nrow, cj, ρ)) * ρ
+    a(u, v) = sum(∫(energy(u, v, ρ, Dt, ci, cj))dΩ for (dΩ, ρ, Dt, ci, cj) in terms)
+    return assemble_matrix(a, ms.U, ms.V)
+end
+
+function FE.fe_axi_average(::GB, ms::GridapAxiMode, Dmap, u, Bop, proj, sets)
+    nrow = size(last(first(Dmap)), 1)
+    nout = length(proj(zeros(nrow)))
+    P = Operation(e -> VectorValue(Tuple(proj(_vec(e)))))
+    uh = FEFunction(ms.U, u)
+
+    prim = zeros(nout)
+    dual = zeros(nout)
+    V = 0.0
+    for (set, D) in Dmap
+        set in sets || continue
+        dΩ, ρ = ms.meas[set]
+        Dt = _tensor(D)
+        e = _strain(ms, uh, Bop, nrow, ρ)
+        prim .+= _vec(sum(∫(P(e) * ρ)dΩ))
+        dual .+= _vec(sum(∫(P(Dt ⋅ e) * ρ)dΩ))
+        V += sum(∫(ρ)dΩ)
+    end
+    return prim ./ V, dual ./ V, 2π * V
+end
+
+end # module

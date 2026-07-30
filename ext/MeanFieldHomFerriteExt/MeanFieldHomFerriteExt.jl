@@ -4,11 +4,16 @@
 Finite-element resolution of the Eshelby problem, activated by
 `import Ferrite, FerriteGmsh, Gmsh`.
 
-Implements [`MeanFieldHom.FEEllipticCrack`](@ref): a flat elliptical crack
-whose crack-opening-displacement tensor comes out of a finite-element solve
-instead of a closed form, using the finite Eshelby cell with a first-order
-corrected boundary condition of Adessina, Barthélémy, Lavergne & Ben Fraj,
-*Int. J. Eng. Sci.* **119** (2017) 1-15.
+Two things live here. [`MeanFieldHom.FEEllipticCrack`](@ref) is implemented in
+full — mesh, solver and the 3+3 corrected scheme — because the gmsh `Crack`
+plugin and the front welding it requires are Ferrite-grid surgery. For
+[`MeanFieldHom.FEExcenteredSphere`](@ref) only the nine methods of the
+[`MeanFieldHom.FEBackend`](@ref) contract are supplied, in `axi_backend.jl`;
+the physics of that solve lives in `src/FiniteElements/`.
+
+Both use the finite Eshelby cell with a first-order corrected boundary
+condition of Adessina, Barthélémy, Lavergne & Ben Fraj, *Int. J. Eng. Sci.*
+**119** (2017) 1-15.
 
 The point of the exercise is that nothing downstream knows: because the type
 subtypes `AbstractCrack` and declares a standard `shape_trait`, supplying
@@ -28,13 +33,11 @@ using LinearAlgebra
 
 const FE = MeanFieldHom.FiniteElements
 
-import MeanFieldHom.FiniteElements: _fe_cod_tensor, _fe_axi_localization
+import MeanFieldHom.FiniteElements: _fe_cod_tensor
 
 include("mesh.jl")
 include("solver.jl")
-include("axi_mesh.jl")
-include("axi_fourier.jl")
-include("axi_solver.jl")
+include("axi_backend.jl")
 
 # ─── Frame handling ──────────────────────────────────────────────────────────
 #

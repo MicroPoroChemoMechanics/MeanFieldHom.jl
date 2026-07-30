@@ -26,7 +26,7 @@ Sub-modules may *extend* (but not redefine) both `_resolve_algo` and
 | `Viscoelasticity`  | ageing linear viscoelasticity (Volterra pipeline, ALV variant of every scheme)                      |
 
 | `CustomInclusions` | the user-defined inclusion contract: `CustomInclusion`, `check_inclusion_interface` |
-| `FiniteElements`   | inclusions solved by finite elements (`FEEllipticCrack`, `FEExcenteredSphere`); the solvers live in `MeanFieldHomFerriteExt` |
+| `FiniteElements`   | inclusions solved by finite elements (`FEEllipticCrack`, `FEExcenteredSphere`); the physics lives here, the discretization in a backend extension (`MeanFieldHomFerriteExt`, `MeanFieldHomGridapExt`) |
 
 Two files sit at the **top level** rather than in a sub-module, and are loaded
 after every geometry sub-module on purpose: `localization.jl` and

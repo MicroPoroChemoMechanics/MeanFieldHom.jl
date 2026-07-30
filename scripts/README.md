@@ -114,6 +114,12 @@ Scripts 81 to 83 need `Ferrite`, `FerriteGmsh` and `Gmsh` (weak dependencies of
 `MeanFieldHom`). 81 and 82 take a minute or so — they mesh a ball and factorize
 a ~10⁵-dof system per case; 83 is two-dimensional and runs in seconds.
 
+83 also runs on the second backend if `Gridap` and `GridapGmsh` are added to
+`scripts/fe/`: pass `backend = GridapBackend()` to `FEExcenteredSphere`. The
+two agree to round-off. 81 and 82 do not — the finite-element crack is
+Ferrite-only, because gmsh's `Crack` plugin needs front-welding surgery on the
+grid data structure.
+
 The two `scripts/fe/make_*_figures.jl` are maintenance scripts, run by hand,
 that regenerate the committed PNGs and result tables of the documentation pages
 `manual/fe_inclusions.md` and `applications/recycled_aggregate.md`. Nothing

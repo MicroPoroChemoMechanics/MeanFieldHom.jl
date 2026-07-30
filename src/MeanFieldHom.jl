@@ -29,7 +29,8 @@ inclusions, algorithms, and material symmetry classes.
   `CustomInclusion` and `check_inclusion_interface`.
 - `MeanFieldHom.FiniteElements`   — inclusions whose response comes out of a
   finite-element resolution of the Eshelby problem (`FEEllipticCrack`,
-  `FEExcenteredSphere`); the solvers live in `MeanFieldHomFerriteExt`.
+  `FEExcenteredSphere`); the discretization comes from a backend extension,
+  `MeanFieldHomFerriteExt` or `MeanFieldHomGridapExt`.
 
 # Shared generic interface
 
@@ -129,8 +130,9 @@ export sif, dif
 # ── Custom (user-defined) inclusions ─────────────────────────────────────────
 export CustomInclusion, CustomShape, check_inclusion_interface
 
-# ── Finite-element inclusions (needs `MeanFieldHomFerriteExt`) ───────────────
+# ── Finite-element inclusions (need a backend extension) ─────────────────────
 export FECache, fe_assembly_count, fe_reset!
+export FEBackend, AutoBackend, FerriteBackend, GridapBackend
 export FEEllipticCrack, FEMeshOptions, fe_cod_breakdown, fe_mesh_report
 export FEExcenteredSphere, FEAxiMeshOptions
 export fe_axi_localization, fe_axi_breakdown, fe_axi_mesh_report

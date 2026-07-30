@@ -54,6 +54,8 @@ section of the docs.
 | `MeanFieldHom.Conductivity` | 2nd-order Hill tensor for transport problems; closed form for any matrix anisotropy. |
 | `MeanFieldHom.LayeredSpheres` | `n`-layer composite spheres, 5 interface types (perfect, spring, membrane, Kapitza, surface-conductive), volume-average and pointwise localization. |
 | `MeanFieldHom.LayeredSpheroids` | `n`-layer confocal spheroids, conduction, with Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
+| `MeanFieldHom.CustomInclusions` | The user-defined inclusion contract: `CustomInclusion` and `check_inclusion_interface`. |
+| `MeanFieldHom.FiniteElements` | Inclusions whose response comes out of a finite-element resolution of the Eshelby problem — elliptical crack (3-D) and sphere with an off-centre core (axisymmetric Fourier) — behind a two-backend contract. |
 | `MeanFieldHom.Schemes` | RVE container and `homogenize`; bounds, dilute, Mori–Tanaka, self-consistent (+ asymmetric), PCW, Maxwell, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
 | `MeanFieldHom.Viscoelasticity` | Ageing linear viscoelasticity via Volterra operators, with structured ISO/TI/orthotropic kernel storage — every scheme, cracks and layered spheres included. |
 
@@ -71,7 +73,7 @@ All dependencies (`TensND.jl`, `OrdinaryDiffEq.jl`, `Elliptic.jl`,
 `Polynomials.jl`, `PolynomialRoots.jl`, `QuadGK.jl`, `Tensors.jl`, …) are
 resolved from the Julia General registry.
 
-Three package extensions activate on weak dependencies, each optional:
+Five package extensions activate on weak dependencies, each optional:
 
 - [`DECUHR.jl`](https://github.com/MicroPoroChemoMechanics/DECUHR.jl) +
   `Integrals.jl` — adaptive cubature backend (`method = :decuhr`); the
@@ -82,6 +84,11 @@ Three package extensions activate on weak dependencies, each optional:
   instead of the built-in Anderson/Newton iteration, with exact
   `ForwardDiff` sensitivities through the fixed point either way.
 - `SymPy.jl` — symbolic closed forms for the elliptic integrals.
+- `Ferrite.jl` + `FerriteGmsh.jl` + `Gmsh.jl` — the reference finite-element
+  backend, serving both `FEEllipticCrack` and `FEExcenteredSphere`.
+- `Gridap.jl` + `GridapGmsh.jl` — a second backend for `FEExcenteredSphere`.
+  The two share the mesh and the physics and agree to round-off; Ferrite is
+  the faster, Gridap states the weak form directly and is the easier to adapt.
 
 Type-generic elliptic integrals themselves are always bundled, as the
 `MeanFieldHom.Elliptic` submodule.

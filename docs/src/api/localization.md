@@ -58,16 +58,51 @@ MeanFieldHom.check_inclusion_interface
 
 ## Finite-element inclusions
 
-Requires `Ferrite`, `FerriteGmsh` and `Gmsh`. Two morphologies, one method —
-see [Finite-element inclusions](@ref man-fe-inclusions) for the elliptical
-crack and [A recycled-concrete aggregate](@ref app-recycled-aggregate) for the
-sphere with an off-centre core.
+Requires a finite-element backend: `Ferrite`, `FerriteGmsh` and `Gmsh`, or —
+for the axisymmetric morphology — `Gridap` and `GridapGmsh`. Two morphologies,
+one method: see [Finite-element inclusions](@ref man-fe-inclusions) for the
+elliptical crack and [A recycled-concrete aggregate](@ref app-recycled-aggregate)
+for the sphere with an off-centre core.
 
 ```@docs
 MeanFieldHom.FiniteElements
 MeanFieldHom.FECache
 MeanFieldHom.fe_assembly_count
 MeanFieldHom.fe_reset!
+```
+
+### Choosing a backend
+
+```@docs
+MeanFieldHom.FEBackend
+MeanFieldHom.AutoBackend
+MeanFieldHom.FerriteBackend
+MeanFieldHom.GridapBackend
+```
+
+### Writing a backend
+
+A backend is these nine methods and nothing else. The Fourier operators, the
+boundary data, the fixed point of the corrected boundary condition and the
+memoization are shared, and the driver closes the strain operator and the
+azimuthal projection over the mode before handing them over — so an
+implementation never sees a Fourier mode or a physics, only "this many scalar
+fields, this operator, this projection".
+
+`ext/MeanFieldHomGridapExt/` is the shorter of the two implementations, at
+about 280 lines, and is the one to read first.
+
+```@docs
+MeanFieldHom.FiniteElements._build_gmsh_axi_model
+MeanFieldHom.FiniteElements.fe_axi_grid
+MeanFieldHom.FiniteElements.fe_axi_grid_counts
+MeanFieldHom.FiniteElements.fe_axi_region_volume
+MeanFieldHom.FiniteElements.fe_axi_mode
+MeanFieldHom.FiniteElements.fe_axi_dof_split
+MeanFieldHom.FiniteElements.fe_axi_set_dirichlet!
+MeanFieldHom.FiniteElements.fe_axi_stiffness
+MeanFieldHom.FiniteElements.fe_axi_average
+MeanFieldHom.FiniteElements._resolve_backend
 ```
 
 ### Elliptical crack (3-D)

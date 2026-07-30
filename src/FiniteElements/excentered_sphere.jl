@@ -11,9 +11,9 @@
 #  azimuth.  Four two-dimensional solves replace six three-dimensional ones and
 #  the cost collapses by two orders of magnitude at equal accuracy.
 #
-#  Only the type and its geometric interface live here; the mesh and the solve
-#  live in `MeanFieldHomFerriteExt`.  See
-#  `docs/src/applications/recycled_aggregate.md`.
+#  The type, the gmsh geometry, the Fourier operators and the algebra live in
+#  this sub-module; only the discretization comes from a backend extension.
+#  See `docs/src/applications/recycled_aggregate.md`.
 # =============================================================================
 
 """
@@ -42,8 +42,8 @@ struct FEAxiMeshOptions
         )
         order in (1, 2) || throw(
             ArgumentError(
-                "interpolation `order` must be 1 or 2 (Ferrite provides no " *
-                    "higher-order Lagrange element on triangles), got $order"
+                "interpolation `order` must be 1 or 2 — the common ground " *
+                    "of the finite-element backends — got $order"
             )
         )
         radius_ratio > 1 ||
@@ -104,15 +104,18 @@ and the `Dict` handed to `add_phase!` is a placeholder that the kernel ignores.
 Build one object per physics: a pair of `Tens{4,3}` for elasticity, a pair of
 `Tens{2,3}` for conduction.
 
-Requires `Ferrite`, `FerriteGmsh` and `Gmsh` to be loaded. The reference medium
-must be isotropic (the corrected boundary condition uses the closed-form Kelvin
-dipole field); the constituents may be isotropic or transversely isotropic
-about the symmetry axis.
+Requires a finite-element backend to be loaded — `Ferrite`, `FerriteGmsh` and
+`Gmsh`, or `Gridap` and `GridapGmsh`; pass `backend = GridapBackend()` to pick
+the second when both are available, and see [`FEBackend`](@ref). The reference
+medium must be isotropic (the corrected boundary condition uses the closed-form
+Kelvin dipole field); the constituents may be isotropic or transversely
+isotropic about the symmetry axis.
 
 # Example
 
 ```julia
-using MeanFieldHom, Ferrite, FerriteGmsh, Gmsh
+using MeanFieldHom
+import Ferrite, FerriteGmsh, Gmsh        # or: import Gridap, GridapGmsh
 
 C_core, C_shell = iso_stiffness(20.0, 12.0), iso_stiffness(6.0, 4.0)
 C₀ = iso_stiffness(10.0, 6.0)
@@ -138,6 +141,7 @@ struct FEExcenteredSphere{T <: Number, P, B <: TensND.AbstractBasis} <:
     basis::B
     mesh::FEAxiMeshOptions
     cache::FECache
+    backend::FEBackend
 end
 
 function FEExcenteredSphere(
@@ -147,7 +151,8 @@ function FEExcenteredSphere(
         eccentricity::Real = 0.0,
         basis::Union{Nothing, TensND.AbstractBasis} = nothing,
         euler_angles::Tuple{Vararg{Real}} = (),
-        radius_ratio = 4.0, nradial = 24, coarsening = 6.0, order = 2
+        radius_ratio = 4.0, nradial = 24, coarsening = 6.0, order = 2,
+        backend::FEBackend = AutoBackend()
     ) where {O}
     T = Core._floatlike(promote_type(typeof(a), typeof(core_fraction), typeof(eccentricity)))
     a > 0 || throw(ArgumentError("the inclusion radius must be positive, got $a"))
@@ -166,7 +171,7 @@ function FEExcenteredSphere(
     bas = basis === nothing ? Core._default_basis(T, euler_angles) : basis
     opts = FEAxiMeshOptions(; radius_ratio, nradial, coarsening, order)
     return FEExcenteredSphere{T, typeof(props), typeof(bas)}(
-        T(a), T(core_fraction), T(eccentricity), props, bas, opts, FECache()
+        T(a), T(core_fraction), T(eccentricity), props, bas, opts, FECache(), backend
     )
 end
 
@@ -249,49 +254,6 @@ Schemes._layer_voigt(s::FEExcenteredSphere, ref::TensND.AbstractTens) =
     _layer_average(s, ref, identity)
 Schemes._layer_reuss(s::FEExcenteredSphere, ref::TensND.AbstractTens) =
     _layer_average(s, ref, inv)
-
-# ─── Extension seams ─────────────────────────────────────────────────────────
-
-"""
-    _fe_axi_localization(incl, P₀; kw...) -> (A, B)
-
-Backend seam of the axisymmetric Fourier solve: returns the strain-side and
-stress-side localization tensors of `incl` (or their transport analogues),
-in the **global** frame. Implemented in `MeanFieldHomFerriteExt`.
-"""
-_fe_axi_localization(args...; kwargs...) = error(
-    "`FEExcenteredSphere` needs the Ferrite extension: run " *
-        "`import Ferrite, FerriteGmsh, Gmsh` first."
-)
-
-"""
-    fe_axi_breakdown(incl, P₀) -> NamedTuple
-
-Diagnostic view of the corrected axisymmetric solve: the localization tensors
-`A_E`, `B_E` of the **finite** cell, the dipole-response tensors `A_p`, `B_p`,
-the polarization operator `X`, and the corrected `A`, `B`.
-
-Comparing `A_E` with `A` measures how much work the boundary correction is
-doing; `A` — unlike `A_E` — should be insensitive to `radius_ratio`. That
-contrast is the practical proof that the correction is wired correctly.
-Bypasses the cache. Implemented in `MeanFieldHomFerriteExt`.
-"""
-fe_axi_breakdown(args...; kwargs...) = error(
-    "`fe_axi_breakdown` needs the Ferrite extension: run " *
-        "`import Ferrite, FerriteGmsh, Gmsh` first."
-)
-
-"""
-    fe_axi_mesh_report(incl) -> NamedTuple
-
-Mesh diagnostics of an axisymmetric finite-element inclusion: cell, node and
-dof counts, and the measured volumes of the core, the shell and the whole cell
-against their exact values. Implemented in `MeanFieldHomFerriteExt`.
-"""
-fe_axi_mesh_report(args...; kwargs...) = error(
-    "`fe_axi_mesh_report` needs the Ferrite extension: run " *
-        "`import Ferrite, FerriteGmsh, Gmsh` first."
-)
 
 """
     fe_axi_localization(incl, P₀) -> (A, B)

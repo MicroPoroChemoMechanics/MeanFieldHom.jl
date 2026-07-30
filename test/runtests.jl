@@ -24,6 +24,18 @@ catch
     false
 end
 
+# The second finite-element backend.  Deliberately **not** a dependency of
+# `test/Project.toml`: `GridapGmsh` pulls `GridapDistributed`,
+# `PartitionedArrays` (hence `MPI`) and `Metis`, which is a lot of machinery to
+# install on every CI run for a cross-check.  Add the two packages to the test
+# environment locally to exercise `test_axi_gridap.jl`.
+const HAS_GRIDAP = try
+    @eval import Gridap, GridapGmsh
+    true
+catch
+    false
+end
+
 # Several test files draw random operators (`test_ti_alv.jl`, `test_ortho_alv.jl`,
 # `test_volterra_inverse.jl`, …).  Seed once here so a CI failure is always
 # reproducible locally instead of depending on the draw.
@@ -104,6 +116,12 @@ Random.seed!(20260723)
         @testset "FiniteElementInclusions" begin
             include("FiniteElements/test_ferrite_crack.jl")
             include("FiniteElements/test_axi_excentered_sphere.jl")
+            if HAS_GRIDAP
+                include("FiniteElements/test_axi_gridap.jl")
+            else
+                @info "Gridap / GridapGmsh unavailable — skipping the " *
+                    "cross-backend finite-element tests."
+            end
         end
     else
         @info "Ferrite / FerriteGmsh / Gmsh unavailable — skipping the " *

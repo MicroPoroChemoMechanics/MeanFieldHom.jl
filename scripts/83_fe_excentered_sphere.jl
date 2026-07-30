@@ -32,7 +32,10 @@
 # \mathbb A = \mathbb A^E + \mathbb A^p : \mathbb X .
 # ```
 #
-# Requires `Ferrite`, `FerriteGmsh` and `Gmsh`.
+# Requires a finite-element backend: `Ferrite`, `FerriteGmsh` and `Gmsh` as
+# below, or `Gridap` and `GridapGmsh` with `backend = GridapBackend()` passed to
+# the constructor. The two agree to round-off; Ferrite is the faster to run,
+# Gridap states the weak form directly and is the easier to adapt.
 
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, "fe"); io = devnull)                 #jl

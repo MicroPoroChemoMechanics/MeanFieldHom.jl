@@ -1,0 +1,219 @@
+# =============================================================================
+#  axi_backend.jl — the Ferrite implementation of the axisymmetric contract.
+#
+#  Nine methods, and nothing else.  Every Fourier-, physics- and
+#  tensor-algebra question has already been answered by the driver in
+#  `src/FiniteElements/axi_driver.jl`; what is left here is discretization:
+#  scalar Lagrange fields, a dof numbering, an assembly loop, a Dirichlet lift
+#  and a quadrature.
+# =============================================================================
+
+const _AXI_FIELDS = (:c1, :c2, :c3)
+
+"""
+One Fourier mode, discretized with Ferrite. Built once per inclusion and mode
+and reused for every reference medium.
+
+`perm` converts Ferrite's interleaved per-cell dof layout into the
+component-major layout `(c-1) * nb + i` that the generalized-strain operator
+expects. It is purely element-local — the global vectors the driver handles
+are never permuted — which is why it never crosses the backend seam.
+
+`bcref` holds the boundary-data closure of the load case currently being
+solved. Ferrite bakes the constrained dof list into the `ConstraintHandler` at
+`close!` time; re-pointing `bcref` and calling `update!` refills the
+inhomogeneities in place, with no reassembly and no refactorization.
+"""
+struct AxiModeSetup{D, C}
+    ncomp::Int
+    dh::D
+    cv::C
+    perm::Vector{Int}
+    ch::Ferrite.ConstraintHandler
+    bcref::Base.RefValue{Any}
+    axis::Vector{Int}
+    presc::Vector{Int}
+    free::Vector{Int}
+end
+
+# ─── Mesh ────────────────────────────────────────────────────────────────────
+
+function FE.fe_axi_grid(::FE.FerriteBackend, incl::MeanFieldHom.FEExcenteredSphere)
+    a = Float64(incl.a)
+    a_core = Float64(FE.core_radius(incl))
+    d = Float64(FE.core_offset(incl))
+    opts = incl.mesh
+    R = opts.radius_ratio * a
+    h_in = a / opts.nradial
+    h_out = opts.coarsening * h_in
+
+    gmsh.initialize()
+    local grid
+    try
+        gmsh.option.setNumber("General.Terminal", 0)
+        FE._build_gmsh_axi_model(gmsh, a, a_core, d, R, h_in, h_out)
+        grid = FerriteGmsh.togrid()
+    finally
+        gmsh.finalize()
+    end
+    return grid
+end
+
+FE.fe_axi_grid_counts(::FE.FerriteBackend, grid) = (;
+    ncells = Ferrite.getncells(grid),
+    nnodes = Ferrite.getnnodes(grid),
+    ncells_by_set = Dict(
+        s => length(Ferrite.getcellset(grid, s)) for
+            s in (FE.AXI_SET_CORE, FE.AXI_SET_SHELL, FE.AXI_SET_MATRIX)
+    ),
+)
+
+function FE.fe_axi_region_volume(::FE.FerriteBackend, grid, set)
+    ip_geo = Ferrite.Lagrange{Ferrite.RefTriangle, 1}()
+    cv = Ferrite.CellValues(Ferrite.QuadratureRule{Ferrite.RefTriangle}(3), ip_geo, ip_geo)
+    V = 0.0
+    for ci in Ferrite.getcellset(grid, set)
+        coords = Ferrite.getcoordinates(grid, ci)
+        Ferrite.reinit!(cv, coords)
+        for q in 1:Ferrite.getnquadpoints(cv)
+            V += Ferrite.getdetJdV(cv, q) * Ferrite.spatial_coordinate(cv, q, coords)[1]
+        end
+    end
+    return 2π * V
+end
+
+# ─── One mode ────────────────────────────────────────────────────────────────
+
+function FE.fe_axi_mode(::FE.FerriteBackend, grid, order::Int, ncomp::Int, axis_zeros)
+    fields = _AXI_FIELDS[1:ncomp]
+
+    ip = Ferrite.Lagrange{Ferrite.RefTriangle, order}()
+    ip_geo = Ferrite.Lagrange{Ferrite.RefTriangle, 1}()
+    qr = Ferrite.QuadratureRule{Ferrite.RefTriangle}(2 * order + 1)
+    cv = Ferrite.CellValues(qr, ip, ip_geo)
+
+    dh = Ferrite.DofHandler(grid)
+    for f in fields
+        Ferrite.add!(dh, f, ip)
+    end
+    Ferrite.close!(dh)
+    perm = reduce(vcat, [collect(Ferrite.dof_range(dh, f)) for f in fields])
+
+    # Outer boundary: values supplied per solve through `bcref`.
+    bcref = Base.RefValue{Any}(_ -> ntuple(_ -> 0.0, ncomp))
+    ch = Ferrite.ConstraintHandler(dh)
+    for (k, f) in pairs(fields)
+        Ferrite.add!(
+            ch, Ferrite.Dirichlet(
+                f, Ferrite.getfacetset(grid, FE.AXI_SET_OUTER), (x, _t) -> bcref[](x)[k]
+            )
+        )
+    end
+    Ferrite.close!(ch)
+
+    # Axis: the components regularity forces to vanish.
+    axis = Int[]
+    if !isempty(axis_zeros)
+        cha = Ferrite.ConstraintHandler(dh)
+        for k in axis_zeros
+            Ferrite.add!(
+                cha, Ferrite.Dirichlet(
+                    fields[k], Ferrite.getfacetset(grid, FE.AXI_SET_AXIS), (_x, _t) -> 0.0
+                )
+            )
+        end
+        Ferrite.close!(cha)
+        axis = collect(cha.prescribed_dofs)
+    end
+
+    presc = sort!(union(collect(ch.prescribed_dofs), axis))
+    free = setdiff(1:Ferrite.ndofs(dh), presc)
+    return AxiModeSetup(ncomp, dh, cv, perm, ch, bcref, axis, presc, free)
+end
+
+FE.fe_axi_dof_split(::FE.FerriteBackend, ms::AxiModeSetup) =
+    (Ferrite.ndofs(ms.dh), ms.free, ms.presc)
+
+function FE.fe_axi_set_dirichlet!(::FE.FerriteBackend, ms::AxiModeSetup, u, f)
+    ms.bcref[] = f
+    Ferrite.update!(ms.ch, 0.0)
+    u[ms.ch.prescribed_dofs] .= ms.ch.inhomogeneities
+    u[ms.axis] .= 0.0                      # the axis wins at the poles
+    return u
+end
+
+# ─── Assembly and averages ───────────────────────────────────────────────────
+#
+#  Both walk the same quadrature and build the same element operator, so the
+#  inner loop is shared.  The measure is `ρ dρ dz`: that single factor is what
+#  turns a plane problem into a solid of revolution.
+
+"Fill `Bq` with the generalized-strain operator of one quadrature point."
+function _axi_fill_B!(Bq, ms::AxiModeSetup, Bop, q, ρ, nb)
+    fill!(Bq, 0)
+    for i in 1:nb
+        N = Ferrite.shape_value(ms.cv, q, i)
+        ∇N = Ferrite.shape_gradient(ms.cv, q, i)
+        Bi = Bop(N, ∇N[1], ∇N[2], ρ)
+        for c in 1:ms.ncomp, r in axes(Bi, 1)
+            Bq[r, (c - 1) * nb + i] = Bi[r, c]
+        end
+    end
+    return Bq
+end
+
+function FE.fe_axi_stiffness(::FE.FerriteBackend, ms::AxiModeSetup, Dmap, Bop)
+    K = Ferrite.allocate_matrix(ms.dh)
+    asm = Ferrite.start_assemble(K)
+    nb = Ferrite.getnbasefunctions(ms.cv)
+    nl = nb * ms.ncomp
+    ke = zeros(nl, nl)
+    Bq = zeros(size(last(first(Dmap)), 1), nl)
+    grid = Ferrite.get_grid(ms.dh)
+
+    for (setname, D) in Dmap
+        for cell in Ferrite.CellIterator(ms.dh, Ferrite.getcellset(grid, setname))
+            Ferrite.reinit!(ms.cv, cell)
+            coords = Ferrite.getcoordinates(cell)
+            fill!(ke, 0)
+            for q in 1:Ferrite.getnquadpoints(ms.cv)
+                ρ = Ferrite.spatial_coordinate(ms.cv, q, coords)[1]
+                dΩ = Ferrite.getdetJdV(ms.cv, q) * ρ
+                _axi_fill_B!(Bq, ms, Bop, q, ρ, nb)
+                ke .+= (Bq' * D * Bq) .* dΩ
+            end
+            Ferrite.assemble!(asm, Ferrite.celldofs(cell)[ms.perm], ke)
+        end
+    end
+    return K
+end
+
+function FE.fe_axi_average(::FE.FerriteBackend, ms::AxiModeSetup, Dmap, u, Bop, proj, sets)
+    nb = Ferrite.getnbasefunctions(ms.cv)
+    nl = nb * ms.ncomp
+    nrow = size(last(first(Dmap)), 1)
+    Bq = zeros(nrow, nl)
+    prim = zeros(length(proj(zeros(nrow))))
+    dual = zeros(length(prim))
+    V = 0.0
+    grid = Ferrite.get_grid(ms.dh)
+
+    for (setname, D) in Dmap
+        setname in sets || continue
+        for cell in Ferrite.CellIterator(ms.dh, Ferrite.getcellset(grid, setname))
+            Ferrite.reinit!(ms.cv, cell)
+            coords = Ferrite.getcoordinates(cell)
+            ue = u[Ferrite.celldofs(cell)[ms.perm]]
+            for q in 1:Ferrite.getnquadpoints(ms.cv)
+                ρ = Ferrite.spatial_coordinate(ms.cv, q, coords)[1]
+                dΩ = Ferrite.getdetJdV(ms.cv, q) * ρ
+                _axi_fill_B!(Bq, ms, Bop, q, ρ, nb)
+                e = Bq * ue
+                prim .+= proj(e) .* dΩ
+                dual .+= proj(D * e) .* dΩ
+                V += dΩ
+            end
+        end
+    end
+    return prim ./ V, dual ./ V, 2π * V
+end

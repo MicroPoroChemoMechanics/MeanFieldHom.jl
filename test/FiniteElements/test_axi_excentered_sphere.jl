@@ -54,7 +54,7 @@ end
     # against their Cartesian expressions, rebuilt from the modal amplitudes at
     # several azimuths — a failure here would otherwise surface only as a
     # plausible-looking few-percent drift in the localization tensors.
-    ext = Base.get_extension(MeanFieldHom, :MeanFieldHomFerriteExt)
+    FE = MeanFieldHom.FiniteElements
     s2 = sqrt(2.0)
     basis = (
         (0, 1, [1.0 0 0; 0 1 0; 0 0 0] ./ s2),      # m₁, mode 0
@@ -75,8 +75,8 @@ end
             θ in (0.0, 0.7, 1.9, 4.1)
 
         x = [ρ * cos(θ), ρ * sin(θ), z]
-        @test to_cart(m, ext._axi_bc_affine(m, j, ρ, z), θ) ≈ Mt * x atol = 1.0e-12
-        @test to_cart(m, ext._axi_bc_dipole(m, j, ρ, z, μ, ν, V), θ) ≈
+        @test to_cart(m, FE._axi_bc_affine(m, j, ρ, z), θ) ≈ Mt * x atol = 1.0e-12
+        @test to_cart(m, FE._axi_bc_dipole(m, j, ρ, z, μ, ν, V), θ) ≈
             MeanFieldHom.Core._dipole_displacement_iso(μ, ν, x, V * Mt) rtol = 1.0e-12
     end
 end
@@ -305,4 +305,23 @@ end
     )
     @test_throws ArgumentError fe_axi_localization(worse, AX_C_MAT)
     @test fe_axi_localization(bad, AX_C_MAT) isa Tuple   # TI core is allowed
+end
+
+@testset "Analytic sensitivity is refused, not silently zero" begin
+    # `_replace_geom_field` copies non-numeric fields by reference, so a
+    # perturbed geometry would share the original's `FECache` — whose key is
+    # the reference medium alone — and hand back the unperturbed tensors. The
+    # derivative would come out as exactly zero, with no warning. (It would be
+    # zero anyway: the solve converts to `Float64` on entry, so a `Dual` loses
+    # its perturbation at the door.) Refusing is the only honest answer.
+    Sch = MeanFieldHom.Schemes
+    incl = FEExcenteredSphere(
+        1.0, (AX_C_CORE, AX_C_SHELL); core_fraction = AX_W, nradial = 10
+    )
+    for f in (:a, :core_fraction, :eccentricity)
+        e = @test_throws ErrorException Sch._replace_geom_field(incl, Val(f), nothing, 0.5)
+        @test occursin("finite difference", e.value.msg)
+    end
+    crack = FEEllipticCrack(1.0, 0.5)
+    @test_throws ErrorException Sch._replace_geom_field(crack, Val(:a), nothing, 2.0)
 end

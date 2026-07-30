@@ -458,7 +458,8 @@ and only the core is left to see.
 ## Using it
 
 ```julia
-using MeanFieldHom, Ferrite, FerriteGmsh, Gmsh
+using MeanFieldHom
+import Ferrite, FerriteGmsh, Gmsh        # or: import Gridap, GridapGmsh
 
 C_agg   = iso_stiffness(70.0 / (3 * (1 - 2 * 0.2)), 70.0 / (2 * (1 + 0.2)))
 C_mortar = iso_stiffness(8.0 / (3 * (1 - 2 * 0.2)), 8.0 / (2 * (1 + 0.2)))
@@ -489,6 +490,45 @@ FEExcenteredSphere(a, props; core_fraction, eccentricity = 0.0,
 ```
 
 See [`FEAxiMeshOptions`](@ref) for what each knob does.
+
+### Choosing a backend
+
+Two finite-element libraries can perform this solve, and the physics is shared
+between them: the Fourier operators, the boundary data, the fixed point of the
+corrected boundary condition and the memoization all live in
+`MeanFieldHom.FiniteElements`. What a backend supplies is a mesh, scalar
+Lagrange spaces, an assembly and a quadrature — nine methods in all.
+
+```julia
+import Ferrite, FerriteGmsh, Gmsh        # FerriteBackend
+import Gridap, GridapGmsh                # GridapBackend
+
+incl = FEExcenteredSphere(a, props; core_fraction, backend = GridapBackend())
+```
+
+Left unspecified, `backend` is [`AutoBackend`](@ref), resolved at the **first
+solve** — so an inclusion can be built, stored in an `RVE` and passed around in
+a session where no finite-element package is loaded, and the informative error
+arrives only when a scheme actually asks for a tensor. With both stacks loaded,
+`AutoBackend` picks Ferrite. The choice is a property of the object and is
+pinned once solved: comparing the two means building two inclusions.
+
+| | [`FerriteBackend`](@ref) | [`GridapBackend`](@ref) |
+|---|---|---|
+| Loads | `Ferrite, FerriteGmsh, Gmsh` | `Gridap, GridapGmsh` |
+| Morphologies | crack **and** sphere | sphere only |
+| Discretization | explicit element loop | weak form, `∫( Eᵐ(v) ⋅ D ⋅ Eᵐ(u) ρ )dΩ` |
+| Speed | ≈ 5× faster | slower |
+
+Both build the same mesh, the same P2 space and the same quadrature, so they do
+not merely converge to the same limit — they agree to round-off, around
+``10^{-14}`` on every tensor in both physics. That is what
+`test/FiniteElements/test_axi_gridap.jl` asserts, which makes it a sharp guard
+on the backend contract rather than a loose convergence check.
+
+Which to reach for: Ferrite to run, Gridap to *read* or to modify. The weak
+form above is the equation of the axisymmetric problem transcribed, so adapting
+the solver to another morphology is a one-line change there and a new mesh.
 
 ### Diagnostics
 
@@ -587,6 +627,15 @@ and the test file that guards all of it:
 ```shell
 julia --project=. -e 'using MeanFieldHom, Ferrite, FerriteGmsh, Gmsh, Test;
                       include("test/FiniteElements/test_axi_excentered_sphere.jl")'
+```
+
+and, if `Gridap` and `GridapGmsh` are installed in the test environment, the
+cross-backend file:
+
+```shell
+julia --project=. -e 'using MeanFieldHom, Ferrite, FerriteGmsh, Gmsh,
+                            Gridap, GridapGmsh, Test;
+                      include("test/FiniteElements/test_axi_gridap.jl")'
 ```
 
 ## See also

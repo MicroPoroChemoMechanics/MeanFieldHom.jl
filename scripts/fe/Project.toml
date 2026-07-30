@@ -1,4 +1,4 @@
-# Environment for the finite-element demonstration scripts (81, 82).
+# Environment for the finite-element demonstration scripts (81, 82, 83).
 #
 # `Ferrite`, `FerriteGmsh` and `Gmsh` are *weak* dependencies of
 # `MeanFieldHom`, so they are not loadable from the package's own environment —
