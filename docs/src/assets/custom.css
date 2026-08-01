@@ -78,32 +78,33 @@ code:not([class]) {
 }
 
 /* ── Mermaid diagrams ──────────────────────────────────────────────────────
- * DocumenterMermaid emits an <svg> carrying the intrinsic width mermaid
- * computed from the text, which on a wide flowchart is a fraction of the
- * column: the diagram renders correct but unreadably small. Letting it take
- * the full content width and scale its height with it is what makes the
- * architecture and pipeline figures legible.
+ * The label font size is whatever mermaid's 16px survives the scaling the
+ * browser applies to fit the <svg> in the column: a flowchart 2200 px wide in a
+ * 820 px column renders its text at 6 px. So the diagrams are drawn top to
+ * bottom, sized to fit the column, and the rule below is what keeps them at
+ * their intrinsic size — never stretched, only shrunk when they overflow.
+ * Each diagram asks for `useMaxWidth: false` so that the <svg> carries a real
+ * pixel width for `max-width` to act on.
  */
 .mermaid {
     width: 100%;
-    margin: 1.5rem 0;
+    margin: 1.6rem 0;
     text-align: center;
 }
 
 .mermaid svg {
-    width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
 }
 
-/* A wide flowchart is allowed to scroll rather than shrink further on a narrow
- * screen — legibility beats fitting. */
+/* A diagram is allowed to scroll rather than shrink on a narrow screen —
+ * legibility beats fitting. */
 @media (max-width: 900px) {
     .mermaid {
         overflow-x: auto;
+        text-align: left;
     }
     .mermaid svg {
-        width: auto !important;
-        min-width: 780px;
+        max-width: none !important;
     }
 }

@@ -20,17 +20,27 @@
 # surrogates, one per tensor, sharing one finite-element solve per sample.
 #
 # ```mermaid
-# flowchart LR
+# %%{init: {"flowchart": {"useMaxWidth": false, "nodeSpacing": 30, "rankSpacing": 45, "wrappingWidth": 280}} }%%
+# flowchart TB
 #     P["α, w, E₂/E₀"] --> FE["FEExcenteredSphere<br/>3 assemblies, 8 solves<br/><b>≈ 1 s</b>"]
 #     FE --> AB["𝔸_εε and 𝔸_σε<br/>TI about the eccentricity axis"]
 #     AB --> LAB["6 Walpole components each<br/>+ residual check"]
 #     LAB --> FIT["two surrogates<br/>Adam, 64+64 hidden"]
 #     FIT --> USE["NeuralLocalizationInclusion<br/><b>≈ µs</b>, and differentiable"]
 #
+#     P -.- NT1["offline, once:<br/>one solve per sample"]
+#     LAB -.- NT2["online, every call:<br/>no solve, and ∂/∂α exists"]
+#
 #     classDef slow fill:#fde8e8,stroke:#c62828,color:#7f1d1d
 #     classDef fast fill:#d7f2d7,stroke:#2e7d32,color:#1b5e20
+#     classDef st fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+#     classDef inbox fill:#eceff1,stroke:#78909c,color:#263238
+#     classDef note fill:#fff8e1,stroke:#e0b84c,color:#5d4200
 #     class FE slow
 #     class USE fast
+#     class AB,LAB,FIT st
+#     class P inbox
+#     class NT1,NT2 note
 # ```
 #
 # **Six components, not five.** A localization tensor is *not* major-symmetric,

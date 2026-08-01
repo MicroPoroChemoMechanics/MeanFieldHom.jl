@@ -23,23 +23,19 @@ bibliography.
 
 ## The chain, in one picture
 
-Everything the package does is one pipeline read left to right. The **grey**
-boxes are what you supply, the **blue** ones what the package computes, and the
-**green** ones the three places where you can plug in your own physics without
-touching the library.
-
-The source of this diagram is the text of this page — edit it in
-`docs/src/index.md` and it re-renders.
+Everything the package does is one pipeline, read top to bottom. The **grey**
+boxes are what you supply — each entering at the stage that needs it — the
+**blue** ones what the package computes, and the **green** ones on the right
+the three places where you can plug in your own physics without touching the
+library.
 
 ```mermaid
-flowchart LR
-    subgraph IN["you supply"]
-        direction TB
-        C0["reference medium<br/>ℂ₀ or 𝐊₀"]
-        SHAPE["inclusion shape<br/>+ orientation"]
-        AMOUNT["amount<br/>fraction f or density ε"]
-        PROP["phase properties<br/>ℂᵣ or 𝐊ᵣ"]
-    end
+%%{init: {"flowchart": {"useMaxWidth": false, "nodeSpacing": 30, "rankSpacing": 45}} }%%
+flowchart TB
+    C0["reference medium<br/>ℂ₀ or 𝐊₀"]
+    SHAPE["inclusion shape<br/>+ orientation"]
+    PROP["phase properties<br/>ℂᵣ or 𝐊ᵣ"]
+    AMOUNT["amount<br/>fraction f or density ε"]
 
     P["Hill tensor ℙ<br/><i>Elasticity, Conductivity</i>"]
     A["localization 𝔸 = [𝕀 + ℙ:(ℂᵣ−ℂ₀)]⁻¹<br/><i>localization.jl</i>"]
@@ -56,14 +52,15 @@ flowchart LR
     AMOUNT --> S
     S --> EFF
 
-    GA["gate A<br/>hill_tensor"]:::ext -.-> P
-    GB["gate B<br/>strain_strain_loc<br/>stress_strain_loc"]:::ext -.-> A
-    GC["gate C<br/>stiffness_contribution<br/>compliance_contribution"]:::ext -.-> N
+    GA["gate A<br/>hill_tensor"] -.-> P
+    GB["gate B<br/>strain_strain_loc<br/>stress_strain_loc"] -.-> A
+    GC["gate C<br/>stiffness_contribution<br/>compliance_contribution"] -.-> N
 
     classDef ext fill:#d7f2d7,stroke:#2e7d32,color:#1b5e20
     classDef inbox fill:#eceff1,stroke:#78909c,color:#263238
     classDef comp fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
     class C0,SHAPE,AMOUNT,PROP inbox
+    class GA,GB,GC ext
     class P,A,N,S,EFF comp
 ```
 

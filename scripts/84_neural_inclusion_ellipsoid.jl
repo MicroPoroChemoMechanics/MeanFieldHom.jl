@@ -59,23 +59,31 @@ const NI = MeanFieldHom.NeuralInclusions
 # dimensionless components vary with the *shape*.
 #
 # ```mermaid
-# flowchart LR
-#     GEO["geometry<br/>semi-axes + basis"] --> FEAT["features<br/>log ω, ν₀"]
+# %%{init: {"flowchart": {"useMaxWidth": false, "nodeSpacing": 30, "rankSpacing": 45, "wrappingWidth": 280}} }%%
+# flowchart TB
+#     GEO["geometry<br/>semi-axes + basis"] --> FEAT
 #     REF["reference medium<br/>ℂ₀"] --> FEAT
-#     FEAT --> STD["standardize"]
+#     FEAT["features<br/>log ω, ν₀ — standardized"] --> L1
 #     subgraph NET["the fitted part"]
-#         direction LR
-#         STD --> L1["Dense 48<br/>tanh"] --> L2["Dense 48<br/>tanh"] --> L3["Dense 5<br/>identity"]
+#         L1["Dense 48 · tanh"] --> L2["Dense 48 · tanh"] --> L3["Dense 5 · identity"]
 #     end
 #     L3 --> INV["un-standardize +<br/>inverse per-component transform"]
-#     INV --> DEC["decode<br/>components → TensTI{4,·,5}<br/>exact scale and ν₀ algebra"]
+#     INV --> DEC["decode → TensTI{4,·,5}<br/>exact scale and ν₀ algebra"]
 #     REF --> DEC
-#     DEC --> OUT["ℙ, global frame"]
+#     DEC --> OUT["ℙ, in the global frame"]
 #
-#     classDef fit fill:#fde8e8,stroke:#c62828,stroke-dasharray:4 3,color:#7f1d1d
+#     L1 -.- NT1["five numbers out:<br/>the Walpole components<br/>of the class"]
+#     DEC -.- NT2["class, frame and ν₀ dependence:<br/>enforced, not learned"]
+#
+#     style NET fill:#fdf3f3,stroke:#c62828,stroke-dasharray:6 4,color:#7f1d1d
+#     classDef fit fill:#fde8e8,stroke:#c62828,color:#7f1d1d
 #     classDef ex fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+#     classDef inbox fill:#eceff1,stroke:#78909c,color:#263238
+#     classDef note fill:#fff8e1,stroke:#e0b84c,color:#5d4200
 #     class L1,L2,L3 fit
-#     class FEAT,STD,INV,DEC,OUT ex
+#     class FEAT,INV,DEC,OUT ex
+#     class GEO,REF inbox
+#     class NT1,NT2 note
 # ```
 #
 # Smooth activations are not a detail: a kink in the activation is a kink in
@@ -85,17 +93,24 @@ const NI = MeanFieldHom.NeuralInclusions
 # ### How it is trained
 #
 # ```mermaid
-# flowchart LR
+# %%{init: {"flowchart": {"useMaxWidth": false, "nodeSpacing": 30, "rankSpacing": 45, "wrappingWidth": 280}} }%%
+# flowchart TB
 #     BOX["SampleBox<br/>= the validity domain"] --> HAL["Halton sampling<br/>train + held out"]
 #     HAL --> GEOM["geometry(x)"]
 #     GEOM --> RESP["response(geom, ℂ₀)<br/><b>the teacher</b>"]
 #     RESP --> LAB["components in the class frame<br/>+ projection residual check"]
 #     LAB --> FIT["fit_scaling → Adam<br/>keep the best epoch"]
-#     FIT --> VAL["validate_surrogate<br/>held-out error → Provenance"]
-#     VAL --> SAVE["save_surrogate<br/>JSON"]
+#     FIT --> SAVE["validate_surrogate → save_surrogate<br/>held-out error + Provenance in the JSON"]
+#
+#     HAL -.- NT1["the teacher: a closed form,<br/>a table, or a finite-element solve"]
+#     RESP -.- NT2["a wrong class shows up as a<br/>projection residual, not as a<br/>silently mediocre fit"]
 #
 #     classDef you fill:#d7f2d7,stroke:#2e7d32,color:#1b5e20
+#     classDef st fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+#     classDef note fill:#fff8e1,stroke:#e0b84c,color:#5d4200
 #     class GEOM,RESP you
+#     class BOX,HAL,LAB,FIT,SAVE st
+#     class NT1,NT2 note
 # ```
 #
 # The two green boxes are the only morphology-dependent part. `response` is where
