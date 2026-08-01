@@ -9,33 +9,48 @@ gr()
 
 default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
 
-const NI = MeanFieldHom.NeuralInclusions</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MeanFieldHom.NeuralInclusions</code></pre><h2 id="§1-The-two-phases"><a class="docs-heading-anchor" href="#§1-The-two-phases">§1 The two phases</a><a id="§1-The-two-phases-1"></a><a class="docs-heading-anchor-permalink" href="#§1-The-two-phases" title="Permalink"></a></h2><h3 id="What-the-network-is"><a class="docs-heading-anchor" href="#What-the-network-is">What the network is</a><a id="What-the-network-is-1"></a><a class="docs-heading-anchor-permalink" href="#What-the-network-is" title="Permalink"></a></h3><p>Not much: a three-layer perceptron with smooth activations, wrapped in the algebra that makes the answer a <em>tensor</em>. Everything outside the dashed box is exact and enforced — the standardization, the inverse component transform, and a decode that puts the components into a structured TensND type in the inclusion&#39;s own frame, with the dependence on the reference moduli applied analytically. The network is only asked for what is genuinely unknown: how the dimensionless components vary with the <em>shape</em>.</p><div class="mermaid">flowchart LR
-    GEO[&quot;geometry&lt;br/&gt;semi-axes + basis&quot;] --&gt; FEAT[&quot;features&lt;br/&gt;log ω, ν₀&quot;]
+const NI = MeanFieldHom.NeuralInclusions</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MeanFieldHom.NeuralInclusions</code></pre><h2 id="§1-The-two-phases"><a class="docs-heading-anchor" href="#§1-The-two-phases">§1 The two phases</a><a id="§1-The-two-phases-1"></a><a class="docs-heading-anchor-permalink" href="#§1-The-two-phases" title="Permalink"></a></h2><h3 id="What-the-network-is"><a class="docs-heading-anchor" href="#What-the-network-is">What the network is</a><a id="What-the-network-is-1"></a><a class="docs-heading-anchor-permalink" href="#What-the-network-is" title="Permalink"></a></h3><p>Not much: a three-layer perceptron with smooth activations, wrapped in the algebra that makes the answer a <em>tensor</em>. Everything outside the dashed box is exact and enforced — the standardization, the inverse component transform, and a decode that puts the components into a structured TensND type in the inclusion&#39;s own frame, with the dependence on the reference moduli applied analytically. The network is only asked for what is genuinely unknown: how the dimensionless components vary with the <em>shape</em>.</p><div class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;useMaxWidth&quot;: false, &quot;nodeSpacing&quot;: 30, &quot;rankSpacing&quot;: 45, &quot;wrappingWidth&quot;: 280}} }%%
+flowchart TB
+    GEO[&quot;geometry&lt;br/&gt;semi-axes + basis&quot;] --&gt; FEAT
     REF[&quot;reference medium&lt;br/&gt;ℂ₀&quot;] --&gt; FEAT
-    FEAT --&gt; STD[&quot;standardize&quot;]
+    FEAT[&quot;features&lt;br/&gt;log ω, ν₀ — standardized&quot;] --&gt; L1
     subgraph NET[&quot;the fitted part&quot;]
-        direction LR
-        STD --&gt; L1[&quot;Dense 48&lt;br/&gt;tanh&quot;] --&gt; L2[&quot;Dense 48&lt;br/&gt;tanh&quot;] --&gt; L3[&quot;Dense 5&lt;br/&gt;identity&quot;]
+        L1[&quot;Dense 48 · tanh&quot;] --&gt; L2[&quot;Dense 48 · tanh&quot;] --&gt; L3[&quot;Dense 5 · identity&quot;]
     end
     L3 --&gt; INV[&quot;un-standardize +&lt;br/&gt;inverse per-component transform&quot;]
-    INV --&gt; DEC[&quot;decode&lt;br/&gt;components → TensTI{4,·,5}&lt;br/&gt;exact scale and ν₀ algebra&quot;]
+    INV --&gt; DEC[&quot;decode → TensTI{4,·,5}&lt;br/&gt;exact scale and ν₀ algebra&quot;]
     REF --&gt; DEC
-    DEC --&gt; OUT[&quot;ℙ, global frame&quot;]
+    DEC --&gt; OUT[&quot;ℙ, in the global frame&quot;]
 
-    classDef fit fill:#fde8e8,stroke:#c62828,stroke-dasharray:4 3,color:#7f1d1d
+    L1 -.- NT1[&quot;five numbers out:&lt;br/&gt;the Walpole components&lt;br/&gt;of the class&quot;]
+    DEC -.- NT2[&quot;class, frame and ν₀ dependence:&lt;br/&gt;enforced, not learned&quot;]
+
+    style NET fill:#fdf3f3,stroke:#c62828,stroke-dasharray:6 4,color:#7f1d1d
+    classDef fit fill:#fde8e8,stroke:#c62828,color:#7f1d1d
     classDef ex fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+    classDef inbox fill:#eceff1,stroke:#78909c,color:#263238
+    classDef note fill:#fff8e1,stroke:#e0b84c,color:#5d4200
     class L1,L2,L3 fit
-    class FEAT,STD,INV,DEC,OUT ex</div><p>Smooth activations are not a detail: a kink in the activation is a kink in <span>$\mathbb P$</span>, hence a wrong curvature and a discontinuous sensitivity. The activation table offers <code>tanh</code> and <code>softplus</code> and deliberately no ReLU.</p><h3 id="How-it-is-trained"><a class="docs-heading-anchor" href="#How-it-is-trained">How it is trained</a><a id="How-it-is-trained-1"></a><a class="docs-heading-anchor-permalink" href="#How-it-is-trained" title="Permalink"></a></h3><div class="mermaid">flowchart LR
+    class FEAT,INV,DEC,OUT ex
+    class GEO,REF inbox
+    class NT1,NT2 note</div><p>Smooth activations are not a detail: a kink in the activation is a kink in <span>$\mathbb P$</span>, hence a wrong curvature and a discontinuous sensitivity. The activation table offers <code>tanh</code> and <code>softplus</code> and deliberately no ReLU.</p><h3 id="How-it-is-trained"><a class="docs-heading-anchor" href="#How-it-is-trained">How it is trained</a><a id="How-it-is-trained-1"></a><a class="docs-heading-anchor-permalink" href="#How-it-is-trained" title="Permalink"></a></h3><div class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;useMaxWidth&quot;: false, &quot;nodeSpacing&quot;: 30, &quot;rankSpacing&quot;: 45, &quot;wrappingWidth&quot;: 280}} }%%
+flowchart TB
     BOX[&quot;SampleBox&lt;br/&gt;= the validity domain&quot;] --&gt; HAL[&quot;Halton sampling&lt;br/&gt;train + held out&quot;]
     HAL --&gt; GEOM[&quot;geometry(x)&quot;]
     GEOM --&gt; RESP[&quot;response(geom, ℂ₀)&lt;br/&gt;&lt;b&gt;the teacher&lt;/b&gt;&quot;]
     RESP --&gt; LAB[&quot;components in the class frame&lt;br/&gt;+ projection residual check&quot;]
     LAB --&gt; FIT[&quot;fit_scaling → Adam&lt;br/&gt;keep the best epoch&quot;]
-    FIT --&gt; VAL[&quot;validate_surrogate&lt;br/&gt;held-out error → Provenance&quot;]
-    VAL --&gt; SAVE[&quot;save_surrogate&lt;br/&gt;JSON&quot;]
+    FIT --&gt; SAVE[&quot;validate_surrogate → save_surrogate&lt;br/&gt;held-out error + Provenance in the JSON&quot;]
+
+    HAL -.- NT1[&quot;the teacher: a closed form,&lt;br/&gt;a table, or a finite-element solve&quot;]
+    RESP -.- NT2[&quot;a wrong class shows up as a&lt;br/&gt;projection residual, not as a&lt;br/&gt;silently mediocre fit&quot;]
 
     classDef you fill:#d7f2d7,stroke:#2e7d32,color:#1b5e20
-    class GEOM,RESP you</div><p>The two green boxes are the only morphology-dependent part. <code>response</code> is where a finite-element solve goes instead of a closed form — and because the frame in which the labels are read is derived from <code>geometry</code> through the same code path the inclusion uses at evaluation time, the two cannot disagree.</p><p>The call itself, for the record — <strong>not run here</strong>, since fitting needs <code>Lux</code>, <code>Optimisers</code> and <code>Zygote</code> and this page must not train anything:</p><pre><code class="language-julia hljs">import Lux, Optimisers, Zygote                    # activates MeanFieldHomLuxExt
+    classDef st fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+    classDef note fill:#fff8e1,stroke:#e0b84c,color:#5d4200
+    class GEOM,RESP you
+    class BOX,HAL,LAB,FIT,SAVE st
+    class NT1,NT2 note</div><p>The two green boxes are the only morphology-dependent part. <code>response</code> is where a finite-element solve goes instead of a closed form — and because the frame in which the labels are read is derived from <code>geometry</code> through the same code path the inclusion uses at evaluation time, the two cannot disagree.</p><p>The call itself, for the record — <strong>not run here</strong>, since fitting needs <code>Lux</code>, <code>Optimisers</code> and <code>Zygote</code> and this page must not train anything:</p><pre><code class="language-julia hljs">import Lux, Optimisers, Zygote                    # activates MeanFieldHomLuxExt
 
 geometry(x) = Ellipsoid(1.0, 1.0, exp(x[1]))      # shape features → morphology
 response(g, C₀) = hill_tensor(g, C₀)              # what is to be learned
@@ -354,7 +369,7 @@ end
 )
 println(&quot;\n  → the ellipsoid pilot is about correctness and differentiability,&quot;)
 println(&quot;    not speed. The speed argument belongs to an expensive teacher.&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">
-  2000 evaluations of ℙ:  surrogate 0.007 s, analytic 0.002 s (ratio 4.7)
+  2000 evaluations of ℙ:  surrogate 0.006 s, analytic 0.002 s (ratio 3.4)
 
   → the ellipsoid pilot is about correctness and differentiability,
     not speed. The speed argument belongs to an expensive teacher.</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p><script type="module">import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
@@ -362,4 +377,4 @@ mermaid.initialize({
     startOnLoad: true,
     theme: "neutral"
 });
-</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../custom_inclusion_contract/">« The custom-inclusion contract: three entry gates, one answer</a><a class="docs-footer-nextpage" href="../neural_excentered_sphere/">Replacing a finite-element solve by a neural surrogate »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 30 July 2026 15:34">Thursday 30 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</script></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../custom_inclusion_contract/">« The custom-inclusion contract: three entry gates, one answer</a><a class="docs-footer-nextpage" href="../neural_excentered_sphere/">Replacing a finite-element solve by a neural surrogate »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Saturday 1 August 2026 15:37">Saturday 1 August 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
