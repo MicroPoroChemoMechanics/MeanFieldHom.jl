@@ -56,6 +56,7 @@ section of the docs.
 | `MeanFieldHom.LayeredSpheroids` | `n`-layer confocal spheroids, conduction, with Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
 | `MeanFieldHom.CustomInclusions` | The user-defined inclusion contract: `CustomInclusion` and `check_inclusion_interface`. |
 | `MeanFieldHom.FiniteElements` | Inclusions whose response comes out of a finite-element resolution of the Eshelby problem — elliptical crack (3-D) and sphere with an off-centre core (axisymmetric Fourier) — behind a two-backend contract. |
+| `MeanFieldHom.NeuralInclusions` | Inclusions whose response comes out of a trained network, with the sampling and fitting machinery; differentiable in the morphology, where a finite-element solve is not. |
 | `MeanFieldHom.Schemes` | RVE container and `homogenize`; bounds, dilute, Mori–Tanaka, self-consistent (+ asymmetric), PCW, Maxwell, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
 | `MeanFieldHom.Viscoelasticity` | Ageing linear viscoelasticity via Volterra operators, with structured ISO/TI/orthotropic kernel storage — every scheme, cracks and layered spheres included. |
 
@@ -73,7 +74,7 @@ All dependencies (`TensND.jl`, `OrdinaryDiffEq.jl`, `Elliptic.jl`,
 `Polynomials.jl`, `PolynomialRoots.jl`, `QuadGK.jl`, `Tensors.jl`, …) are
 resolved from the Julia General registry.
 
-Five package extensions activate on weak dependencies, each optional:
+Six package extensions activate on weak dependencies, each optional:
 
 - [`DECUHR.jl`](https://github.com/MicroPoroChemoMechanics/DECUHR.jl) +
   `Integrals.jl` — adaptive cubature backend (`method = :decuhr`); the
@@ -90,6 +91,9 @@ Five package extensions activate on weak dependencies, each optional:
   as well. The two share the mesh and the physics and agree to round-off;
   Ferrite is the faster to run, Gridap states the weak form directly and is the
   easier to adapt.
+- `Lux.jl` + `Optimisers.jl` + `Zygote.jl` — the optimizer used to *train* a
+  neural surrogate. Loading and evaluating one of the shipped models needs none
+  of them: the trained network carries no machine-learning dependency.
 
 Type-generic elliptic integrals themselves are always bundled, as the
 `MeanFieldHom.Elliptic` submodule.
