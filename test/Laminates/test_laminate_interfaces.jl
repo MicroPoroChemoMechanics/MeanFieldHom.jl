@@ -274,7 +274,7 @@ end
     ) atol = ATOL_ITF
 
     # A full in-plane surface stiffness, with a shear-extension coupling.
-    Cs = SMatrix{3, 3}(0.20, 0.05, 0.01, 0.05, 0.09, 0.02, 0.01, 0.02, 0.06)
+    Cs = SMatrix{3, 3}(0.2, 0.05, 0.01, 0.05, 0.09, 0.02, 0.01, 0.02, 0.06)
     @test Cs ≈ Cs'
     lamm = _bilayer(; itf1 = AnisotropicMembraneInterface(Cs))
     Chm = homogenize(lamm, Laminated(), :C)
@@ -287,7 +287,7 @@ end
     lamk = _bilayer(; itf1 = AnisotropicSurfaceConductiveInterface(Ks))
     Kh = Matrix(components(homogenize(lamk, Laminated(), :K)))
     Kr = Matrix(components(homogenize(_bilayer(), Laminated(), :K)))
-    @test (Kh-Kr)[1:2, 1:2] ≈ Matrix(Ks)[1:2, 1:2] atol = ATOL_ITF
+    @test (Kh - Kr)[1:2, 1:2] ≈ Matrix(Ks)[1:2, 1:2] atol = ATOL_ITF
     @test Kh[3, 3] ≈ Kr[3, 3] atol = ATOL_ITF
 end
 
