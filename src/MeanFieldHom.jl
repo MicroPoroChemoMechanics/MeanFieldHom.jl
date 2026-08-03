@@ -218,6 +218,8 @@ export layer_names, layer_count, layer_property, layer_property_raw
 export layer_thickness, layer_fraction
 export laminate_period, laminate_basis, laminate_normal, laminate_interface
 export validate_laminate
+export AnisotropicSpringInterface, AnisotropicMembraneInterface
+export AnisotropicSurfaceConductiveInterface
 export laminate_hill
 export layer_strain_localization, layer_stress_localization
 export layer_gradient_localization, layer_flux_localization

@@ -17,9 +17,10 @@
 #      even be CONSTRUCTED for a non-isbits element type such as `SymPy.Sym`.
 #
 #  NOT published to the documentation gallery: SymPy-heavy scripts are kept
-#  out of the build (repo policy, see scripts/README.md). Its content is
-#  covered by `docs/src/theory/laminate.md` and by
-#  `test/Laminates/test_laminate_symbolic.jl`.
+#  out of the Literate build (repo policy, see scripts/README.md). Its content
+#  is covered by the hand-written tutorial
+#  `docs/src/tutorials/symbolic_laminate.md`, by `docs/src/theory/laminate.md`
+#  and by `test/Laminates/test_laminate_symbolic.jl`.
 # =============================================================================
 
 import Pkg
@@ -69,6 +70,41 @@ println("─"^78)
 # The two structural results, read directly off the symbolic output:
 #   * out of plane, a HARMONIC (Reuss) mean — the laminate saturates Reuss;
 #   * in plane, an ARITHMETIC (Voigt) mean  — and saturates Voigt.
+# The whole effective matrix, in the five averages the answer is built from.
+# `A` and `G` enter INVERTED — the harmonic (series, out-of-plane) part; `E`
+# and `F` enter directly — the arithmetic (parallel, in-plane) part; `B`
+# couples them.
+avg0(g) = f₁ * g(λ₁, μ₁) + f₂ * g(λ₂, μ₂)
+A = avg0((l, m) -> 1 / (l + 2m))          # harmonic building block
+B = avg0((l, m) -> l / (l + 2m))          # the coupling weight
+E = avg0((l, m) -> 2m * l / (l + 2m))
+F = avg0((l, m) -> m)                     # arithmetic mean of the shear moduli
+G = avg0((l, m) -> 1 / m)                 # harmonic mean of the shear moduli
+
+M_claim = [
+    E+B^2/A+2F E+B^2/A B/A 0 0 0
+    E+B^2/A E+B^2/A+2F B/A 0 0 0
+    B/A B/A 1/A 0 0 0
+    0 0 0 2/G 0 0
+    0 0 0 0 2/G 0
+    0 0 0 0 0 2F
+]
+
+println("\n§1b  The effective Kelvin-Mandel matrix, in five averages")
+println("─"^78)
+println("     A = ⟨1/(λ+2μ)⟩   B = ⟨λ/(λ+2μ)⟩   E = ⟨2μλ/(λ+2μ)⟩   F = ⟨μ⟩   G = ⟨1/μ⟩")
+println()
+println("     ⎡ E+B²/A+2F   E+B²/A     B/A     .      .      .  ⎤")
+println("     ⎢ E+B²/A      E+B²/A+2F  B/A     .      .      .  ⎥")
+println("     ⎢ B/A         B/A        1/A     .      .      .  ⎥")
+println("     ⎢ .           .          .      2/G     .      .  ⎥")
+println("     ⎢ .           .          .       .     2/G     .  ⎥")
+println("     ⎣ .           .          .       .      .     2F  ⎦")
+println()
+@printf "  residual against the code : %s\n" string(maximum(abs, simplify.(Matrix(Ch) - M_claim)))
+println("  A and G appear INVERTED (harmonic, series, out of plane);")
+println("  E and F appear directly (arithmetic, parallel, in plane).")
+
 println("\n§2  The two exact bound saturations")
 println("─"^78)
 d_reuss = simplify(1 / Ch[3, 3] - (f₁ / (λ₁ + 2μ₁) + f₂ / (λ₂ + 2μ₂)))

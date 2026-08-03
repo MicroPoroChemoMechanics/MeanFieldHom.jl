@@ -23,6 +23,20 @@
     membrane produces no traction jump at all), and enter with the weight
     `1/L`, an interface **density**: hence a genuine size effect, and why a
     laminate stores thicknesses rather than only fractions.
+  - **Anisotropic interfaces**, which a plane admits and a sphere does not:
+    `AnisotropicSpringInterface` (any symmetric compliance tensor),
+    `AnisotropicMembraneInterface` (any 2-D surface stiffness, six
+    coefficients) and `AnisotropicSurfaceConductiveInterface`. The spherical
+    recurrence needs its jump conditions to share the symmetry of the
+    geometry; a plane has a normal and an arbitrary in-plane texture, so it
+    does not. Both exact oracles hold unchanged with a full tensor.
+    (`KapitzaInterface` needs no counterpart: `[T] = ρ qₙ` relates two
+    scalars.)
+  - A hand-written symbolic tutorial,
+    `docs/src/tutorials/symbolic_laminate.md`, deriving the closed forms from
+    the code and displaying the effective Kelvin-Mandel matrix in terms of
+    five layer averages — two of which enter *inverted* (harmonic, series,
+    out of plane) and two directly (arithmetic, parallel, in plane).
   - Per-layer localization (`layer_strain_localization`, …), the two Hill
     tensors (`laminate_hill`) and the interface displacement jumps
     (`interface_jump`); lenses `ThicknessParameter` and `InterfaceParameter`.

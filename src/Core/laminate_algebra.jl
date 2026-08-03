@@ -212,12 +212,17 @@ physical 3×3 matrix `X` in the frame `(ℓ, m, n)` — the inverse map of
 Ŝ[a, b] = X[π(a), π(b)] / (s_a s_b) ,   π = (3, 2, 1),  s = (1, √2, √2).
 ```
 
-Its use is the imperfect interface of spring type, whose compliance
-`𝕂 = k_n\\,n⊗n + k_t\\,(δ − n⊗n)` produces the added strain `(𝕂·(σ·n)) ⊗ˢ n`
-and therefore the block `diag(k_n, k_t/2, k_t/2)`. Note the factor 2: a
-displacement jump enters the strain through a *symmetrised* product, so the
-tangential compliance is halved in Mandel slots, exactly as `ℙ` is
-`𝐊⁻¹` divided — not multiplied — by the Mandel weights.
+Its use is the imperfect interface of spring type, whose compliance `𝕂`
+produces the added strain `(𝕂·(σ·n)) ⊗ˢ n`. `X` may be **any symmetric 3×3
+compliance** — all six entries are used — so an anisotropic interface is
+handled exactly like an isotropic one; the isotropic case
+`𝕂 = k_n\\,n⊗n + k_t\\,(δ − n⊗n)` simply gives the block
+`diag(k_n, k_t/2, k_t/2)`.
+
+Note the factor 2 on the tangential entries: a displacement jump enters the
+strain through a *symmetrised* product, so those compliances are halved in
+Mandel slots — exactly as `ℙ` is `𝐊⁻¹` divided, not multiplied, by the Mandel
+weights.
 """
 @inline function compliance_op_block(X::AbstractMatrix{T}) where {T}
     r2 = sqrt(2 * one(T))

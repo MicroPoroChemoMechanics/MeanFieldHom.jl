@@ -15,12 +15,9 @@ reference against which bounds and estimates can be calibrated — the laminate
 saturates the Voigt bound in the plane of the layers and the Reuss bound
 across them, simultaneously.
 
-This page follows [barthelemy2021multilayer](@cite), corrected and completed:
-the derivation there is stated for elasticity with perfect bonding, and its
-appendix on the "in-plane and out-of-plane pseudo-inverses" is both
-unnecessary and internally inconsistent (see §[Pseudo-inverse](@ref
-th-laminate-pinv)). The transport case, the localisation tensors and the
-imperfect interfaces below are new.
+The derivation below is written for a general anisotropic stack, in
+elasticity and in transport, with the localisation tensors and the imperfect
+interfaces.
 
 ## Setting
 
@@ -197,7 +194,7 @@ in-plane **Schur complement** of ``\mathbb{C}_i``. Two consequences used
 throughout: ``\mathbb{P}:\mathbb{C}:\mathbb{P} = \mathbb{P}`` and
 ``\mathbb{Q}:\mathbb{P} = 0``.
 
-## [The pseudo-inverse — one, not two](@id th-laminate-pinv)
+## [The pseudo-inverse](@id th-laminate-pinv)
 
 Averaging the compatibility condition over the cell, ``\langle
 \boldsymbol{\varepsilon}\rangle = \boldsymbol{E}`` requires
@@ -211,45 +208,29 @@ that is
 \langle\,\cdot\,\rangle = \sum_{i=1}^N f_i\,(\cdot)_i .
 ```
 
-This determines only the *out-of-plane* part of ``\boldsymbol{\Sigma}``,
-because ``\langle\mathbb{P}\rangle`` is supported on the out-of-plane
-subspace. Extracting it needs a pseudo-inverse — and here the original note
-takes a wrong turn worth stating explicitly.
+This determines only the *out-of-plane* part of ``\boldsymbol{\Sigma}``, and
+for a good reason: ``\langle\mathbb{P}\rangle`` is supported on the
+out-of-plane subspace, so it is not invertible. What is needed is its
+**Moore-Penrose pseudo-inverse**, which for an out-of-plane-supported tensor
+is simply the inverse of that block, embedded back:
 
-!!! warning "Correction to [barthelemy2021multilayer](@cite)"
-    The appendix of the original note introduces a *pair* of pseudo-inverses
-    ``\mathbb{T}^{\dagger^{\mathcal{I}}}`` and
-    ``\mathbb{T}^{\dagger^{\mathcal{O}}}``, defined by
-    ``\mathbb{T}^{\dagger^{\mathcal{I}}}:\mathbb{T} = \Pi^{\mathcal{I}}`` and
-    ``\mathbb{T}^{\dagger^{\mathcal{O}}}:\mathbb{T} = \Pi^{\mathcal{O}}``.
+```math
+\mathrm{Mat}(\langle\mathbb{P}\rangle^{\dagger}) =
+\begin{pmatrix} 0 & 0 \\ 0 & P_{\mathcal{OO}}^{-1}\end{pmatrix},
+\qquad
+\langle\mathbb{P}\rangle^{\dagger} : \langle\mathbb{P}\rangle
+  = \Pi^{\mathcal{O}} .
+```
 
-    For the tensor actually involved this is **vacuous**: every
-    ``\mathbb{P}_i`` has out-of-plane components only, so
-    ``\langle\mathbb{P}\rangle`` has an identically zero in-plane block; its
-    "in-plane pseudo-inverse" does not exist, and the defining identity
-    cannot be satisfied.
+It exists as soon as ``P_{\mathcal{OO}}`` is invertible, that is as soon as
+every acoustic tensor ``\boldsymbol{K}_i`` is definite.
 
-    The single object needed is the **ordinary Moore-Penrose
-    pseudo-inverse**, which for a block-diagonal, out-of-plane-supported
-    tensor automatically returns
-
-    ```math
-    \mathrm{Mat}(\langle\mathbb{P}\rangle^{\dagger}) =
-    \begin{pmatrix} 0 & 0 \\ 0 & P_{\mathcal{OO}}^{-1}\end{pmatrix},
-    \qquad
-    \langle\mathbb{P}\rangle^{\dagger} : \langle\mathbb{P}\rangle
-      = \Pi^{\mathcal{O}} ,
-    ```
-
-    and exists as soon as ``P_{\mathcal{OO}}`` is invertible, i.e. as soon as
-    every acoustic tensor ``\boldsymbol{K}_i`` is definite. The general
-    non-block-diagonal case, which the original appendix announces and leaves
-    unfinished, is never required.
-
-    In practice the implementation never calls a generic `pinv` either: the
-    pseudo-inverse is the ordinary inverse of a ``3\times3`` block, taken in
-    closed form. An SVD would be differentiable by neither `ForwardDiff` nor
-    a symbolic backend, and would be wasted on an exactly-rank-3 input.
+!!! note "Never a generic `pinv`"
+    The implementation does not call `LinearAlgebra.pinv`: the pseudo-inverse
+    is the ordinary inverse of a ``3\times3`` block (a scalar reciprocal in
+    transport), taken in closed form. An SVD would be differentiable by
+    neither `ForwardDiff` nor a symbolic backend, and would in any case be
+    wasted on an exactly-rank-3 input.
 
 ## Effective stiffness
 
@@ -330,20 +311,20 @@ formulas above reduce to the classical long-wave average of
 [backus1962](@cite):
 
 ```math
-\begin{aligned}
-C^{\hom}_{3333} &= \Big\langle \tfrac{1}{\lambda+2\mu}\Big\rangle^{-1},
-&\qquad
-C^{\hom}_{2323} &= \Big\langle \tfrac{1}{\mu}\Big\rangle^{-1},
-&\qquad
-C^{\hom}_{1212} &= \big\langle \mu \big\rangle, \\
-C^{\hom}_{1133} &= \Big\langle \tfrac{1}{\lambda+2\mu}\Big\rangle^{-1}
-                   \Big\langle \tfrac{\lambda}{\lambda+2\mu}\Big\rangle,
-&\qquad
-\multicolumn{3}{l}{
+C^{\hom}_{3333} = \Big\langle \tfrac{1}{\lambda+2\mu}\Big\rangle^{-1},
+\qquad
+C^{\hom}_{2323} = \Big\langle \tfrac{1}{\mu}\Big\rangle^{-1},
+\qquad
+C^{\hom}_{1212} = \big\langle \mu \big\rangle,
+```
+
+```math
+C^{\hom}_{1133} = \Big\langle \tfrac{1}{\lambda+2\mu}\Big\rangle^{-1}
+                  \Big\langle \tfrac{\lambda}{\lambda+2\mu}\Big\rangle,
+\qquad
 C^{\hom}_{1111} = \Big\langle \tfrac{4\mu(\lambda+\mu)}{\lambda+2\mu}\Big\rangle
   + \Big\langle \tfrac{1}{\lambda+2\mu}\Big\rangle^{-1}
-    \Big\langle \tfrac{\lambda}{\lambda+2\mu}\Big\rangle^{2} . }
-\end{aligned}
+    \Big\langle \tfrac{\lambda}{\lambda+2\mu}\Big\rangle^{2} .
 ```
 
 The out-of-plane response is a harmonic (Reuss) mean, the in-plane shear an
@@ -407,16 +388,31 @@ fractions, physically meaningful.
 | elasticity | `SpringInterface(kn, kt)` | `MembraneInterface(κs, μs)` |
 | transport | `KapitzaInterface(ρ)` | `SurfaceConductiveInterface(ks)` |
 
+Unlike the spherical case, **nothing forces these to be isotropic**. The
+spherical-harmonic recurrence of the layered sphere only closes if the jump
+conditions share the symmetry of the geometry, which is why its interfaces
+carry two scalars each. A plane has a normal and an arbitrary in-plane
+texture, so ``\boldsymbol{\mathcal{K}}`` may be any symmetric second-order
+compliance and ``\mathbb{C}^{s}`` any 2-D surface stiffness (six independent
+coefficients) — the formulas below are written for the general case, and the
+implementation provides both a scalar and a tensor-valued type per family. The
+primal *transport* condition ``[\![T]\!] = \rho\,q_n`` relates two scalars
+and is already general.
+
 ### Primal: a jump of the field
 
-A spring interface imposes
-``[\![\underline{u}]\!] = \boldsymbol{\mathcal{K}}\cdot(\boldsymbol{\sigma}
-\cdot\underline{n})`` with
-``\boldsymbol{\mathcal{K}} = k_n\,\underline{n}\otimes\underline{n}
- + k_t\,\boldsymbol{p}`` (the fields being *compliances*), the traction
-staying continuous. It is the limit of a layer of vanishing thickness whose
-out-of-plane compliance stays finite and whose in-plane stiffness vanishes, so
-it contributes to ``\langle\mathbb{P}\rangle`` **and to nothing else**:
+A spring interface imposes a displacement jump driven by the traction, which
+stays continuous:
+
+```math
+[\![\underline{u}]\!] = \boldsymbol{\mathcal{K}}\cdot
+  (\boldsymbol{\sigma}\cdot\underline{n}) ,
+```
+
+where ``\boldsymbol{\mathcal{K}}`` is a symmetric second-order **compliance**
+tensor. It is the limit of a layer of vanishing thickness whose out-of-plane
+compliance stays finite and whose in-plane stiffness vanishes, so it
+contributes to ``\langle\mathbb{P}\rangle`` **and to nothing else**:
 
 ```math
 \langle\mathbb{P}\rangle \;\longleftarrow\;
@@ -506,7 +502,7 @@ time block, and the two exact saturations survive the transposition.
 
 ## References
 
-The derivation follows [barthelemy2021multilayer](@cite) (corrected as noted
-above); the isotropic bilayer closed form is [backus1962](@cite); the
+The isotropic bilayer closed form is [backus1962](@cite); the flat-inclusion
+limit of the Hill tensor is discussed in [barthelemyIJES2021](@cite); the
 interface models are those of [herveLuanco2014](@cite), specialised to a
 plane.

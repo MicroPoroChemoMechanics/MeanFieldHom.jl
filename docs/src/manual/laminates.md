@@ -84,8 +84,8 @@ classes of the layers:
 - one layer with perfect interfaces → the layer property object itself,
   unchanged;
 - every layer isotropic, or **major-symmetric** TI about `n` itself
-  (`TensISO`, `TensTI{4,T,5}` / `TensTI{2,T,2}` of axis `n`) → an exact
-  `TensTI` about `n`;
+  (`TensISO`, `TensTI{4,T,5}` / `TensTI{2,T,2}` of axis `n`), **and** every
+  interface in-plane isotropic → an exact `TensTI` about `n`;
 - **anything else → a generic `Tens`** in the laminate basis.
 
 The middle case is worth more than tidiness: a `TensTI` fed back into a
@@ -94,8 +94,9 @@ cubature.
 
 The last case is the **general** one, and it covers more than it may look. A
 laminate of orthotropic layers is *not* transversely isotropic even when their
-axes coincide with the laminate frame, and a TI layer whose axis is not `n`
-breaks it too. The non-major-symmetric `TensTI{4,T,8}` — what the exact
+axes coincide with the laminate frame, a TI layer whose axis is not `n`
+breaks it too, and so does any anisotropic interface however isotropic the
+layers. The non-major-symmetric `TensTI{4,T,8}` — what the exact
 rotation-group average produces — also falls here deliberately: the
 five-coefficient Walpole read-off would discard its `ℓ₃ ≠ ℓ₄` and
 antisymmetric content, so the generic wrapper, which is lossless, is used
@@ -136,6 +137,45 @@ add_layer!(lam, :B, Dict(:C => C_B); thickness = 0.7,
     `SpringInterface(kn, kt)` follows the `LayeredSpheres` convention:
     `[u] = 𝒦·(σ·n)`, so `kn = kt = 0` is perfect bonding and `k → ∞`
     decouples the layers.
+
+### Anisotropic interfaces
+
+The four types above are **isotropic in the plane** — that is what the
+spherical recurrence requires, since the jump conditions must share the
+symmetry of the geometry. A *plane* imposes no such restriction: it has a
+well-defined normal and an arbitrary in-plane texture. A laminate therefore
+also accepts a full tensor:
+
+| scalar (shared with the sphere) | tensor (laminate only) |
+| :--- | :--- |
+| `SpringInterface(kn, kt)` | `AnisotropicSpringInterface(𝒦)` — any symmetric 3×3 compliance |
+| `MembraneInterface(κs, μs)` | `AnisotropicMembraneInterface(ℂˢ)` — any in-plane surface stiffness (6 coefficients) |
+| `SurfaceConductiveInterface(ks)` | `AnisotropicSurfaceConductiveInterface(𝐤ˢ)` — any in-plane surface conductivity |
+| `KapitzaInterface(ρ)` | — *already general*: `[T] = ρ qₙ` relates two scalars |
+
+```julia
+# a spring with different normal and tangential compliances, and a coupling
+𝒦 = [3.0e-3 5.0e-4 0.0; 5.0e-4 8.0e-3 0.0; 0.0 0.0 1.0e-3]
+add_layer!(lam, :A, Dict(:C => C_A); thickness = 0.3,
+           interface = AnisotropicSpringInterface(𝒦))
+
+# an orthotropic membrane: in-plane Kelvin-Mandel block (ℓ⊗ℓ, m⊗m, √2 ℓ⊗ˢm),
+# so the [3,3] entry is 2 Cˢ₁₂₁₂
+ℂˢ = [0.20 0.05 0.0; 0.05 0.09 0.0; 0.0 0.0 0.06]
+add_layer!(lam, :B, Dict(:C => C_B); thickness = 0.7,
+           interface = AnisotropicMembraneInterface(ℂˢ))
+```
+
+A tensor field is read as **components in the layer frame** `(ℓ, m, n)` when
+given as a plain matrix, or converted from its own basis when given as a
+`TensND` tensor. Feeding the tensor form the isotropic values reproduces the
+scalar form exactly.
+
+Both oracles stay exact with a full tensor — the compliance simply adds to the
+out-of-plane series law, the surface stiffness to the in-plane one. What does
+change is the **symmetry of the result**: an anisotropic interface breaks
+transverse isotropy just as an anisotropic layer does, so such a cell returns
+a generic `Tens` even when every layer is isotropic.
 
 The two families act on complementary halves of the answer: a primal interface
 changes the out-of-plane response and leaves the in-plane one untouched, a

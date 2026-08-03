@@ -17,6 +17,17 @@ MeanFieldHom.Laminates.laminate_normal
 MeanFieldHom.Laminates.validate_laminate
 ```
 
+## Anisotropic interfaces
+
+A plane, unlike a sphere, imposes no symmetry on the interface, so a laminate
+also accepts tensor-valued interface properties.
+
+```@docs
+MeanFieldHom.Laminates.AnisotropicSpringInterface
+MeanFieldHom.Laminates.AnisotropicMembraneInterface
+MeanFieldHom.Laminates.AnisotropicSurfaceConductiveInterface
+```
+
 ## Fields and per-layer tensors
 
 ```@docs

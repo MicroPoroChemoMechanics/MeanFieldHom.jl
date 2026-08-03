@@ -96,13 +96,37 @@ _ti_about2(K::TensND.TensTI{2, T, 2}, n) where {T} = _parallel(TensND.axis(K), n
 _ti_about2(::TensND.TensTI{2}, n) = false
 _ti_about2(::Any, n) = false
 
-# All layers TI about the laminate normal?
+"""
+    _ti_preserving(itf) -> Bool
+
+Whether an interface leaves a transversely isotropic stack transversely
+isotropic. The scalar-valued models are in-plane isotropic by construction and
+do; the tensor-valued ones carry an arbitrary in-plane texture and, in
+general, do not — so they are refused, structurally and conservatively, even
+when the tensor they hold happens to be isotropic.
+"""
+_ti_preserving(::PerfectInterface) = true
+_ti_preserving(::SpringInterface) = true
+_ti_preserving(::MembraneInterface) = true
+_ti_preserving(::KapitzaInterface) = true
+_ti_preserving(::SurfaceConductiveInterface) = true
+_ti_preserving(::AnisotropicSpringInterface) = false
+_ti_preserving(::AnisotropicMembraneInterface) = false
+_ti_preserving(::AnisotropicSurfaceConductiveInterface) = false
+
+# All layers TI about the laminate normal — AND every interface in-plane
+# isotropic. Both are needed: an anisotropic interface breaks the symmetry of
+# an otherwise transversely isotropic stack just as surely as an anisotropic
+# layer does, and claiming TI would send the result through the
+# five-coefficient read-off and silently discard the in-plane texture.
 function _all_ti(lam::Laminate, prop::Symbol, ::Val{4})
+    all(_ti_preserving, lam.interfaces) || return false
     n = laminate_normal(lam)
     return all(nm -> _ti_about(layer_property(lam, nm, prop), n), lam.layer_names)
 end
 
 function _all_ti(lam::Laminate, prop::Symbol, ::Val{2})
+    all(_ti_preserving, lam.interfaces) || return false
     n = laminate_normal(lam)
     return all(nm -> _ti_about2(layer_property(lam, nm, prop), n), lam.layer_names)
 end

@@ -74,7 +74,7 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `33_laminate_basics.jl` | Backus 1962 | **published tutorial** — the exact periodic multilayer: closed form, the two bound saturations (in-plane Voigt, out-of-plane Reuss), transport, localisation, arbitrary normal |
 | `34_laminate_interfaces.jl` | Hervé-Luanco 2014, planar case | **published tutorial** — primal (spring/Kapitza) vs dual (membrane/surface-conductive) interfaces act on complementary halves of the answer; the `1/L` size effect; displacement jumps |
 | `36_laminate_multiscale.jl` | — | **published tutorial** — a three-scale model written explicitly *and* declaratively (`Homogenized`), shown to agree exactly; `NestedParameter` sensitivities across every scale; one microstructure, two physics |
-| `38_laminate_symbolic.jl` | Backus 1962 | **not published** (SymPy-heavy): derives the closed forms *from the code*, symbolically — the check that the pseudo-inverse is a cofactor inverse and not an SVD |
+| `38_laminate_symbolic.jl` | Backus 1962 | **not published** (SymPy-heavy): derives the closed forms *from the code*, symbolically, and prints the effective matrix in five averages — the check that the pseudo-inverse is a cofactor inverse and not an SVD. Hand-written companion: `docs/src/tutorials/symbolic_laminate.md` |
 | `39_laminate_alv.jl` | — | **published tutorial** — the multilayer in ageing viscoelasticity: elastic limit, a creeping binder between elastic reinforcements, the saturations surviving the Volterra transposition |
 
 ### 40–49 Strength & multiscale

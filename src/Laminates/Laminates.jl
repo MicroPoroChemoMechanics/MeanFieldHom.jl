@@ -89,6 +89,11 @@ export layer_thickness, layer_volume_fraction, layer_interface
 export laminate_period, laminate_basis, laminate_normal
 export validate_laminate
 
+# Anisotropic interfaces (laminate-specific: a plane imposes no symmetry on
+# the interface, unlike the spherical recurrence)
+export AnisotropicSpringInterface, AnisotropicMembraneInterface
+export AnisotropicSurfaceConductiveInterface
+
 # Fields
 export laminate_hill
 export layer_strain_localization, layer_stress_localization

@@ -22,6 +22,7 @@ using TensND
 using LinearAlgebra
 using StaticArrays
 using Random
+using ForwardDiff
 
 const MFHC_I = MeanFieldHom.Core
 const ATOL_ITF = 1.0e-11
@@ -213,4 +214,135 @@ end
     kn = [Matrix(components(K3[i]))[3, 3] for i in 1:2]
     @test 1 / Kh[3, 3] ≈ sum(fs[i] / kn[i] for i in 1:2) + ρ / laminate_period(lam) atol = ATOL_ITF
     @test !(homogenize(lam, Laminated(), :K) isa TensND.TensTI)   # structural: not TI
+end
+
+# =============================================================================
+#  Anisotropic interfaces — a plane, unlike a sphere, imposes no symmetry on
+#  the interface, so the laminate accepts a full tensor. These check that the
+#  tensor-valued types reproduce the scalar ones on isotropic input, that both
+#  oracles stay exact for a genuinely anisotropic interface, and that the
+#  exact-TI claim correctly refuses such a cell.
+# =============================================================================
+
+@testset "Anisotropic interfaces — reduce to the isotropic ones" begin
+    kn, kt = 0.013, 0.021
+    𝕂 = SMatrix{3, 3}(Diagonal([kt, kt, kn]))          # (ℓ, m, n) frame
+    a = homogenize(_bilayer(; itf1 = AnisotropicSpringInterface(𝕂)), Laminated(), :C)
+    b0 = homogenize(_bilayer(; itf1 = SpringInterface(kn, kt)), Laminated(), :C)
+    @test Matrix(KM(a)) ≈ Matrix(KM(b0)) atol = ATOL_ITF
+
+    κs, μs = 0.07, 0.04
+    Cs = SMatrix{3, 3}(κs + μs, κs - μs, 0.0, κs - μs, κs + μs, 0.0, 0.0, 0.0, 2μs)
+    am = homogenize(_bilayer(; itf1 = AnisotropicMembraneInterface(Cs)), Laminated(), :C)
+    bm = homogenize(_bilayer(; itf1 = MembraneInterface(κs, μs)), Laminated(), :C)
+    @test Matrix(KM(am)) ≈ Matrix(KM(bm)) atol = ATOL_ITF
+
+    ks = 0.06
+    Ks = SMatrix{3, 3}(ks, 0.0, 0.0, 0.0, ks, 0.0, 0.0, 0.0, 0.0)
+    ak = homogenize(_bilayer(; itf1 = AnisotropicSurfaceConductiveInterface(Ks)), Laminated(), :K)
+    bk = homogenize(_bilayer(; itf1 = SurfaceConductiveInterface(ks)), Laminated(), :K)
+    @test Matrix(components(ak)) ≈ Matrix(components(bk)) atol = ATOL_ITF
+
+    # The null tensor is still the perfect interface.
+    Z3 = zero(SMatrix{3, 3, Float64})
+    @test Matrix(KM(homogenize(_bilayer(; itf1 = AnisotropicSpringInterface(Z3)), Laminated(), :C))) ≈
+        Matrix(KM(homogenize(_bilayer(), Laminated(), :C))) atol = ATOL_ITF
+end
+
+@testset "Anisotropic interfaces — both oracles stay exact" begin
+    # A full, non-diagonal compliance: normal and tangential directions with
+    # their own compliances AND coupled.
+    𝕂 = SMatrix{3, 3}(
+        3.0e-3, 5.0e-4, 7.0e-4,
+        5.0e-4, 8.0e-3, 2.0e-4,
+        7.0e-4, 2.0e-4, 1.1e-2
+    )
+    @test 𝕂 ≈ 𝕂'                                        # a compliance is symmetric
+    lam = _bilayer(; itf1 = AnisotropicSpringInterface(𝕂))
+    Ch = homogenize(lam, Laminated(), :C)
+    b = laminate_basis(lam)
+
+    # O1 — the full tensor simply adds to the out-of-plane series law.
+    @test inv(_acoustic_i(Ch, b)) ≈ sum(
+        layer_volume_fraction(lam, nm) * inv(_acoustic_i(layer_property(lam, nm, :C), b))
+            for nm in layer_names(lam)
+    ) + 𝕂 / laminate_period(lam) atol = ATOL_ITF
+    # O2 — a spring, anisotropic or not, is invisible in the plane.
+    @test _schur_ip_i(Ch, b) ≈ sum(
+        layer_volume_fraction(lam, nm) * _schur_ip_i(layer_property(lam, nm, :C), b)
+            for nm in layer_names(lam)
+    ) atol = ATOL_ITF
+
+    # A full in-plane surface stiffness, with a shear-extension coupling.
+    Cs = SMatrix{3, 3}(0.20, 0.05, 0.01, 0.05, 0.09, 0.02, 0.01, 0.02, 0.06)
+    @test Cs ≈ Cs'
+    lamm = _bilayer(; itf1 = AnisotropicMembraneInterface(Cs))
+    Chm = homogenize(lamm, Laminated(), :C)
+    ref = homogenize(_bilayer(), Laminated(), :C)
+    @test _schur_ip_i(Chm, b) ≈ _schur_ip_i(ref, b) + Cs / laminate_period(lamm) atol = ATOL_ITF
+    @test _acoustic_i(Chm, b) ≈ _acoustic_i(ref, b) atol = ATOL_ITF   # no traction jump
+
+    # An anisotropic surface conductivity adds to the in-plane conduction only.
+    Ks = SMatrix{3, 3}(0.09, 0.02, 0.0, 0.02, 0.04, 0.0, 0.0, 0.0, 0.0)
+    lamk = _bilayer(; itf1 = AnisotropicSurfaceConductiveInterface(Ks))
+    Kh = Matrix(components(homogenize(lamk, Laminated(), :K)))
+    Kr = Matrix(components(homogenize(_bilayer(), Laminated(), :K)))
+    @test (Kh-Kr)[1:2, 1:2] ≈ Matrix(Ks)[1:2, 1:2] atol = ATOL_ITF
+    @test Kh[3, 3] ≈ Kr[3, 3] atol = ATOL_ITF
+end
+
+@testset "Anisotropic interfaces — the exact-TI claim refuses them" begin
+    # Isotropic layers, but an anisotropic interface: the stack is NOT
+    # transversely isotropic, and claiming so would project away the in-plane
+    # texture the interface carries.
+    𝕂 = SMatrix{3, 3}(3.0e-3, 5.0e-4, 7.0e-4, 5.0e-4, 8.0e-3, 2.0e-4, 7.0e-4, 2.0e-4, 1.1e-2)
+    lam = _bilayer(; itf1 = AnisotropicSpringInterface(𝕂))
+    Ch = homogenize(lam, Laminated(), :C)
+    @test !(Ch isa TensND.TensTI)
+    M = Matrix(KM(Ch, laminate_basis(lam)))
+    @test abs(M[4, 4] - M[5, 5]) > 1.0e-6          # genuinely not TI
+
+    # ... while the scalar interface types keep the TI claim.
+    @test homogenize(_bilayer(; itf1 = SpringInterface(1.0e-2, 2.0e-2)), Laminated(), :C) isa
+        TensND.TensTI{4}
+    @test homogenize(_bilayer(; itf1 = MembraneInterface(0.07, 0.04)), Laminated(), :C) isa
+        TensND.TensTI{4}
+end
+
+@testset "Anisotropic interfaces — TensND-valued fields and a rotated frame" begin
+    # The tensor may be given as a plain matrix (read in the layer frame) or as
+    # a TensND tensor carrying its own basis, converted on use.
+    𝕂 = SMatrix{3, 3}(3.0e-3, 5.0e-4, 7.0e-4, 5.0e-4, 8.0e-3, 2.0e-4, 7.0e-4, 2.0e-4, 1.1e-2)
+    lam = Laminate(; normal = (1, 1, 1))
+    b = laminate_basis(lam)
+    add_layer!(
+        lam, :A, Dict(:C => _isoi(2.0, 0.8)); thickness = 0.3,
+        interface = AnisotropicSpringInterface(Tens(Matrix(𝕂), b))
+    )
+    add_layer!(lam, :B, Dict(:C => _isoi(0.5, 0.2)); thickness = 0.7)
+    Ch = homogenize(lam, Laminated(), :C)
+
+    @test inv(_acoustic_i(Ch, b)) ≈ sum(
+        layer_volume_fraction(lam, nm) * inv(_acoustic_i(layer_property(lam, nm, :C), b))
+            for nm in layer_names(lam)
+    ) + 𝕂 / laminate_period(lam) atol = ATOL_ITF
+
+    # A plain matrix in the same (layer) frame gives the same answer.
+    lam2 = Laminate(; normal = (1, 1, 1))
+    add_layer!(
+        lam2, :A, Dict(:C => _isoi(2.0, 0.8)); thickness = 0.3,
+        interface = AnisotropicSpringInterface(𝕂)
+    )
+    add_layer!(lam2, :B, Dict(:C => _isoi(0.5, 0.2)); thickness = 0.7)
+    @test Matrix(KM(homogenize(lam2, Laminated(), :C), b)) ≈ Matrix(KM(Ch, b)) atol = ATOL_ITF
+end
+
+@testset "Anisotropic interfaces — ForwardDiff reaches a tensor entry" begin
+    base = [3.0e-3 5.0e-4 7.0e-4; 5.0e-4 8.0e-3 2.0e-4; 7.0e-4 2.0e-4 0.0]
+    f = function (x)
+        K = SMatrix{3, 3}(base + [0.0 0 0; 0 0 0; 0 0 x])
+        return Matrix(KM(homogenize(_bilayer(; itf1 = AnisotropicSpringInterface(K)), Laminated(), :C)))[3, 3]
+    end
+    h = 1.0e-8
+    @test ForwardDiff.derivative(f, 1.1e-2) ≈ (f(1.1e-2 + h) - f(1.1e-2 - h)) / (2h) rtol = 1.0e-5
 end
