@@ -41,7 +41,7 @@ checked against a closed form before being pointed at something unknown.
   moduli, frame indifference) are *enforced* rather than fitted.
 - `surrogate.jl` — [`NeuralSurrogate`](@ref): weights, standardization, output
   specification, validity box and [`Provenance`](@ref).
-- `dataset.jl` — Halton sampling of a [`SampleBox`](@ref) and labelling by a
+- `dataset.jl` — Halton sampling of a [`SampleBox`](@ref) and labeling by a
   **teacher**, the one seam that changes between morphologies.
 - `training.jl` — [`TrainingOptions`](@ref) and the fallback
   [`train_surrogate`](@ref); the optimizer lives in `MeanFieldHomLuxExt`.

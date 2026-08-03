@@ -62,7 +62,7 @@ Requires a finite-element backend: `Ferrite`, `FerriteGmsh` and `Gmsh`, or —
 for the axisymmetric morphology — `Gridap` and `GridapGmsh`. Two morphologies,
 one method: see [Finite-element inclusions](@ref man-fe-inclusions) for the
 elliptical crack and [A recycled-concrete aggregate](@ref app-recycled-aggregate)
-for the sphere with an off-centre core.
+for the sphere with an off-center core.
 
 ```@docs
 MeanFieldHom.FiniteElements
@@ -130,7 +130,7 @@ MeanFieldHom.fe_mesh_report
 MeanFieldHom.fe_cod_breakdown
 ```
 
-### Sphere with an off-centre core (axisymmetric Fourier)
+### Sphere with an off-center core (axisymmetric Fourier)
 
 ```@docs
 MeanFieldHom.FEExcenteredSphere
@@ -212,7 +212,7 @@ MeanFieldHom.NeuralInclusions._canonical_axes
 MeanFieldHom.NeuralInclusions._spheroid_axis_index
 ```
 
-### Sampling and labelling
+### Sampling and labeling
 
 ```@docs
 MeanFieldHom.SampleBox

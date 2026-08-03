@@ -3,7 +3,7 @@
 Recycling concrete means crushing it, and what comes out is not a clean
 aggregate: each grain is an **old natural aggregate wrapped in a shell of
 adhered old mortar**, of uncertain and generally poor quality, and the old
-aggregate is not centred in its shell. [adessinaIJES2017](@cite) homogenized that morphology by
+aggregate is not centered in its shell. [adessinaIJES2017](@cite) homogenized that morphology by
 generalizing the Eshelby problem to an inclusion of arbitrary internal
 structure, solved by finite elements. This page reproduces their study with
 [`FEExcenteredSphere`](@ref), and improves on it in one respect.
@@ -48,7 +48,7 @@ eccentricity, and the tangency limit that *defines* the normalization of
 | ``\mathbb C_0`` | stiffness of the reference medium, the fresh paste |
 
 The normalization is what makes ``\alpha`` readable: ``a - a_c`` is the distance
-the core centre can travel before the core touches the outer surface, so
+the core center can travel before the core touches the outer surface, so
 ``\alpha`` runs over ``[0, 1]`` whatever ``w`` is, and ``\alpha = 1`` is tangency
 by construction. Values above 1 are geometrically impossible and rejected.
 
@@ -215,7 +215,7 @@ material term, to absorb the ``\rho`` weight.
 the two zooms, P2 triangles.
 
 The half-plane ``\rho \ge 0``, meshed with straight triangles: the core in red,
-the adhered mortar in blue, the surrounding matrix in grey. A node of this mesh
+the adhered mortar in blue, the surrounding matrix in gray. A node of this mesh
 stands for a whole circle of the three-dimensional body, and the axis on the
 left is a boundary of the computation, not of the body.
 
@@ -298,7 +298,7 @@ figure (``E_2/E_0 = 0.1``, a badly degraded adhered mortar).
 | 8.0 | 0.103 | 0.007 | 0.201 | 0.009 |
 | 12.0 | 0.026 | 0.007 | 0.055 | 0.007 |
 
-Two different behaviours, worth separating.
+Two different behaviors, worth separating.
 
 The ``\mathbb J`` (bulk) column is the ideal case: the correction is **exact to
 the discretization floor at every ``R``**, including ``R = 1.5a`` where the
@@ -336,13 +336,13 @@ The engineering question of the paper: a recycled aggregate is an old natural
 aggregate wrapped in a shell of old mortar of uncertain, generally poor,
 quality. Holding the old-aggregate fraction fixed and softening the adhered
 mortar, how much does the concrete lose — and does it matter that the old
-aggregate is not centred?
+aggregate is not centered?
 
 Left, the effective Young modulus itself: the three eccentricities all but
 superpose, and the concentric one sits on the exact Hervé-Zaoui composite
 sphere — that superposition *is* the validation. Right, the same data read
 against the concentric case, which is the only way to see the effect at all.
-The grey dashed line is the numerical error of the concentric finite-element
+The gray dashed line is the numerical error of the concentric finite-element
 curve against the exact one, an order of magnitude below the signal.
 
 ``E_{\rm eff}/E_0``, Mori-Tanaka, aggregate volume fraction 0.4,
@@ -359,7 +359,7 @@ curve against the exact one, an order of magnitude below the signal.
 
 The concentric column tracks the exact one to 0.03 % over the whole range,
 which is the validation. Physically: while the shell is the **weak** phase,
-moving the core off centre *stiffens* the composite — the eccentric pattern
+moving the core off center *stiffens* the composite — the eccentric pattern
 short-circuits part of the soft mortar, so the inclusion takes up less strain.
 The effect is worth 1.7 % on ``E_{\rm eff}`` at ``E_{\rm shell}/E_0 = 0.1``,
 vanishes when the shell matches the paste, and changes sign beyond. What the

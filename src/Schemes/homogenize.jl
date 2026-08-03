@@ -21,7 +21,7 @@ or a `Laminate` (periodic stack of parallel layers, solved exactly by
 rather than dispatching elsewhere.
 
 `property` is a *required* `Symbol` argument naming which stored phase
-property is homogenised. The order of the result (4th-order, 2nd-order,
+property is homogenized. The order of the result (4th-order, 2nd-order,
 …) follows from the order of the tensor stored under that name in each
 phase ; the symbol itself is just a key — any user-chosen name
 (`:stiffness`, `:conductivity`, `:κ`, …) works as long as every phase
@@ -58,7 +58,7 @@ end
 # Backward-compatible kwarg form, kept so existing scripts and tests using
 # the old `homogenize(rve, scheme; property = …)` signature keep working.
 # New code is encouraged to pass the property name as a positional argument
-# (the user must always state explicitly which property is being homogenised).
+# (the user must always state explicitly which property is being homogenized).
 function homogenize(
         cell::AbstractHomogenizationCell, scheme::HomogenizationScheme;
         property::Symbol = :C, kw...

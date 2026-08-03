@@ -100,7 +100,7 @@ J = volterra_inverse(M; block_size = 6)            # creep (compliance) matrix
                  atol = 1e-10)                       # block-diagonal identity
 ```
 
-## 3. Building an RVE and homogenising
+## 3. Building an RVE and homogenizing
 
 ```julia
 # 50-step time grid; the matrix is the Maxwell iso law from §1.1

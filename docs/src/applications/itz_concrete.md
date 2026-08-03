@@ -127,7 +127,7 @@ C_cp = TensISO{3}(3k_cp, 2μ_cp)
 
 ## Scale 3: what an ITZ is made of
 
-The ITZ is modelled as the **same paste carrying additional capillary
+The ITZ is modeled as the **same paste carrying additional capillary
 porosity** ``\varphi_{\rm ITZ}``, introduced as spherical voids by Mori-Tanaka.
 No empirical stiffness–porosity relation is involved: the softening comes out of
 the same scheme used everywhere else on this page.

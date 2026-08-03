@@ -182,7 +182,7 @@ function raw_features(incl, s::NeuralSurrogate, P₀::TensND.AbstractTens)
 end
 
 # The frame conventions (`_class_frame`, `_axes`, `_spheroid_axis_index`) live in
-# `specs.jl`, next to the classes: the labeller and the inclusion must derive the
+# `specs.jl`, next to the classes: the labeler and the inclusion must derive the
 # frame identically, so there is a single definition serving both.
 
 # ─── Gate A — NeuralHillInclusion ────────────────────────────────────────────

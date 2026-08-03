@@ -7,7 +7,7 @@
 #
 #  This is the value-level counterpart of subtyping: it lets a user plug a
 #  morphology into every homogenization scheme without declaring a type and a
-#  method table.  It is the direct analogue of the `user_inclusion` class of
+#  method table.  It is the direct analog of the `user_inclusion` class of
 #  the C++/Python `echoes` codebase, where the user overrides `build_all()`
 #  to return the concentration tensors by any means.
 #

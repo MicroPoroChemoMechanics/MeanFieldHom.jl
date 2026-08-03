@@ -34,7 +34,7 @@ if isdefined(TensND, :TensTI)
         # Non-aligned : hand over to the shared anisotropic default, which
         # picks a cubature.  Deciding it here again would silently reinstate
         # the residue algorithm as a default — the very thing
-        # `Core.dispatch.jl` centralises to avoid.
+        # `Core.dispatch.jl` centralizes to avoid.
         return MFH_Core._aniso_default_algo(C₀)
     end
     @eval MFH_Core._resolve_algo(::Val{:auto}, crack::MFH_Core.AbstractCrack, C₀::TensND.TensTI{4}) =
@@ -133,7 +133,7 @@ function _apply_interface_stiffness(
     KB = Matrix(K_M) * Matrix(B_M)
     M = I3 + b .* KB
     B_eff_M = Matrix(B_M) / M
-    # Symmetrise to remove rounding drift.
+    # Symmetrize to remove rounding drift.
     B_eff_M = (B_eff_M + B_eff_M') ./ 2
     return TensND.TensCanonical(B_eff_M)
 end

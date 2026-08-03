@@ -75,7 +75,7 @@ independently.
 
 ## Cracks
 
-The transport analogue of the crack compliance is the **crack resistivity
+The transport analog of the crack compliance is the **crack resistivity
 contribution** ``\boldsymbol{R}``, a rank-1 order-2 tensor: only the normal
 component of the flux can jump across a crack. It is assembled from a scalar
 COD ``b``, with the same geometric factors ``3/4`` (elliptic) and ``2/\pi``

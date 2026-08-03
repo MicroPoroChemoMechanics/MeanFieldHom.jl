@@ -241,7 +241,7 @@ than an earlier one. Default is `false` (return last iterate).
 Non-convergence is reported via `@debug` (silent by default; set
 `JULIA_DEBUG=MeanFieldHom` to surface it) rather than `@warn`. Near
 bifurcation points the Picard step intrinsically slows down (the
-linearised step has a Jacobian eigenvalue ≈ 1) and the residual stalls
+linearized step has a Jacobian eigenvalue ≈ 1) and the residual stalls
 above `tol_eff` while still being negligibly small compared to the
 matrix-property scale; the returned iterate is informative even when
 the strict tolerance is not reached, so a default warning would be

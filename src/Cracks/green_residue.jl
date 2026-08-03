@@ -83,7 +83,7 @@ function _Qnn_star_residue(
         end
     end
 
-    # Symmetrise
+    # Symmetrize
     @inbounds for i in 1:3, k in (i + 1):3
         avg = (result[i, k] + result[k, i]) / 2
         result[i, k] = avg

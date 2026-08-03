@@ -257,7 +257,7 @@ end
 DiluteDual scheme: the dilute contribution is computed in compliance
 space.  Equivalent in form to [`dilute_alv`](@ref) but with the matrix
 acting on the compliance kernel.  Useful when the inclusions are weak
-(e.g. cracks) — the linearisation around the matrix compliance
+(e.g. cracks) — the linearization around the matrix compliance
 converges better.
 
   J̃_eff = J̃^0 + Σ_r f_r · H̃^{r,dil}

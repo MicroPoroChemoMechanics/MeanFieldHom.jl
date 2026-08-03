@@ -186,7 +186,7 @@ index reversal documented at the top of this file.
 
 Used for reporting and for the exact out-of-plane oracle of a laminate,
 `(n · ℂ^{hom} · n)^{-1} = Σ_i f_i (n · ℂ_i · n)^{-1} + Σ_j 𝕂_j / L`; the
-laminate kernel itself never materialises `𝐊`.
+laminate kernel itself never materializes `𝐊`.
 """
 @inline function acoustic_tensor(M::AbstractMatrix{T}) where {T}
     B = _op_block(M)
@@ -220,7 +220,7 @@ handled exactly like an isotropic one; the isotropic case
 `diag(k_n, k_t/2, k_t/2)`.
 
 Note the factor 2 on the tangential entries: a displacement jump enters the
-strain through a *symmetrised* product, so those compliances are halved in
+strain through a *symmetrized* product, so those compliances are halved in
 Mandel slots — exactly as `ℙ` is `𝐊⁻¹` divided, not multiplied, by the Mandel
 weights.
 """
@@ -240,7 +240,7 @@ end
 
 Inverse of a 6×6 Kelvin-Mandel matrix by block elimination on the in-plane /
 out-of-plane partition: two [`_inv3`](@ref) cofactor inversions and a Schur
-complement, hence **no pivoting and no factorisation**. Stays exact for
+complement, hence **no pivoting and no factorization**. Stays exact for
 `ForwardDiff.Dual` and evaluable for symbolic element types, where the LU
 fallback behind `inv(::SMatrix{6,6})` is not.
 
@@ -341,7 +341,7 @@ Arguments:
 `opinv` / `opinv_avg` are the out-of-plane inversion used for a layer
 stiffness and for the average `⟨ℙ⟩` respectively. They are function arguments
 so that the ageing-viscoelastic laminate reuses this very kernel with the
-Volterra block inversion substituted; Julia specialises on the function type,
+Volterra block inversion substituted; Julia specializes on the function type,
 so there is no abstraction cost and only one place where the physics lives.
 """
 function laminate_stiffness(
@@ -371,7 +371,7 @@ end
 """
     laminate_strain_localization(C6, Chom6; opinv = plane_pinv) -> SMatrix{6,6}
 
-Strain localisation tensor of one layer, `𝔸_i = 𝕀 + ℙ_i : (ℂ^{hom} − ℂ_i)`,
+Strain localization tensor of one layer, `𝔸_i = 𝕀 + ℙ_i : (ℂ^{hom} − ℂ_i)`,
 in Kelvin-Mandel form. Its in-plane block is the identity and its
 in-plane/out-of-plane coupling block vanishes — the macroscopic in-plane
 strain is transmitted unchanged to every layer. The fractions weight to the
@@ -384,7 +384,7 @@ end
 """
     laminate_stress_localization(C6, Chom6; opinv = plane_pinv) -> SMatrix{6,6}
 
-Stress localisation tensor of one layer,
+Stress localization tensor of one layer,
 `𝔹_i = ℂ_i : 𝔸_i : (ℂ^{hom})^{-1}`, in Kelvin-Mandel form, with
 `Σ_i f_i 𝔹_i = 𝕀`. The inverse goes through [`_inv_km6`](@ref), so the result
 stays differentiable and symbolically evaluable.
@@ -403,7 +403,7 @@ end
 """
     plane_pinv2(K3) -> SMatrix{3,3}
 
-Order-2 analogue of [`plane_pinv`](@ref): the pseudo-inverse of a 3×3
+Order-2 analog of [`plane_pinv`](@ref): the pseudo-inverse of a 3×3
 conductivity-like matrix restricted to the out-of-plane direction `n`, i.e.
 `(1/k_{nn}) n⊗n` in a frame whose third axis is `n`.
 """
@@ -454,7 +454,7 @@ end
 """
     laminate_gradient_localization(K3, Khom3; opinv = plane_pinv2) -> SMatrix{3,3}
 
-Gradient localisation tensor of one layer in a transport problem,
+Gradient localization tensor of one layer in a transport problem,
 `𝐀_i = 𝟏 + 𝐏_i · (𝐊^{hom} − 𝐊_i)`, with `Σ_i f_i 𝐀_i = 𝟏`.
 """
 @inline function laminate_gradient_localization(K3, Khom3; opinv = plane_pinv2)
@@ -464,7 +464,7 @@ end
 """
     laminate_flux_localization(K3, Khom3; opinv = plane_pinv2) -> SMatrix{3,3}
 
-Flux localisation tensor of one layer,
+Flux localization tensor of one layer,
 `𝐁_i = 𝐊_i · 𝐀_i · (𝐊^{hom})^{-1}`, with `Σ_i f_i 𝐁_i = 𝟏`.
 """
 @inline function laminate_flux_localization(K3, Khom3; opinv = plane_pinv2)

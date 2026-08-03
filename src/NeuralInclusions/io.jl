@@ -11,7 +11,7 @@
 #    blob would not;
 #  * it is version-stable in a way `Serialization` is not: a `.jls` file written
 #    by one Julia version is not guaranteed to load in the next, which is
-#    disqualifying for an artefact committed to a repository.
+#    disqualifying for an artifact committed to a repository.
 #
 #  Every field needed to reproduce an evaluation bit-for-bit is written,
 #  including the format version. Nothing is inferred at load time.

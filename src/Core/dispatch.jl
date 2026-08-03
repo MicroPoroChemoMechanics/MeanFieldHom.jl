@@ -1,7 +1,7 @@
 # =============================================================================
 #  dispatch.jl
 #
-#  Centralised `_resolve_algo(Val(method), incl, C₀)` dispatch — single
+#  Centralized `_resolve_algo(Val(method), incl, C₀)` dispatch — single
 #  place where the symbol `:auto` / `:residues` / `:decuhr` is translated
 #  into an [`AbstractAlgorithm`](@ref) instance, taking into account the
 #  material symmetry class (TensND type of `C₀`) *and* the inclusion

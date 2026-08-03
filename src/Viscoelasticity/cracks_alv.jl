@@ -278,7 +278,7 @@ function stiffness_contribution_alv_at(
     # Optional Sevostianov interface-stiffness correction.  Caller
     # supplies the **already-discretized** scalar interface matrices
     # `Rn_mat`, `Rt_mat` (n × n Volterra) — the iteration of SC against
-    # the running estimate does not need to re-trapezoidalise the
+    # the running estimate does not need to re-trapezoidalize the
     # interface laws each pass.
     if Rn_mat !== nothing || Rt_mat !== nothing
         n_t = size(α, 1)

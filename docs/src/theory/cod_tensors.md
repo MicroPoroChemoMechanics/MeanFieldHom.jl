@@ -81,7 +81,7 @@ its orientation, never on how big it is. This is the convention of
 ### The shape coefficient ``\chi``
 
 The opening profile is an ellipsoidal cap, so the average jump is a fixed
-fraction of the **maximum** jump ``\underline{\beta}`` at the crack centre:
+fraction of the **maximum** jump ``\underline{\beta}`` at the crack center:
 
 ```math
 \bigl\langle [\![\underline{u}]\!] \bigr\rangle_{\mathcal{I}} = \chi\,\underline{\beta},

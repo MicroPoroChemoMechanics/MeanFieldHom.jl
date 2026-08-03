@@ -1,5 +1,5 @@
 # =============================================================================
-#  dataset.jl — sampling the parameter box and labelling it with a teacher.
+#  dataset.jl — sampling the parameter box and labeling it with a teacher.
 #
 #  The *teacher* abstraction is the whole point of this file, and the only seam
 #  that has to change to move from the analytic pilot to a complex morphology:
@@ -29,7 +29,7 @@ Axis-aligned sampling box over the *raw feature* space, one entry per feature.
 
 `scale` is per feature: `:linear` samples uniformly between `lo` and `hi`,
 `:log` samples uniformly in the logarithm — the right choice for an aspect
-ratio, whose interesting behaviour is spread over decades rather than over an
+ratio, whose interesting behavior is spread over decades rather than over an
 interval.
 
 The box travels into the trained surrogate as its
@@ -184,7 +184,7 @@ function grid_box(box::SampleBox, npts::Integer)
     return X
 end
 
-# ─── Labelling ───────────────────────────────────────────────────────────────
+# ─── Labeling ───────────────────────────────────────────────────────────────
 
 """
     Dataset

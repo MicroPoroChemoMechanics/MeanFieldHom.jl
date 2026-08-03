@@ -284,7 +284,7 @@ JSON, which is what keeps the suite deterministic and the doc build free of Lux.
 
 - [Custom inclusions](@ref man-custom-inclusions) — the contract and its three
   entry gates
-- [Adding a new inclusion](@ref dev-adding-inclusion) — the levelled developer
+- [Adding a new inclusion](@ref dev-adding-inclusion) — the leveled developer
   contract
 - [Finite-element inclusions](@ref man-fe-inclusions) — the expensive teacher a
   surrogate is meant to replace

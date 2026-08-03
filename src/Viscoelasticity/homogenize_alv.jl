@@ -482,7 +482,7 @@ end
 
 # ── Dispatch table on scheme types ──────────────────────────────────────────
 #
-# Crack handling.  Every dispatcher honours the optional kwargs
+# Crack handling.  Every dispatcher honors the optional kwargs
 #    crack_data    :: Vector{Tuple{geom, density, sym}}
 #    ΔC_cracks_M   :: pre-aggregated stiffness contribution against C̃_M
 #    ΔJ_cracks_M   :: pre-aggregated compliance contribution against C̃_M
@@ -815,7 +815,7 @@ end
 
 # Solver options shared by the order-4 and order-2 ALV differential
 # drivers.  Mirrors the elastic `DifferentialScheme` contract: the
-# recognised keywords are read out, everything else is forwarded to
+# recognized keywords are read out, everything else is forwarded to
 # `OrdinaryDiffEq.solve`.
 function _diff_alv_options(sch::DifferentialScheme)
     return (

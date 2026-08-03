@@ -63,7 +63,7 @@ differentiate against. Four concrete lens kinds are shipped, plus a
 | `geometry(:I, :semi_axes, 3)`   | scalar geometry field               | `GeometryParameter`         |
 | `shape_param(:semi_axes, 1)`    | distribution-shape geometry field   | `DistributionShapeParameter`|
 
-Named selectors recognised by `property` (other symbols fall back to a
+Named selectors recognized by `property` (other symbols fall back to a
 positional `Int` index into `get_data(tensor)`):
 
 | Tensor type    | Named selectors                                      |

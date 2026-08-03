@@ -64,7 +64,7 @@ gap = maximum(abs, get_array(A_exact) .- get_array(A_fit))
 @printf "‖exact − best-fit‖∞ = %.4e  (content dropped by the projection)\n" gap
 @printf "  → components lost : ℓ₃≠ℓ₄ split + the ℓ₇/ℓ₈ azimuthal couplings.\n\n"
 
-# ## Consequence at scheme level: Mori–Tanaka homogenised stiffness
+# ## Consequence at scheme level: Mori–Tanaka homogenized stiffness
 #
 # Two RVEs identical except for the symmetrization mechanism applied to the
 # tilted-needle phase. The exact average is what the scheme kernels use.

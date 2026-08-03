@@ -50,9 +50,9 @@ function build_rve(::Any, φ; ω_s = 1.0, ω_p = 1.0, sym_s = nothing, sym_p = n
     return rve
 end
 
-# ── Extract iso (k, μ) from the homogenised stiffness ──────────────────────
+# ── Extract iso (k, μ) from the homogenized stiffness ──────────────────────
 #
-# When the homogenised result is iso (the expected case for the porous
+# When the homogenized result is iso (the expected case for the porous
 # benchmark), the stiffness is stored as a TensISO{4, 3} with two
 # data scalars : `(α, β) = (3K, 2μ)`. The simpler accessor below maps
 # directly to (k, μ).  A fallback for non-TensISO outputs keeps the

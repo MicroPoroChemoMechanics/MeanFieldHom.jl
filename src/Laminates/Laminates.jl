@@ -10,7 +10,7 @@ package addresses. The schemes of `Schemes` (bounds, dilute, Mori-Tanaka,
 Maxwell, Ponte-Castañeda-Willis, self-consistent, differential) all describe
 **random** morphologies through the Eshelby auxiliary problem; some of them
 single out a matrix phase and some do not, but all of them estimate. A
-laminate is **periodic and deterministic**, and its effective behaviour
+laminate is **periodic and deterministic**, and its effective behavior
 follows in closed form from two continuity conditions:
 
 - the traction `σ·n` is continuous — the *out-of-plane* stress components;
@@ -32,7 +32,7 @@ Provides:
   [`SpringInterface`](@ref) / [`MembraneInterface`](@ref) in elasticity,
   [`KapitzaInterface`](@ref) / [`SurfaceConductiveInterface`](@ref) in
   transport, each entering with an interface *density* `1/L`;
-- per-layer localisation ([`layer_strain_localization`](@ref), …), the two
+- per-layer localization ([`layer_strain_localization`](@ref), …), the two
   Hill tensors ([`laminate_hill`](@ref)) and the interface jumps
   ([`interface_jump`](@ref));
 - parameter lenses [`ThicknessParameter`](@ref) and

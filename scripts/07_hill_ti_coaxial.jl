@@ -1,7 +1,7 @@
 # =============================================================================
 #  07_hill_ti_coaxial.jl
 #
-#  Demonstration of the closed-form analytical Hill polarisation tensor for
+#  Demonstration of the closed-form analytical Hill polarization tensor for
 #  a spheroidal inclusion coaxial with a transversely isotropic matrix
 #  (Barthélémy 2020, eqs. 49–58).
 #

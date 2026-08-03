@@ -237,7 +237,7 @@ Mesh diagnostics: cell, node and dof counts, the two lip facet counts and their
 measured areas against the exact `πab`. Builds the discretization if it does
 not exist yet, and caches it.
 
-Both lip areas equalling `πab` is what says the `Crack` plugin split the
+Both lip areas equaling `πab` is what says the `Crack` plugin split the
 surface cleanly *and* the front weld did not glue the lips back together.
 """
 function fe_mesh_report(crack::FEEllipticCrack)

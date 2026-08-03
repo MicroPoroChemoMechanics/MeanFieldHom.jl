@@ -4,7 +4,7 @@
 #  Opt-in work counters used by the benchmark harness (`scripts/bench/`).
 #
 #  Rationale: measuring *time* and *allocations* alone cannot distinguish a
-#  genuine speed-up from a change of adaptive-quadrature behaviour (fewer
+#  genuine speed-up from a change of adaptive-quadrature behavior (fewer
 #  nodes evaluated ⇒ faster *and* less accurate).  These counters expose the
 #  amount of **work** actually performed, so a benchmark diff can assert that
 #  the node/iteration count is unchanged while the time drops.

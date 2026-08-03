@@ -1,9 +1,9 @@
-# # A sphere with an off-centre core, by axisymmetric Fourier finite elements
+# # A sphere with an off-center core, by axisymmetric Fourier finite elements
 #
 # The morphology of Adessina, Barthélémy, Lavergne & Ben Fraj (2017): a
 # recycled-concrete aggregate — an old natural aggregate wrapped in a shell of
 # adhered old mortar, embedded in fresh cement paste. The old aggregate sits
-# **off centre**, so the pattern is not the concentric composite sphere and has
+# **off center**, so the pattern is not the concentric composite sphere and has
 # no closed form.
 #
 # The paper solves it in three dimensions. It is a solid of revolution, so here
@@ -130,7 +130,7 @@ for R in (1.5, 2.0, 3.0, 4.0, 6.0, 10.0)
     @printf("  %5.1f   %+8.3f %%     %+8.3f %%\n", R, eu, ec)
 end
 
-# ## §4 Moving the core off centre
+# ## §4 Moving the core off center
 #
 # The response loses its isotropy and becomes transversely isotropic about the
 # eccentricity axis. `A₁₁` is the transverse localization, `A₃₃` the axial one.

@@ -72,7 +72,7 @@ The raw finite-element opening sits a few percent **below** the closed form,
 and for two compounding reasons that both push the same way: a truncated cell
 is stiffer than an infinite medium, and a fixed-order element under-resolves
 the front. The extrapolated values land within a percent — the residual is
-discretization, not a modelling error.
+discretization, not a modeling error.
 
 For reference, the FEniCSx implementation of the same scheme in the `SifAniso`
 study reports ±5 % on ``\mathbf B_\infty`` at `htipdiv = 12` with P3 elements.

@@ -12,7 +12,7 @@
 `MeanFieldHom.Schemes` ships Voigt/Reuss, dilute (direct and dual),
 Mori-Tanaka, Maxwell, Ponte-Castañeda–Willis, self-consistent (symmetric and
 asymmetric) and differential, each in an elastic and an ageing-viscoelastic
-flavour. A new scheme slots in beside them:
+flavor. A new scheme slots in beside them:
 
 1. Create `src/Schemes/<scheme_name>.jl` and `include` it from
    `src/Schemes/Schemes.jl`.
@@ -26,7 +26,7 @@ flavour. A new scheme slots in beside them:
    `_mt_dispatch` does in `mori_tanaka.jl`.
 4. **Go through `contribution_helpers.jl`.** Never call
    `stiffness_contribution` and friends directly on a phase geometry: the
-   `_phase_*` helpers apply the amount, honour the `symmetrize` setting, hand
+   `_phase_*` helpers apply the amount, honor the `symmetrize` setting, hand
    the kernel the correctly pre-projected reference medium, and branch on
    [`is_homogeneous_inclusion`](@ref). Two invariants stated in that file's
    header must hold in your kernel too — all helpers of a given evaluation must

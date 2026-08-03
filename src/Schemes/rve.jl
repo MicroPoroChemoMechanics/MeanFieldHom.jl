@@ -704,7 +704,7 @@ end
 #
 # `validate_rve` is left strictly as it was — including its requirement of a
 # registered matrix phase, which is precisely the part that does NOT
-# generalise to a matrix-free cell. That requirement is why the indirection
+# generalize to a matrix-free cell. That requirement is why the indirection
 # below exists rather than a relaxed `validate_rve`.
 
 validate_cell(rve::RVE) = validate_rve(rve)

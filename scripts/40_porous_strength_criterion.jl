@@ -7,7 +7,7 @@
 #
 #  Setup: oblate spheroid solid (ω = 0.1, K_s = 1e6, μ_s = 1) at fraction 1-φ
 #         + oblate spheroid pore (ω = 0.1, C_pore ≈ 0) at fraction φ. Both
-#         phases iso-symmetrised, so the homogenised stiffness is isotropic
+#         phases iso-symmetrized, so the homogenized stiffness is isotropic
 #         (in the limit of infinitely many random orientations).
 #
 #  For each scheme we plot the strength ellipse
@@ -34,7 +34,7 @@ const TINY = 1.0e-12
 const ω_aspect = 0.1
 const φ_value = 0.15
 
-# Build an iso 2-vector (α=3K, β=2μ) of the homogenised stiffness, parametrized
+# Build an iso 2-vector (α=3K, β=2μ) of the homogenized stiffness, parametrized
 # by the SOLID shear modulus `μs` (so that ForwardDiff can differentiate).
 function _C_hom_iso_2vec(μs::Real, ks, φ, scheme)
     T = typeof(μs)

@@ -1,10 +1,10 @@
 # =============================================================================
-#  excentered_sphere.jl — the sphere with an off-centre spherical core, solved
+#  excentered_sphere.jl — the sphere with an off-center spherical core, solved
 #  by *axisymmetric Fourier* finite elements.
 #
 #  This is the morphology of Adessina, Barthélémy, Lavergne & Ben Fraj,
 #  *Int. J. Eng. Sci.* 119 (2017) 1-15 — a recycled-concrete aggregate: an old
-#  natural aggregate (the core) sitting off-centre inside a shell of adhered
+#  natural aggregate (the core) sitting off-center inside a shell of adhered
 #  old mortar, the whole embedded in fresh cement paste.  The paper solves it
 #  in full 3-D; the geometry is a solid of revolution, so we solve it instead
 #  on the *meridian half-plane*, expanding the fields in Fourier series in the
@@ -63,7 +63,7 @@ end
                        coarsening = 6.0, order = 2)
 
 Spherical inclusion of radius `a` containing a **spherical core placed off the
-centre**, resolved by axisymmetric Fourier finite elements.
+center**, resolved by axisymmetric Fourier finite elements.
 
 # Geometry
 
@@ -72,7 +72,7 @@ centre**, resolved by axisymmetric Fourier finite elements.
 | `a` | radius of the whole inclusion |
 | `w = core_fraction` | volume fraction of the core *within the inclusion* |
 | `a_core = a·w^(1/3)` | core radius, fixed by `w` |
-| `α = eccentricity` | offset of the core centre, as a fraction of the largest offset that keeps the core inside: `d = α·(a − a_core)` |
+| `α = eccentricity` | offset of the core center, as a fraction of the largest offset that keeps the core inside: `d = α·(a − a_core)` |
 
 `α = 0` is the concentric two-layer sphere, for which
 [`LayeredSphere`](@ref MeanFieldHom.LayeredSpheres.LayeredSphere) gives the

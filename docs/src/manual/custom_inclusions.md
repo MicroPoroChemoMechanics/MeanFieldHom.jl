@@ -243,7 +243,7 @@ the contract, with nothing downstream aware of it.
 | Page | Morphology | Gate |
 | :--- | :--- | :--- |
 | [Finite-element inclusions](@ref man-fe-inclusions) | elliptical crack, 3-D tetrahedra | the crack algebra, from `cod_tensor` alone |
-| [A recycled-concrete aggregate](@ref app-recycled-aggregate) | sphere with an off-centre core | B, both localization tensors |
+| [A recycled-concrete aggregate](@ref app-recycled-aggregate) | sphere with an off-center core | B, both localization tensors |
 
 ## See also
 

@@ -9,7 +9,7 @@
 #  *time-discretized Volterra* algebra.  Each one stores the symmetry
 #  class compactly (2 / 6 / 12 `n × n` matrices respectively, instead
 #  of one `(6n × 6n)`) and the algebra closures `+, *, volterra_inverse`
-#  remain in the structured class without ever materialising the full
+#  remain in the structured class without ever materializing the full
 #  block matrix.
 #
 #  Usage  : julia --project scripts/58_alv_kernel_types.jl
@@ -60,7 +60,7 @@ println(
 
 @assert isapprox(Matrix(K_iso), M_full; atol = 1.0e-12)  # round-trip check
 
-# ─── 2) Algebra closure — multiplication stays iso, no materialisation ─────
+# ─── 2) Algebra closure — multiplication stays iso, no materialization ─────
 
 println("\n" * "="^78)
 println(" 2) Algebra closure : iso × iso → iso  (no (6n × 6n) materialisation)")
@@ -82,7 +82,7 @@ K_prod = K1 * K2
 println("type(K1 * K2) = ", typeof(K_prod))           # ALVKernelISO
 println("K_prod is type-stable iso : ", K_prod isa ALVKernelISO)
 
-# Sanity check vs the materialised generic GEMM.
+# Sanity check vs the materialized generic GEMM.
 M_prod_full = Matrix(K1) * Matrix(K2)
 @assert isapprox(Matrix(K_prod), M_prod_full; atol = 1.0e-12)
 

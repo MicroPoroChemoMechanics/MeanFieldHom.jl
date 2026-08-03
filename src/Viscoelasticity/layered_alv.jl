@@ -1088,14 +1088,14 @@ function _membrane_surface_stress_alv(
     end
     layers, M_κ_0, M_μ_0 = _bulk_layer_moduli_alv(sphere, C0_law, times)
 
-    # Bulk displacement amplitudes u_r(r_k), normalised by the far-field A∞.
+    # Bulk displacement amplitudes u_r(r_k), normalized by the far-field A∞.
     inside_amps, A_M, _ = bulk_amplitude_seq_alv(sphere, C0_law, times)
     A_M_inv = volterra_inverse(A_M; block_size = 1)
     Tb = eltype(A_M)
     a_surf = zeros(Tb, n, n)
     b_surf = zeros(Tb, n, n)
 
-    # Deviatoric interface displacement amplitudes (U, W)(r_k), normalised to a
+    # Deviatoric interface displacement amplitudes (U, W)(r_k), normalized to a
     # unit remote deviatoric far field (same λ combination as the localization).
     inside_a, inside_b, s_a, s_b = _shear_state_seq_alv(sphere, layers, M_κ_0, M_μ_0, times)
     a_ab, b_ab = _shear_amp_blocks_alv(radii[N], M_κ_0, M_μ_0, n, hcat(s_a, s_b))
@@ -1110,7 +1110,7 @@ function _membrane_surface_stress_alv(
         κs = intf.κs; μs = intf.μs
         r = radii[k]
         A_k, B_k = inside_amps[k]
-        u_r = (r .* A_k .+ (1 / r^2) .* B_k) * A_M_inv     # normalised u_r(r_k)
+        u_r = (r .* A_k .+ (1 / r^2) .* B_k) * A_M_inv     # normalized u_r(r_k)
         a_surf .+= (4 * κs * r / R³) .* u_r
         combo = inside_a[k] * λ_a + inside_b[k] * λ_b       # (4n × n) state
         U = zeros(Tb, n, n); W = zeros(Tb, n, n)

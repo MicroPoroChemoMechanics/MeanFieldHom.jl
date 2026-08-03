@@ -175,7 +175,7 @@ delta_resistivity(H::TensND.AbstractTens{2, 3}, f) = f * H
 #  Generic fallback of the perf seam consumed by the density branch of
 #  Mori-Tanaka.  `Cracks` specializes it to share a single `cod_tensor` solve;
 #  any other flat morphology (a user-defined one, a finite-element crack, …)
-#  gets the correct — if not the fastest — behaviour for free.  Per the
+#  gets the correct — if not the fastest — behavior for free.  Per the
 #  contract in the `Core` docstring, the fallback *is* the pair.
 # =============================================================================
 

@@ -20,7 +20,7 @@
 #      logspace(-2, log₁₀(50−t₀), 50)`.
 #
 #  Output : effective uniaxial creep response `Eₓₓ(t)` from the
-#  homogenised relaxation matrix R̃, as the strain field of a unit
+#  homogenized relaxation matrix R̃, as the strain field of a unit
 #  longitudinal stress step (cf. the Python `linalg.inv(V).dot(S)`).
 #
 #  Usage  : julia --project scripts/57_ageing_creep_cracks.jl

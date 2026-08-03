@@ -2,7 +2,7 @@
 
 A [`Laminate`](@ref) is a periodic unit cell of parallel layers of common
 normal `n`: no matrix, no reference medium, and an **exact** effective
-behaviour rather than an estimate. It is an
+behavior rather than an estimate. It is an
 [`AbstractHomogenizationCell`](@ref MeanFieldHom.Core.AbstractHomogenizationCell)
 alongside [`RVE`](@ref), solved by the [`Laminated`](@ref) scheme.
 

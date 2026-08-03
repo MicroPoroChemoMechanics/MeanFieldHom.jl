@@ -156,7 +156,7 @@ p^\star - \Big(\frac{\partial F}{\partial p}\Big)^{-1} F(p^\star;\theta)
       \Big(\frac{\partial F}{\partial p}\Big)^{-1}\frac{\partial F}{\partial\theta} .
 ```
 
-**Step 4 — recognise the IFT.** Differentiating ``F(p^\star(\theta);\theta) = 0``
+**Step 4 — recognize the IFT.** Differentiating ``F(p^\star(\theta);\theta) = 0``
 with respect to ``\theta`` gives
 ``\frac{\partial F}{\partial p}\frac{dp^\star}{d\theta} + \frac{\partial F}{\partial\theta} = 0``,
 i.e.

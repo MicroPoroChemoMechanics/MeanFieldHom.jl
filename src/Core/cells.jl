@@ -94,7 +94,7 @@ function homogenize end
 Structural sanity check of a homogenization cell, called by
 [`homogenize`](@ref) before evaluation. `validate_cell(::RVE)` forwards to
 `validate_rve` (which additionally requires a registered matrix phase — the
-one requirement that does *not* generalise), `validate_cell(::Laminate)` to
+one requirement that does *not* generalize), `validate_cell(::Laminate)` to
 `validate_laminate`.
 """
 function validate_cell end

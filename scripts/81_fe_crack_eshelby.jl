@@ -130,7 +130,7 @@ convergence(1.0, 0.25, (6, 9, 12))         # elongated, η = 1/4
 # closed form — a truncated cell is stiffer than an infinite medium and a
 # fixed-order element under-resolves the front. The extrapolated values land
 # within about a percent, which is the real validation: the residual is
-# discretization, not a modelling error.
+# discretization, not a modeling error.
 #
 # For reference, the FEniCSx implementation of the same scheme in `SifAniso`
 # reports ±5 % on ``B_\infty`` at `htipdiv = 12` with P3 elements; `Ferrite`

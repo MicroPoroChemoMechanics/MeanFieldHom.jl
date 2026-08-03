@@ -23,7 +23,7 @@
 # Write the macroscopic strain as ``\boldsymbol{E} = \tfrac{E_v}{3}\boldsymbol{1}
 # + \boldsymbol{E}_d`` with ``E_v = \mathrm{tr}\,\boldsymbol{E}`` its volumetric
 # part and ``\boldsymbol{E}_d`` its deviator. For an isotropic effective
-# behaviour of moduli ``(k^{\hom}, \mu^{\hom})`` the macroscopic elastic energy is
+# behavior of moduli ``(k^{\hom}, \mu^{\hom})`` the macroscopic elastic energy is
 #
 # ```math
 # W(\boldsymbol{E}) = \tfrac{1}{2}\,\boldsymbol{E}:\mathbb{C}^{\hom}:\boldsymbol{E}

@@ -25,7 +25,7 @@ homogenization schemes. The derivations are those of [barthelemyIJSS2016](@cite)
     tensor inverse. In `MeanFieldHom` these two operations are
     [`volterra_product`](@ref) and [`volterra_inverse`](@ref).
 
-## The ageing linear viscoelastic behaviour
+## The ageing linear viscoelastic behavior
 
 The strain and stress histories are related by a **Stieltjes integral**
 ([barthelemyIJSS2016](@cite)):
@@ -98,7 +98,7 @@ block-triangular** matrix ``\widetilde{\mathbb{C}}`` of size
 
 !!! warning "A block is not a kernel value"
     ``[\widetilde{\mathbb{C}}]_{ik}`` is a *weighted combination* of kernel
-    values at neighbouring times, not ``\mathbb{C}(t_i,t_k)``. Reading a
+    values at neighboring times, not ``\mathbb{C}(t_i,t_k)``. Reading a
     relaxation function off a column of the matrix therefore gives the wrong
     answer; the physical extraction is to apply the matrix to a unit strain
     step, which for a step at ``t_0`` amounts to summing each block row. The

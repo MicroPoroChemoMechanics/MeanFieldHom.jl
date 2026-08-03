@@ -1,15 +1,15 @@
 # =============================================================================
-#  axi_mesh.jl — the meridian half-plane of the sphere with an off-centre core.
+#  axi_mesh.jl — the meridian half-plane of the sphere with an off-center core.
 #
 #  The geometry is a solid of revolution, so the mesh is *two-dimensional*: the
 #  half-plane `ρ ≥ 0` of the cylindrical coordinates `(ρ, θ, z)`, with the
 #  symmetry axis `ρ = 0` as part of the boundary.  A node of this mesh stands
 #  for a whole circle of the three-dimensional body.
 #
-#  Three regions, all half-discs centred on the axis:
+#  Three regions, all half-discs centered on the axis:
 #
-#      core    radius a_c = a·w^(1/3), centred at z = d = α·(a − a_c)
-#      shell   the rest of the inclusion (radius a, centred at the origin)
+#      core    radius a_c = a·w^(1/3), centered at z = d = α·(a − a_c)
+#      shell   the rest of the inclusion (radius a, centered at the origin)
 #      matrix  the rest of the cell (radius R = radius_ratio·a)
 #
 #  Built with the *built-in* gmsh kernel from explicit points and circle arcs.
@@ -38,7 +38,7 @@ const AXI_SET_AXIS_PTS = "axis_pts"
     _build_gmsh_axi_model(gmsh, a, a_core, d, R, h_in, h_out)
 
 Populate the current gmsh session with the meridian half-plane of a sphere of
-radius `a` holding a core of radius `a_core` centred at `z = d`, itself
+radius `a` holding a core of radius `a_core` centered at `z = d`, itself
 embedded in a ball of matrix of radius `R`.
 
 Element size is `h_in` on the inclusion and its core and `h_out` on the outer
@@ -59,7 +59,7 @@ function _build_gmsh_axi_model(
     gmsh.model.add("mfh_excentered_sphere_axi")
     geo = gmsh.model.geo
 
-    # Centres of the three families of arcs.
+    # Centers of the three families of arcs.
     c_out = geo.addPoint(0.0, 0.0, 0.0, h_out)
     c_inc = geo.addPoint(0.0, 0.0, 0.0, h_in)
     c_cor = geo.addPoint(0.0, d, 0.0, h_in)

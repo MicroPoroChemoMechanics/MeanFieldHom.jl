@@ -1,6 +1,6 @@
 # [Symbolic laminates: arithmetic and harmonic averages](@id tut-symbolic-laminate)
 
-A laminate is the one microstructure in this package whose effective behaviour
+A laminate is the one microstructure in this package whose effective behavior
 is **exact**, so it is also the one whose closed forms the code can *derive*
 rather than merely reproduce. `TensND` being generic in its element type, the
 whole laminate kernel runs on **SymPy** `Sym` unchanged — and what comes out is
@@ -104,7 +104,7 @@ claims = [
 ```
 
 The last line, ``C_{1111} - C_{1122} = 2\langle\mu\rangle = 2C_{1212}``, is the
-transverse-isotropy identity — the in-plane behaviour is *entirely* an
+transverse-isotropy identity — the in-plane behavior is *entirely* an
 arithmetic average.
 
 ## The whole matrix in five averages

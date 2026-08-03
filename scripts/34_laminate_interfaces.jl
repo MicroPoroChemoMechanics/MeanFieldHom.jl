@@ -31,7 +31,7 @@ C₁ = TensISO{3}(3k₁, 2μ₁)
 C₂ = TensISO{3}(3k₂, 2μ₂)
 K₁, K₂ = TensISO{3}(2.0), TensISO{3}(0.3)
 
-# A bilayer parameterised by its interfaces and by an overall length scale.
+# A bilayer parameterized by its interfaces and by an overall length scale.
 function bilayer(; itf = PerfectInterface(), itf2 = PerfectInterface(), L = 1.0)
     lam = Laminate(; normal = (0, 0, 1))
     add_layer!(lam, :A, Dict(:C => C₁, :K => K₁); thickness = 0.3L, interface = itf)

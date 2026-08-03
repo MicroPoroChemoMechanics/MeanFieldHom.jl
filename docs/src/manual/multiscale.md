@@ -73,7 +73,7 @@ Both snippets return the same tensor, to the last bit.
 ### What the declarative form buys
 
 **One object per model.** The chain can be stored, passed around, compared and
-parameterised as a whole, instead of living in the control flow of a script.
+parameterized as a whole, instead of living in the control flow of a script.
 
 **Sensitivities across every scale, without plumbing.**
 [`NestedParameter`](@ref) addresses a scalar *inside* a nested cell, so
@@ -141,7 +141,7 @@ typically when it is to be differentiated, fitted or swept.
   inner result would have to be re-expressible as a
   [`ViscoLaw`](@ref). Chain ageing-viscoelastic scales explicitly.
 - The declarative form does not check scale separation. That remains the
-  modeller's responsibility, exactly as in the explicit form.
+  modeler's responsibility, exactly as in the explicit form.
 
 ## Writing a new cell type
 

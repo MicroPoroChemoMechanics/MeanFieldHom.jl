@@ -19,7 +19,7 @@
 #  `inclusion_basis` are introspection accessors expected by convention, and
 #  `shape_tensor` is optional — it describes an equivalent ellipsoidal
 #  envelope, which not every morphology has.  See
-#  `docs/src/developer/adding_inclusion.md` for the full levelled contract.
+#  `docs/src/developer/adding_inclusion.md` for the full leveled contract.
 #
 #  They are deliberately declared here as *stub* `function` definitions (no
 #  methods) so that sub-modules can add their own methods without
@@ -34,7 +34,7 @@
 """
     AbstractInclusion{T<:Number}
 
-Root abstract supertype for every inclusion geometry recognised by
+Root abstract supertype for every inclusion geometry recognized by
 `MeanFieldHom`.  The type parameter `T` is the element type of the
 geometric scalars (semi-axes, half-widths, …) and propagates through
 every tensor produced by the package, supporting `Float64`,
@@ -310,7 +310,7 @@ Size-independent compliance contribution tensor `H` of an inclusion in a
 matrix `P₀`.  For a dilute family of volume fraction `f`:
 `ΔS_eff = f · H` (see [`delta_compliance`](@ref)).
 
-The **two-argument** form is the *flat-object* flavour used by cracks and,
+The **two-argument** form is the *flat-object* flavor used by cracks and,
 more generally, by any inclusion registered in an
 [`RVE`](@ref MeanFieldHom.Schemes.RVE) with a
 [`CrackDensity`](@ref MeanFieldHom.Schemes.CrackDensity) amount: the

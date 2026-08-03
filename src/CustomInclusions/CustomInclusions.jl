@@ -8,7 +8,7 @@ scheme, in elasticity as in transport.
 Two exports:
 
 - [`CustomInclusion`](@ref) — a concrete, callback-driven inclusion, the
-  value-level analogue of subtyping `AbstractCustomInclusion`;
+  value-level analog of subtyping `AbstractCustomInclusion`;
 - [`check_inclusion_interface`](@ref) — a conformance checker that works on
   *any* `AbstractInclusion`, reporting which entry gate it satisfies and what
   is missing.

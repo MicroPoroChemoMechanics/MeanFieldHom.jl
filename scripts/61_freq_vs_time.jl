@@ -1,6 +1,6 @@
 # # Frequency or time? Two routes to the same viscoelastic composite
 #
-# `MeanFieldHom` reaches the effective behaviour of a linear viscoelastic
+# `MeanFieldHom` reaches the effective behavior of a linear viscoelastic
 # composite by two entirely separate roads:
 #
 # - the **frequency route** — replace every modulus by its complex counterpart

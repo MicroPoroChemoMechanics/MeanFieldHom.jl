@@ -26,7 +26,7 @@
 - Exact rotation-group symmetrization (ISO / TI) of concentration tensors,
   preserving non-major-symmetric content (`TensTI{4,T,8}`), for arbitrary
   multi-axis orientation distributions inside every scheme kernel.
-- User-defined inclusions and algorithms: a levelled, documented contract
+- User-defined inclusions and algorithms: a leveled, documented contract
   ([Adding a new inclusion](@ref dev-adding-inclusion)), the neutral
   [`AbstractCustomInclusion`](@ref) branch, the callback-driven
   [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion), the
@@ -68,7 +68,7 @@
   first-order corrected boundary condition of
   [adessinaIJES2017](@cite) and an
   isotropic reference medium: the **elliptical crack** in 3-D tetrahedra
-  (3 + 3 crack declination) and the **sphere with an off-centre core** in
+  (3 + 3 crack declination) and the **sphere with an off-center core** in
   axisymmetric Fourier elements (the general polarization fixed point).
   Open extensions — anisotropic reference medium (Pan-Chou or Barnett-Willis
   Green gradient); more than one inclusion, or a non-spherical envelope, in the

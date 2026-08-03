@@ -21,7 +21,7 @@
 #  shear `L^μ(t)` (creep compliance) and `μ(t)` (relaxation modulus) is
 #  available analytically (eqs. (35)–(43) of @barthelemyIJES2019).
 #
-#  This script computes the homogenised effective shear via
+#  This script computes the homogenized effective shear via
 #  `homogenize_alv` and overlays the closed-form curves.  The
 #  Mittag-Leffler implementation is borrowed from the ECHOES Python
 #  test suite via PyCall (no Julia-native ML library is currently a

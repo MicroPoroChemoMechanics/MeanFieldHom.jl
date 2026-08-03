@@ -248,7 +248,7 @@ end
 #  Which frame argument `build` and `components` need depends on the class, and
 #  for the TI classes on *which* semi-axis is the distinct one.  This lives here,
 #  next to the classes, because both ends of the pipeline go through it: the
-#  labeller reads the teacher's components in this frame, and the inclusion
+#  labeler reads the teacher's components in this frame, and the inclusion
 #  writes the network's prediction back into it.  One definition, so they cannot
 #  disagree.
 

@@ -65,7 +65,7 @@ Imperfect interface of spring type with a **full compliance tensor**:
   (\\boldsymbol{\\sigma}\\cdot\\underline{n}),
 ```
 
-the traction staying continuous. Generalises [`SpringInterface`](@ref), whose
+the traction staying continuous. Generalizes [`SpringInterface`](@ref), whose
 two scalars describe the isotropic case
 `𝕂 = kn n⊗n + kt (δ − n⊗n)`; here `𝕂` is any symmetric second-order
 compliance, so the normal and the two tangential directions may each have
@@ -95,7 +95,7 @@ AnisotropicSpringInterface(K) =
     AnisotropicMembraneInterface(ℂˢ)
 
 Surface-elastic (Gurtin-Murdoch) interface with a **full in-plane surface
-stiffness**, generalising [`MembraneInterface`](@ref) — whose two moduli
+stiffness**, generalizing [`MembraneInterface`](@ref) — whose two moduli
 `(κs, μs)` describe the isotropic case. A 2-D elastic surface has six
 independent coefficients, all of them available here.
 
@@ -125,7 +125,7 @@ AnisotropicMembraneInterface(S) =
     AnisotropicSurfaceConductiveInterface(𝐤ˢ)
 
 Highly conductive 2-D surface layer with a **full in-plane surface
-conductivity**, generalising [`SurfaceConductiveInterface`](@ref) — whose
+conductivity**, generalizing [`SurfaceConductiveInterface`](@ref) — whose
 single scalar describes the isotropic case.
 
 `𝐤ˢ` is either a 3×3 matrix in the layer frame or a `TensND` second-order

@@ -1,5 +1,5 @@
 # =============================================================================
-#  evaluate.jl — `homogenize` on a `Laminate`, and the per-layer localisation.
+#  evaluate.jl — `homogenize` on a `Laminate`, and the per-layer localization.
 #
 #  The physics lives in `Core/laminate_algebra.jl`; this file is the bridge
 #  between the cell (named layers, thicknesses, interfaces, a frame) and that
@@ -249,12 +249,12 @@ end
     laminate_hill(lam, name::Symbol; property = :C) -> (ℙ, ℚ)
 
 The two Hill tensors of one layer, as TensND tensors in the laminate basis:
-`ℙ = n ⊗ˢ 𝐊⁻¹ ⊗ˢ n` — the flat-inclusion limit of the Hill polarisation
+`ℙ = n ⊗ˢ 𝐊⁻¹ ⊗ˢ n` — the flat-inclusion limit of the Hill polarization
 tensor of an ellipsoid embedded in that layer's own material — and
 `ℚ = ℂ − ℂ:ℙ:ℂ`, the in-plane Schur complement.
 
 Exposed for the theory page and for checking the identities `ℙ:ℂ:ℙ = ℙ` and
-`ℚ:ℙ = 0`; the kernel itself never materialises them as tensors.
+`ℚ:ℙ = 0`; the kernel itself never materializes them as tensors.
 """
 function laminate_hill(lam::Laminate, name::Symbol; property::Symbol = :C)
     C = layer_property(lam, name, property)
@@ -272,7 +272,7 @@ end
 """
     layer_strain_localization(lam, name::Symbol; property = :C) -> Tens{4,3}
 
-Strain localisation tensor `𝔸_i` of one layer: `ε_i = 𝔸_i : E`, with
+Strain localization tensor `𝔸_i` of one layer: `ε_i = 𝔸_i : E`, with
 `𝔸_i = 𝕀 + ℙ_i : (ℂ^{hom} − ℂ_i)` and `Σ_i f_i 𝔸_i = 𝕀`.
 
 Its in-plane block is the identity and its in-plane/out-of-plane coupling
@@ -293,7 +293,7 @@ end
 """
     layer_stress_localization(lam, name::Symbol; property = :C) -> Tens{4,3}
 
-Stress localisation tensor `𝔹_i` of one layer: `σ_i = 𝔹_i : Σ`, with
+Stress localization tensor `𝔹_i` of one layer: `σ_i = 𝔹_i : Σ`, with
 `𝔹_i = ℂ_i : 𝔸_i : (ℂ^{hom})^{-1}` and `Σ_i f_i 𝔹_i = 𝕀`.
 """
 function layer_stress_localization(lam::Laminate, name::Symbol; property::Symbol = :C)

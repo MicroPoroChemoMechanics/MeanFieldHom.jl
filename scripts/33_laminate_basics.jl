@@ -2,7 +2,7 @@
 #
 # A laminate is a periodic unit cell of parallel layers: no matrix, no
 # auxiliary Eshelby problem, no reference medium — and an **exact** effective
-# behaviour rather than an estimate. It is the deterministic counterpart of
+# behavior rather than an estimate. It is the deterministic counterpart of
 # the random morphologies the mean-field schemes describe.
 #
 # This script builds one, checks it against the closed form of
@@ -101,7 +101,7 @@ Karr = Matrix(components(Kᵉᶠᶠ))
 @printf "\nconduction  k_∥ = %.6f  (want %.6f, parallel)\n" Karr[1, 1] (f₁ * 2.0 + f₂ * 0.3)
 @printf "            k_⊥ = %.6f  (want %.6f, series)\n" Karr[3, 3] 1 / (f₁ / 2.0 + f₂ / 0.3)
 
-# ## Localisation
+# ## Localization
 #
 # The layer strains follow from the same tensors. Their fraction-weighted
 # average is the identity, and the in-plane block of every `𝔸ᵢ` is the
@@ -123,7 +123,7 @@ MA = Matrix(KM(𝔸[:A]))
 )
 
 # The two Hill tensors of a layer are available as well. `ℙ` is the flat limit
-# of the Hill polarisation tensor and operates only within out-of-plane
+# of the Hill polarization tensor and operates only within out-of-plane
 # tensors; `ℚ` operates only within in-plane ones.
 
 ℙ, ℚ = laminate_hill(lam, :A)

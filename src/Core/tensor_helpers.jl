@@ -2,7 +2,7 @@
 #  tensor_helpers.jl
 #
 #  Low-level helpers for 4th-order tensor assembly and simple utilities
-#  (Kronecker delta, 3×3×3×3 array extraction, symmetrisation …).  Shared
+#  (Kronecker delta, 3×3×3×3 array extraction, symmetrization …).  Shared
 #  by every sub-module.
 # =============================================================================
 

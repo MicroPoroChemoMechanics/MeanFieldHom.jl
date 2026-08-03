@@ -30,7 +30,7 @@ const SET_OUTER_PTS = "outer_pts"
     _build_gmsh_crack_model(gmsh, a, b, R, htipdiv)
 
 Populate the current gmsh session with the crack-in-a-ball model: a ball of
-radius `R` centred on an elliptical crack of semi-axes `(a, b)` lying in the
+radius `R` centered on an elliptical crack of semi-axes `(a, b)` lying in the
 `z = 0` plane, refined to `min(a,b)/htipdiv` in a torus hugging the crack front
 and coarsening to `R/3` at the outer boundary.
 

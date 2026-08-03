@@ -6,7 +6,7 @@
 #  scalar by a discretized Volterra operator therefore turns the elastic
 #  kernel into the ALV one WITHOUT rewriting the physics — the very same
 #  `Core.laminate_stiffness` runs, with its `opinv` / `opinv_avg` callables
-#  swapped for the block-Volterra inversion. Julia specialises on the function
+#  swapped for the block-Volterra inversion. Julia specializes on the function
 #  type, so there is no abstraction cost and only one place where a physics
 #  bug could live.
 #

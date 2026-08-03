@@ -77,9 +77,9 @@ bulk :  4 κs · u_r(r) · r / R³
 shear:  (−6κs U + 18κs W + 36μs W) · r / (5 R³)         (× 3/2, 𝕂-projection)
 ```
 
-`u_r(r)` is the bulk radial amplitude (normalised by the far-field `A∞`);
+`u_r(r)` is the bulk radial amplitude (normalized by the far-field `A∞`);
 `U(r), W(r)` are the deviatoric displacement amplitudes at the interface
-(already normalised to a unit remote deviatoric far field).
+(already normalized to a unit remote deviatoric far field).
 """
 function _membrane_surface_stress(
         sphere::LayeredSphere{T, N}, C₀::TensND.TensISO{4, 3}
@@ -92,7 +92,7 @@ function _membrane_surface_stress(
     has_membrane = any(k -> layer_interface(sphere, k) isa MembraneInterface, 1:N)
     has_membrane || return (zero(T), zero(T))
 
-    # Bulk amplitudes u_r(r_k), normalised by the far-field A∞.
+    # Bulk amplitudes u_r(r_k), normalized by the far-field A∞.
     inside_b, s_b = _bulk_state_seq(sphere, κ₀, μ₀)
     A_inf, _ = _bulk_extract_AB(radii[N], κ₀, μ₀, s_b[1], s_b[2])
     # Deviatoric state amplitudes (U, W)(r_k), already at unit remote far field.

@@ -12,7 +12,7 @@
 #
 #    * memory savings :  iso 18×, TI 6×, ortho 3× cheaper than (6n×6n)
 #    * algebra closure :  +, *, volterra_inverse stay in the structured
-#      type — the (6n×6n) materialisation is needed only at API
+#      type — the (6n×6n) materialization is needed only at API
 #      boundaries.
 #
 #  Iso ⊂ TI ⊂ ortho ⊂ generic aniso.  Promotion / conversion functions
@@ -21,7 +21,7 @@
 #
 #  This is a **prototype** : the types are fully usable on their own
 #  (algebra closure verified by tests) but `homogenize_alv` does not
-#  yet accept them — pass `Matrix(K)` to materialise.  Full integration
+#  yet accept them — pass `Matrix(K)` to materialize.  Full integration
 #  with the dispatcher is left to a follow-up PR.
 # =============================================================================
 
@@ -43,7 +43,7 @@ abstract type AbstractALVKernel{T} <: AbstractMatrix{T} end
 
 Iso ALV kernel: stores the two `n × n` Volterra parameter matrices `α`
 and `β` (with `α = 3K(t,t')` and `β = 2μ(t,t')` in Mandel form).
-Materialises as a `(6n × 6n)` block matrix on demand via
+Materializes as a `(6n × 6n)` block matrix on demand via
 `Matrix(K)` or `getindex`.
 """
 struct ALVKernelISO{T} <: AbstractALVKernel{T}
@@ -72,7 +72,7 @@ ALVKernelISO(M::AbstractMatrix) =
 
 TI ALV kernel: stores the six `n × n` Walpole parameter matrices
 `(ℓ₁, ℓ₂, ℓ₃, ℓ₄, ℓ₅, ℓ₆)` with the canonical axis (currently only
-`e₃` supported).  Materialises as a `(6n × 6n)` block matrix on demand.
+`e₃` supported).  Materializes as a `(6n × 6n)` block matrix on demand.
 """
 struct ALVKernelTI{T} <: AbstractALVKernel{T}
     ℓ::NTuple{6, Matrix{T}}
@@ -116,7 +116,7 @@ ALVKernelTI(
 Ortho ALV kernel: stores the twelve `n × n` parameter matrices of the
 ortho closure (9 entries of the full unsymmetric 3×3 normal block in
 Mandel form + 3 shears) with the canonical material frame
-`(e₁, e₂, e₃)`.  Materialises as a `(6n × 6n)` block matrix on demand.
+`(e₁, e₂, e₃)`.  Materializes as a `(6n × 6n)` block matrix on demand.
 """
 struct ALVKernelOrtho{T} <: AbstractALVKernel{T}
     o::NTuple{12, Matrix{T}}
@@ -238,7 +238,7 @@ end
     end
 end
 
-# ─── Materialisation to dense (6n × 6n) ────────────────────────────────────
+# ─── Materialization to dense (6n × 6n) ────────────────────────────────────
 
 Base.Matrix(K::ALVKernelISO) = iso_blocks_from_params(K.α, K.β)
 Base.Matrix(K::ALVKernelTI) = ti_blocks_from_params(K.ℓ; axis = K.axis)
@@ -346,7 +346,7 @@ end
 
 Volterra inverse of a structured ALV kernel.  Stays in the same
 symmetry class : iso ↦ iso, TI ↦ TI, ortho ↦ ortho.  Avoids
-materialising the `(6n × 6n)` matrix.
+materializing the `(6n × 6n)` matrix.
 """
 function volterra_inverse(K::ALVKernelISO)
     αβ = _iso_inv((K.α, K.β))

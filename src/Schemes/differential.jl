@@ -375,9 +375,9 @@ end
 
 # Same symmetry class *and* same number of canonical components — the
 # two conditions for one state vector to be usable for the other tensor
-# (`TensTI` comes in a 5- and an 8-component flavour).  Called once per
+# (`TensTI` comes in a 5- and an 8-component flavor).  Called once per
 # RHS evaluation, so it reads the component count off the (statically
-# sized) canonical data rather than materialising a state vector.
+# sized) canonical data rather than materializing a state vector.
 function _diff_same_layout(a, b)
     tag = _symmetry_tag(a)
     tag === _symmetry_tag(b) || return false
@@ -436,7 +436,7 @@ _reconstruct_tens(::Val{:full_2}, ::TensND.AbstractTens, u) =
 # ── Per-phase contribution helpers ──────────────────────────────────────────
 
 # Dilute correction `(C_i − C) ⊡ A_dil(C)` for a solid inclusion phase
-# (symmetrize honoured through `_phase_dilute_concentration`).
+# (symmetrize honored through `_phase_dilute_concentration`).
 function _diff_dilute_correction(
         rve::RVE, name::Symbol, prop::Symbol,
         P_curr::TensND.AbstractTens{4, 3}; kw...

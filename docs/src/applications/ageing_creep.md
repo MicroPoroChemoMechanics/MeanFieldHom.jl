@@ -212,7 +212,7 @@ second scatters them independently in the matrix.
     (`:layers` ``E_0 J`` ≈ 1.60 → 11.06; `:whole_pores` ≈ 1.96 → 17.54 at
     ``t_0 = 2/3``), and the two differ by ``\approx 6.5`` in ``E_0 J``.
 
-    That gap is a modelling result, not a discrepancy: the composite-sphere
+    That gap is a modeling result, not a discrepancy: the composite-sphere
     packing of [sanahuja2013](@cite) is an efficient model — one Eshelby problem
     instead of ``N+1`` — not an exact reformulation of the separate-inclusion
     RVE. Choosing between them is choosing a morphology.

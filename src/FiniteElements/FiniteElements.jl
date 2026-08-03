@@ -9,7 +9,7 @@ contract is enough to reach every scheme.
 | Type | Morphology | Discretization | Entry gate |
 |---|---|---|---|
 | [`FEEllipticCrack`](@ref) | flat elliptical crack | 3-D tetrahedra | COD tensor → crack algebra |
-| [`FEExcenteredSphere`](@ref) | sphere with an off-centre spherical core | axisymmetric Fourier | B — the two localization tensors |
+| [`FEExcenteredSphere`](@ref) | sphere with an off-center spherical core | axisymmetric Fourier | B — the two localization tensors |
 
 Both use the *finite Eshelby cell with a first-order corrected boundary
 condition* of Adessina, Barthélémy, Lavergne & Ben Fraj, *Int. J. Eng. Sci.*

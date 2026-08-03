@@ -1,7 +1,7 @@
 # =============================================================================
 #  08_hill_derivatives.jl
 #
-#  Derivatives of the Hill polarisation tensor P with respect to the reference
+#  Derivatives of the Hill polarization tensor P with respect to the reference
 #  medium — the MeanFieldHom counterpart of a hand-coded `hill_derivative`.
 #
 #  The classical approach hand-codes an analytical `hill_derivative(ell, C,

@@ -63,7 +63,7 @@ J + \beta\,\mathbb K`` on the spherical (``\mathbb J``) and deviatoric
 ```
 
 Substituting the isotropic identity ``k_0 = \dfrac{2\mu_0(1+\nu_0)}{3(1-2\nu_0)}``
-recovers the two Eshelby (1957) eigenvalues everyone eventually memorises:
+recovers the two Eshelby (1957) eigenvalues everyone eventually memorizes:
 
 ```@example tutsymsph
 k0_of_ν0 = 2 * μ0 * (1 + ν0) / (3 * (1 - 2 * ν0))

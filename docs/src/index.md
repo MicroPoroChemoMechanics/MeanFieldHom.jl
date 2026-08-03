@@ -23,7 +23,7 @@ bibliography.
 
 ## The chain, in one picture
 
-Everything the package does is one pipeline, read top to bottom. The **grey**
+Everything the package does is one pipeline, read top to bottom. The **gray**
 boxes are what you supply — each entering at the stage that needs it — the
 **blue** ones what the package computes, and the **green** ones on the right
 the three places where you can plug in your own physics without touching the

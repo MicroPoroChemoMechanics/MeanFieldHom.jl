@@ -46,7 +46,7 @@ default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
 # interface — while an arrow long enough to be visible is longer than the grid
 # spacing, so the arrows overlap and hide the geometry they should reveal.
 # Streamlines carry the geometry in their *spacing* and the magnitude in their
-# *colour*.
+# *color*.
 #
 # The tracer below is written once and reused by both geometries. The geometry
 # enters only through `coord`, the map from a meridian point `(x, z)` to the
@@ -330,7 +330,7 @@ gif(anim; fps = 2)
 # ### Interactive 3-D view
 #
 # The meridian streamlines revolved around the axis: drag to rotate, scroll to
-# zoom. The grey surface is the particle, the coloured curves are flux lines.
+# zoom. The gray surface is the particle, the colored curves are flux lines.
 
 function _plotly_streamlines(β; nrev = 8, uid = "spheroid-3d")
     s = _oblate_particle(β)
