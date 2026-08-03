@@ -27,9 +27,9 @@ function _iso_km_sym(λ, μ)
     z = zero(λ)
     return SMatrix{6, 6}(
         [
-            λ+2μ λ λ z z z
-            λ λ+2μ λ z z z
-            λ λ λ+2μ z z z
+            λ + 2μ λ λ z z z
+            λ λ + 2μ λ z z z
+            λ λ λ + 2μ z z z
             z z z 2μ z z
             z z z z 2μ z
             z z z z z 2μ

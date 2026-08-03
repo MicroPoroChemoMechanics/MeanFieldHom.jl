@@ -147,14 +147,18 @@ end
     times = [0.0, 2.0]
     ρ = 0.11
     lam_el = Laminate(; normal = (0, 0, 1))
-    add_layer!(lam_el, :A, Dict(:K => TensISO{3}(2.0)); thickness = 0.3,
-        interface = KapitzaInterface(ρ))
+    add_layer!(
+        lam_el, :A, Dict(:K => TensISO{3}(2.0)); thickness = 0.3,
+        interface = KapitzaInterface(ρ)
+    )
     add_layer!(lam_el, :B, Dict(:K => TensISO{3}(0.3)); thickness = 0.7)
     K_el = Matrix(components(homogenize(lam_el, Laminated(), :K)))
 
     lam = Laminate(; normal = (0, 0, 1))
-    add_layer!(lam, :A, Dict(:K => heaviside_law(TensISO{3}(2.0))); thickness = 0.3,
-        interface = KapitzaInterface(ρ))
+    add_layer!(
+        lam, :A, Dict(:K => heaviside_law(TensISO{3}(2.0))); thickness = 0.3,
+        interface = KapitzaInterface(ρ)
+    )
     add_layer!(lam, :B, Dict(:K => heaviside_law(TensISO{3}(0.3))); thickness = 0.7)
     M = homogenize_alv(lam, Laminated(), :K; times = times)
     @test _blk(M, 1, 3) ≈ K_el atol = ATOL_LALV

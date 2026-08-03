@@ -328,7 +328,7 @@ end
     lam = Laminate(; normal = (0, 0, 1))
     add_layer!(lam, :O, Dict(:C => C_ortho); thickness = 0.15)
     add_layer!(lam, :T, Dict(:C => C_ti); thickness = 0.55)
-    add_layer!(lam, :I, Dict(:C => C_iso); thickness = 0.30)
+    add_layer!(lam, :I, Dict(:C => C_iso); thickness = 0.3)
 
     Ch = homogenize(lam, Laminated(), :C)
     @test !(Ch isa TensND.TensTI)                # structural detection says no

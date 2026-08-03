@@ -40,10 +40,14 @@ end
 # Two-layer reference cell, parameterised by its interfaces and its period.
 function _bilayer(; itf1 = PerfectInterface(), itf2 = PerfectInterface(), scale = 1.0)
     lam = Laminate(; normal = (0, 0, 1))
-    add_layer!(lam, :A, Dict(:C => _isoi(2.0, 0.8), :K => TensISO{3}(2.0));
-        thickness = 0.3scale, interface = itf1)
-    add_layer!(lam, :B, Dict(:C => _isoi(0.5, 0.2), :K => TensISO{3}(0.3));
-        thickness = 0.7scale, interface = itf2)
+    add_layer!(
+        lam, :A, Dict(:C => _isoi(2.0, 0.8), :K => TensISO{3}(2.0));
+        thickness = 0.3scale, interface = itf1
+    )
+    add_layer!(
+        lam, :B, Dict(:C => _isoi(0.5, 0.2), :K => TensISO{3}(0.3));
+        thickness = 0.7scale, interface = itf2
+    )
     return lam
 end
 
@@ -93,7 +97,7 @@ end
     ref = homogenize(_bilayer(), Laminated(), :C)
     b = laminate_basis(lam)
 
-    Cs = [κs+μs κs-μs 0.0; κs-μs κs+μs 0.0; 0.0 0.0 2μs]
+    Cs = [κs + μs κs - μs 0.0; κs - μs κs + μs 0.0; 0.0 0.0 2μs]
     @test _schur_ip_i(Ch, b) ≈ _schur_ip_i(ref, b) + Cs / L atol = ATOL_ITF
     # A planar membrane produces NO traction jump, so the out-of-plane law is
     # untouched (oracle O1) — this is what distinguishes the flat case from
