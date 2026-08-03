@@ -1,5 +1,14 @@
 # [Adding a homogenization scheme](@id dev-adding-scheme)
 
+!!! note "Which cell does your scheme serve?"
+    `homogenize` accepts any
+    [`AbstractHomogenizationCell`](@ref MeanFieldHom.Core.AbstractHomogenizationCell)
+    — an [`RVE`](@ref) or a `Laminate`. Schemes stay typed on the **concrete**
+    cell they serve (`_evaluate(rve::RVE, ::MyScheme, …)`), so a scheme applied
+    to a cell it does not serve falls through to the error-raising fallback
+    instead of dispatching somewhere wrong. Type the *scheme* argument too:
+    leaving it untyped is ambiguous with that fallback.
+
 `MeanFieldHom.Schemes` ships Voigt/Reuss, dilute (direct and dual),
 Mori-Tanaka, Maxwell, Ponte-Castañeda–Willis, self-consistent (symmetric and
 asymmetric) and differential, each in an elastic and an ageing-viscoelastic

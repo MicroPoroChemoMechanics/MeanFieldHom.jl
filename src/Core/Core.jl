@@ -7,6 +7,10 @@ Contents
 --------
 - `counters.jl`           : opt-in work counters for the benchmark harness
 - `abstractions.jl`       : inclusion hierarchy (`AbstractInclusion` …)
+- `cells.jl`              : the homogenization *cell* contract
+                             (`AbstractHomogenizationCell`, `AbstractParameter`)
+                             and the declarative multiscale seam
+                             (`Homogenized`, `NestedParameter`)
 - `traits.jl`             : algorithm and material-symmetry traits
 - `bases.jl`              : helpers around `TensND` bases
 - `tensor_helpers.jl`     : low-level utilities (`_δ`, `_C_array`, Voigt)
@@ -15,6 +19,9 @@ Contents
 - `moduli.jl`             : modulus extractors for the common symmetry classes
 - `newton_potential.jl`   : Newton potentials (2D / 3D)
 - `green_kernel.jl`       : closed-form 3×3 inverse (`_inv3`)
+- `laminate_algebra.jl`   : in-plane / out-of-plane Kelvin-Mandel block
+                             algebra of a periodic laminate (`plane_pinv`,
+                             `flat_hill`, `laminate_stiffness`, …)
 - `green_residue.jl`      : Masson / Cauchy residue summation
 - `green_helpers.jl`      : quadrature-agnostic Green-function helpers
 - `green_dipole.jl`       : real-space Kelvin Green gradient and the dipole
@@ -34,6 +41,7 @@ using PolynomialRoots
 
 include("counters.jl")
 include("abstractions.jl")
+include("cells.jl")
 include("traits.jl")
 include("bases.jl")
 include("tensor_helpers.jl")
@@ -41,6 +49,7 @@ include("rotational_average.jl")
 include("moduli.jl")
 include("newton_potential.jl")
 include("green_kernel.jl")
+include("laminate_algebra.jl")
 include("green_residue.jl")
 include("green_helpers.jl")
 include("green_dipole.jl")
@@ -50,6 +59,12 @@ include("dispatch.jl")
 # Abstractions
 export AbstractInclusion, AbstractEllipsoidalInclusion,
     AbstractCrack, AbstractLayeredInclusion, AbstractCustomInclusion
+
+# The homogenization cell contract + declarative multiscale nesting
+export AbstractHomogenizationCell, AbstractParameter
+export homogenize, validate_cell, get_param, set_param
+export cell_member_names, cell_container_property, cell_set_property
+export Homogenized, NestedParameter, nested, resolve_property, has_nested_property
 export dimension, element_type, inclusion_basis, shape_trait, shape_tensor
 export eshelby_tensor
 export is_homogeneous_inclusion
@@ -75,6 +90,13 @@ export newton_potential_3d, newton_potential_2d, newton_potential_3d_cylinder
 
 # Real-space Kelvin Green gradient / dipole far field (isotropic matrix)
 export green_gradient_iso, dipole_displacement_iso
+
+# Laminate block algebra (public — used by Laminates, the ALV twin and users)
+export KM_IP, KM_OP
+export plane_pinv, plane_pinv2, flat_hill, acoustic_tensor, compliance_op_block
+export laminate_stiffness, laminate_conductivity
+export laminate_strain_localization, laminate_stress_localization
+export laminate_gradient_localization, laminate_flux_localization
 
 # Localization & contribution (generics; methods added at top level and in Cracks)
 export strain_strain_loc, stress_strain_loc, strain_stress_loc, stress_stress_loc

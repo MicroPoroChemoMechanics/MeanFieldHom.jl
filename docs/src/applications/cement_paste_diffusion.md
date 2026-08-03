@@ -160,6 +160,50 @@ end
 engineering_model(0.4, 0.6)
 ```
 
+### One microstructure, two physics
+
+The two-scale chain above homogenizes the *same* foam twice — once for `:C`
+and once for `:D` — and then hands both results to the paste. Written
+[declaratively](@ref man-multiscale), the foam is described once and the same
+nested object answers both keys, because a `Homogenized` with no explicit
+`property` **inherits the key it is stored under**:
+
+```@example diffusion
+function engineering_declarative(wc, α = -1.0)
+    α < 0 && (α = αmax(wc))
+    _fa, _fh, _fcp = fa(wc, α), fh(wc, α), fcp(wc, α)
+    ft = _fh + _fcp
+
+    foam = RVE(:HYD)
+    add_matrix!(foam, Ellipsoid(1.0, 1.0, ω_h), Dict(:C => C_hyd, :D => D_hyd);
+        symmetrize = IsoSymmetrize())
+    add_phase!(foam, :CAP, Ellipsoid(1.0, 1.0, ω_cp), Dict(:C => Z4, :D => D_bulk);
+        fraction = _fcp / ft, symmetrize = IsoSymmetrize())
+
+    h = Homogenized(foam, SelfConsistent())          # answers :C AND :D
+    paste = RVE(:FOAM)
+    add_matrix!(paste, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => h, :D => h))
+    add_phase!(paste, :CLINKER, Ellipsoid(1.0, 1.0, 1.0),
+        Dict(:C => C_anhyd, :D => Z2); fraction = _fa)
+    return paste
+end
+
+let wc = 0.4, α = 0.6
+    paste = engineering_declarative(wc, α)
+    E_d = E_nu(homogenize(paste, MoriTanaka(), :C))[1]
+    D_d = avg_D(homogenize(paste, MoriTanaka(), :D))
+    E_x, D_x = engineering_model(wc, α)
+    (ΔE = abs(E_d - E_x), ΔD = abs(D_d - D_x))
+end
+```
+
+The two agree exactly. Note what the declarative form does *not* change: the
+percolation gate (`k_mu(C_foam)[1] < 1e-6 ⇒ E = 0`) is a decision taken
+*between* the scales, so it stays in the explicit driver — which is why the
+production model on this page keeps the explicit form. The declarative
+variant is shown here for the microstructure-description saving, which is
+what it is good at.
+
 The effective Young's modulus and (log-scale) chloride diffusivity over the
 whole hydration range, for a set of water-to-cement ratios:
 

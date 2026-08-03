@@ -347,7 +347,8 @@ add_phase!(rve, :CRACK, penny_crack, Dict(:C => C0); density = 0.05)
 See also [`add_matrix!`](@ref), [`add_phase!`](@ref),
 [`matrix_volume_fraction`](@ref), [`validate_rve`](@ref).
 """
-mutable struct RVE{T <: Number, S <: Union{Nothing, AbstractDistributionShape}}
+mutable struct RVE{T <: Number, S <: Union{Nothing, AbstractDistributionShape}} <:
+    AbstractHomogenizationCell
     matrix_name::Symbol
     phase_names::Vector{Symbol}
     phases::Dict{Symbol, Phase}
@@ -564,8 +565,30 @@ inclusion_phase_names(rve::RVE) =
 
 Return the property tensor `key` (e.g. `:C`, `:K`) of the phase named
 `name`.
+
+If the stored value is a [`Homogenized`](@ref) — a declaratively nested cell
+— it is resolved here, memoized for the duration of the enclosing
+`homogenize` call, so that every scheme kernel sees a plain tensor without
+knowing that nesting exists. Use [`phase_property_raw`](@ref) to inspect the
+stored value without triggering that resolution.
 """
 function phase_property(rve::RVE, name::Symbol, key::Symbol)
+    haskey(rve.phases, name) ||
+        throw(ArgumentError("no phase named :$(name) in RVE"))
+    p = rve.phases[name]
+    haskey(p.properties, key) ||
+        throw(ArgumentError("phase :$(name) does not carry property :$(key)"))
+    return resolve_property(p.properties[key], key)
+end
+
+"""
+    phase_property_raw(rve, name::Symbol, key::Symbol)
+
+The value stored under `key` on phase `name`, **without** resolving a
+[`Homogenized`](@ref). Type inspections must use this — resolving would run a
+whole inner homogenization just to look at a type.
+"""
+function phase_property_raw(rve::RVE, name::Symbol, key::Symbol)
     haskey(rve.phases, name) ||
         throw(ArgumentError("no phase named :$(name) in RVE"))
     p = rve.phases[name]
@@ -673,6 +696,33 @@ function validate_rve(rve::RVE)
         @warn "RVE has matrix volume fraction $(fm) < 0 — total inclusion volume fraction exceeds 1"
     end
     return rve
+end
+
+# =============================================================================
+#  The `AbstractHomogenizationCell` contract (declared in `Core/cells.jl`)
+# =============================================================================
+#
+# `validate_rve` is left strictly as it was — including its requirement of a
+# registered matrix phase, which is precisely the part that does NOT
+# generalise to a matrix-free cell. That requirement is why the indirection
+# below exists rather than a relaxed `validate_rve`.
+
+validate_cell(rve::RVE) = validate_rve(rve)
+
+cell_member_names(rve::RVE) = rve.phase_names
+
+cell_container_property(rve::RVE, name::Symbol, key::Symbol) =
+    phase_property_raw(rve, name, key)
+
+function cell_set_property(rve::RVE, name::Symbol, key::Symbol, value)
+    haskey(rve.phases, name) ||
+        throw(ArgumentError("no phase named :$(name) in RVE"))
+    ph = rve.phases[name]
+    new_props = Dict{Symbol, Any}(ph.properties)
+    new_props[key] = value
+    new_phases = Dict{Symbol, Phase}(rve.phases)
+    new_phases[name] = Phase(ph.geometry, new_props)
+    return _rebuild_rve(rve; phases = new_phases)
 end
 
 # =============================================================================

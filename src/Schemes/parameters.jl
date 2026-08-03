@@ -23,28 +23,11 @@
 #  Lens hierarchy
 # =============================================================================
 
-"""
-    AbstractParameter
-
-Supertype of parameter lenses. Concrete subtypes designate a single scalar
-input of a homogenization computation :
-
-- [`AmountParameter`](@ref) — volume fraction or crack density of a
-  phase.
-- [`PropertyParameter`](@ref) — a scalar coefficient of a property tensor
-  (`:C`, `:K`, …) of a phase, designated either by a named selector
-  (`:bulk`, `:shear`, …) or by a positional index.
-- [`GeometryParameter`](@ref) — a scalar geometry field of a phase (semi-
-  axis of an ellipsoid, radius of a layer, …).
-- [`DistributionShapeParameter`](@ref) — a scalar field of the PCW /
-  Maxwell distribution shape.
-
-The [`get_param`](@ref) / [`set_param`](@ref) functions read and replace
-the designated scalar in a `RVE`. See also the convenience constructors
-[`amount`](@ref), [`property`](@ref), [`geometry`](@ref),
-[`shape_param`](@ref).
-"""
-abstract type AbstractParameter end
+# `AbstractParameter`, `get_param` and `set_param` are declared in
+# `Core/cells.jl` — the lenses are shared by every `AbstractHomogenizationCell`
+# (an `RVE` here, a `Laminate` in `Laminates/parameters.jl`), and
+# `NestedParameter` composes them across a whole multiscale chain. Only the
+# RVE-specific lenses and methods live in this file.
 
 """
     AmountParameter(phase::Symbol)
@@ -445,23 +428,8 @@ end
 #  get_param / set_param — public lens entry points
 # =============================================================================
 
-"""
-    get_param(rve, p::AbstractParameter) -> Number
-
-Read the scalar designated by lens `p` in `rve`.
-"""
-function get_param end
-
-"""
-    set_param(rve, p::AbstractParameter, value) -> RVE
-
-Return a *new* `rve` instance in which the scalar designated by lens
-`p` has been replaced by `value`. The element type of the affected
-fields (amounts, tensors, geometries) is promoted to absorb
-`typeof(value)` ; all other fields are preserved unchanged (no
-mutation of the original).
-"""
-function set_param end
+# `get_param` / `set_param` are declared in `Core/cells.jl`; the methods below
+# are the RVE-specific ones.
 
 # ── AmountParameter ──────────────────────────────────────────────────────────
 
@@ -506,8 +474,12 @@ function set_param(rve::RVE, p::PropertyParameter, value)
     i = _resolve_selector(old_t, p.selector)
     new_t = _replace_data_at(old_t, i, value)
 
-    # Build new properties dict (keeping all other entries pointing to the same tensors)
-    new_props = Dict{Symbol, TensND.AbstractTens}(phase.properties)
+    # Build new properties dict (keeping all other entries pointing to the same
+    # objects). It must be typed `Any`, exactly like `Phase.properties`: a
+    # property value is not necessarily an `AbstractTens` — it can be a
+    # `ViscoLaw` (ALV) or a `Homogenized` (declaratively nested cell), and
+    # narrowing here threw on both.
+    new_props = Dict{Symbol, Any}(phase.properties)
     new_props[p.property] = new_t
     new_phase = Phase(phase.geometry, new_props)
 
@@ -581,7 +553,10 @@ The default implementation composes individual `set_param` calls; for
 amounts), a future optimization could fuse the passes. Correctness is
 preserved by composition.
 """
-function _set_many(rve::RVE, params::AbstractVector{<:AbstractParameter}, values::AbstractVector)
+function _set_many(
+        rve::AbstractHomogenizationCell,
+        params::AbstractVector{<:AbstractParameter}, values::AbstractVector
+    )
     length(params) == length(values) || throw(
         ArgumentError(
             "params and values must have the same length"

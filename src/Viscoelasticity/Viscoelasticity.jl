@@ -51,7 +51,8 @@ using ..LayeredSpheres: LayeredSphere, layer_radius, layer_modulus,
     SpringInterface, MembraneInterface,
     layer_count, layer_volume_fraction, outer_radius
 import ..Schemes
-using ..Schemes: RVE, HomogenizationScheme, Voigt, Reuss, Dilute, DiluteDual,
+import ..Laminates
+using ..Schemes: RVE, HomogenizationScheme, Laminated, Voigt, Reuss, Dilute, DiluteDual,
     MoriTanaka, Maxwell, SelfConsistent, AsymmetricSelfConsistent,
     PonteCastanedaWillis, DifferentialScheme,
     Proportional, Sequential, CustomPath, Path,
@@ -80,6 +81,7 @@ include("schemes_alv_sc.jl")
 include("schemes_alv_sc_newton.jl")
 include("schemes_alv_extra.jl")
 include("layered_alv.jl")
+include("laminate_alv.jl")
 include("homogenize_alv.jl")
 include("order2_alv.jl")
 include("cracks_alv.jl")
@@ -118,6 +120,7 @@ export voigt_alv_order2, reuss_alv_order2, dilute_alv_order2,
     dilute_dual_alv_order2, mori_tanaka_alv_order2, maxwell_alv_order2
 export dilute_concentration_alv_order2, dilute_contribution_alv_order2
 export homogenize_alv_order2
+export laminate_alv
 export cod_kernel_alv, compliance_contribution_alv, delta_compliance_alv
 export stiffness_contribution_alv, stiffness_contribution_alv_at, delta_stiffness_alv
 

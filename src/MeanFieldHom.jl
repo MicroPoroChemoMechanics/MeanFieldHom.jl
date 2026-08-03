@@ -72,6 +72,11 @@ include("Conductivity/Conductivity.jl")
 include("LayeredSpheres/LayeredSpheres.jl")
 include("LayeredSpheroids/LayeredSpheroids.jl")
 include("Schemes/Schemes.jl")
+# `Laminates` sits between `Schemes` and `Viscoelasticity`: it extends
+# `_evaluate` and uses `HomogenizationScheme`/`Laminated`/`Voigt`/`Reuss` from
+# the former, and the latter needs `Laminate` for the ageing-viscoelastic
+# multilayer.
+include("Laminates/Laminates.jl")
 include("Viscoelasticity/Viscoelasticity.jl")
 
 using .Elliptic
@@ -82,6 +87,7 @@ using .Conductivity
 using .LayeredSpheres
 using .LayeredSpheroids
 using .Schemes
+using .Laminates
 using .Viscoelasticity
 
 # ─── Localization + contribution (top-level: need all sub-module APIs) ──────
@@ -197,14 +203,30 @@ export polar_orientation_bins
 export Phase, RVE
 export add_matrix!, add_phase!
 export matrix_phase, inclusion_phase_names
-export phase_property, matrix_property
+export phase_property, phase_property_raw, matrix_property
 export volume_fraction, crack_density, matrix_volume_fraction
 export phase_symmetrize
 export validate_rve, promote_rve
 
+# ── The homogenization cell contract + declarative multiscale chaining ──────
+export AbstractHomogenizationCell, validate_cell
+export Homogenized, NestedParameter, nested
+
+# ── Laminates : the periodic multilayer cell ────────────────────────────────
+export Laminate, Layer, add_layer!
+export layer_names, layer_count, layer_property, layer_property_raw
+export layer_thickness, layer_fraction
+export laminate_period, laminate_basis, laminate_normal, laminate_interface
+export validate_laminate
+export laminate_hill
+export layer_strain_localization, layer_stress_localization
+export layer_gradient_localization, layer_flux_localization
+export interface_jump
+export ThicknessParameter, InterfaceParameter, thickness, interface_param
+
 # ── Schemes : scheme types + entry point ─────────────────────────────────────
 export HomogenizationScheme
-export Voigt, Reuss, Dilute, DiluteDual, MoriTanaka, Maxwell, PonteCastanedaWillis
+export Voigt, Reuss, Laminated, Dilute, DiluteDual, MoriTanaka, Maxwell, PonteCastanedaWillis
 export SelfConsistent, AsymmetricSelfConsistent
 export AndersonDefault, NewtonDefault, AutoNonlinear
 export DifferentialTrajectory, Proportional, Sequential, CustomPath, Path, DifferentialScheme

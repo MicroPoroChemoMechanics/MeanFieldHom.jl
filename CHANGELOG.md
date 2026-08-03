@@ -4,6 +4,78 @@
 
 ### Added
 
+- **Periodic multilayer homogenization**, `MeanFieldHom.Laminates` — a second
+  kind of microstructure, next to the random morphologies the Eshelby-based
+  schemes describe:
+  - `Laminate`, a periodic unit cell of parallel layers with **no matrix, no
+    auxiliary Eshelby problem and no reference medium**, solved *exactly* by
+    the new `Laminated` scheme. `Voigt` and `Reuss` apply to it too, and two
+    of the bracketings are equalities: a laminate saturates Voigt in the plane
+    of the layers and Reuss across them, simultaneously and for arbitrary
+    anisotropy.
+  - Elasticity **and** transport from one implementation, dispatched on the
+    order of the stored property exactly as the mean-field schemes are.
+  - The four imperfect-interface models of `LayeredSpheres` reused unchanged —
+    a planar interface being the curvature-free case: `SpringInterface` /
+    `MembraneInterface` in elasticity, `KapitzaInterface` /
+    `SurfaceConductiveInterface` in transport. They act on *complementary*
+    halves of the answer (primal out of plane, dual in plane — a planar
+    membrane produces no traction jump at all), and enter with the weight
+    `1/L`, an interface **density**: hence a genuine size effect, and why a
+    laminate stores thicknesses rather than only fractions.
+  - Per-layer localization (`layer_strain_localization`, …), the two Hill
+    tensors (`laminate_hill`) and the interface displacement jumps
+    (`interface_jump`); lenses `ThicknessParameter` and `InterfaceParameter`.
+  - Ageing-viscoelastic twin (`laminate_alv`,
+    `homogenize_alv(lam, Laminated(), …)`): the *same* kernel with the `3×3`
+    cofactor inversion swapped for `volterra_inverse` on the out-of-plane
+    restriction. The elastic limit returns the elastic laminate in every
+    diagonal time block, and both exact saturations survive the transposition.
+  - Symbolically evaluable end to end: `scripts/38_laminate_symbolic.jl`
+    derives the Backus (1962) closed forms *from the code*. This is what pins
+    the two implementation choices that make it possible — the pseudo-inverse
+    is a cofactor inverse of the out-of-plane block, never an SVD-based
+    `pinv`, and every intermediate is an `SMatrix`, never an `MMatrix`.
+  - Documented theory (`docs/src/theory/laminate.md`), which **corrects** the
+    reference note it follows: its appendix introduces a *pair* of
+    "in-plane / out-of-plane pseudo-inverses", which is vacuous for the tensor
+    actually involved — `⟨ℙ⟩` has an identically zero in-plane block, so its
+    in-plane pseudo-inverse does not exist. One ordinary Moore-Penrose
+    pseudo-inverse is all that is needed, and the unfinished general case is
+    never required.
+
+- **The homogenization-cell abstraction and declarative multiscale chaining**:
+  - `AbstractHomogenizationCell` (in `Core/cells.jl`) is now the supertype of
+    everything `homogenize` accepts — `RVE` and `Laminate` today. `homogenize`,
+    `get_param`/`set_param` and `derivative`/`gradient`/`jacobian` are typed on
+    it; every scheme kernel stays on `RVE`, so existing behaviour is unchanged.
+  - `Homogenized(cell, scheme)` may be stored **as a property value**: a whole
+    multiscale model becomes one object, resolved lazily. With no explicit
+    `property` it *inherits the key it is stored under*, so one nested cell
+    answers `:C` and `:K` alike — a microstructure is described once, not once
+    per physics.
+  - `NestedParameter` / `nested(...)` addresses a scalar inside a nested cell,
+    so `derivative`/`gradient`/`jacobian` cross every scale in a single
+    `ForwardDiff` pass, replacing hand-rolled closures and explicit
+    `ForwardDiff.Tag` plumbing.
+  - Each `(cell, key)` pair is evaluated exactly once per `homogenize` call —
+    including across the ~100 iterations of a self-consistent solve — through a
+    task-local, call-scoped cache that never leaks a value between two autodiff
+    evaluations.
+  - Both styles are documented and compared in
+    `docs/src/manual/multiscale.md`, with a worked side-by-side in
+    `scripts/36_laminate_multiscale.jl`; `applications/strength.md` and
+    `applications/cement_paste_diffusion.md` now show the declarative variant
+    next to their production (explicit) model, and say when each is preferable.
+
+### Fixed
+
+- `set_param(rve, PropertyParameter(...), x)` narrowed the rebuilt property
+  dict to `Dict{Symbol,TensND.AbstractTens}` although `Phase.properties` is
+  `Dict{Symbol,Any}`. It therefore **threw** on any RVE carrying a non-tensor
+  property — every ageing-viscoelastic RVE (`ViscoLaw`) included. Undetected
+  because the ALV sensitivity tests only exercised `AmountParameter`.
+
 - **Inclusions whose response is a trained neural network**,
   `MeanFieldHom.NeuralInclusions` — a fourth route into the custom-inclusion
   contract, after the analytic families, the layered patterns and the

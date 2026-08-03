@@ -54,10 +54,11 @@ section of the docs.
 | `MeanFieldHom.Conductivity` | 2nd-order Hill tensor for transport problems; closed form for any matrix anisotropy. |
 | `MeanFieldHom.LayeredSpheres` | `n`-layer composite spheres, 5 interface types (perfect, spring, membrane, Kapitza, surface-conductive), volume-average and pointwise localization. |
 | `MeanFieldHom.LayeredSpheroids` | `n`-layer confocal spheroids, conduction, with Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
+| `MeanFieldHom.Laminates` | Periodic **multilayer** cell: parallel layers, no matrix, no Eshelby problem — an *exact* solution in elasticity and transport, with the same 4 imperfect-interface models, per-layer localization and an ageing-viscoelastic twin. |
 | `MeanFieldHom.CustomInclusions` | The user-defined inclusion contract: `CustomInclusion` and `check_inclusion_interface`. |
 | `MeanFieldHom.FiniteElements` | Inclusions whose response comes out of a finite-element resolution of the Eshelby problem — elliptical crack (3-D) and sphere with an off-centre core (axisymmetric Fourier) — behind a two-backend contract. |
 | `MeanFieldHom.NeuralInclusions` | Inclusions whose response comes out of a trained network, with the sampling and fitting machinery; differentiable in the morphology, where a finite-element solve is not. |
-| `MeanFieldHom.Schemes` | RVE container and `homogenize`; bounds, dilute, Mori–Tanaka, self-consistent (+ asymmetric), PCW, Maxwell, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
+| `MeanFieldHom.Schemes` | The cell abstraction (`RVE`, and `Laminate` beside it) and `homogenize`; declarative multiscale chaining (`Homogenized`, `NestedParameter`); bounds, dilute, Mori–Tanaka, self-consistent (+ asymmetric), PCW, Maxwell, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
 | `MeanFieldHom.Viscoelasticity` | Ageing linear viscoelasticity via Volterra operators, with structured ISO/TI/orthotropic kernel storage — every scheme, cracks and layered spheres included. |
 
 ## Installation

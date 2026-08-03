@@ -11,6 +11,38 @@ internal `_kernel` method table maintained by each sub-module.
 Sub-modules may *extend* (but not redefine) both `_resolve_algo` and
 `_kernel`.
 
+## Cells: what `homogenize` accepts
+
+`RVE` is no longer the only container. Everything `homogenize` accepts is an
+[`AbstractHomogenizationCell`](@ref MeanFieldHom.Core.AbstractHomogenizationCell),
+declared in `src/Core/cells.jl` alongside the rest of the package's generics:
+
+| Cell | Morphology | Solved by |
+| :--- | :--- | :--- |
+| `Schemes.RVE` | random, through the Eshelby auxiliary problem | every mean-field scheme |
+| `Laminates.Laminate` | periodic stack of parallel layers | `Laminated` (exact), `Voigt`, `Reuss` |
+
+Only the **entry points** are typed on the supertype (`homogenize`,
+`get_param`/`set_param`, `derivative`/`gradient`/`jacobian`, and the
+`_evaluate` fallback). Every scheme kernel and every `_phase_*` helper stays
+typed on `RVE`. That split is deliberate: it is what makes the abstraction
+regression-free, and what makes a mis-applied scheme report itself.
+
+`src/Core/cells.jl` also carries the **declarative multiscale** seam. A
+property value may be a `Homogenized(cell, scheme)`, resolved lazily by
+`resolve_property` — called from exactly two places, `phase_property` and
+`layer_property` — and memoized per `(cell, key)` for the duration of one
+`homogenize` call by a task-local `ScopedValue`. Two invariants to preserve
+when touching it:
+
+- **type inspections must go through the raw accessors**
+  (`phase_property_raw`, `cell_container_property`); resolving would run a full
+  inner homogenization just to look at a type;
+- the cache scope must span the whole `_evaluate`, iterative solvers included,
+  or a self-consistent loop would re-solve every nested cell once per
+  iteration.
+
+
 ## Sub-module responsibilities
 
 | Sub-module         | Exports                                                                                            |

@@ -39,6 +39,31 @@ Reuss (uniform-stress) lower bound: ``\\langle \\mathbb S \\rangle^{-1}``.
 """
 struct Reuss <: HomogenizationScheme end
 
+# ── Exact periodic solutions (require an ordered cell, not an RVE) ───────────
+
+"""
+    Laminated() <: HomogenizationScheme
+
+Exact solution of the periodic **multilayer** unit cell — a stack of parallel
+layers of common normal `n`, with no matrix and no reference medium. Applies
+to a `Laminate` cell, not to an [`RVE`](@ref).
+
+Unlike every other scheme in this file it is not an estimate: for a laminate
+it *is* the answer,
+
+```math
+\\mathbb C^{hom} = \\langle\\mathbb Q\\rangle
+ + \\langle\\mathbb C : \\mathbb P\\rangle : \\langle\\mathbb P\\rangle^{\\dagger}
+   : \\langle\\mathbb P : \\mathbb C\\rangle ,
+```
+
+with `ℙ_i` the flat-inclusion Hill tensor of layer `i` and
+`ℚ_i = ℂ_i − ℂ_i:ℙ_i:ℂ_i`. Serves elasticity and transport, and accepts
+imperfect interfaces of spring / membrane / Kapitza / surface-conductive
+type. See the theory page on the laminate and [backus1962](@cite).
+"""
+struct Laminated <: HomogenizationScheme end
+
 # ── One-shot schemes (require a matrix phase) ────────────────────────────────
 
 """

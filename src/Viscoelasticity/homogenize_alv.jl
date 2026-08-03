@@ -9,26 +9,32 @@
 # =============================================================================
 
 """
-    has_visco_property(rve, prop::Symbol = :C) -> Bool
+    has_visco_property(cell, prop::Symbol = :C) -> Bool
 
-Return `true` if any phase of `rve` carries a [`ViscoLaw`](@ref) under
-the key `prop`.
+Return `true` if any member (phase or layer) of `cell` carries a
+[`ViscoLaw`](@ref) under the key `prop`.
+
+Reads through the **raw** accessor `cell_container_property`: this is a type
+inspection, and going through the resolving accessor would run a whole inner
+homogenization on every declaratively nested cell just to look at a type. A
+nested cell is instead recursed into, so a `ViscoLaw` buried one scale down
+is still reported.
 """
-function has_visco_property(rve::RVE, prop::Symbol = :C)
-    try
-        m = matrix_property(rve, prop)
-        m isa ViscoLaw && return true
-    catch
-    end
-    for name in inclusion_phase_names(rve)
-        try
-            v = phase_property(rve, name, prop)
-            v isa ViscoLaw && return true
+function has_visco_property(cell::MFH_Core.AbstractHomogenizationCell, prop::Symbol = :C)
+    for name in MFH_Core.cell_member_names(cell)
+        v = try
+            MFH_Core.cell_container_property(cell, name, prop)
         catch
+            continue
         end
+        _is_visco_value(v, prop) && return true
     end
     return false
 end
+
+_is_visco_value(v, ::Symbol) = v isa ViscoLaw
+_is_visco_value(h::MFH_Core.Homogenized, key::Symbol) =
+    has_visco_property(h.cell, h.property === nothing ? key : h.property)
 
 # ── Iso projection of a 6n×6n block matrix (ECHOES `symmetrize=[ISO]`) ─────
 #

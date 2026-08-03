@@ -90,6 +90,55 @@ end
 _normalize_euler(::Tuple{}) = (0.0, 0.0, 0.0)
 
 """
+    _frame_from_normal(n) -> AbstractBasis
+
+Complete a normal vector `n` into an orthonormal frame `(ℓ, m, n̂)` whose
+**third** axis is `n̂ = n/‖n‖`, by Gram-Schmidt against whichever canonical
+axis is least aligned with `n̂`. Returns a `CanonicalBasis` when `n` is
+exactly the third canonical axis, so the common laminate needs no rotation at
+all.
+
+The in-plane pair `(ℓ, m)` is chosen discretely and the effective property of
+a laminate is invariant under rotation about its normal, so this choice never
+leaks into a gradient — but pass an explicit basis if the frame itself has to
+be differentiable.
+
+Requires a `Real` element type: the axis selection is a comparison, which a
+symbolic normal cannot answer. Build the basis explicitly in that case.
+"""
+function _frame_from_normal(nvec)
+    length(nvec) == 3 ||
+        throw(ArgumentError("a laminate normal has 3 components; got $(length(nvec))"))
+    T0 = promote_type(typeof(nvec[1]), typeof(nvec[2]), typeof(nvec[3]))
+    T0 <: Real || throw(
+        ArgumentError(
+            "_frame_from_normal needs a Real normal (the in-plane axis choice is a " *
+                "comparison); pass an explicit `basis = …` for a symbolic frame"
+        )
+    )
+    T = _floatlike(T0)
+    n = SVector{3, T}(T(nvec[1]), T(nvec[2]), T(nvec[3]))
+    nrm = sqrt(n ⋅ n)
+    nrm > 0 || throw(ArgumentError("a laminate normal must be non-zero"))
+    n̂ = n / nrm
+    # The canonical laminate (n = e₃) keeps the canonical basis: exact, and it
+    # lets the kernel skip the Bond rotation entirely.
+    n̂ == SVector{3, T}(0, 0, 1) && return TensND.CanonicalBasis{3, _basis_eltype(T)}()
+    k = argmin(abs.(n̂))
+    a = SVector{3, T}(ntuple(i -> i == k ? one(T) : zero(T), 3))
+    ℓ = a - (a ⋅ n̂) * n̂
+    ℓ̂ = ℓ / sqrt(ℓ ⋅ ℓ)
+    m̂ = n̂ × ℓ̂                       # (ℓ̂, m̂, n̂) right-handed: ℓ̂ × m̂ = n̂
+    R = zeros(T, 3, 3)
+    @inbounds for i in 1:3
+        R[i, 1] = ℓ̂[i]
+        R[i, 2] = m̂[i]
+        R[i, 3] = n̂[i]
+    end
+    return TensND.RotatedBasis(R)
+end
+
+"""
     _default_basis(::Type{T}, euler_angles)
 
 Build the default TensND basis associated with a set of ZYZ Euler

@@ -341,3 +341,74 @@ psc
 The absolute strength in MPa is recovered by multiplying by
 ``\sigma^{\rm ult}_{\rm hyd}``, which [pichler2011](@cite) calibrate to ≈ 70–90 MPa
 for typical C-S-H.
+
+## The same chain, written declaratively
+
+The model above is the *explicit* multiscale style: one function per scale,
+each handing its result to the next, and — because the whole chain has to be
+differentiated at once — a hand-rolled `ForwardDiff.Tag` seeded into
+`μ_b0` and read back out of the final array.
+
+The [declarative style](@ref man-multiscale) writes the same chain as a
+single object, a phase property *being* another cell plus a scheme. Here the
+last two scales are plain Mori-Tanaka stages with nothing in between, so they
+port directly:
+
+```@example strength
+function cp_mo_declarative(wc, sc, α_p, C_hf)
+    T = eltype(C_hf)
+    cp = RVE(:HF; T = T)
+    add_matrix!(cp, Ellipsoid(1.0), Dict(:C => C_hf))
+    add_phase!(cp, :CLIN, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3K_clin), convert(T, 2μ_clin)));
+        fraction = f_clin(wc, α_p))
+
+    mo = RVE(:CP; T = T)
+    add_matrix!(mo, Ellipsoid(1.0), Dict(:C => Homogenized(cp, MoriTanaka())))
+    add_phase!(mo, :SAN, Ellipsoid(1.0),
+        Dict(:C => TensISO{3}(convert(T, 3K_san), convert(T, 2μ_san)));
+        fraction = fh_san(wc, sc))
+    return mo
+end
+
+let wc = 0.5, sc = 0.0, α_p = αmax(0.5) * (1 - 1e-12)
+    C_hf = best_fit_ti(build_hf(wc, α_p, float(μ_hyd_ref)), (0.0, 0.0, 1.0))
+    C_explicit = build_mo(wc, sc, build_cp(wc, α_p, C_hf))
+    C_declarative = homogenize(cp_mo_declarative(wc, sc, α_p, C_hf), MoriTanaka(), :C)
+    maximum(abs, get_array(C_explicit) - get_array(C_declarative))
+end
+```
+
+Identical to the last bit — as it must be: the two styles differ in how the
+chain is *written*, not in what it computes.
+
+### Why the foam stage keeps its explicit form here
+
+The seam between the hydrate foam and the cement paste is **not** a plain
+hand-off: the converged `TensTI{4,T,8}` is passed through `best_fit_ti` before
+the Mori-Tanaka stage, to match what Echoes does. A `Homogenized` resolves to
+whatever the inner scheme returns, so a post-processing step of that kind has
+to happen outside it.
+
+That is the general rule stated in [Multiscale models](@ref man-multiscale):
+the declarative style is for chains whose scales hand results straight to one
+another; a scale that needs a projection, a criterion or a change of variables
+in between keeps its explicit form. Both styles are first-class, and mixing
+them — as here, explicit at the foam seam and declarative afterwards — is
+normal.
+
+### What the declarative form would buy
+
+Where a chain *is* fully declarative, the sensitivity plumbing disappears: the
+`ForwardDiff.Tag` seeding above is replaced by a lens naming the parameter,
+wherever it lives in the chain,
+
+```julia
+p = nested(:CP, :C, property(:HF, :C, :shear))    # μ of the foam, one scale down
+gradient(mo, MoriTanaka(), [p]; indexer = C -> k_mu(C)[2])
+```
+
+and the inner cells are still solved exactly once per evaluation. The
+three-scale worked example is
+[the multiscale tutorial](@ref laminate_multiscale), which writes one model
+both ways and checks that the derivatives agree with finite differences.

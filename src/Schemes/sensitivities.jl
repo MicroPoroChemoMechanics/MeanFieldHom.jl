@@ -29,7 +29,7 @@ the extension loaded raises an explicit error pointing at the extension.
 See also [`gradient`](@ref), [`jacobian`](@ref), [`sensitivity`](@ref).
 """
 function derivative(
-        rve::RVE, scheme::HomogenizationScheme,
+        rve::AbstractHomogenizationCell, scheme::HomogenizationScheme,
         p::AbstractParameter;
         output::Symbol = :C, indexer = identity, kw...
     )
@@ -57,7 +57,7 @@ rule).
 Without `using ForwardDiff`: error.
 """
 function gradient(
-        rve::RVE, scheme::HomogenizationScheme,
+        rve::AbstractHomogenizationCell, scheme::HomogenizationScheme,
         ps::AbstractVector{<:AbstractParameter};
         output::Symbol = :C, indexer = identity,
         chunk = nothing, kw...
@@ -91,7 +91,7 @@ via `get_array` then `vec`.
 Without `using ForwardDiff`: error.
 """
 function jacobian(
-        rve::RVE, scheme::HomogenizationScheme,
+        rve::AbstractHomogenizationCell, scheme::HomogenizationScheme,
         ps::AbstractVector{<:AbstractParameter};
         output::Symbol = :C, indexer = identity,
         chunk = nothing, kw...
@@ -113,7 +113,7 @@ end
 # Single-parameter convenience: pass one AbstractParameter, return jacobian
 # along that single dimension (still a Matrix of size (length(output_flat), 1)).
 jacobian(
-    rve::RVE, scheme::HomogenizationScheme,
+    rve::AbstractHomogenizationCell, scheme::HomogenizationScheme,
     p::AbstractParameter; kw...
 ) =
     jacobian(rve, scheme, [p]; kw...)

@@ -16,7 +16,7 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | 01–09 | Tensor / Hill / Eshelby toolbox |
 | 10–19 | Cracks & COD (16–19 reserved for future conductive / resistive conduction cracks) |
 | 20–29 | Elastic homogenization schemes |
-| 30–39 | Layered n-layer sphere / spheroid |
+| 30–39 | Layered n-layer sphere / spheroid, periodic multilayer |
 | 40–49 | Strength & multiscale (Pichler-Hellmich) |
 | 50–59 | Viscoelasticity & ALV |
 | 60–69 | ALV cracks, interfaces & cross-validations |
@@ -63,7 +63,7 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `28_porous_schemes.jl` | porous benchmark | porous scheme comparison |
 | `29_symbolic_schemes.jl` | — | SymPy/Symbolics closed forms: Eshelby/Hill, dilute, MT, porous/rigid limits, hand-derived self-consistent |
 
-### 30–39 Layered n-layer sphere / spheroid
+### 30–39 Layered n-layer sphere / spheroid, periodic multilayer
 | Script | reference / topic | Notes |
 |---|---|---|
 | `30_average_nlayers.jl` | n-layer sphere | volume-average concentration (sphere) |
@@ -71,6 +71,11 @@ three-scale model (`common/pichler_model.jl`), used by both the demo script
 | `32_spheroid_effective_conductivity.jl` | Kushch 2015 setting | **published tutorial** — confocal geometry and API, Kapitza sweep, exact equivalent particle (`𝐤ᵉᑫ = 𝐁_Ω·𝐀_Ω⁻¹`), series-truncation convergence and quadrature vs. BigFloat |
 | `35_spheroid_interfaces.jl` | local fields (spheroid) | **published tutorial** — what an interface does to the local fields: temperature map, streamlines (bilateral seeding), GIF over β, interactive 3D |
 | `37_spheroid_hc_conductivity.jl` | Kushch 2015, HC interface | **published tutorial** — highly conducting (surface-conductive) interfaces vs. aspect ratio |
+| `33_laminate_basics.jl` | Backus 1962 | **published tutorial** — the exact periodic multilayer: closed form, the two bound saturations (in-plane Voigt, out-of-plane Reuss), transport, localisation, arbitrary normal |
+| `34_laminate_interfaces.jl` | Hervé-Luanco 2014, planar case | **published tutorial** — primal (spring/Kapitza) vs dual (membrane/surface-conductive) interfaces act on complementary halves of the answer; the `1/L` size effect; displacement jumps |
+| `36_laminate_multiscale.jl` | — | **published tutorial** — a three-scale model written explicitly *and* declaratively (`Homogenized`), shown to agree exactly; `NestedParameter` sensitivities across every scale; one microstructure, two physics |
+| `38_laminate_symbolic.jl` | Backus 1962 | **not published** (SymPy-heavy): derives the closed forms *from the code*, symbolically — the check that the pseudo-inverse is a cofactor inverse and not an SVD |
+| `39_laminate_alv.jl` | — | **published tutorial** — the multilayer in ageing viscoelasticity: elastic limit, a creeping binder between elastic reinforcements, the saturations surviving the Volterra transposition |
 
 ### 40–49 Strength & multiscale
 | Script | reference / topic | Notes |

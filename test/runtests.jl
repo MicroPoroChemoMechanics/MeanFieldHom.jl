@@ -158,6 +158,19 @@ Random.seed!(20260723)
         include("LayeredSpheres/test_scheme_integration.jl")
     end
 
+    # The periodic multilayer cell. Placed after the layered morphologies
+    # whose interface models it reuses, and before `Viscoelasticity`, which
+    # carries its ageing-viscoelastic twin.
+    @testset "Laminates" begin
+        include("Laminates/test_km_blocks.jl")
+        include("Laminates/test_laminate_cell.jl")
+        include("Laminates/test_laminate_oracles.jl")
+        include("Laminates/test_laminate_interfaces.jl")
+        include("Laminates/test_laminate_nesting.jl")
+        include("Laminates/test_laminate_dual_compat.jl")
+        include("Laminates/test_laminate_symbolic.jl")
+    end
+
     @testset "LayeredSpheroids" begin
         include("LayeredSpheroids/test_legendre.jl")
         include("LayeredSpheroids/test_coupling.jl")
@@ -168,6 +181,7 @@ Random.seed!(20260723)
 
     @testset "Viscoelasticity" begin
         include("Viscoelasticity/test_symmetrize_alv.jl")
+        include("Viscoelasticity/test_laminate_alv.jl")
         include("Viscoelasticity/test_visco_law.jl")
         include("Viscoelasticity/test_trapezoidal.jl")
         include("Viscoelasticity/test_volterra_inverse.jl")

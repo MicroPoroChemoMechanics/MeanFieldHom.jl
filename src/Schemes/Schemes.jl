@@ -24,6 +24,15 @@ import ..Core
 using ..Core
 const MFH_Core = Core
 
+# The homogenization *cell* contract is declared in `Core` (`Core/cells.jl`)
+# so that `Schemes`, `Laminates` and user code all attach their methods to one
+# canonical function per generic. `RVE` is one implementation of it; the
+# laminate unit cell is another.
+import ..Core: AbstractHomogenizationCell, AbstractParameter,
+    homogenize, validate_cell, _evaluate, get_param, set_param,
+    cell_member_names, cell_container_property, cell_set_property,
+    Homogenized, NestedParameter, nested, resolve_property
+
 # Forward declarations of inclusion types we touch from the other sub-modules
 # (loaded earlier than Schemes by `MeanFieldHom.jl`).
 import ..Elasticity: Ellipsoid, hill_tensor
@@ -58,10 +67,12 @@ include("sensitivities.jl")
 export AbstractAmount, VolumeFraction, CrackDensity
 export AbstractDistributionShape, UniformDistribution
 export AbstractSymmetrize, NoSymmetrize, IsoSymmetrize, TISymmetrize
+export AbstractHomogenizationCell, Homogenized, NestedParameter, nested
 export Phase, RVE
 export add_matrix!, add_phase!
 export matrix_phase, inclusion_phase_names
-export phase_property, matrix_property
+export phase_property, phase_property_raw, matrix_property
+export validate_cell
 export volume_fraction, crack_density, matrix_volume_fraction
 export phase_symmetrize
 export validate_rve, promote_rve
@@ -70,7 +81,7 @@ export polar_orientation_bins
 
 # Schemes
 export HomogenizationScheme
-export Voigt, Reuss, Dilute, DiluteDual, MoriTanaka, Maxwell, PonteCastanedaWillis
+export Voigt, Reuss, Laminated, Dilute, DiluteDual, MoriTanaka, Maxwell, PonteCastanedaWillis
 export SelfConsistent, AsymmetricSelfConsistent
 export AndersonDefault, NewtonDefault, AutoNonlinear
 export DifferentialTrajectory, Proportional, Sequential, CustomPath, Path, DifferentialScheme

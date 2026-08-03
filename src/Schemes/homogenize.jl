@@ -9,10 +9,16 @@
 # =============================================================================
 
 """
-    homogenize(rve::RVE, scheme::HomogenizationScheme, property::Symbol; kw...)
-    homogenize(rve::RVE, scheme::Symbol, property::Symbol; kw...)
+    homogenize(cell, scheme::HomogenizationScheme, property::Symbol; kw...)
+    homogenize(cell, scheme::Symbol, property::Symbol; kw...)
 
-Compute the effective `property` of `rve` under the chosen `scheme`.
+Compute the effective `property` of `cell` under the chosen `scheme`.
+
+`cell` is any [`AbstractHomogenizationCell`](@ref): an [`RVE`](@ref) (matrix
+plus named phases, for every scheme built on the Eshelby auxiliary problem)
+or a `Laminate` (periodic stack of parallel layers, solved exactly by
+`Laminated`). A scheme that a cell does not support reports it explicitly
+rather than dispatching elsewhere.
 
 `property` is a *required* `Symbol` argument naming which stored phase
 property is homogenised. The order of the result (4th-order, 2nd-order,
@@ -35,11 +41,18 @@ Extra `kw...` are forwarded to the scheme's `_evaluate` method
 `method = :auto | :decuhr | …` for the underlying Hill-tensor backend).
 """
 function homogenize(
-        rve::RVE, scheme::HomogenizationScheme,
+        cell::AbstractHomogenizationCell, scheme::HomogenizationScheme,
         property::Symbol; kw...
     )
-    validate_rve(rve)
-    return _evaluate(rve, scheme, Val(property); kw...)
+    validate_cell(cell)
+    # The scope spans the WHOLE evaluation, iterative solvers included: a
+    # self-consistent loop reads the phase properties once per iteration, and
+    # without the memoization a declaratively nested cell would be
+    # re-homogenized on every one of them. `_with_nested_cache` reuses an
+    # already-active scope, so sibling and deeper cells share it.
+    return MFH_Core._with_nested_cache() do
+        _evaluate(cell, scheme, Val(property); kw...)
+    end
 end
 
 # Backward-compatible kwarg form, kept so existing scripts and tests using
@@ -47,10 +60,10 @@ end
 # New code is encouraged to pass the property name as a positional argument
 # (the user must always state explicitly which property is being homogenised).
 function homogenize(
-        rve::RVE, scheme::HomogenizationScheme;
+        cell::AbstractHomogenizationCell, scheme::HomogenizationScheme;
         property::Symbol = :C, kw...
     )
-    return homogenize(rve, scheme, property; kw...)
+    return homogenize(cell, scheme, property; kw...)
 end
 
 """
@@ -97,16 +110,20 @@ const SCHEME_ALIAS = Dict{Symbol, Type{<:HomogenizationScheme}}(
     # Differential
     :differential => DifferentialScheme, :Differential => DifferentialScheme,
     :diff => DifferentialScheme, :Diff => DifferentialScheme, :DIFF => DifferentialScheme,
+    # Laminated (exact periodic multilayer — applies to a `Laminate` cell)
+    :laminated => Laminated, :Laminated => Laminated, :LAMINATED => Laminated,
+    :laminate => Laminated, :lam => Laminated, :LAM => Laminated,
+    :multilayer => Laminated,
 )
 
-function homogenize(rve::RVE, scheme::Symbol, property::Symbol; kw...)
+function homogenize(cell::AbstractHomogenizationCell, scheme::Symbol, property::Symbol; kw...)
     haskey(SCHEME_ALIAS, scheme) ||
         throw(ArgumentError("unknown scheme :$(scheme); see MeanFieldHom.Schemes.SCHEME_ALIAS"))
-    return homogenize(rve, SCHEME_ALIAS[scheme](), property; kw...)
+    return homogenize(cell, SCHEME_ALIAS[scheme](), property; kw...)
 end
 
-function homogenize(rve::RVE, scheme::Symbol; property::Symbol = :C, kw...)
-    return homogenize(rve, scheme, property; kw...)
+function homogenize(cell::AbstractHomogenizationCell, scheme::Symbol; property::Symbol = :C, kw...)
+    return homogenize(cell, scheme, property; kw...)
 end
 
 # =============================================================================
@@ -115,13 +132,22 @@ end
 # =============================================================================
 
 """
-    _evaluate(rve, scheme, ::Val{p}; kw...) -> AbstractTens
+    _evaluate(cell, scheme, ::Val{p}; kw...) -> AbstractTens
 
-Internal entry point that each concrete scheme implements. This generic
-fallback throws an explicit `ErrorException` so that a missing
+Internal entry point that each concrete (cell, scheme) pair implements. This
+generic fallback throws an explicit `ErrorException` so that a missing
 specialization is reported clearly instead of dispatching to the wrong
-method.
+method — in particular when a scheme is applied to a cell it does not serve
+(`MoriTanaka` needs a matrix, so it does not apply to a `Laminate`;
+`Laminated` needs an ordered stack of layers, so it does not apply to an
+`RVE`).
 """
-function _evaluate(rve::RVE, scheme::HomogenizationScheme, ::Val{p}; kw...) where {p}
-    error("homogenize: scheme $(typeof(scheme)) does not yet implement property :$(p)")
+function _evaluate(
+        cell::AbstractHomogenizationCell, scheme::HomogenizationScheme,
+        ::Val{p}; kw...
+    ) where {p}
+    error(
+        "homogenize: scheme $(typeof(scheme)) does not implement property :$(p) " *
+            "for a $(nameof(typeof(cell)))"
+    )
 end

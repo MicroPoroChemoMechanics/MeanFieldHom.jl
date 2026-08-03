@@ -3,8 +3,16 @@
 ## Shipped
 
 - Mean-field schemes: Voigt/Reuss bounds, dilute, Mori–Tanaka, Maxwell,
-  Ponte-Castañeda–Willis, self-consistent (Anderson + Newton),
+  Ponte-Castañeda-Willis, self-consistent (Anderson + Newton),
   asymmetric self-consistent, differential.
+- **Periodic multilayer** (`Laminate` + the `Laminated` scheme): a matrix-free,
+  deterministic cell with an *exact* solution, in elasticity and transport,
+  with the four imperfect-interface models and an ageing-viscoelastic twin.
+  Saturates Voigt in the plane of the layers and Reuss across them.
+- **The homogenization-cell abstraction** (`AbstractHomogenizationCell`) and
+  **declarative multiscale chaining** (`Homogenized`, `NestedParameter`): a
+  multiscale model as one object, differentiable end to end in a single
+  `ForwardDiff` pass, with a call-scoped memoization.
 - Representative volume element (RVE) assembly and effective-property
   pipelines mirroring the reference C++ RVE assembly.
 - Concentric multi-layer sphere (`LayeredSphere` via
@@ -46,6 +54,10 @@
   tensorial conduction COD.
 - Multi-layer extensions: coated cylinders, anisotropic per-layer moduli,
   excentered spheres.
+- Laminate extensions: viscoelastic *interface* laws (the interface types
+  carry `Number` fields today, so an ageing interface needs a different
+  carrier), and `Homogenized` inside an ALV chain (the inner result would have
+  to be re-expressible as a `ViscoLaw`).
 - `PairwiseDistribution` (Willis 1982) envelope for the PCW scheme.
 - Native Anderson acceleration with memory > 1, replacing the current
   `AndersonDefault` (currently Picard with relaxation, memory = 1).
