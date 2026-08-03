@@ -93,14 +93,14 @@ exactly zero:
 
 ```@example tutsymlam
 claims = [
-    "C₁₂₁₂ = ⟨μ⟩                       (arithmetic)"  => M[6, 6] / 2 - F,
-    "C₂₃₂₃ = ⟨1/μ⟩⁻¹                   (harmonic)"    => M[4, 4] / 2 - 1 / G,
-    "C₃₃₃₃ = ⟨1/(λ+2μ)⟩⁻¹              (harmonic)"    => M[3, 3] - 1 / A,
-    "C₁₁₃₃ = ⟨1/(λ+2μ)⟩⁻¹⟨λ/(λ+2μ)⟩"                  => M[1, 3] - B / A,
-    "C₁₁₂₂ = ⟨2μλ/(λ+2μ)⟩ + ⟨λ/(λ+2μ)⟩²/⟨1/(λ+2μ)⟩"   => M[1, 2] - (E + B^2 / A),
-    "C₁₁₁₁ = C₁₁₂₂ + 2⟨μ⟩"                            => M[1, 1] - (E + B^2 / A + 2F),
+    "C₁₂₁₂ = ⟨μ⟩                      (arithmetic)" => M[6, 6] / 2 - F,
+    "C₂₃₂₃ = ⟨1/μ⟩⁻¹                  (harmonic)" => M[4, 4] / 2 - 1 / G,
+    "C₃₃₃₃ = ⟨1/(λ+2μ)⟩⁻¹             (harmonic)" => M[3, 3] - 1 / A,
+    "C₁₁₃₃ = ⟨1/(λ+2μ)⟩⁻¹⟨λ/(λ+2μ)⟩" => M[1, 3] - B / A,
+    "C₁₁₂₂ = ⟨2μλ/(λ+2μ)⟩ + ⟨λ/(λ+2μ)⟩²/⟨1/(λ+2μ)⟩" => M[1, 2] - (E + B^2 / A),
+    "C₁₁₁₁ = C₁₁₂₂ + 2⟨μ⟩" => M[1, 1] - (E + B^2 / A + 2F),
 ]
-[k => simplify(v) for (k, v) in claims]
+[k => iszero(simplify(v)) for (k, v) in claims]
 ```
 
 The last line, ``C_{1111} - C_{1122} = 2\langle\mu\rangle = 2C_{1212}``, is the
@@ -130,16 +130,20 @@ arithmetic (parallel, in-plane) part; `B` couples them. Checking it against
 the code is one comparison:
 
 ```@example tutsymlam
-M_claim = [
-    E+B^2/A+2F E+B^2/A B/A 0 0 0
-    E+B^2/A E+B^2/A+2F B/A 0 0 0
-    B/A B/A 1/A 0 0 0
-    0 0 0 2/G 0 0
-    0 0 0 0 2/G 0
-    0 0 0 0 0 2F
+entries = [
+    (1, 1) => E + B^2 / A + 2F,
+    (1, 2) => E + B^2 / A,
+    (1, 3) => B / A,
+    (3, 3) => 1 / A,
+    (4, 4) => 2 / G,
+    (6, 6) => 2F,
 ]
-maximum(abs, simplify.(Matrix(M) - M_claim))
+all(iszero(simplify(M[i, j] - v)) for ((i, j), v) in entries)
 ```
+
+(The other entries are fixed by symmetry, by ``M_{11} = M_{22}``,
+``M_{13} = M_{23}``, ``M_{44} = M_{55}``, and by the zeros of the pattern —
+the six above are the independent ones.)
 
 Nothing above used ``N = 2``: with three layers the same five averages, now
 over three terms, still describe the answer exactly.
@@ -165,18 +169,21 @@ G3 = avg3((λ, μ) -> 1 / μ)
 
 ## The bounds, read off the same matrix
 
-The laminate **saturates** Voigt in the plane of the layers and Reuss across
-them. Symbolically that is the statement that `C₁₂₁₂` is the arithmetic mean
-and `C₃₃₃₃` the harmonic one — so the exact answer coincides with a bound in
-each of those two directions:
+No separate computation is needed to see that the laminate **saturates** its
+bounds: the table above already says it. ``C_{1212} = \langle\mu\rangle`` is
+the arithmetic mean of the layer shear moduli — the Voigt value — and
+``C_{3333} = \langle 1/(\lambda+2\mu)\rangle^{-1}`` is the harmonic mean of
+the layer oedometric moduli — the Reuss value. The exact answer therefore
+*coincides with a bound* in each of those two directions, simultaneously, and
+lies strictly between them everywhere else.
 
-```@example tutsymlam
-Mv = KM(homogenize(lam, Voigt(), :C))
-Mr = KM(homogenize(lam, Reuss(), :C))
-
-(in_plane_is_Voigt   = simplify(M[6, 6] - Mv[6, 6]),
- out_of_plane_is_Reuss = simplify(M[3, 3] - Mr[3, 3]))
-```
+!!! note "Why this one is not checked symbolically here"
+    Evaluating `homogenize(lam, Reuss(), :C)` on symbolic moduli means
+    inverting a ``6\times6`` matrix that is itself a sum of symbolic inverses;
+    the expression swell makes `simplify` impractical, for a statement the
+    closed forms above already establish. The identity is checked numerically
+    instead, in `test/Laminates/test_laminate_oracles.jl` ("bounds bracket the
+    exact answer") and printed by `scripts/33_laminate_basics.jl`.
 
 ## Transport: the same two means, one line each
 
