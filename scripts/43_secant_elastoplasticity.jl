@@ -123,7 +123,7 @@ const FPORE = 0.1     # porosity
 # exact for any number of them. They are a discretization of the **plastic
 # zone**: each shell carries its own secant modulus, so a plastic front moving
 # outwards from the cavity is resolved shell by shell. Cut open, with the void
-# core at the centre:
+# core at the center:
 
 include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
 
