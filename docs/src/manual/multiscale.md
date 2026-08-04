@@ -5,6 +5,39 @@ one scale becomes a phase property at the next. `MeanFieldHom` supports two
 ways of writing that chain, and **both are fully supported** — they differ in
 what is an object, not in what they compute.
 
+The shape of such a chain, before any code — the four-scale cascade worked out
+in [ITZ in concrete](@ref app-itz-concrete). What changes from one scale to the
+next is the **morphology**, and therefore the scheme: self-consistent where no
+phase surrounds the others, Mori–Tanaka where one does.
+
+```mermaid
+%%{init: {"flowchart": {"useMaxWidth": false, "nodeSpacing": 26, "rankSpacing": 34}} }%%
+flowchart TB
+    S1["hydrate needles + water + air<br/><i>SelfConsistent</i>"]
+    HF["ℂ hydrate foam"]
+    S2["foam matrix + clinker grains<br/><i>MoriTanaka</i>"]
+    CP["ℂ cement paste"]
+    S3["paste + extra capillary porosity<br/><i>MoriTanaka</i>"]
+    ITZ["ℂ interfacial transition zone"]
+    S4["paste matrix + ITZ-coated aggregates<br/><i>MoriTanaka</i>"]
+    OUT["ℂ concrete"]
+
+    S1 --> HF --> S2 --> CP --> S3 --> ITZ --> S4 --> OUT
+    CP --> S4
+
+    classDef step fill:#eceff1,stroke:#78909c,color:#263238
+    classDef state fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+    classDef done fill:#d7f2d7,stroke:#2e7d32,color:#1b5e20
+    class S1,S2,S3,S4 step
+    class HF,CP,ITZ state
+    class OUT done
+```
+
+Two features of that chain drive the API below: a scale consumes only the
+**effective tensor** of the scales beneath it — note that the cement paste feeds
+*two* consumers — and the scales are otherwise independent, which is exactly what
+makes the two writing styles equivalent.
+
 ## The cell abstraction
 
 Everything `homogenize` accepts is an

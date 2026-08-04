@@ -556,40 +556,20 @@ The same two threshold maps as **interactive 3D surfaces** over
 values, exactly as the Echoes book renders them with Plotly:
 
 ```@example diffusion
-# Emit an interactive Plotly surface.  Documenter pages load require.js (AMD),
-# so plotly.js must be pulled in *through* require.js — a plain global
-# `<script>`/`Plotly` would be swallowed by the AMD loader and never define the
-# global, leaving the figure blank.  The plot data are embedded inline.
-function plotly_surface(x, y, Z; title, zlabel, uid)
-    jsvec(v) = "[" * join(v, ",") * "]"
-    jsmat(M) = "[" * join((jsvec(M[i, :]) for i in axes(M, 1)), ",") * "]"
-    return Base.HTML("""
-    <div id="$uid" style="width:100%;height:520px;"></div>
-    <script>
-    (function () {
-      var data = [{type:"surface", x:$(jsvec(x)), y:$(jsvec(y)), z:$(jsmat(Z)),
-        colorscale:"RdBu", reversescale:true, colorbar:{title:"φ (%)"}}];
-      var layout = {title:{text:"$title"}, height:520, margin:{l:0,r:0,t:40,b:0},
-        scene:{xaxis:{title:"log₁₀ ωs"}, yaxis:{title:"log₁₀ ωp"},
-               zaxis:{title:"$zlabel"}}};
-      function draw(Plotly) { Plotly.newPlot("$uid", data, layout); }
-      if (window.Plotly) { draw(window.Plotly); }
-      else if (window.require) {
-        require.config({paths: {plotly_mfh: "https://cdn.plot.ly/plotly-2.35.2.min"}});
-        require(["plotly_mfh"], draw);
-      }
-    })();
-    </script>
-    """)
-end
+# `plotly_surface` comes from the shared figure helpers — it emits a `<div>` plus
+# a `<script>` that pulls plotly.js in *through* require.js, which is what
+# Documenter pages need (see scripts/common/docviz.jl for why).
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
 
 plotly_surface(logω, logω, Ze; title = "Elastic percolation threshold φ_elas (%)",
-    zlabel = "φ_elas (%)", uid = "surf-phi-elas")
+    zlabel = "φ_elas (%)", uid = "surf-phi-elas",
+    xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp", colorbar_title = "φ (%)")
 ```
 
 ```@example diffusion
 plotly_surface(logω, logω, Zd; title = "Diffusion percolation threshold φ_diff (%)",
-    zlabel = "φ_diff (%)", uid = "surf-phi-diff")
+    zlabel = "φ_diff (%)", uid = "surf-phi-diff",
+    xlabel = "log₁₀ ωs", ylabel = "log₁₀ ωp", colorbar_title = "φ (%)")
 ```
 
 The thin oblate solid (``\omega_s = 0.013``) percolates at a tiny solid

@@ -7,6 +7,13 @@ volume fractions or crack densities.
 
 ## Building an RVE
 
+An `RVE` is the morphological picture, written down: one phase declared as the
+matrix, any number of inclusion phases with their geometry, properties and
+amount. This is the Mori–Tanaka morphology — a matrix carrying ellipsoids,
+cracks and coated spheres, in whatever mix.
+
+![Matrix carrying ellipsoids and coated spheres — the morphology an `RVE` with a matrix phase describes (from the Echoes book [echoes](@cite))](../assets/schemes/rve_mori_tanaka.png)
+
 ```julia
 using MeanFieldHom, TensND
 
@@ -52,6 +59,19 @@ accept `abstol`, `maxiters`, `damping`, `verbose`.
 
 ## Distribution shape (Maxwell, PCW)
 
+Two schemes take a **second** shape, describing how the inclusions are placed
+rather than what they look like. Maxwell reads it as the envelope of a cluster
+that is replaced by one equivalent inclusion; PCW reads it as a distribution
+ellipsoid around each inclusion, forbidding closer approach:
+
+| Maxwell | Ponte Castañeda–Willis |
+| :---: | :---: |
+| ![Cluster of inclusions replaced by an equivalent inclusion Ω](../assets/schemes/rve_maxwell.png) | ![Each inclusion inside its own distribution ellipsoid](../assets/schemes/rve_pcw.png) |
+
+A spherical distribution shape — the default — makes both collapse onto
+Mori–Tanaka, which is the quickest way to check that the option is wired
+correctly.
+
 ```julia
 rve = RVE(:M; distribution_shape = Ellipsoid(1.0, 1.0, 0.3))   # oblate outer
 add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
@@ -66,6 +86,13 @@ breaking the public API — see
 [`AbstractDistributionShape`](@ref).
 
 ## Iterative solvers
+
+The self-consistent schemes describe the other morphology: no phase is a matrix,
+every phase is embedded in the medium being sought. `add_matrix!` still names one
+phase, but the scheme ignores that role — which is why a polycrystal or a
+granular assembly is homogenized this way and not by Mori–Tanaka.
+
+![A tessellation in which no phase surrounds the others (from the Echoes book [echoes](@cite))](../assets/schemes/rve_self_consistent.png)
 
 ```julia
 homogenize(rve, SelfConsistent())                            # built-in damped Picard (default)
@@ -102,6 +129,12 @@ All three are `ForwardDiff`-compatible — differentiating `homogenize` through 
 [Nonlinear solvers tutorial](../tutorials/nonlinear_solvers.md)).
 
 ## Differential scheme
+
+The differential scheme applies the *dilute* step over and over, updating the
+reference medium each time — the loop is drawn in
+[The differential scheme](../theory/differential_scheme.md#Incorporation-process).
+Two knobs follow from that loop: how many steps (`nsteps`), and in which order
+the phases are grown (the **trajectory**).
 
 ### Trajectories
 

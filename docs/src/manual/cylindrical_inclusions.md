@@ -29,6 +29,21 @@ first column of the basis, and the transverse semi-axes `(b, c)` (with
 `b ≥ c` for real element types) are associated with the second and
 third columns respectively.
 
+```@setup cylinders
+using MeanFieldHom
+using TensND
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+```
+
+```@example cylinders
+cyl = Cylinder(2.0, 1.0)
+plotly_scene(shape_traces(cyl); uid = "man-cylinder", height = 420,
+    title = "Cylinder(2.0, 1.0) — the drawn length is arbitrary, the Hill tensor does not see it")
+```
+
+The length shown is a drawing convenience only: the cylinder is the ``a \to \infty``
+limit, and no closed form below depends on how much of it is displayed.
+
 ## Redirection from `Ellipsoid`
 
 Passing an infinite or zero semi-axis to the `Ellipsoid` constructor

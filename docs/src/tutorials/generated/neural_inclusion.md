@@ -13,7 +13,7 @@ network**, which is what this script drives.
 
 The morphology here is the *ellipsoid*, whose Hill tensor is known in closed
 form. That is the point: it is the one case where a surrogate can be held to an
-exact answer, so every part of the pipeline — the sampling, the labelling, the
+exact answer, so every part of the pipeline — the sampling, the labeling, the
 decode, the frame conventions, the schemes, the sensitivities — can be checked
 before being pointed at something unknown.
 

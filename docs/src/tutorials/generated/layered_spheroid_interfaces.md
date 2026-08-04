@@ -38,6 +38,10 @@ using Printf
 using Plots
 gr()
 
+# Interactive-3-D helpers (Plotly through require.js); see the file header for
+# why the include goes through `pkgdir` rather than `@__DIR__`.
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+
 default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
 ````
 
@@ -49,7 +53,7 @@ common length throws away the magnitude — precisely the story near an
 interface — while an arrow long enough to be visible is longer than the grid
 spacing, so the arrows overlap and hide the geometry they should reveal.
 Streamlines carry the geometry in their *spacing* and the magnitude in their
-*colour*.
+*color*.
 
 The tracer below is written once and reused by both geometries. The geometry
 enters only through `coord`, the map from a meridian point `(x, z)` to the
@@ -355,7 +359,7 @@ gif(anim; fps = 2)
 ### Interactive 3-D view
 
 The meridian streamlines revolved around the axis: drag to rotate, scroll to
-zoom. The grey surface is the particle, the coloured curves are flux lines.
+zoom. The gray surface is the particle, the colored curves are flux lines.
 
 ````@example layered_spheroid_interfaces
 function _plotly_streamlines(β; nrev = 8, uid = "spheroid-3d")
@@ -383,33 +387,11 @@ function _plotly_streamlines(β; nrev = 8, uid = "spheroid-3d")
         )
     end
     # Particle surface, coarse parametric mesh.
-    us = range(0, 2π; length = 24); vs = range(-π / 2, π / 2; length = 16)
-    Xs = [OBL_T * cos(v) * cos(u) for v in vs, u in us]
-    Ys = [OBL_T * cos(v) * sin(u) for v in vs, u in us]
-    Zs = [OBL_A * sin(v) for v in vs, _ in us]
-    jsmat(M) = "[" * join(("[" * join(round.(M[i, :]; digits = 3), ",") * "]" for i in axes(M, 1)), ",") * "]"
-    push!(
-        traces, """{type:"surface",x:$(jsmat(Xs)),y:$(jsmat(Ys)),z:$(jsmat(Zs)),
-        opacity:0.35,showscale:false,colorscale:[[0,"#888"],[1,"#888"]]}"""
-    )
-    return Base.HTML(
-        """
-        <div id="$uid" style="width:100%;height:560px;"></div>
-        <script>
-        (function () {
-          var data = [$(join(traces, ","))];
-          var layout = {height:560, margin:{l:0,r:0,t:30,b:0},
-            title:{text:"Flux lines around an insulating spheroid, β = $β"},
-            scene:{aspectmode:"data", xaxis:{title:"x"}, yaxis:{title:"y"}, zaxis:{title:"z"}}};
-          function draw(Plotly) { Plotly.newPlot("$uid", data, layout); }
-          if (window.Plotly) { draw(window.Plotly); }
-          else if (window.require) {
-            require.config({paths: {plotly_mfh: "https://cdn.plot.ly/plotly-2.35.2.min"}});
-            require(["plotly_mfh"], draw);
-          }
-        })();
-        </script>
-        """
+    Xs, Ys, Zs = ellipsoid_surface(OBL_T, OBL_T, OBL_A; nu = 24, nv = 16)
+    push!(traces, surface_trace(Xs, Ys, Zs; color = "#888888", opacity = 0.35))
+    return plotly_scene(
+        traces; uid = uid, height = 560,
+        title = "Flux lines around an insulating spheroid, β = $β"
     )
 end
 

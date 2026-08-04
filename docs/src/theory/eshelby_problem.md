@@ -14,6 +14,8 @@ centered at the origin (shape tensor ``\boldsymbol{A}``, semi-axes
 uniform **polarization stress** ``\boldsymbol{\tau}`` inside the ellipsoid and
 zero outside, with no remote loading.
 
+![The inclusion problem: a uniform polarization inside the ellipsoid, no remote loading (from the Echoes book [echoes](@cite))](../assets/geometry/eshelby_inclusion.png)
+
 [eshelby1957](@cite) showed that the resulting strain field is **uniform inside
 the ellipsoid**. This is the whole reason mean-field homogenization works, and
 it is specific to the ellipsoid: no other shape has it.
@@ -99,9 +101,16 @@ See [Conduction and diffusion](@ref man-conductivity) for the call.
 
 ## Why this matters for a real material
 
-A real heterogeneous material is not one ellipsoid in an infinite medium. The
-step from this idealized problem to an estimate of effective properties is the
-subject of the next two pages, and it has two parts:
+A real heterogeneous material is not one ellipsoid in an infinite medium. What
+comes closest is the **inhomogeneity** problem — an ellipsoid of a *different*
+stiffness ``\mathbb{C}^I``, loaded remotely by ``\underline{u} = \boldsymbol{E}\cdot\underline{x}``
+— and it reduces to the inclusion problem above by the equivalent-polarization
+argument of [Localization](localization.md):
+
+![The inhomogeneity problem: a different stiffness inside, remote loading outside (from the Echoes book [echoes](@cite))](../assets/geometry/eshelby_inhomogeneity.png)
+
+The step from there to an estimate of effective properties is the subject of the
+next two pages, and it has two parts:
 
 1. each inclusion is treated as if it were alone in an infinite *reference*
    medium — this is what makes ``\mathbb{P}`` usable, and it is exactly the

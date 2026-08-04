@@ -7,7 +7,7 @@ EditURL = "../../../../scripts/80_custom_inclusion_contract.jl"
 `MeanFieldHom` lets an arbitrary morphology take part in every homogenization
 scheme, in elasticity and in transport, without touching the package. This is
 the counterpart of the `user_inclusion` mechanism of the C++/Python `echoes`
-codebase, but levelled: you implement the **lowest gate you can reach** and
+codebase, but leveled: you implement the **lowest gate you can reach** and
 the package derives everything above it.
 
 | Gate | You supply | You get |

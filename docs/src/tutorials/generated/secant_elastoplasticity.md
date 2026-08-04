@@ -27,7 +27,7 @@ Two ingredients make it work, and both already exist in the package:
 Write the macroscopic strain as ``\boldsymbol{E} = \tfrac{E_v}{3}\boldsymbol{1}
 + \boldsymbol{E}_d`` with ``E_v = \mathrm{tr}\,\boldsymbol{E}`` its volumetric
 part and ``\boldsymbol{E}_d`` its deviator. For an isotropic effective
-behaviour of moduli ``(k^{\hom}, \mu^{\hom})`` the macroscopic elastic energy is
+behavior of moduli ``(k^{\hom}, \mu^{\hom})`` the macroscopic elastic energy is
 
 ```math
 W(\boldsymbol{E}) = \tfrac{1}{2}\,\boldsymbol{E}:\mathbb{C}^{\hom}:\boldsymbol{E}
@@ -124,7 +124,26 @@ the outer radius being 1.
     use for water and air (`scripts/README.md`). At ``10^{-8} k_s`` its effect
     on the results below is far under the plotting resolution.
 
+The shells are not a discretization of the geometry — the composite sphere is
+exact for any number of them. They are a discretization of the **plastic
+zone**: each shell carries its own secant modulus, so a plastic front moving
+outwards from the cavity is resolved shell by shell. Cut open, with the void
+core at the centre:
+
 ````@example secant_elastoplasticity
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+
+let n = 5, f = FPORE
+    radii = ntuple(i -> i == 1 ? f^(1 / 3) : (f + (1 - f) * (i - 1) / n)^(1 / 3), n + 1)
+    ls = LayeredSphere(radii, ntuple(i -> iso_stiffness(KS, MUS), n + 1))
+    plotly_scene(
+        shape_traces(ls; colors = ["#ffffff", "#f0ad4e", "#e8a33d", "#d4913a",
+            "#c0392b", "#8a2e22"]);
+        uid = "secant-shells", height = 450,
+        title = "Composite sphere: void core (f = $f) and $n plastic shells"
+    )
+end
+
 function porous_sphere(μs, f)
     n = length(μs)
     T = eltype(μs)

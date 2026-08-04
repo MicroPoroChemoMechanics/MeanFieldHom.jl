@@ -21,6 +21,30 @@ const C_p = iso_stiffness(k_p, μ_p)
 nothing # hide
 ```
 
+The microstructure the schemes are asked about, at a moderate porosity — drag to
+rotate. The second half of the page repeats everything with the pores flattened
+to ``\omega = 0.2``, which is the same picture with squashed pores and a very
+different answer:
+
+```@setup tutporousbenchviz
+using MeanFieldHom
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+```
+
+```@example tutporousbenchviz
+plotly_scene(rve_traces(; n = 70, semi_axes = (0.055, 0.055, 0.055),
+        color = "#78909c", opacity = 0.95);
+    uid = "pb-rve-spheres", height = 450,
+    title = "Spherical pores, isotropic distribution")
+```
+
+```@example tutporousbenchviz
+plotly_scene(rve_traces(; n = 70, semi_axes = (0.075, 0.075, 0.015), seed = 7,
+        color = "#78909c", opacity = 0.95);
+    uid = "pb-rve-oblate", height = 450,
+    title = "Oblate pores, ω = 0.2, random orientations")
+```
+
 ## Extracting effective moduli
 
 The homogenized stiffness is expected to be isotropic here (spherical

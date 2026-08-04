@@ -236,6 +236,15 @@ end
 and measured agreement are in [Cross-validation](../developer/validation.md),
 timings in [Performance vs Echoes](../developer/benchmarks.md).
 
+Two tutorials carry a captured Echoes reference in the page itself, in the
+literal-data style used above, and are worth reading next because each one turns
+up a place where the two libraries do *not* line up trivially:
+
+| Page | What the cross-check shows |
+| :--- | :--- |
+| [Crack distributions: isotropic or parallel](@ref tut-crack-distributions) | `MoriTanaka` and `SelfConsistent` reproduce Echoes to ``\sim 10^{-7}`` on both an isotropic and a single-orientation crack population — but `AsymmetricSelfConsistent` is a *different* fixed point, not the translation of Echoes' `SC`, and it percolates where Echoes' does not |
+| [Ageing creep: loading age against inclusion shape](@ref tut-ageing-ages-aspect) | the ageing-viscoelastic counterpart of the table above: `ViscoLaw(J, :creep)` against Echoes' `visco_prop={"C": (Js, CREEP)}`, swept over loading ages and aspect ratios |
+
 Without Echoes or PyCall, each cross-check has a PyCall-free counterpart:
 committed `*_python.json` dumps, and pure-Julia transcriptions such as
 `scripts/55_ageing_creep_dirichlet_chains.jl`.

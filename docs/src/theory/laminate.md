@@ -30,6 +30,21 @@ and periodic of period ``L`` along ``\underline{n}``. One period contains
 ``N`` layers ``\mathcal{L}_i``, of uniform stiffness ``\mathbb{C}_i``,
 thickness ``h_i`` and volume fraction ``f_i = h_i/L``.
 
+```@setup laminate
+using MeanFieldHom
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+```
+
+```@example laminate
+plotly_scene(laminate_traces([0.30, 0.15, 0.40, 0.15]); uid = "th-laminate-cell",
+    height = 420, title = "One period: four layers of thickness hᵢ, common normal n̂")
+```
+
+Only ``\underline{n}`` and the thicknesses matter — the picture is drawn from the
+volume fractions ``f_i = h_i/L`` and would be unchanged by any rotation within
+``\mathcal{P}``. That invariance is what collapses the problem to one dimension,
+and it is why the laminate is solved **exactly** rather than estimated.
+
 The cell is loaded by a macroscopic strain ``\boldsymbol{E}``:
 
 ```math

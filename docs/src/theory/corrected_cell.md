@@ -25,6 +25,45 @@ allowed to move the way the infinite medium would let it. The apparent opening
 therefore carries a bias of order ``O\bigl((a/R)^3\bigr)``, which is why an
 uncorrected computation needs `R/a` between 10 and 40 before it can be trusted.
 
+```@setup cell
+using Plots
+gr()  # headless backend; GKSwstype is set to "100" in make.jl
+```
+
+```@example cell
+# The geometry the correction is about: an inclusion of size a at the center of a
+# meshed ball of radius R, with the boundary condition applied on ∂Ω.
+R, a = 1.0, 0.24
+θ = range(0, 2π; length = 200)
+
+p = plot(; aspect_ratio = 1, framestyle = :none, legend = false,
+    size = (620, 400), xlims = (-1.35, 1.5), ylims = (-1.25, 1.25))
+plot!(p, R .* cos.(θ), R .* sin.(θ); lw = 2, ls = :dash, c = :steelblue)
+plot!(p, a .* cos.(θ), 0.09a .* sin.(θ); seriestype = :shape,
+    fillcolor = :sienna, lc = :sienna, fillalpha = 0.85)
+
+# The two radii, measured from the same center. The inclusion half-width is
+# dimensioned just below the crack, which would otherwise hide the line.
+plot!(p, [0, a], [-0.11, -0.11]; lw = 1.6, c = :sienna)
+plot!(p, [0, 0], [-0.145, -0.075]; lw = 1.6, c = :sienna)
+plot!(p, [a, a], [-0.145, -0.075]; lw = 1.6, c = :sienna)
+plot!(p, [0, R * cosd(35)], [0, R * sind(35)]; lw = 2, c = :steelblue)
+annotate!(p, [(0.5a, -0.24, text("a", 11, :sienna)),
+              (0.52R * cosd(35) - 0.04, 0.52R * sind(35) + 0.10,
+                  text("R", 11, :steelblue)),
+              (0.0, -0.62, text("Ω  (meshed)", 10, :gray35)),
+              (0.0, 1.10, text("∂Ω :  u = E·x  +  ∇G(x) : (V ⟨p⟩)", 11, :black)),
+              (0.0, -1.12, text("the second term is what the correction adds", 9, :gray45))])
+p
+```
+
+Without the dipole term the boundary carries the remote field alone, and the ball
+has to be made large enough for the neglected term to fall below the target
+accuracy. With it, the boundary already knows what the infinite medium would do,
+and `R/a = 5` suffices — the default `radius_ratio` of the finite-element
+backends ([FE inclusions](@ref man-fe-inclusions)) — the price being that
+``\langle p\rangle`` appears on both sides.
+
 ## The general fixed point
 
 The exact infinite-medium solution is

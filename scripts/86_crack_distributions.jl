@@ -1,0 +1,295 @@
+# # [Crack distributions: isotropic or parallel](@id tut-crack-distributions)
+#
+# The same cracks, the same crack density, two orientation distributions — and
+# two different effective media. This is the shortest example that exercises the
+# three things a cracked RVE needs: a **density** instead of a volume fraction,
+# an **orientation distribution**, and a scheme that can cope with a phase of
+# zero volume.
+#
+# The material is a solid of ``E = 1``, ``\nu = 0.2`` carrying penny-shaped
+# cracks of density ``\varepsilon = 0.6``. Everything below is cross-checked
+# against values captured from a run of Echoes 1.0 on the same problem.
+#
+# ## The two microstructures
+#
+# The realizations are drawn with a fixed seed, so the two pictures differ only
+# in the orientation rule — the crack positions are the same.
+
+import Pkg                                                          #jl
+Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
+
+using MeanFieldHom
+using TensND
+using LinearAlgebra
+using Printf
+using Plots
+gr()
+
+## Interactive-3-D helpers; `pkgdir` rather than `@__DIR__` so the include also
+## resolves inside a Documenter `@example` block.
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+
+const E₀, ν₀ = 1.0, 0.2
+const C₀ = iso_stiffness_E_nu(E₀, ν₀)
+const ε = 0.6
+const k₀, μ₀ = k_mu(C₀)
+
+@printf "intact solid : k = %.6f   μ = %.6f\n" k₀ μ₀
+
+# An **isotropic distribution**: every orientation equally likely, so the
+# effective medium is isotropic however anisotropic each single crack is.
+
+plotly_scene(
+    rve_traces(; n = 70, semi_axes = (0.10, 0.10, 0.004), seed = 2024);
+    uid = "cd-rve-iso", height = 470,
+    title = "Isotropic distribution of penny cracks"
+)
+
+# **Parallel cracks**: one common normal, here the direction of spherical angles
+# ``(\theta, \varphi) = (\pi/4, \pi/3)``. The effective medium is transversely
+# isotropic about that normal.
+
+const n̂ = (sin(π / 4) * cos(π / 3), sin(π / 4) * sin(π / 3), cos(π / 4))
+
+plotly_scene(
+    rve_traces(; n = 70, semi_axes = (0.10, 0.10, 0.004), seed = 2024,
+        orientation = n̂);
+    uid = "cd-rve-aligned", height = 470,
+    title = "Parallel cracks, all normals along n̂ = (√2/4, √6/4, √2/2)"
+)
+
+# ## Building the two RVEs
+#
+# A crack phase differs from an inclusion phase in two places only: it is
+# declared with `density` instead of `fraction`, and its property dictionary
+# carries the **matrix** stiffness — the crack-opening machinery needs the medium
+# the crack opens in, not a stiffness of its own (a crack has none).
+#
+# The orientation distribution is the `symmetrize` keyword. `IsoSymmetrize()`
+# performs the exact SO(3) average of the concentration tensor; leaving it out
+# keeps the single orientation carried by the crack's own frame.
+
+function rve_isotropic(ε)
+    r = RVE(:SOLID)
+    add_matrix!(r, Spheroid(1.0), Dict(:C => C₀))
+    add_phase!(
+        r, :CRACK, PennyCrack(1.0), Dict(:C => C₀);
+        density = ε, symmetrize = IsoSymmetrize()
+    )
+    return r
+end
+
+function rve_parallel(ε; angles = (π / 4, π / 3))
+    r = RVE(:SOLID)
+    add_matrix!(r, Spheroid(1.0), Dict(:C => C₀))
+    add_phase!(
+        r, :CRACK, PennyCrack(1.0; euler_angles = angles), Dict(:C => C₀);
+        density = ε
+    )
+    return r
+end
+
+## The two angles of `euler_angles` are read here as the polar and azimuthal
+## angles of the crack normal, which is the third column of the crack frame.
+crack = PennyCrack(1.0; euler_angles = (π / 4, π / 3))
+normal = [TensND.vecbasis(crack.basis, :cov)[i, 3] for i in 1:3]
+@printf "crack normal : (%.6f, %.6f, %.6f)\n" normal...
+
+# ## Isotropic distribution
+#
+# Three schemes, and they do not merely differ in value — they differ in
+# *behavior*. `MoriTanaka` and `DiluteDual` coincide exactly here: a crack has
+# no volume, so the Mori-Tanaka denominator reduces to the identity and the
+# scheme collapses onto the dilute compliance estimate. That is not a bug, it is
+# what the crack limit does to the algebra.
+
+const SC = SelfConsistent(; abstol = 1.0e-8, maxiters = 400, select_best = true)
+const ASC = AsymmetricSelfConsistent(; abstol = 1.0e-8, maxiters = 400, select_best = true)
+
+kμ_iso(rve, scheme) = k_mu(best_fit_iso(homogenize(rve, scheme, :C)))
+
+for (name, scheme) in (("Mori-Tanaka", MoriTanaka()), ("DiluteDual", DiluteDual()),
+        ("SelfConsistent", SC), ("Asym. SC", ASC))
+    k, μ = kμ_iso(rve_isotropic(ε), scheme)
+    @printf "%-16s : k = %.6f   μ = %.6f   (3k, 2μ) = (%.6f, %.6f)\n" name k μ 3k 2μ
+end
+
+# Against Echoes 1.0 at the same density. Echoes reports an isotropic tensor
+# through its two Walpole coefficients ``(3k, 2\mu)``, which is what the last
+# column above prints:
+
+echoes_iso = Dict(                    # captured from a run of Echoes 1.0
+    "MT" => (k = 0.205254, μ = 0.218124),
+    "SC" => (k = 0.133754, μ = 0.139589),
+)
+
+for (name, scheme) in (("MT", MoriTanaka()), ("SC", SC))
+    k, μ = kμ_iso(rve_isotropic(ε), scheme)
+    ref = echoes_iso[name]
+    @printf "%s : Δk = %.2e   Δμ = %.2e\n" name abs(k - ref.k) abs(μ - ref.μ)
+end
+
+# Both agree to the last captured digit. Note that it is the **symmetric**
+# `SelfConsistent` that matches Echoes' `SC` on cracks, not
+# `AsymmetricSelfConsistent`: the two solve different fixed points, and the next
+# section is where that becomes visible.
+#
+# ## Where the two self-consistent forms part company
+#
+# `SelfConsistent` iterates on the stiffness, `AsymmetricSelfConsistent` on the
+# compliance. For cracks the compliance form is the classical
+# Budiansky–O'Connell construction, and it **percolates**: the effective moduli
+# reach zero at a finite crack density. The stiffness form does not.
+
+εs = range(0.0, 0.9; length = 91)
+curves = Dict(
+    "Mori-Tanaka" => [kμ_iso(rve_isotropic(e), MoriTanaka()) for e in εs],
+    "SelfConsistent" => [kμ_iso(rve_isotropic(e), SC) for e in εs],
+    "Asym. SC" => [kμ_iso(rve_isotropic(e), ASC) for e in εs],
+)
+
+## The percolation threshold of the compliance-form fixed point. `k` decays
+## linearly to zero and then sits on the solver floor (`abstol`), so asking
+## "where is it below 1e-8" would report the tolerance rather than the physics.
+## The zero of the last linear stretch is the threshold.
+function percolation_threshold(ks, εs; floor = 1.0e-4)
+    i = findlast(k -> k > floor, ks)
+    slope = (ks[i] - ks[i - 1]) / (εs[i] - εs[i - 1])
+    return εs[i] - ks[i] / slope
+end
+
+ε_perc = percolation_threshold([c[1] for c in curves["Asym. SC"]], collect(εs))
+@printf "compliance-form SC percolates at ε ≈ %.4f   (9/16 = %.4f)\n" ε_perc 9 / 16
+
+p_iso = plot(;
+    xlabel = "crack density ε", ylabel = "normalized modulus",
+    framestyle = :box, legend = :topright, size = (760, 480),
+    title = "Isotropic crack distribution (E₀ = 1, ν₀ = 0.2)"
+)
+for (name, color) in (("Mori-Tanaka", :black), ("SelfConsistent", :orange),
+        ("Asym. SC", :red))
+    plot!(p_iso, εs, [c[1] / k₀ for c in curves[name]]; label = "$name  k/k₀",
+        color = color, lw = 2)
+    plot!(p_iso, εs, [c[2] / μ₀ for c in curves[name]]; label = "$name  μ/μ₀",
+        color = color, lw = 2, ls = :dash)
+end
+vline!(p_iso, [9 / 16]; color = :gray, ls = :dot, lw = 2, label = "ε = 9/16")
+scatter!(p_iso, [ε, ε], [echoes_iso["MT"].k / k₀, echoes_iso["MT"].μ / μ₀];
+    marker = :circle, ms = 5, color = :black, label = "Echoes MT")
+scatter!(p_iso, [ε, ε], [echoes_iso["SC"].k / k₀, echoes_iso["SC"].μ / μ₀];
+    marker = :diamond, ms = 5, color = :orange, label = "Echoes SC")
+p_iso
+
+# The dotted line is ``9/16 = 0.5625``, the Budiansky–O'Connell density at which
+# a solid weakened by randomly oriented cracks loses all stiffness. The
+# compliance-form fixed point reproduces it: extrapolating the linear decay of
+# ``k`` to zero lands within a thousandth of ``9/16``. Past that density
+# `AsymmetricSelfConsistent` sits on the solver tolerance — numerically zero,
+# which is the only admissible solution on that branch — and this is why the
+# chosen ``\varepsilon = 0.6`` gave a null result above while the other two
+# schemes still returned a finite medium.
+#
+# Beware of reading the threshold off the raw output rather than off the decay:
+# below it the returned moduli are the `abstol` floor of the fixed-point solver,
+# so a test of the form `k < 1e-8` reports the tolerance, not the physics.
+#
+# ## Parallel cracks
+#
+# One orientation, so the effective tensor is transversely isotropic about the
+# crack normal. Reading it back needs one convention to be clear, and it is the
+# one that trips people up:
+
+C_par = homogenize(rve_parallel(ε), MoriTanaka(), :C)
+typeof(C_par)
+
+# The result is a `TensRotated`: it **carries its own frame**. `TensND.KM` then
+# returns the components in *that* frame — the crack frame — not in the global
+# one. Both are useful, and they are different matrices:
+
+C_local = TensND.KM(C_par)                              # crack frame
+C_global = TensND.KM(TensND.components_canon(C_par))    # global frame
+round.(C_local; digits = 6)
+
+# In the crack frame the transverse isotropy is plain: the 3-axis is the normal,
+# the ``(1,2)`` block is the crack plane, and the last two diagonal entries are
+# the out-of-plane and in-plane shears.
+
+round.(C_global; digits = 6)
+
+# The global matrix is full, and it is the one to compare against another code
+# that knows nothing of the crack frame. The five Walpole coefficients — the
+# reporting form Echoes prints as `Param(size=5)` — come straight from the local
+# matrix:
+
+walpole = TensND.ti_params_from_KM(C_local)
+round.(collect(walpole); digits = 6)
+
+# Against Echoes 1.0, same problem, same density:
+
+echoes_parallel = [0.251762, 1.28147, 0.0890113, 0.833333, 0.344036]
+@printf "max |Δ| on the five Walpole coefficients : %.2e\n" maximum(
+    abs.(collect(walpole) .- echoes_parallel)
+)
+
+# The fourth coefficient is exactly ``2\mu_0 = 0.8333``: the shear that acts in
+# the crack plane is not relaxed by an opening at all, whatever the density. That
+# is a useful check that the orientation survived the whole pipeline.
+#
+# !!! warning "One scheme is unavailable here"
+#     `SelfConsistent` on a **single-orientation** crack phase raises a
+#     `SingularException`: its strain-concentration tensor degenerates when the
+#     inclusion has no volume and no orientation average smooths it. Use
+#     `AsymmetricSelfConsistent`, as the [cracks manual](@ref man-cracks)
+#     prescribes — bearing in mind, from the previous section, that it is a
+#     different fixed point from Echoes' `SC`.
+
+try
+    homogenize(rve_parallel(ε), SC, :C)
+catch err
+    println("SelfConsistent : ", first(sprint(showerror, err), 60))
+end
+
+C_par_asc = homogenize(rve_parallel(ε), ASC, :C)
+round.(collect(TensND.ti_params_from_KM(TensND.KM(C_par_asc))); digits = 6)
+
+# ## Isotropic against parallel, at equal density
+#
+# The last comparison is the point of the whole page: same cracks, same
+# ``\varepsilon``, and a Young's modulus that depends on the direction it is
+# measured in only in the second case.
+
+function young_along(C, d)
+    ## Uniaxial stress along the unit vector `d`; E = σ / ε_dd.
+    S = inv(Array(TensND.components_canon(C)) |> A -> TensND.KM(TensND.Tens(A)))
+    e = [d[1]^2, d[2]^2, d[3]^2, √2 * d[2] * d[3], √2 * d[1] * d[3], √2 * d[1] * d[2]]
+    return 1 / (e' * S * e)
+end
+
+C_iso = homogenize(rve_isotropic(ε), MoriTanaka(), :C)
+angles = range(0, π; length = 181)
+## Directions swept in the plane containing the crack normal.
+t̂ = normalize(cross(collect(normal), [0.0, 0.0, 1.0]))
+dirs = [cos(a) .* collect(normal) .+ sin(a) .* t̂ for a in angles]
+
+p_dir = plot(;
+    proj = :polar, size = (620, 560), legend = :bottomleft,
+    title = "Young's modulus in the plane of the crack normal, ε = $ε"
+)
+plot!(p_dir, angles, [young_along(C_iso, d) for d in dirs];
+    lw = 2.5, color = :black, label = "isotropic distribution")
+plot!(p_dir, angles, [young_along(C_par, d) for d in dirs];
+    lw = 2.5, color = :red, label = "parallel cracks")
+p_dir
+
+# At ``a = 0`` the direction is the crack normal, where the parallel population
+# is at its softest; at ``a = \pi/2`` it lies in the crack plane, where opening
+# contributes nothing and the modulus is close to the intact one. The isotropic
+# distribution flattens that contrast into a single number — the same amount of
+# cracking, spread over every orientation.
+
+const figdir = joinpath(@__DIR__, "figures")                          #jl
+isdir(figdir) || mkdir(figdir)                                        #jl
+savefig(p_iso, joinpath(figdir, "86_crack_distributions_iso.png"))    #jl
+savefig(p_dir, joinpath(figdir, "86_crack_distributions_dir.png"))    #jl
+display(p_iso)                                                        #jl
+@printf "\nSaved : %s\n" joinpath(figdir, "86_crack_distributions_*.png")  #jl

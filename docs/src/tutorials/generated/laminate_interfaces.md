@@ -34,7 +34,7 @@ C₂ = TensISO{3}(3k₂, 2μ₂)
 K₁, K₂ = TensISO{3}(2.0), TensISO{3}(0.3)
 ````
 
-A bilayer parameterised by its interfaces and by an overall length scale.
+A bilayer parameterized by its interfaces and by an overall length scale.
 
 ````@example laminate_interfaces
 function bilayer(; itf = PerfectInterface(), itf2 = PerfectInterface(), L = 1.0)

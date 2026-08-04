@@ -4,6 +4,33 @@ MeanFieldHom exposes the four **dilute localization tensors** of the
 Eshelby problem, together with the size-independent **stiffness and
 compliance contribution tensors** of Kachanov–Sevostianov.
 
+Everything on this page is one chain, and each link is a separate entry point —
+which is what makes it possible to plug a morphology in halfway through
+([custom inclusions](@ref man-custom-inclusions)):
+
+```mermaid
+%%{init: {"flowchart": {"useMaxWidth": false, "nodeSpacing": 26, "rankSpacing": 34}} }%%
+flowchart TB
+    GEO["inclusion shape<br/>+ orientation"]
+    C0["reference medium ℂ₀"]
+    P["ℙ = hill_tensor(shape, ℂ₀)"]
+    C1["inclusion stiffness ℂ₁"]
+    A["𝔸_εε = [𝕀 + ℙ:(ℂ₁−ℂ₀)]⁻¹"]
+    N["ℕ = (ℂ₁−ℂ₀):𝔸_εε<br/>ℍ = (𝕊₁−𝕊₀):𝔸_σσ"]
+    EFF["Δℂ = f ℕ<br/>Δ𝕊 = f ℍ"]
+
+    GEO --> P
+    C0 --> P
+    P --> A
+    C1 --> A
+    A --> N --> EFF
+
+    classDef inbox fill:#eceff1,stroke:#78909c,color:#263238
+    classDef comp fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+    class GEO,C0,C1 inbox
+    class P,A,N,EFF comp
+```
+
 ## Pivot formula
 
 For an inclusion `I` of stiffness ``\mathbb C_1`` embedded in an

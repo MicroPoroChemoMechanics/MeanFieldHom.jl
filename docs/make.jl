@@ -91,6 +91,7 @@ makedocs(;
         ],
         "Manual"  => [
             "manual/installation.md",
+            "manual/inclusion_gallery.md",
             "manual/ellipsoidal_inclusions.md",
             "manual/cylindrical_inclusions.md",
             "manual/cracks.md",
@@ -125,6 +126,7 @@ makedocs(;
             "Inclusions, geometries and orientation" => [
                 "tutorials/generated/hill_tensors.md",
                 "tutorials/cracks.md",
+                "tutorials/generated/crack_distributions.md",
                 "tutorials/fe_crack.md",
                 "tutorials/generated/layered_sphere.md",
                 "tutorials/generated/layered_spheroid_effective.md",
@@ -141,6 +143,7 @@ makedocs(;
                 "tutorials/viscoelasticity.md",
                 "tutorials/generated/freq_vs_time.md",
                 "tutorials/generated/alv_schemes.md",
+                "tutorials/generated/ageing_ages_aspect.md",
                 "tutorials/generated/alv_sensitivities.md",
                 "tutorials/generated/laminate_alv.md",
             ],

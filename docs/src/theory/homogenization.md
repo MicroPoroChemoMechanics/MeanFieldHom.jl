@@ -14,6 +14,15 @@ The Representative Volume Element (RVE) consists of:
   ``\mathbb C_i``, geometries ``\mathcal G_i``, and amounts
   ``f_i`` (volume fraction) or ``\varepsilon_i`` (crack density).
 
+![An RVE loaded by ``\underline u = \boldsymbol E\cdot\underline x`` is replaced by a sum of single-inclusion problems in the infinite matrix ``\mathbb C_m``, each loaded by ``\underline u = \boldsymbol E^0\cdot\underline x`` (from the Echoes book [echoes](@cite))](../assets/schemes/rve_decomposition.png)
+
+That picture *is* the mean-field approximation, and every scheme below is one
+answer to the single question it leaves open: **what is ``\boldsymbol E^0``, and
+in which medium is each inclusion embedded?** Take ``\boldsymbol E^0 = \boldsymbol E``
+and the matrix as the reference and you have the dilute estimate; require the
+matrix average to come out right and you have Mori–Tanaka; embed each inclusion
+in the *unknown* effective medium and you have the self-consistent scheme.
+
 For each inclusion the **dilute strain concentration tensor**
 ``\mathbb A_\mathrm{dil}^{(i)}`` and the **size-independent stiffness
 contribution** ``\mathbb N_i = (\mathbb C_i - \mathbb C_0):
@@ -43,12 +52,28 @@ the penny limit (`c → 0`) while their density stays finite.
 | **Maxwell** | ``\mathbb C_0 + \Sigma : (\mathbb I - \mathbb P_d : \Sigma)^{-1}`` with `P_d` the Hill tensor of the *outer distribution shape* |
 | **PCW** | identical algebraic form, distribution-shape-aware ensemble interpretation ([Ponte-Castañeda & Willis 1995](@cite ponte1995)) |
 
+The two right-hand entries differ from the first three in that a **second**
+shape enters, describing how the inclusions are *placed* rather than what they
+look like. Maxwell reads it as one equivalent inclusion swallowing a cluster;
+PCW reads it as a safety ellipsoid around each inclusion:
+
+| Maxwell | Ponte Castañeda–Willis |
+| :---: | :---: |
+| ![A cluster of inclusions is equivalent to a single inclusion Ω, both loaded remotely](../assets/schemes/rve_maxwell.png) | ![Each flat inclusion sits inside its own spatial-distribution ellipsoid](../assets/schemes/rve_pcw.png) |
+
 The **distribution shape** is stored at the RVE level (default: unit
 sphere ⇒ Mori-Tanaka limit). Any `AbstractInclusion` can be used; the
 hierarchy [`AbstractDistributionShape`](@ref) leaves room for a future
 `PairwiseDistribution` extension following [Willis 1982](@cite willis1982).
 
 ## Iterative schemes
+
+The one-shot schemes all need a phase to play the role of the matrix. When no
+phase does — a polycrystal, a granular assembly, a saturated foam — the
+reference medium has to be the effective medium itself, and the estimate becomes
+a fixed point:
+
+![No phase plays the role of a matrix: the reference medium is the effective medium being sought (from the Echoes book [echoes](@cite))](../assets/schemes/rve_self_consistent.png)
 
 | Scheme | Iteration |
 | --- | --- |

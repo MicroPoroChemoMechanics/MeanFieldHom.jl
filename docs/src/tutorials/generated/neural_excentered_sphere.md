@@ -5,7 +5,7 @@ EditURL = "../../../../scripts/85_neural_excentered_sphere.jl"
 # Replacing a finite-element solve by a neural surrogate
 
 The [ellipsoid pilot](neural_inclusion.md) proved the machinery against a
-closed form. This is the case it exists for: the **sphere with an off-centre
+closed form. This is the case it exists for: the **sphere with an off-center
 core** of [adessinaIJES2017](@cite), whose localization tensors have no
 analytic expression and come out of an axisymmetric Fourier finite-element
 solve ([`FEExcenteredSphere`](@ref)).
@@ -258,7 +258,7 @@ end
 ````
 
 The two columns agree, and neither is zero: the sensitivity of the effective
-stiffness to how far off centre the old aggregate sits is now a quantity one
+stiffness to how far off center the old aggregate sits is now a quantity one
 can compute — and optimize against.
 
 ---

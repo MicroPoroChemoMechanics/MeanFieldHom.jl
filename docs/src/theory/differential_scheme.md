@@ -9,6 +9,36 @@ incorporation trajectory ([Norris 1985](@cite norris1985)).
 
 ## Incorporation process
 
+The construction is a loop, and the loop is the scheme: what distinguishes it
+from Mori–Tanaka is not the dilute step — that step is the *same* — but the fact
+that the reference medium is updated after each one.
+
+```mermaid
+%%{init: {"flowchart": {"useMaxWidth": false, "nodeSpacing": 28, "rankSpacing": 38}} }%%
+flowchart TB
+    C["ℂ(τ)<br/>current effective medium"]
+    ADD["replace dφᵢ of it<br/>by each inclusion phase"]
+    HOM["dilute homogenization<br/>with ℂ(τ) as the matrix"]
+    NEXT["ℂ(τ + dτ) = ℂ(τ) + Σᵢ dφᵢ ℕᵢ(ℂ(τ))"]
+    OUT["ℂʰᵒᵐ = ℂ(1)"]
+
+    C --> ADD --> HOM --> NEXT
+    NEXT -- "τ &lt; 1" --> C
+    NEXT -- "τ = 1" --> OUT
+
+    classDef state fill:#e3f0fb,stroke:#1565c0,color:#0d3c61
+    classDef step fill:#eceff1,stroke:#78909c,color:#263238
+    classDef done fill:#d7f2d7,stroke:#2e7d32,color:#1b5e20
+    class C,NEXT state
+    class ADD,HOM step
+    class OUT done
+```
+
+Two things in that loop are worth naming before the algebra: the increments
+``\mathrm d\varphi_i`` are taken out of the *current medium*, not out of the
+original matrix, and the order in which the phases are grown is a free choice —
+the **trajectory**. Both are what makes the scheme path-dependent.
+
 The RVE holds a matrix (index `0`) and `N` inclusion phases, of final
 volume fractions ``f_i^\infty``. Each phase is grown along a fictitious
 incorporation time,
@@ -271,6 +301,49 @@ values (piecewise-linear):
 ```julia
 DifferentialScheme(; trajectory = Path(:I1 => τ -> τ^2, :I2 => τ -> 2τ - τ^2))
 ```
+
+### The three, side by side
+
+For two phases the trajectory is a curve in the ``(f_1, f_2)`` plane. All four
+curves below start at the origin and end at the same target
+``(f_1^\infty, f_2^\infty) = (0.25, 0.20)`` — so they describe the *same*
+material, and they will not give the same effective stiffness:
+
+```@setup diffpaths
+using Plots
+gr()  # headless backend; GKSwstype is set to "100" in make.jl
+```
+
+```@example diffpaths
+f1∞, f2∞ = 0.25, 0.20
+τ = range(0, 1; length = 201)
+
+p = plot(; xlabel = "f₁", ylabel = "f₂", framestyle = :box, legend = :topleft,
+    size = (620, 430), aspect_ratio = 1, xlims = (-0.01, 0.30), ylims = (-0.01, 0.30))
+
+# Proportional: the straight line to the target.
+plot!(p, f1∞ .* τ, f2∞ .* τ; lw = 2.5, c = :black, label = "Proportional")
+
+# Sequential (:I1 then :I2), and the reverse order — two sides of the rectangle.
+plot!(p, [0, f1∞, f1∞], [0, 0, f2∞]; lw = 2.5, c = :orange,
+    label = "Sequential (1 then 2)")
+plot!(p, [0, 0, f1∞], [0, f2∞, f2∞]; lw = 2.5, c = :seagreen, ls = :dash,
+    label = "Sequential (2 then 1)")
+
+# An arbitrary Path: f₁ ∝ τ², f₂ ∝ 2τ − τ².
+plot!(p, f1∞ .* τ .^ 2, f2∞ .* (2τ .- τ .^ 2); lw = 2.5, c = :red, ls = :dot,
+    label = "Path(τ², 2τ − τ²)")
+
+scatter!(p, [f1∞], [f2∞]; m = :star5, ms = 9, c = :black, label = "target")
+p
+```
+
+They all agree in the dilute limit — near the origin every curve is tangent to
+its own straight line and the first-order term is the same — and they separate
+like ``f`` at finite fractions. The spread is a *feature* of the scheme, not a
+numerical artifact: it is what makes the differential scheme able to represent a
+processing history, and it is measured in
+[Comparing loading-path trajectories](../tutorials/differential_loading_paths.md).
 
 ## Conduction and viscoelasticity
 

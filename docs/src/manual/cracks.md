@@ -1,5 +1,31 @@
 # [Cracks](@id man-cracks)
 
+A crack is an inclusion of **zero volume**: the ``c \to 0`` limit of an
+ellipsoid. Two consequences run through this page — the amount of cracking is a
+*density*, not a volume fraction, and everything is written in the crack's own
+frame ``(\hat{\underline{\ell}}, \hat{\underline{m}}, \hat{\underline{n}})``,
+whose third vector is the normal.
+
+```@setup mancracks
+using MeanFieldHom
+using TensND
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+```
+
+```@example mancracks
+plotly_scene(shape_traces(PennyCrack(1.0)); uid = "man-crack-penny", height = 400,
+    title = "Penny-shaped crack: a = b, c = 0, normal n̂")
+```
+
+```@example mancracks
+plotly_scene(shape_traces(RibbonCrack(0.5)); uid = "man-crack-ribbon", height = 400,
+    title = "Ribbon crack: half-width b, unbounded along ℓ̂")
+```
+
+The full set of shapes, tilted cracks included, is in
+[The inclusion zoo](@ref man-inclusion-gallery); the geometry and the symbols
+are defined in [Crack opening displacement](../theory/cod_tensors.md).
+
 ```julia
 using MeanFieldHom, TensND
 E, ν = 210.0, 0.3
@@ -76,10 +102,21 @@ C_eff = homogenize(rve, MoriTanaka(), :C)
 K_eff = homogenize(rve, MoriTanaka(), :K)
 ```
 
-For SC-type schemes on cracked RVEs use
-[`AsymmetricSelfConsistent`](@ref) — the symmetric `SelfConsistent`
-form does not handle cracks (its strain-concentration tensor is
-singular).
+For SC-type schemes on cracked RVEs, which form applies depends on the
+orientation distribution:
+
+- **single orientation** — the symmetric [`SelfConsistent`](@ref) raises a
+  `SingularException`: its strain-concentration tensor degenerates for a phase
+  with no volume and no orientation average to smooth it. Use
+  [`AsymmetricSelfConsistent`](@ref).
+- **isotropic or TI distribution** (`symmetrize = IsoSymmetrize()` or
+  `TISymmetrize(axis)`) — both forms run, and they solve **different fixed
+  points**: the symmetric one iterates on the stiffness, the asymmetric one on
+  the compliance. Only the latter is the classical Budiansky–O'Connell
+  construction, and only it percolates (at ``\varepsilon = 9/16`` for randomly
+  oriented penny cracks). Which one to pick is a modeling decision, and it is
+  worked out with numbers in
+  [Crack distributions: isotropic or parallel](@ref tut-crack-distributions).
 
 For the **time-dependent** (ALV) version with `Rn(t,t')` and
 `Rt(t,t')` ageing interface kernels, see the

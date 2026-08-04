@@ -1,5 +1,12 @@
 # [Ellipsoidal inclusions](@id man-ellipsoidal-inclusions)
 
+The ellipsoid is the one shape for which the strain is uniform inside the
+inclusion, which is what makes a Hill tensor exist at all
+([The Eshelby inclusion problem](../theory/eshelby_problem.md)). An
+[`Ellipsoid`](@ref) is built from its semi-axes, in any order — the constructor
+sorts them decreasing and permutes the local frame to match, so ``a \ge b \ge c``
+always holds downstream.
+
 ```julia
 using MeanFieldHom, TensND
 E, ν = 210e3, 0.3
@@ -15,6 +22,29 @@ hill_tensor(Ellipsoid(3.0, 1.0, 1.0), C₀)
 # 2D ellipse
 hill_tensor(Ellipsoid(1.0, 0.5), TensISO{2}(3*(λ+2μ/3), 2μ))
 ```
+
+The two aspect ratios that recur everywhere are the in-plane ``\eta = b/a`` and
+the flatness ``\omega = c/a``; both are read off the stored semi-axes:
+
+```@setup ellipsoids
+using MeanFieldHom
+using TensND
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+```
+
+```@example ellipsoids
+ell = Ellipsoid(3.0, 1.5, 0.8)
+a, b, c = ell.semi_axes
+(a = a, b = b, c = c, η = b / a, ω = c / a, shape = MeanFieldHom.shape_trait(ell))
+```
+
+```@example ellipsoids
+plotly_scene(shape_traces(ell); uid = "man-ellipsoid", height = 440,
+    title = "Ellipsoid(3.0, 1.5, 0.8) — dashed guides are the principal semi-axes")
+```
+
+Every other spheroid and the degenerate limits below are drawn side by side in
+[The inclusion zoo](@ref man-inclusion-gallery).
 
 ## Degenerate limits
 

@@ -33,6 +33,15 @@ with ``-1\le p\le 1`` and ``q\ge 1``. Surfaces of constant ``q`` are **confocal*
 spheroids — they share the same focal ring, which is what makes the layer
 geometry consistent — with axial and transverse semi-axes
 
+![The N-layer confocal geometry: domains ``\Omega_1 \dots \Omega_{N+1}`` separated by interfaces ``\mathcal I_1 \dots \mathcal I_N``](../assets/geometry/layered_ellipsoid.png)
+
+Confocality is a real constraint, and it has a visible consequence: since
+``\rho_a^2 - \rho_t^2 = c^2`` is the same for every layer, the **inner shells are
+more elongated than the outer ones**. A confocal stack cannot be a set of
+homothetic shells, and asking for one raises an error at construction. The
+interactive view in [The inclusion zoo](@ref man-inclusion-gallery) shows the
+effect on a three-layer prolate stack.
+
 ```math
 \rho_a = c\,q,
 \qquad

@@ -46,6 +46,9 @@ tensor of [Notation](notation.md#Ellipsoid-geometry),
 
 with ``(\underline{\ell},\underline{m})`` the in-plane unit vectors along the
 major and minor semi-axes ``a\ge b``, and ``\underline{n}`` the unit normal.
+
+![The crack frame and its semi-axes, before the flat limit is taken (from the Echoes book [echoes](@cite))](../assets/geometry/crack_frame.svg)
+
 Two families matter, and they are **genuinely different objects**, not two
 regimes of one:
 

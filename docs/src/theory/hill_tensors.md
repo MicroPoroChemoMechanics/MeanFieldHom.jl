@@ -15,6 +15,64 @@ This page follows the appendix *Hill polarization tensors* of the
 conventions and bibliography are aligned on it. Extensions specific to
 `MeanFieldHom` are flagged as such.
 
+Those columns are the shapes below — meridian sections, drawn to scale from the
+semi-axes each closed form is written in. Every one of them is a limit of the
+same triaxial ellipsoid, reached by sending an aspect ratio to `1`, `0` or `∞`:
+
+```@setup hillshapes
+using Plots
+gr()  # headless backend; GKSwstype is set to "100" in make.jl
+```
+
+```@example hillshapes
+θ = range(0, 2π; length = 240)
+const LIM = 1.45      # half-width of every panel, so the shapes compare directly
+
+function panel(title, col; shape = :ellipse, ρt = 1.0, ρa = 1.0, second = nothing)
+    p = plot(; aspect_ratio = 1, framestyle = :none, legend = false,
+        xlims = (-LIM, LIM), ylims = (-LIM, LIM),
+        title = title, titlefontsize = 8)
+    if shape === :ellipse
+        plot!(p, ρt .* cos.(θ), ρa .* sin.(θ); seriestype = :shape,
+            fillcolor = col, fillalpha = 0.45, lc = col, lw = 1.6)
+    elseif shape === :vstrip          # runs off the top and bottom: a fiber
+        plot!(p, [-ρt, ρt, ρt, -ρt], [-LIM, -LIM, LIM, LIM]; seriestype = :shape,
+            fillcolor = col, fillalpha = 0.45, lc = col, lw = 1.6)
+    elseif shape === :hstrip          # runs off both sides: a tunnel crack
+        plot!(p, [-LIM, LIM, LIM, -LIM], [-ρa, -ρa, ρa, ρa]; seriestype = :shape,
+            fillcolor = col, fillalpha = 0.9, lc = col, lw = 1.6)
+    end
+    # A second principal section, to show that all three semi-axes differ.
+    second === nothing || plot!(p, second[1] .* cos.(θ), second[2] .* sin.(θ);
+        lw = 1.3, ls = :dash, lc = col)
+    return p
+end
+
+panels = [
+    panel("sphere\nω = 1", :steelblue; ρt = 0.95, ρa = 0.95),
+    panel("prolate\nω = 3", :steelblue; ρt = 0.42, ρa = 1.26),
+    panel("oblate\nω = 0.3", :steelblue; ρt = 1.26, ρa = 0.38),
+    panel("triaxial\na > b > c", :steelblue; ρt = 1.26, ρa = 0.55,
+        second = (0.75, 0.55)),
+    panel("cylinder\na → ∞", :seagreen; shape = :vstrip, ρt = 0.50),
+    panel("penny crack\nω → 0", :sienna; ρt = 0.95, ρa = 0.035),
+    panel("ribbon crack\nη → 0", :sienna; shape = :hstrip, ρa = 0.035),
+]
+
+plot(panels...; layout = (1, 7), size = (980, 165), top_margin = 3Plots.mm)
+```
+
+Read the last three columns as limits, not as separate objects: the cylinder and
+the ribbon leave the panel because they are unbounded, and the two cracks are
+flat rather than thin. The dashed outline in the triaxial panel is the second
+principal section — the case where no two semi-axes coincide, and the only one
+that needs the general cubature.
+
+The **flat** limits on the right are the ones that need care: ``\mathbb{P}``
+stays finite there, but the object built on it, ``\mathbb{Q}``, degenerates in a
+controlled way — which is why the crack theory is written on ``\mathbb{Q}``
+([Crack opening displacement](cod_tensors.md)).
+
 ## Newton-potential integrals
 
 Three integrals over the unit sphere, depending on ``\boldsymbol{A}`` only,

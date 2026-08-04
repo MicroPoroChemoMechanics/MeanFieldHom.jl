@@ -30,6 +30,7 @@ and the one where the choice of scheme matters most.
 | :--- | :--- |
 | [Hill polarization tensors in practice](generated/hill_tensors.md) | `hill_tensor` on four geometries; residues vs cubature on an anisotropic matrix; the Eshelby tensor against its closed form; `P` → a dilute estimate |
 | [Cracks and crack density](cracks.md) | volume fraction → crack density; the COD tensor |
+| [Crack distributions: isotropic or parallel](generated/crack_distributions.md) | the same density, two orientation rules; where the two self-consistent forms part company and why one of them percolates at ε = 9/16; the local-versus-global frame of a `TensRotated` result |
 | [Layered spheres](generated/layered_sphere.md) | Hervé–Zaoui `n`-layer localization and layer averages |
 | [Layered spheroids: geometry and effective conductivity](generated/layered_spheroid_effective.md) | the confocal `n`-layer spheroid, the equivalent particle, harmonic-series accuracy |
 | [Imperfect interfaces: what they do to the local fields](generated/layered_spheroid_interfaces.md) | pointwise temperature and flux, streamlines, conductance sweep, 3-D view |
@@ -49,6 +50,7 @@ their volume-averaged concentration tensors instead.
 | [Viscoelastic composites](viscoelasticity.md) | complex moduli in the frequency domain; a first taste of ageing creep |
 | [Frequency or time?](generated/freq_vs_time.md) | the complex-modulus and time-domain ALV routes, cross-checked on the same non-ageing composite |
 | [Ageing viscoelastic schemes side by side](generated/alv_schemes.md) | Dilute / Mori-Tanaka / Maxwell / PCW on one creep test; the aspect ratio; where the distribution shape decides the answer |
+| [Ageing creep: loading age against inclusion shape](generated/ageing_ages_aspect.md) | ageing and morphology on the same output: three loading ages × three aspect ratios, and why the shape effect is an offset independent of the age |
 | [Derivatives through the ageing-viscoelastic pipeline](generated/alv_sensitivities.md) | `ForwardDiff` through the Volterra assembly: the `set_param` lens for RVE parameters, closure capture for moduli and relaxation times |
 
 ## Differentiation and solvers

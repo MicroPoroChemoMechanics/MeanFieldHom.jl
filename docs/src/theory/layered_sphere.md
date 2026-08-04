@@ -25,6 +25,21 @@ with **layer ``k`` occupying** ``r_{k-1} \le r < r_k``.  Layer 1 is the
 core, layer ``N`` is the outermost shell, and the composite sphere is
 embedded in an infinite matrix for ``r > r_N``.
 
+| The generalized Eshelby problem | The ``N = 2`` case: three-phase model |
+| :---: | :---: |
+| ![Concentric layered inclusion in an infinite matrix, loaded remotely](../assets/geometry/eshelby_generalized.png) | ![Pore, shell of stiffness ℂˢ, infinite medium of stiffness ℂʰᵒᵐ](../assets/geometry/three_phase_model.png) |
+
+The left-hand figure is what the recurrences below solve — a layered pattern in
+an infinite reference medium. The right-hand one is the historical special case:
+take ``N = 2``, a void core and a solid shell, and make the reference medium the
+*unknown* effective one, and the fixed point is Christensen–Lo. Because the
+strain is **not** uniform inside such a pattern, it has no Hill tensor at all;
+what it does have is a volume-averaged concentration tensor, and that is what
+every scheme consumes.
+
+An interactive view of the layered geometry is in
+[The inclusion zoo](@ref man-inclusion-gallery).
+
 Moduli ``(\mathbb C_1, \ldots, \mathbb C_N)`` are `TensISO{4,3}`
 (elasticity) or `TensISO{2,3}` (conductivity).  Interface conditions
 at each radius ``r_k`` are specified in an `NTuple{N, AbstractInterface}`

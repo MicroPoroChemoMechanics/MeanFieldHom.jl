@@ -100,7 +100,7 @@ let ell = Ellipsoid(1.0)
 end
 ````
 
-### The prolate spheroid — a long fibre
+### The prolate spheroid — a long fiber
 
 `a = 5, b = c = 1`. The answer must be transversely isotropic about the long
 axis, which is a free correctness check.

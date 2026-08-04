@@ -98,6 +98,21 @@ ratios recur:
   spheroid, depending on the page. **It is always redefined locally**, because
   the two usages differ.
 
+The figure below is drawn from an actual [`Ellipsoid`](@ref) instance, so the
+guides are the stored ``\rho_i`` in the stored frame — the same ones every
+closed form on the following pages is written in. Semi-axes
+``(a, b, c) = (3, 1.5, 0.8)``, hence ``\eta = 0.5`` and ``\omega \approx 0.27``.
+
+```@setup notation
+using MeanFieldHom
+include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+```
+
+```@example notation
+plotly_scene(shape_traces(Ellipsoid(3.0, 1.5, 0.8)); uid = "notation-ellipsoid",
+    height = 430, title = "Semi-axes a ≥ b ≥ c and the principal frame")
+```
+
 ## Storage: Kelvin–Mandel
 
 Order-2 and order-4 tensors are stored in the **Kelvin–Mandel** convention

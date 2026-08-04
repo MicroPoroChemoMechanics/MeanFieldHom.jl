@@ -51,6 +51,8 @@ const PUBLISHED_SCRIPTS = [
     "80_custom_inclusion_contract.jl" => "custom_inclusion_contract",
     "84_neural_inclusion_ellipsoid.jl" => "neural_inclusion",
     "85_neural_excentered_sphere.jl" => "neural_excentered_sphere",
+    "86_crack_distributions.jl" => "crack_distributions",
+    "87_ageing_ages_aspect.jl" => "ageing_ages_aspect",
 ]
 
 # `81_fe_crack_eshelby.jl`, `82_fe_crack_schemes.jl` and
