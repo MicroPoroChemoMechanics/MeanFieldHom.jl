@@ -29,12 +29,12 @@ function print_IA(IA, dim; label = "I^A")
     return @printf "  %-14s diag = [%s ]   sum = %.8f\n" label join([@sprintf " %10.7f" v for v in d]) sum(d)
 end
 
-const voigt3 = ((1, 1), (2, 2), (3, 3), (2, 3), (1, 3), (1, 2))
+const voigt3 = ((1, 1), (2, 2), (3, 3), (2, 3), (3, 1), (1, 2))
 const voigt2 = ((1, 1), (2, 2), (1, 2))
 
 function print_voigt(C, dim; label = "")
     vij = dim == 3 ? voigt3 : voigt2
-    lab = dim == 3 ? ["11", "22", "33", "23", "13", "12"] : ["11", "22", "12"]
+    lab = dim == 3 ? ["11", "22", "33", "23", "31", "12"] : ["11", "22", "12"]
     isempty(label) || println("  Voigt[$label]:")
     print("      ")
     for l in lab

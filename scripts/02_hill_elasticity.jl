@@ -41,8 +41,8 @@ const C_iso = TensISO{3}(3k_ref, 2μ_ref)
 # algebra of §5. Double contraction itself is TensND's `⊡`, used as `P ⊡ C_iso`
 # in §4; there is no need to write index loops for it.
 
-const voigt_idx = ((1, 1), (2, 2), (3, 3), (2, 3), (1, 3), (1, 2))
-const voigt_lab = ["11", "22", "33", "23", "13", "12"]
+const voigt_idx = ((1, 1), (2, 2), (3, 3), (2, 3), (3, 1), (1, 2))
+const voigt_lab = ["11", "22", "33", "23", "31", "12"]
 
 function print_voigt(C; label = "P", scale = 1.0e6, unit = "×10⁻⁶ MPa⁻¹")
     println("  Voigt[$label] ($unit):")

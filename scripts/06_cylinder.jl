@@ -29,8 +29,8 @@ const μ_ref = E_ref / (2 * (1 + ν_ref))
 const k_ref = λ_ref + 2μ_ref / 3
 const C_iso = TensISO{3}(3k_ref, 2μ_ref)
 
-const voigt_idx = ((1, 1), (2, 2), (3, 3), (2, 3), (1, 3), (1, 2))
-const voigt_lab = ["11", "22", "33", "23", "13", "12"]
+const voigt_idx = ((1, 1), (2, 2), (3, 3), (2, 3), (3, 1), (1, 2))
+const voigt_lab = ["11", "22", "33", "23", "31", "12"]
 
 function print_voigt(C; label = "P", scale = 1.0e6, unit = "×10⁻⁶ MPa⁻¹")
     println("  Voigt[$label] ($unit):")
