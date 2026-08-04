@@ -65,11 +65,14 @@ function plotly_scene(
         axes_visible::Bool = true,
     )
     vis = axes_visible ? "true" : "false"
-    ttl = isempty(title) ? "" : "title:{text:\"$title\"},"
+    ## Left-aligned: Plotly puts its modebar at the top right, and a centered
+    ## title long enough to be useful runs straight into it.
+    ttl = isempty(title) ? "" :
+        "title:{text:\"$title\",x:0.02,xanchor:\"left\",font:{size:13}},"
     return _plotly_html(
         uid, height,
         join(traces, ","),
-        """{height:$height, margin:{l:0,r:0,t:$(isempty(title) ? 10 : 40),b:0},
+        """{height:$height, margin:{l:0,r:0,t:$(isempty(title) ? 10 : 46),b:0},
             $ttl showlegend:$(showlegend),
             scene:{aspectmode:"$aspectmode",
                    xaxis:{title:"$xlabel",visible:$vis},

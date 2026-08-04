@@ -128,7 +128,7 @@ The shells are not a discretization of the geometry — the composite sphere is
 exact for any number of them. They are a discretization of the **plastic
 zone**: each shell carries its own secant modulus, so a plastic front moving
 outwards from the cavity is resolved shell by shell. Cut open, with the void
-core at the centre:
+core at the center:
 
 ````@example secant_elastoplasticity
 include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))

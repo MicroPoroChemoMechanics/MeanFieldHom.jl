@@ -20,11 +20,11 @@ semi-axes each closed form is written in. Every one of them is a limit of the
 same triaxial ellipsoid, reached by sending an aspect ratio to `1`, `0` or `∞`:
 
 ```@setup hillshapes
+# Drawn in a `@setup` block: this page is about the closed forms, and forty
+# lines of plotting boilerplate in front of a thumbnail strip would bury them.
 using Plots
 gr()  # headless backend; GKSwstype is set to "100" in make.jl
-```
 
-```@example hillshapes
 θ = range(0, 2π; length = 240)
 const LIM = 1.45      # half-width of every panel, so the shapes compare directly
 
@@ -56,19 +56,28 @@ panels = [
         second = (0.75, 0.55)),
     panel("cylinder\na → ∞", :seagreen; shape = :vstrip, ρt = 0.50),
     panel("penny crack\nω → 0", :sienna; ρt = 0.95, ρa = 0.035),
-    panel("ribbon crack\nη → 0", :sienna; shape = :hstrip, ρa = 0.035),
 ]
 
-plot(panels...; layout = (1, 7), size = (980, 165), top_margin = 3Plots.mm)
+strip = plot(panels...; layout = (1, 6), size = (900, 170), top_margin = 3Plots.mm)
 ```
 
-Read the last three columns as limits, not as separate objects: the cylinder and
-the ribbon leave the panel because they are unbounded, and the two cracks are
-flat rather than thin. The dashed outline in the triaxial panel is the second
+```@example hillshapes
+strip
+```
+
+Two of the six are limits rather than bounded bodies: the cylinder leaves the
+panel because it is unbounded along its axis, and the penny crack is *flat*
+rather than thin. The dashed outline in the triaxial panel is the second
 principal section — the case where no two semi-axes coincide, and the only one
 that needs the general cubature.
 
-The **flat** limits on the right are the ones that need care: ``\mathbb{P}``
+The **ribbon crack** is deliberately absent: it is the ``a\to\infty`` limit of
+the penny crack, so in a meridian section it draws exactly the same flat
+segment. What distinguishes it lies *in* the crack plane, which this view cannot
+show — hence the separate `RibbonCrack` type, and the ``\eta\to 0`` column of
+every table below.
+
+The **flat** limits are the ones that need care: ``\mathbb{P}``
 stays finite there, but the object built on it, ``\mathbb{Q}``, degenerates in a
 controlled way — which is why the crack theory is written on ``\mathbb{Q}``
 ([Crack opening displacement](cod_tensors.md)).

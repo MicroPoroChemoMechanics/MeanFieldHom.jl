@@ -310,11 +310,11 @@ curves below start at the origin and end at the same target
 material, and they will not give the same effective stiffness:
 
 ```@setup diffpaths
+# Drawn in a `@setup` block: the trajectories are the point, not the `plot!`
+# calls that draw them.
 using Plots
 gr()  # headless backend; GKSwstype is set to "100" in make.jl
-```
 
-```@example diffpaths
 f1∞, f2∞ = 0.25, 0.20
 τ = range(0, 1; length = 201)
 
@@ -335,6 +335,10 @@ plot!(p, f1∞ .* τ .^ 2, f2∞ .* (2τ .- τ .^ 2); lw = 2.5, c = :red, ls = :
     label = "Path(τ², 2τ − τ²)")
 
 scatter!(p, [f1∞], [f2∞]; m = :star5, ms = 9, c = :black, label = "target")
+nothing # hide
+```
+
+```@example diffpaths
 p
 ```
 

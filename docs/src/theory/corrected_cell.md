@@ -26,11 +26,11 @@ therefore carries a bias of order ``O\bigl((a/R)^3\bigr)``, which is why an
 uncorrected computation needs `R/a` between 10 and 40 before it can be trusted.
 
 ```@setup cell
+# Drawn in a `@setup` block: the subject of this page is the correction, not the
+# `Plots` calls that sketch its geometry.
 using Plots
 gr()  # headless backend; GKSwstype is set to "100" in make.jl
-```
 
-```@example cell
 # The geometry the correction is about: an inclusion of size a at the center of a
 # meshed ball of radius R, with the boundary condition applied on ∂Ω.
 R, a = 1.0, 0.24
@@ -54,6 +54,10 @@ annotate!(p, [(0.5a, -0.24, text("a", 11, :sienna)),
               (0.0, -0.62, text("Ω  (meshed)", 10, :gray35)),
               (0.0, 1.10, text("∂Ω :  u = E·x  +  ∇G(x) : (V ⟨p⟩)", 11, :black)),
               (0.0, -1.12, text("the second term is what the correction adds", 9, :gray45))])
+nothing # hide
+```
+
+```@example cell
 p
 ```
 
