@@ -58,7 +58,7 @@ nothing # hide
 ```
 
 ```@example cell
-p
+p # hide
 ```
 
 Without the dipole term the boundary carries the remote field alone, and the ball

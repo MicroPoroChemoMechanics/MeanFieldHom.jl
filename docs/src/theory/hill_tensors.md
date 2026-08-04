@@ -58,11 +58,11 @@ panels = [
     panel("penny crack\nω → 0", :sienna; ρt = 0.95, ρa = 0.035),
 ]
 
-strip = plot(panels...; layout = (1, 6), size = (900, 170), top_margin = 3Plots.mm)
+shape_strip = plot(panels...; layout = (1, 6), size = (900, 170), top_margin = 3Plots.mm)
 ```
 
 ```@example hillshapes
-strip
+shape_strip # hide
 ```
 
 Two of the six are limits rather than bounded bodies: the cylinder leaves the

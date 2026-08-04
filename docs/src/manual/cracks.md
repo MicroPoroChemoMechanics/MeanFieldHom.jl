@@ -112,10 +112,12 @@ orientation distribution:
 - **isotropic or TI distribution** (`symmetrize = IsoSymmetrize()` or
   `TISymmetrize(axis)`) — both forms run, and they solve **different fixed
   points**: the symmetric one iterates on the stiffness, the asymmetric one on
-  the compliance. Only the latter is the classical Budiansky–O'Connell
-  construction, and only it percolates (at ``\varepsilon = 9/16`` for randomly
-  oriented penny cracks). Which one to pick is a modeling decision, and it is
-  worked out with numbers in
+  the compliance. Both **percolate**, but not at the same crack density: for
+  randomly oriented penny cracks the compliance form reaches zero at the classical
+  Budiansky–O'Connell value ``\varepsilon = 9/16`` exactly, the stiffness one at
+  ``\varepsilon \approx 1.158`` — both independent of ``\nu_0``. Between the two thresholds they therefore
+  disagree qualitatively, not just numerically. Which one to pick is a modeling
+  decision, worked out with numbers in
   [Crack distributions: isotropic or parallel](@ref tut-crack-distributions).
 
 For the **time-dependent** (ALV) version with `Rn(t,t')` and

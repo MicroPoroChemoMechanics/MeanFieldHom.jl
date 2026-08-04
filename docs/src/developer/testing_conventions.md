@@ -82,3 +82,30 @@ Run coverage through `.github/scripts/coverage.jl` rather than the stock
 The stock processor misattributes lines inside generated functions and
 multi-line expressions — observed reporting ~59 % where the true figure is
 ~95 %. Trust the script's numbers over the action's.
+
+## Checking the documentation without a full build
+
+`docs/make.jl` re-executes every page and takes tens of minutes, most of it
+spent on pages nobody just edited. For the edit/check loop use the partial
+check instead — it runs only the `@setup` / `@example` / `@repl` blocks of the
+pages you name, one fresh module per block group, exactly as Documenter
+sandboxes them:
+
+```
+julia --project=docs docs/check_blocks.jl theory/hill_tensors.md manual/
+julia --project=docs docs/check_blocks.jl $(git diff --name-only -- 'docs/src/*.md')
+```
+
+It catches what breaks a build in practice: undefined names, a binding that
+shadows an import (`strip = ...` over `Base.strip`), state a block silently
+inherited from elsewhere, method errors. Exit status is non-zero on any failure.
+
+It does **not** replace the full build, which is still what validates
+cross-references, the `pages` tree, citations and the page-size thresholds.
+
+And neither of them can tell you that an *interactive* figure came out blank:
+Documenter reports nothing, and the HTML is well-formed either way. That needs a
+browser, with software WebGL enabled — the exact invocation is recorded at the
+end of `docs/check_blocks.jl`. Without those flags plotly.js reports "WebGL is
+not supported by your browser" and every 3-D scene renders as a gray box, which
+looks like a broken figure and is not one.

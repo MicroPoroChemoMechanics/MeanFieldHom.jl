@@ -339,7 +339,7 @@ nothing # hide
 ```
 
 ```@example diffpaths
-p
+p # hide
 ```
 
 They all agree in the dilute limit — near the origin every curve is tangent to
