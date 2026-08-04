@@ -56,7 +56,7 @@ the elastic ones.
 ## Relation to the Echoes manual
 
 `MeanFieldHom` is a pure-Julia reimplementation of the Eshelby/Hill machinery of
-the [Echoes manual](https://github.com/jeanfrancoisbarthelemy/echoes), and the
+the [Echoes manual](https://jfbarthelemy.github.io/echoes/), and the
 Hill-tensor pages follow its appendix closely — same expressions, same
 conventions, same bibliography. Two families of difference are flagged
 explicitly wherever they occur:

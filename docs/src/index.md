@@ -16,7 +16,7 @@ ageing linear viscoelasticity, all under one abstraction hierarchy, a shared
 numerical core, and forward-mode automatic differentiation throughout.
 
 `MeanFieldHom` is a pure-Julia reimplementation of the Eshelby/Hill machinery
-of the [Echoes](https://github.com/jeanfrancoisbarthelemy/echoes) C++/Python
+of the [Echoes](https://jfbarthelemy.github.io/echoes/) C++/Python
 codebase; see [From Echoes to MeanFieldHom](@ref man-from-echoes) for the translation guide
 and [Theory — reading path](theory/index.md) for the shared conventions and
 bibliography.

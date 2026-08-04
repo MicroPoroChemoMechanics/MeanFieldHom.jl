@@ -7,7 +7,7 @@ page where it appears.
 ## Tensor order is carried by the typeface
 
 The convention is that of the
-[Echoes manual](https://github.com/jeanfrancoisbarthelemy/echoes), so that
+[Echoes manual](https://jfbarthelemy.github.io/echoes/), so that
 formulas can be compared side by side with it.
 
 | Object | Typeset as | Example |

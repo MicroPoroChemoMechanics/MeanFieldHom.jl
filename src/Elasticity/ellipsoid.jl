@@ -333,7 +333,7 @@ Return the symmetric representative of the 2nd-order shape tensor
 of `ell`, expressed in the canonical frame.
 
 Note: the Echoes convention
-([eshelby_hill.qmd](https://github.com/jeanfrancoisbarthelemy/echoes))
+([eshelby_hill.qmd](https://jfbarthelemy.github.io/echoes/))
 allows ``\\mathbf A`` to be any invertible 2nd-order tensor — only the
 symmetric product ``\\mathbf A^{\\!T}\\!\\cdot\\mathbf A`` enters any
 Hill expression. MFH stores the symmetric representative for

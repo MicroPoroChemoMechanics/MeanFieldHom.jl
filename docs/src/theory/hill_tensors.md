@@ -11,7 +11,7 @@ Newton-potential integrals; every shape — triaxial ellipsoid, spheroid, sphere
 infinite cylinder — is one column of the same two tables.
 
 This page follows the appendix *Hill polarization tensors* of the
-[Echoes manual](https://github.com/jeanfrancoisbarthelemy/echoes); expressions,
+[Echoes manual](https://jfbarthelemy.github.io/echoes/); expressions,
 conventions and bibliography are aligned on it. Extensions specific to
 `MeanFieldHom` are flagged as such.
 
