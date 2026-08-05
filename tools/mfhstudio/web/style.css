@@ -1,0 +1,382 @@
+:root {
+  --bg: #ffffff;
+  --panel: #f7f8fa;
+  --line: #dfe3e8;
+  --ink: #1c2430;
+  --muted: #6b7684;
+  --accent: #2c6fb5;
+  --warn: #a5580f;
+  --bad: #b03030;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14181d;
+    --panel: #1b2028;
+    --line: #2c333d;
+    --ink: #e6eaf0;
+    --muted: #93a0b0;
+    --accent: #5aa2e8;
+    --warn: #e0a45c;
+    --bad: #e07070;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ── header ─────────────────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: .01em;
+}
+
+.spacer { flex: 1; }
+
+.file { display: flex; gap: 6px; align-items: center; }
+.file input { width: 34ch; }
+
+.badge {
+  font: 11px/1 var(--mono);
+  padding: 4px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.badge.ok { color: #2e7d32; border-color: #2e7d3255; }
+.badge.bad { color: var(--bad); border-color: #b0303055; }
+
+/* ── layout ─────────────────────────────────────────────────────── */
+
+main {
+  display: grid;
+  grid-template-columns: minmax(320px, 26%) minmax(300px, 36%) minmax(320px, 38%);
+  height: calc(100% - 45px);
+  min-height: 0;
+}
+
+section {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--line);
+}
+section:last-child { border-right: none; }
+
+#left { background: var(--panel); }
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 12px;
+  background: var(--panel);
+}
+.panel-head:first-child { border-top: none; }
+
+/* Plotly sizes itself to the container, so the container must be the one that
+   clips: without `overflow: hidden` the 3-D scene keeps its intrinsic height
+   and bleeds under the panel below it. */
+#view3d, #plot {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+#view3d { flex: 1 1 55%; }
+#plot { flex: 1 1 45%; }
+
+#stdout {
+  margin: 0;
+  padding: 8px 10px;
+  max-height: 26%;
+  overflow: auto;
+  font: 11.5px/1.4 var(--mono);
+  white-space: pre-wrap;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+#code {
+  margin: 0;
+  padding: 10px 12px;
+  flex: 1;
+  overflow: auto;
+  font: 12px/1.5 var(--mono);
+  white-space: pre;
+  tab-size: 4;
+}
+
+/* ── tabs ───────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.tabs button {
+  flex: 1;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  padding: 8px 6px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.tabs button.on { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+
+.tab { display: none; overflow-y: auto; padding: 10px; flex: 1; }
+.tab.on { display: block; }
+
+/* ── forms ──────────────────────────────────────────────────────── */
+
+.field { margin: 6px 0; }
+.field > label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+input, select, textarea, button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+input, select, textarea { width: 100%; }
+input[type=checkbox] { width: auto; }
+textarea { font-family: var(--mono); font-size: 12px; resize: vertical; }
+
+button { cursor: pointer; background: var(--panel); }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: #fff; border-color: transparent; }
+button.primary:hover { filter: brightness(1.08); }
+button.small { font-size: 11px; padding: 2px 6px; }
+
+.row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+.row > select { flex: 1; }
+.row > button { flex: 0 0 auto; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+
+h3 {
+  font-size: 12px;
+  margin: 14px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: var(--bg);
+}
+.card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.card > header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 0 6px;
+  border: none;
+  background: none;
+}
+.card > header b { flex: 1; font-size: 12px; }
+
+.tag {
+  font: 10px/1 var(--mono);
+  padding: 3px 6px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.tag.matrix { color: var(--accent); border-color: currentColor; }
+.tag.seam { color: var(--warn); border-color: currentColor; }
+
+.muted { color: var(--muted); font-weight: 400; font-size: 11px; }
+.problem { color: var(--bad); }
+
+.note {
+  font-size: 11px;
+  color: var(--muted);
+  border-left: 2px solid var(--line);
+  padding: 4px 8px;
+  margin: 6px 0;
+}
+
+.kept {
+  font: 11.5px/1.4 var(--mono);
+  white-space: pre;
+  overflow-x: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+
+/* ── scale graph ────────────────────────────────────────────────── */
+
+.graph {
+  flex: 0 0 auto;
+  height: 260px;
+  resize: vertical;
+  position: relative;
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle, var(--line) 1px, transparent 1px);
+  background-size: 18px 18px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  overflow: auto;
+  user-select: none;
+}
+
+.graph svg.edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.graph path.edge {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.graph path.edge.pending { stroke-dasharray: 5 4; opacity: .8; }
+.graph path.arrowhead, .graph .arrowhead { fill: var(--accent); stroke: none; }
+.graph path.edge-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.graph path.edge-hit.hot { stroke: var(--bad); opacity: .25; }
+
+.graph .node {
+  position: absolute;
+  min-width: 168px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  box-shadow: 0 2px 6px #0002;
+  padding-bottom: 6px;
+}
+.graph .node.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 2px 8px #0003; }
+
+.graph .node > header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+  cursor: grab;
+  background: none;
+}
+.graph .node > header:active { cursor: grabbing; }
+.graph .node > header b { flex: 1; font-size: 12px; }
+
+.graph .phase {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px 0;
+}
+.graph .pill {
+  font: 10px/1 var(--mono);
+  padding: 3px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.graph .pill.matrix { color: var(--accent); border-color: currentColor; }
+
+.graph .port {
+  font: 10px/1 var(--mono);
+  border-radius: 8px;
+  cursor: crosshair;
+}
+.graph .port.in {
+  padding: 3px 7px;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+}
+.graph .port.in.linked { border-style: solid; border-color: var(--warn); color: var(--warn); }
+.graph .port.in.target { border-color: var(--accent); background: var(--accent); color: #fff; }
+.graph .port.out {
+  position: absolute;
+  right: -7px;
+  top: 12px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+.graph .port.out:hover { transform: scale(1.18); }
+
+
+
+/* ── toast ──────────────────────────────────────────────────────── */
+
+#toast {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 20;
+}
+#toast div {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  max-width: 46ch;
+  box-shadow: 0 6px 18px #0003;
+}
+#toast div.bad { background: var(--bad); color: #fff; }

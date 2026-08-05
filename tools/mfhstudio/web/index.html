@@ -1,0 +1,85 @@
+<meta charset="utf-8">
+<title>MFH Studio</title>
+<link rel="stylesheet" href="/style.css">
+
+<header>
+  <h1>MFH&nbsp;Studio</h1>
+  <div class="file">
+    <input id="path" type="text" spellcheck="false" placeholder="path/to/script.jl">
+    <button id="open">Open</button>
+    <button id="save" class="primary">Save</button>
+  </div>
+  <div class="spacer"></div>
+  <span id="sidecar" class="badge" title="Julia sidecar">starting…</span>
+  <button id="run" class="primary">Run</button>
+</header>
+
+<main>
+  <!-- ── left: the model ─────────────────────────────────────────── -->
+  <section id="left">
+    <nav class="tabs">
+      <button data-tab="scales" class="on">Scales</button>
+      <button data-tab="sweep">Sweep</button>
+      <button data-tab="alv">Viscoelastic</button>
+      <button data-tab="params">Constants</button>
+      <button data-tab="kept">Kept</button>
+    </nav>
+
+    <div class="tab on" id="tab-scales">
+      <div class="row">
+        <select id="cell-select"></select>
+        <button id="cell-add" title="Add a scale">+</button>
+        <button id="cell-del" title="Remove this scale">−</button>
+      </div>
+      <div class="field">
+        <label>Scale name</label>
+        <input id="cell-name" type="text" spellcheck="false">
+      </div>
+      <div class="field">
+        <label>Matrix phase</label>
+        <input id="cell-matrix" type="text" spellcheck="false">
+      </div>
+      <h3>Phases <button id="phase-add" class="small">+ phase</button></h3>
+      <div id="phases"></div>
+    </div>
+
+    <div class="tab" id="tab-sweep"></div>
+    <div class="tab" id="tab-alv"></div>
+    <div class="tab" id="tab-params"></div>
+    <div class="tab" id="tab-kept"></div>
+  </section>
+
+  <!-- ── middle: 3-D and results ─────────────────────────────────── -->
+  <section id="middle">
+    <div class="panel-head" id="graph-head" hidden>
+      <span>Scales</span>
+      <span class="muted">drag a box to move it · drag the blue dot onto a
+        property slot to feed it from that scale · click a connector to detach</span>
+    </div>
+    <div id="graph" class="graph" hidden></div>
+    <div class="panel-head">
+      <span>Shape</span>
+      <label class="inline"><input type="checkbox" id="cutaway" checked> cut-away</label>
+      <span id="shape-label" class="muted"></span>
+    </div>
+    <div id="view3d"></div>
+    <div class="panel-head"><span>Results</span></div>
+    <div id="plot"></div>
+    <pre id="stdout"></pre>
+  </section>
+
+  <!-- ── right: the script ───────────────────────────────────────── -->
+  <section id="right">
+    <div class="panel-head">
+      <span>Julia</span>
+      <span id="problems" class="muted"></span>
+    </div>
+    <pre id="code"></pre>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script src="/vendor/plotly.min.js"></script>
+<script src="/graph.js"></script>
+<script src="/app.js"></script>

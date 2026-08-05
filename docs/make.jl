@@ -99,6 +99,8 @@ makedocs(;
             "manual/fe_inclusions.md",
             "manual/neural_inclusions.md",
             "manual/from_echoes.md",
+            "manual/echoes2mfh.md",
+            "manual/mfhstudio.md",
             "manual/conductivity.md",
             "manual/schemes.md",
             "manual/laminates.md",
