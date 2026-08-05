@@ -102,7 +102,19 @@ function jnum(v) {
   return Number.isInteger(v) ? v.toFixed(1) : String(v);
 }
 
-/** The Julia expression for a phase's geometry, for the 3-D preview. */
+/** `; euler_angles = (…)` for the preview, empty when the shape is unrotated. */
+function anglesExpr(g) {
+  const a = (g.euler_angles || []).filter((x) => x !== "" && x != null);
+  if (!a.length) return "";
+  const vals = a.map(jnum).join(", ");
+  return a.length === 1 ? `; euler_angles = (${vals},)` : `; euler_angles = (${vals})`;
+}
+
+/** The Julia expression for a phase's geometry, for the 3-D preview.
+ *
+ * The orientation belongs here: a preview that drew every inclusion in the
+ * canonical frame would quietly disagree with the script it is previewing.
+ */
 function geomExpr(ph) {
   if (!ph) return "";
   const g = ph.geometry, a = g.args || {};
@@ -110,13 +122,14 @@ function geomExpr(ph) {
     const v = a[k];
     return jnum(v === undefined || v === "" ? d : v);
   };
+  const rot = anglesExpr(g);
   switch (g.kind) {
-    case "spheroid": return `Spheroid(${n("omega", 1)})`;
-    case "ellipsoid": return `Ellipsoid(${n("a", 1)}, ${n("b", 1)}, ${n("c", 1)})`;
-    case "cylinder": return `Cylinder(${n("b", 1)}, ${n("c", 1)})`;
-    case "penny_crack": return `PennyCrack(${n("a", 1)})`;
-    case "elliptic_crack": return `EllipticCrack(${n("a", 1)}, ${n("b", 0.5)})`;
-    case "ribbon_crack": return `RibbonCrack(${n("b", 1)})`;
+    case "spheroid": return `Spheroid(${n("omega", 1)}${rot})`;
+    case "ellipsoid": return `Ellipsoid(${n("a", 1)}, ${n("b", 1)}, ${n("c", 1)}${rot})`;
+    case "cylinder": return `Cylinder(${n("b", 1)}, ${n("c", 1)}${rot})`;
+    case "penny_crack": return `PennyCrack(${n("a", 1)}${rot})`;
+    case "elliptic_crack": return `EllipticCrack(${n("a", 1)}, ${n("b", 0.5)}${rot})`;
+    case "ribbon_crack": return `RibbonCrack(${n("b", 1)}${rot})`;
     case "layered_sphere": {
       const r = (g.layers || []).map((l) => jnum(l.radius));
       if (!r.length) return "";
@@ -277,8 +290,64 @@ function geometryEditor(ph) {
         }))
       )));
   }
+  if (form && form.angles) box.append(anglesEditor(g, form.angles));
   if (form && form.layered) box.append(layersEditor(g));
   return box;
+}
+
+/** Euler angles, as many as the shape has.
+ *
+ * Radians, because that is what MeanFieldHom takes and what the generated
+ * script must contain: converting here would either put `deg2rad(...)` in the
+ * script or leave an opaque decimal in it, and neither reads back cleanly.
+ * The degree equivalent is shown beside the field instead.
+ */
+const ANGLE_NAMES = ["θ", "φ", "ψ"];
+
+function anglesEditor(g, count) {
+  g.euler_angles = g.euler_angles || [];
+  const deg = (v) => {
+    const x = parseFloat(v);
+    return isFinite(x) ? `${(x * 180 / Math.PI).toFixed(1)}°` : "";
+  };
+  const box = el("div", {},
+    el("h3", {}, "Orientation",
+      el("button", {
+        class: "small",
+        title: "Back to the canonical frame",
+        onclick: () => { g.euler_angles = []; push(); },
+      }, "reset")),
+    el("div", { class: "note" },
+      "ZYZ Euler angles in radians. " + (count === 2
+        ? "θ and φ point the symmetry axis."
+        : "θ, φ, ψ orient the principal axes."))
+  );
+  const grid = el("div", { class: count > 2 ? "grid3" : "grid2" });
+  for (let i = 0; i < count; i++) {
+    const cur = g.euler_angles[i];
+    grid.append(field(
+      `${ANGLE_NAMES[i]} (rad) ${deg(cur)}`,
+      input(cur ?? "", (v) => {
+        const t = v.trim();
+        // Keep the array dense up to the last angle the user set: MFH takes a
+        // tuple of 0-3 and reads it positionally.
+        g.euler_angles[i] = t === "" ? 0.0 : (isFinite(+t) ? +t : t);
+        while (g.euler_angles.length && isTrailingZero(g.euler_angles)) {
+          g.euler_angles.pop();
+        }
+        push();
+      })
+    ));
+  }
+  box.append(grid);
+  return box;
+}
+
+/** A trailing exact zero carries no information: dropping it keeps the
+ *  generated call short and the canonical frame free of `euler_angles`. */
+function isTrailingZero(arr) {
+  const last = arr[arr.length - 1];
+  return last === 0 || last === 0.0;
 }
 
 function layersEditor(g) {

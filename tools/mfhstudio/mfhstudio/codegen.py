@@ -251,8 +251,10 @@ class CodeGen:
         v = lambda k, d=0.0: (a[k] if isinstance(a.get(k), str) else _fnum(a.get(k, d)))
         ang = ""
         if g.euler_angles:
+            # Angles are physical quantities: a bare `0` next to `0.5` would
+            # make the tuple `Tuple{Int, Float64}`.
             vals = ", ".join(
-                x if isinstance(x, str) else _num(x) for x in g.euler_angles
+                x if isinstance(x, str) else _fnum(x) for x in g.euler_angles
             )
             ang = f"; euler_angles = ({vals},)" if len(g.euler_angles) == 1 else f"; euler_angles = ({vals})"
 

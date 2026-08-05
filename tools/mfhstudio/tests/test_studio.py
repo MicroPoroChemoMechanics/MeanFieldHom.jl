@@ -62,6 +62,42 @@ def test_solver_options_attach_to_the_scheme():
     assert "homogenize(cell, scheme, :C)" in src
 
 
+def test_orientation_reaches_the_generated_call():
+    c = Cell(name="r", matrix_name="M", phases=[
+        Phase(name="M", is_matrix=True, properties=[Property()]),
+        Phase(name="I", amount=0.2, geometry=Geometry(
+            kind="spheroid", args={"omega": 0.3}, euler_angles=[0.7, 1.1])),
+    ])
+    src = generate(Model(cells=[c]), embed_model=False)
+    assert "Spheroid(0.3; euler_angles = (0.7, 1.1))" in src
+
+
+def test_a_single_angle_gets_the_tuple_comma():
+    c = Cell(name="r", matrix_name="M", phases=[
+        Phase(name="M", is_matrix=True, properties=[Property()]),
+        Phase(name="I", amount=0.2, geometry=Geometry(
+            kind="spheroid", args={"omega": 0.3}, euler_angles=[1.2])),
+    ])
+    assert "euler_angles = (1.2,)" in generate(Model(cells=[c]), embed_model=False)
+
+
+def test_angles_are_floats_like_every_other_size():
+    """A bare `0` next to `1.1` would make the tuple `Tuple{Int, Float64}`."""
+    c = Cell(name="r", matrix_name="M", phases=[
+        Phase(name="M", is_matrix=True, properties=[Property()]),
+        Phase(name="I", amount=0.2, geometry=Geometry(
+            kind="ellipsoid", args={"a": 2, "b": 1, "c": 0.5},
+            euler_angles=[0, 1.1, 0.3])),
+    ])
+    src = generate(Model(cells=[c]), embed_model=False)
+    assert "euler_angles = (0.0, 1.1, 0.3)" in src
+
+
+def test_no_angles_means_no_keyword():
+    src = generate(default_model(), embed_model=False)
+    assert "euler_angles" not in src
+
+
 def test_geometry_sizes_are_floats():
     """An NTuple mixing Int and Float64 fails to dispatch."""
     g = Geometry(kind="layered_sphere", layers=[

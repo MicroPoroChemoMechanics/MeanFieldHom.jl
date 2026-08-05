@@ -156,6 +156,7 @@ and written back, and no line may be lost.
   Scripts using them open and are preserved, but those parts are not editable.
 - Viscoelastic properties are entered as Julia expressions rather than through
   a form.
+
 - An inner `Homogenized` cannot sit inside an ALV chain (MeanFieldHom cannot
   re-express a homogenized result as a `ViscoLaw`); the interface blocks the
   combination.

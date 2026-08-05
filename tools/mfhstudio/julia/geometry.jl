@@ -93,10 +93,13 @@ function axis_guides(R, lengths, names)
     return out
 end
 
+# `vecbasis`, not `get_array`: the latter is for tensors and throws on a basis.
+# It used to be called here inside a `try`, so every rotated inclusion was drawn
+# unrotated — the picture disagreed with the script and nothing said so.
 _rot(b) = Matrix{Float64}(I, 3, 3)  # canonical fallback
 function _rot(ell::MeanFieldHom.Ellipsoid)
     try
-        return Matrix{Float64}(MeanFieldHom.TensND.get_array(ell.basis))
+        return Matrix{Float64}(MeanFieldHom.TensND.vecbasis(ell.basis))
     catch
         return Matrix{Float64}(I, 3, 3)
     end
@@ -118,7 +121,7 @@ end
 function traces(cyl::MeanFieldHom.Cylinder; guides::Bool = true, length_shown = 6.0, kw...)
     b, c = Float64.(cyl.semi_axes)
     R = try
-        Matrix{Float64}(MeanFieldHom.TensND.get_array(cyl.basis))
+        Matrix{Float64}(MeanFieldHom.TensND.vecbasis(cyl.basis))
     catch
         Matrix{Float64}(I, 3, 3)
     end
@@ -142,7 +145,7 @@ end
 
 function traces(cr::MeanFieldHom.EllipticCrack; kw...)
     R = try
-        Matrix{Float64}(MeanFieldHom.TensND.get_array(cr.basis))
+        Matrix{Float64}(MeanFieldHom.TensND.vecbasis(cr.basis))
     catch
         Matrix{Float64}(I, 3, 3)
     end
@@ -151,7 +154,7 @@ end
 
 function traces(cr::MeanFieldHom.RibbonCrack; length_shown = 6.0, kw...)
     R = try
-        Matrix{Float64}(MeanFieldHom.TensND.get_array(cr.basis))
+        Matrix{Float64}(MeanFieldHom.TensND.vecbasis(cr.basis))
     catch
         Matrix{Float64}(I, 3, 3)
     end

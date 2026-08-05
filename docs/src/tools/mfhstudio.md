@@ -51,12 +51,12 @@ Three columns: the model on the left, the shape and the results in the middle,
 the Julia on the right. The script is regenerated on every edit, so what is
 displayed is exactly what **Save** writes.
 
-The **Shape** panel draws the geometry of the phase currently selected — one
-inclusion, drawn from its semi-axes and orientation. It is not a picture of the
-microstructure: mean-field homogenization never builds one, and nothing here
-places inclusions in a volume or shows their spatial distribution. What the
-panel is good for is checking that the shape you described is the shape you
-meant.
+The **Shape** panel draws the geometry of the phase currently selected — a
+single inclusion, from its semi-axes and orientation. It is not a picture of the
+microstructure:
+mean-field homogenization never builds one, and nothing here places inclusions
+in a volume or shows how they are distributed. What the panel is good for is
+checking that the shape you described is the shape you meant.
 
 The screenshot shows the porous benchmark after pressing **Run** — a solid
 matrix ``(k, \mu) = (72, 32)`` with spherical pores swept over
@@ -71,6 +71,13 @@ Two conventions the interface removes rather than documents:
 - Moduli are entered as physical ``(k, \mu)`` or ``(E, \nu)`` and emitted
   through [`iso_stiffness`](@ref). The raw `TensISO{3}` constructor, which
   takes ``(3k, 2\mu)``, never appears.
+
+Shapes that have one carry an **Orientation** block: ZYZ Euler angles in
+radians, as many as the shape admits — two for a spheroid or a penny crack,
+which only need their axis pointed, three for an ellipsoid or an elliptic
+crack. The field shows the degree equivalent beside the label, and the drawing
+follows, so a mis-typed angle is visible rather than hidden until the numbers
+come out wrong.
 
 Solver options follow the scheme rather than `homogenize`, and the list offered
 for each scheme is read from the scheme itself — `SelfConsistent` shows
