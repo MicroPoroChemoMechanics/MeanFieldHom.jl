@@ -195,6 +195,63 @@ def f():
     assert out.index("local C") < out.index("try")
 
 
+def test_non_string_plot_label_is_stringified():
+    """matplotlib stringifies any label; Plots.jl raises a `length`
+    MethodError instead. `label=sch` over scheme constants is the common case."""
+    src = """
+from echoes import *
+import matplotlib.pyplot as plt
+for sch in [MT, SC]:
+    plt.plot(x, y, label=sch)
+"""
+    out = translate(src)
+    assert "label = mfh_label(sch)" in out
+
+
+def test_string_literal_label_is_not_wrapped():
+    src = """
+import matplotlib.pyplot as plt
+plt.plot(x, y, label='HF')
+"""
+    out = translate(src)
+    assert 'label = "HF"' in out
+    assert "string(" not in out
+
+
+def test_scheme_label_is_the_short_type_name():
+    """`string(DifferentialScheme(...))` dumps the whole solver configuration
+    into the legend and squashes the axes."""
+    src = """
+from echoes import *
+import matplotlib.pyplot as plt
+for sch in [MT, DIFF]:
+    plt.plot(x, y, label=sch)
+"""
+    out = translate(src)
+    assert (
+        "mfh_label(s::MeanFieldHom.HomogenizationScheme) = "
+        "string(nameof(typeof(s)))" in out
+    )
+
+
+def test_unlabelled_series_stays_out_of_the_legend():
+    """matplotlib legends only labelled series; Plots.jl invents `y1`, `y2`, …"""
+    src = """
+import matplotlib.pyplot as plt
+plt.plot(x, y)
+"""
+    out = translate(src)
+    assert 'label = ""' in out
+
+
+def test_preamble_finds_the_project_from_anywhere():
+    """A translated script is dropped wherever the user wants, so a fixed
+    `joinpath(@__DIR__, "..")` is wrong outside `scripts/`."""
+    out = translate("x=1\n")
+    assert 'occursin("MeanFieldHom", read(pt, String))' in out
+    assert 'Pkg.activate(joinpath(@__DIR__, ".."))' not in out
+
+
 # ---------------------------------------------------------------------------
 # Refusals -- these must NOT silently translate
 # ---------------------------------------------------------------------------

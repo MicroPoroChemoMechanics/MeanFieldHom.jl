@@ -47,6 +47,13 @@ PHASE_CTORS = {
     "inclusion_generic_ellipsoid": "ellipsoid",
 }
 
+def _is_string_literal(node: ast.expr) -> bool:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return True
+    # an f-string is a string too
+    return isinstance(node, ast.JoinedStr)
+
+
 HOMOGENIZE_FNS = {
     "homogenize": "elastic",
     "homogenize_visco": "alv",
@@ -1047,12 +1054,27 @@ class Extractor:
             key = {"label": "label", "color": "color", "linewidth": "lw",
                    "lw": "lw", "linestyle": "linestyle",
                    "marker": "marker"}.get(kw.arg)
-            if key:
-                kwargs[key] = JuliaExpr(self.tr.translate(kw.value))
+            if not key:
+                continue
+            code = self.tr.translate(kw.value)
+            # matplotlib stringifies whatever it is handed as a label; Plots.jl
+            # requires an actual string and fails with a `length` MethodError
+            # otherwise. `label=sch` over a list of scheme constants is the
+            # common case, and a plain `string` there would dump the scheme's
+            # entire configuration into the legend, so it gets its own helper.
+            if key == "label" and not _is_string_literal(kw.value):
+                code = f"mfh_label({code})"
+                self.script.needs_label_helper = True
+            kwargs[key] = JuliaExpr(code)
         if name in mapping.PLOT_SCALE_KW:
             for part in mapping.PLOT_SCALE_KW[name].split(", "):
                 k, _, v = part.partition(" = ")
                 kwargs[k] = JuliaExpr(v)
+        # matplotlib legends only the series that were given a label; Plots.jl
+        # invents `y1`, `y2`, … for the rest, which fills the legend with the
+        # companion curves the original deliberately left out.
+        if "label" not in kwargs:
+            kwargs["label"] = JuliaExpr('""')
         return PlotCall(
             func=mapping.PLOT_FUNCS[name],
             args=args,

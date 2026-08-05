@@ -302,6 +302,8 @@ class Script:
     needs_style_helper: bool = False
     #: True when `tensor(M)` needs run-time dispatch on the array shape
     needs_tensor_helper: bool = False
+    #: True when a plot label is not a string literal and needs shortening
+    needs_label_helper: bool = False
     #: plot objects the script creates itself (from plt.figure / plt.subplot)
     declared_axes: set[str] = field(default_factory=set)
     #: True when the original used a subplot grid, which Plots.jl declares

@@ -36,6 +36,26 @@ IND = "    "
 
 RULE = "# " + "=" * 77
 
+# Activating a fixed `joinpath(@__DIR__, "..")` only works for a script sitting
+# in `scripts/`. A translated script goes wherever the user puts it, so the
+# environment is located by walking upwards. If nothing is found the active
+# environment is left alone, which is what `julia --project=...` expects.
+_ACTIVATE = r"""
+import Pkg
+let d = @__DIR__
+    while true
+        pt = joinpath(d, "Project.toml")
+        if isfile(pt) && occursin("MeanFieldHom", read(pt, String))
+            Pkg.activate(d; io = devnull)
+            break
+        end
+        parent = dirname(d)
+        parent == d && break
+        d = parent
+    end
+end
+"""
+
 # The Echoes `tensor(...)` conventions, transcribed from the C++ sources and
 # checked numerically against TensND (agreement to 9e-16):
 #
@@ -137,6 +157,7 @@ class Emitter:
         self._params()
         self._builders()
         self._tensor_helper()
+        self._label_helper()
         self._style_helper()
         self._helpers()
         self._body()
@@ -186,10 +207,11 @@ class Emitter:
 
     def _preamble(self) -> None:
         mark = "  #jl" if self.literate else ""
-        self._w(f"import Pkg{mark}")
-        self._w(
-            f'Pkg.activate(joinpath(@__DIR__, ".."); io = devnull){mark}'
-        )
+        # A translated script can be dropped anywhere, so the environment is
+        # found by walking up from the script rather than assuming it sits one
+        # level below the project root the way `scripts/` does.
+        for line in _ACTIVATE.strip("\n").splitlines():
+            self._w(f"{line}{mark}")
         self._blank()
         order = ["MeanFieldHom", "TensND", "LinearAlgebra", "Printf", "Plots"]
         mods = [m for m in order if m in self.s.imports]
@@ -346,6 +368,24 @@ class Emitter:
             return
         for line in _TENSOR_HELPER.strip("\n").splitlines():
             self._w(line)
+        self._blank()
+
+    def _label_helper(self) -> None:
+        if not self.s.needs_label_helper:
+            return
+        self._w(_rule("Legend labels"))
+        self._w("#")
+        self._w("# Echoes' scheme constants are enum values that print as short")
+        self._w("# names. MFH's schemes are configured struct instances, so a")
+        self._w("# plain `string` would put the whole solver configuration in the")
+        self._w("# legend. The type name is the faithful short form.")
+        self._w("mfh_label(x) = string(x)")
+        self._w("mfh_label(x::AbstractString) = String(x)")
+        self._w("mfh_label(x::Symbol) = String(x)")
+        self._w(
+            "mfh_label(s::MeanFieldHom.HomogenizationScheme) = "
+            "string(nameof(typeof(s)))"
+        )
         self._blank()
 
     def _style_helper(self) -> None:
