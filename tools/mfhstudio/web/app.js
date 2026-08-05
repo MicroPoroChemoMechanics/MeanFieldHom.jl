@@ -131,11 +131,14 @@ function geomExpr(ph) {
 /* ── rendering ──────────────────────────────────────────────────── */
 
 function render() {
+  const focus = captureFocus();
+  _keySeq = 0;
   renderScales();
   renderSweep();
   renderAlv();
   renderParams();
   renderKept();
+  restoreFocus(focus);
 }
 
 function renderScales() {
@@ -226,7 +229,18 @@ function phaseCard(ph, i) {
 
   return el("div", {
     class: "card" + (i === S.phaseIdx ? " selected" : ""),
-    onclick: () => { S.phaseIdx = i; render(); draw3d(); },
+    // Selecting a phase must not steal clicks meant for the controls inside
+    // it. Re-rendering here would destroy the very input or select the user
+    // just pressed, so the field never takes focus and a dropdown closes the
+    // instant it opens — which looks exactly like "the mouse does nothing"
+    // while the keyboard still works, since Tab fires no click.
+    onclick: (e) => {
+      if (e.target.closest("input, select, textarea, button, label, option")) return;
+      if (i === S.phaseIdx) return;
+      S.phaseIdx = i;
+      render();
+      draw3d();
+    },
   }, head, body);
 }
 
@@ -557,7 +571,17 @@ function renderKept() {
 
 /* ── small widgets ──────────────────────────────────────────────── */
 
+/* Every panel is rebuilt from scratch on each change, which is simple and
+ * keeps one source of truth — but it also destroys whatever the user was
+ * typing in. Each control therefore carries a stable key derived from where
+ * it sits in the model, and `render()` puts the caret back afterwards. */
+let _keySeq = 0;
+function nextKey(label) {
+  return `${label || "f"}#${_keySeq++}`;
+}
+
 function field(label, node) {
+  if (node && node.dataset && !node.dataset.k) node.dataset.k = nextKey(label);
   return el("div", { class: "field" }, label ? el("label", {}, label) : null, node);
 }
 function input(value, on) {
@@ -577,6 +601,28 @@ function checkbox(value, on) {
   n.checked = !!value;
   n.addEventListener("change", () => on(n.checked));
   return n;
+}
+
+/** Where the caret was, so a rebuild does not throw the user out of a field. */
+function captureFocus() {
+  const a = document.activeElement;
+  if (!a || !a.dataset || !a.dataset.k) return null;
+  const f = { k: a.dataset.k };
+  if (a.selectionStart != null) {
+    f.start = a.selectionStart;
+    f.end = a.selectionEnd;
+  }
+  return f;
+}
+
+function restoreFocus(f) {
+  if (!f) return;
+  const n = document.querySelector(`[data-k="${CSS.escape(f.k)}"]`);
+  if (!n) return;
+  n.focus();
+  if (f.start != null && n.setSelectionRange) {
+    try { n.setSelectionRange(f.start, f.end); } catch { /* not a text input */ }
+  }
 }
 function checkboxLabel(text, value, on) {
   return el("label", { class: "inline" }, checkbox(value, on), " " + text);

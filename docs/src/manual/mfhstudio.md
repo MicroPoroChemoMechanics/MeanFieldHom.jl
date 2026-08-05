@@ -24,8 +24,24 @@ which takes a few minutes once.
 
 If Julia cannot start, the interface still comes up and says so in a banner:
 building and saving a script works, while the 3-D view, reading a script back
-and **Run** are off. Running `--check` first is the quickest way to see what
-the Julia side thinks.
+and **Run** are off. `--check` diagnoses the Julia side without paying the load
+time, and is the right first command on a new machine.
+
+One failure is worth knowing about. The committed `Manifest.toml` pins some
+dependencies to sibling checkouts (`path = "../TensND.jl"`), which only resolve
+when those siblings are there. Those are development overrides — MeanFieldHom
+is not registered, but its dependencies are — so on a machine holding only the
+MeanFieldHom clone, build an environment that takes them from the registry:
+
+```julia
+using Pkg
+Pkg.activate("mfhstudio", shared = true)
+Pkg.add("TensND")
+Pkg.develop(path = raw"<path to MeanFieldHom.jl>")
+```
+
+and start the studio with `--project @mfhstudio`. `--check` reads the manifest
+and names the missing checkouts itself.
 
 ## The layout
 

@@ -21,6 +21,7 @@ from . import catalog as catalog_module
 from .codegen import extract_embedded, generate
 from .juliabridge import PROJECT_ROOT, Bridge, SidecarError, SidecarUnavailable
 from .model import Model, default_model
+from .preflight import check_project
 from .readback import model_from_script
 
 WEB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "web"))
@@ -42,10 +43,10 @@ class Session:
     disposable: it can be restarted after a wedge without losing work.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, project: Optional[str] = None, julia: Optional[str] = None) -> None:
         self.model: Model = default_model()
         self.path: Optional[str] = None
-        self.bridge = Bridge()
+        self.bridge = Bridge(julia=julia, project=project or PROJECT_ROOT)
         self.lock = threading.Lock()
         self._catalog: Optional[dict] = None
         self.catalog_error: Optional[str] = None
@@ -305,8 +306,11 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(200, data, _MIME.get(ext, "application/octet-stream"))
 
 
-def serve(host: str = "127.0.0.1", port: int = 8765, open_browser: bool = True) -> None:
-    session = Session()
+def serve(
+    host: str = "127.0.0.1", port: int = 8765, open_browser: bool = True,
+    project: Optional[str] = None, julia: Optional[str] = None,
+) -> None:
+    session = Session(project=project, julia=julia)
     handler = type("BoundHandler", (Handler,), {"session": session})
     httpd = ThreadingHTTPServer((host, port), handler)
 
@@ -315,13 +319,22 @@ def serve(host: str = "127.0.0.1", port: int = 8765, open_browser: bool = True) 
     print("Starting the Julia sidecar (MeanFieldHom takes ~10 s to load)…")
 
     def warm() -> None:
+        # Reading the manifest is instant and names a missing local checkout
+        # precisely, where the Julia failure would only say "not installed".
+        if not str(session.bridge.project).startswith("@"):
+            rep = check_project(session.bridge.project)
+            if not rep.ok:
+                print("\n" + rep.text() + "\n")
         try:
             session.bridge.start()
             session.catalog()
             print("Sidecar ready.")
         except Exception as exc:  # noqa: BLE001
             print(f"Sidecar unavailable: {exc}")
-            print("The interface still runs; 3-D, read-back and execution are off.")
+            print(
+                "\nThe interface still runs; 3-D, read-back and Run are off.\n"
+                "Run `--check` for a diagnosis of the Julia environment."
+            )
 
     threading.Thread(target=warm, daemon=True).start()
 

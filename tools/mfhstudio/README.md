@@ -10,6 +10,7 @@ python3 -m mfhstudio                 # start and open a browser
 python3 -m mfhstudio --port 9000     # pick the port
 python3 -m mfhstudio --no-browser    # stay in the terminal
 python3 -m mfhstudio --check         # verify the Julia side and exit
+python3 -m mfhstudio --project @env  # use another Julia environment
 ```
 
 On Windows the command is `python -m mfhstudio`.
@@ -18,12 +19,38 @@ Requires Python 3.10+ (standard library only — no `pip install`) and a `julia`
 on `PATH` able to load MeanFieldHom. Set `JULIA` to point at a specific
 executable.
 
-On a fresh checkout the package environment has not been instantiated, and the
-sidecar's `using JSON3` would die with a stack trace whose only advice is to
-run `Pkg.instantiate()`. The sidecar now runs it itself on first start, which
-can take a few minutes. To do it by hand:
+### Getting the Julia side to start
+
+`--check` diagnoses this without paying the ten-second load, and is the right
+first command on a new machine.
+
+Two things go wrong in practice.
+
+**The environment has never been instantiated.** The sidecar's `using JSON3`
+then dies with a stack trace whose only advice is to run `Pkg.instantiate()`.
+The sidecar now runs it itself on first start, which takes a few minutes once.
+By hand:
 
     julia --project=<MeanFieldHom.jl> -e 'using Pkg; Pkg.instantiate()'
+
+**The committed `Manifest.toml` pins dependencies to sibling checkouts.** It
+records, for instance:
+
+    [[deps.TensND]]
+    path = "../TensND.jl"
+
+which only resolves when `TensND.jl` sits next to `MeanFieldHom.jl`. That is a
+development override: MeanFieldHom is not registered, but its dependencies are,
+so on a machine with only the MeanFieldHom clone the way out is a separate
+environment that takes them from the registry:
+
+    julia -e 'using Pkg; Pkg.activate("mfhstudio", shared=true); \
+              Pkg.add("TensND"); Pkg.develop(path=raw"<MeanFieldHom.jl>")'
+
+then `python -m mfhstudio --project @mfhstudio`. Adding the dependencies before
+the develop is what stops the resolver from turning them back into path
+entries. `--check` reads the manifest and names the missing checkout itself, so
+it will tell you which packages to add.
 
 If Julia is unavailable for any reason the interface still comes up: you can
 build and save a script, and a banner says what is off. Only the 3-D view,
