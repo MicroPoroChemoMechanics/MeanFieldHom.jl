@@ -4,7 +4,7 @@
 #  Loading MeanFieldHom costs ~10 s, so it is paid once and the process then
 #  answers requests on stdin. The protocol is JSON lines: one request object
 #  per line in, one response object per line out. Everything the interface
-#  needs from Julia goes through here -- the feature catalogue, 3-D traces,
+#  needs from Julia goes through here -- the feature catalog, 3-D traces,
 #  reading an existing script, and running one.
 #
 #  Anything printed by user code would corrupt the protocol, so stdout is
@@ -40,7 +40,7 @@ end
 # from this world context".
 function handle(op::String, payload)
     op == "ping" && return Dict("pong" => true, "ready" => STATE["ready"])
-    op == "catalogue" && return Base.invokelatest(catalogue)
+    op == "catalog" && return Base.invokelatest(catalog)
     op == "traces" && return _traces(payload)
     op == "parse" && return Base.invokelatest(parse_script, String(payload["source"]))
     op == "run" && return _run(payload)

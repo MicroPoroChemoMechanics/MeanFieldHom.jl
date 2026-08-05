@@ -117,7 +117,7 @@ belong to `build_Cijkl`, which it never calls. The 9-parameter form, by
 contrast, *is* the Cijkl one — the two arities genuinely disagree.
 
 Echoes' sym-Walpole basis turns out to be TensND's Walpole basis with
-``\mathbb W_3`` and ``\mathbb W_4`` already symmetrised (``\ell_3 = \ell_4``),
+``\mathbb W_3`` and ``\mathbb W_4`` already symmetrized (``\ell_3 = \ell_4``),
 i.e. exactly the `N = 5` layout, so the five coefficients map across in order.
 The correspondence was checked numerically to ``9 \times 10^{-16}``.
 

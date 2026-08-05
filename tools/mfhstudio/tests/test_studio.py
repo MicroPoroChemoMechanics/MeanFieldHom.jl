@@ -185,11 +185,11 @@ def _bridge():
     return b
 
 
-def test_catalogue_covers_every_exported_scheme():
+def test_catalog_covers_every_exported_scheme():
     """The interface must not fall behind MeanFieldHom."""
     b = _bridge()
     try:
-        cat = b.catalogue()
+        cat = b.catalog()
         names = {s["name"] for s in cat["schemes"]}
         src = open(os.path.join(REPO, "src", "Schemes", "scheme_types.jl")).read()
         for expected in ("Voigt", "Reuss", "MoriTanaka", "SelfConsistent",
@@ -197,7 +197,7 @@ def test_catalogue_covers_every_exported_scheme():
                          "Dilute", "DiluteDual", "Maxwell",
                          "PonteCastanedaWillis", "Laminated"):
             assert f"struct {expected}" in src or expected in src
-            assert expected in names, f"{expected} missing from the catalogue"
+            assert expected in names, f"{expected} missing from the catalog"
     finally:
         b.stop()
 
@@ -207,7 +207,7 @@ def test_self_consistent_offers_only_what_it_reads():
     probing the constructor."""
     b = _bridge()
     try:
-        cat = b.catalogue()
+        cat = b.catalog()
         sc = next(s for s in cat["schemes"] if s["name"] == "SelfConsistent")
         editable = {o["name"] for o in sc["options"] if o["editable"]}
         assert "abstol" in editable and "select_best" in editable
@@ -274,7 +274,7 @@ def test_traces_come_back_as_real_json():
 
 
 JULIA_TESTS = {
-    "test_catalogue_covers_every_exported_scheme",
+    "test_catalog_covers_every_exported_scheme",
     "test_self_consistent_offers_only_what_it_reads",
     "test_preserves_every_demo_script",
     "test_generated_script_matches_the_echoes_reference",

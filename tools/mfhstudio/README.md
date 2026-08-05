@@ -42,14 +42,14 @@ restarted after a wedge without losing work.
 | `mfhstudio/juliabridge.py` | the sidecar process: start, call, restart |
 | `mfhstudio/server.py` | HTTP endpoints and session state |
 | `julia/sidecar.jl` | the JSON-lines loop |
-| `julia/introspect.jl` | the feature catalogue, read from the live package |
+| `julia/introspect.jl` | the feature catalog, read from the live package |
 | `julia/geometry.jl` | 3-D traces |
 | `julia/parse_script.jl` | `Meta.parse` → nodes that tile the file exactly |
 | `web/graph.js` | the draggable scale graph |
 
 ## Three design decisions worth knowing
 
-**The catalogue is introspected, never hard-coded.** Schemes come from
+**The catalog is introspected, never hard-coded.** Schemes come from
 `subtypes(HomogenizationScheme)`, and each scheme's solver options are read
 from the constant it declares for the purpose (`_SC_SOLVER_KWARGS`,
 `_DIFF_RESERVED_OPTIONS`). Probing the constructor would not do: those schemes
@@ -82,7 +82,7 @@ One JSON object per line, both directions:
 {"id": 7, "ok": true, "result": {"data": [...], "layout": {...}}}
 ```
 
-Ops: `ping`, `catalogue`, `traces`, `parse`, `run`. The first line the sidecar
+Ops: `ping`, `catalog`, `traces`, `parse`, `run`. The first line the sidecar
 ever writes is `{"event": "ready", ...}`.
 
 `run` executes in a fresh anonymous module with stdout redirected to a
@@ -103,7 +103,7 @@ and written back, and no line may be lost.
 
 ## Known limits
 
-- Sensitivities, laminates and custom/FE/neural inclusions are not modelled.
+- Sensitivities, laminates and custom/FE/neural inclusions are not modeled.
   Scripts using them open and are preserved, but those parts are not editable.
 - Viscoelastic properties are entered as Julia expressions rather than through
   a form.

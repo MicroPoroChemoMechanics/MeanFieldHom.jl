@@ -200,7 +200,7 @@ constructs need code in `extract.py`/`emit.py`.
   `build_Cijkl`, which it never calls. Second, the 9-parameter form *is* the
   Cijkl one — the two arities genuinely disagree with each other. Echoes'
   sym-Walpole basis turns out to be TensND's Walpole basis with W₃ and W₄
-  already symmetrised (ℓ₃ = ℓ₄), i.e. exactly the `N = 5` layout, so the
+  already symmetrized (ℓ₃ = ℓ₄), i.e. exactly the `N = 5` layout, so the
   five coefficients map across in order.
 
   The TI axis is taken as `(sinθcosφ, sinθsinφ, cosθ)` — the third column of

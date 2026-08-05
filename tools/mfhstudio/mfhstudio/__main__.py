@@ -42,7 +42,7 @@ def _check() -> int:
         print(f"sidecar unavailable: {exc}", file=sys.stderr)
         return 1
     try:
-        cat = b.catalogue()
+        cat = b.catalog()
         print(f"MeanFieldHom {cat['mfh_version']} on Julia {cat['julia_version']}")
         print(f"  schemes    : {len(cat['schemes'])}")
         print(f"  geometries : {len(cat['geometries'])}")

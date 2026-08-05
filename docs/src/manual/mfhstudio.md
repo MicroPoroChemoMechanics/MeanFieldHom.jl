@@ -56,7 +56,7 @@ membrane, Kapitza, surface-conductive). The 3-D view cuts the shells open,
 which is the only way a layered inclusion is readable at all: without the
 cut-away only the outermost shell is visible.
 
-Radii are ascending with ``r = 0`` implicit at the centre, and layer 1 is the
+Radii are ascending with ``r = 0`` implicit at the center, and layer 1 is the
 core — the same convention as [`LayeredSphere`](@ref).
 
 ## Multiscale
@@ -119,7 +119,7 @@ multi-line layout included — until you actually edit it.
 Across the 57 demo scripts in `scripts/` and the translations produced by
 `echoes2mfh`, opening and writing back leaves every line intact.
 
-## What is not modelled yet
+## What is not modeled yet
 
 Sensitivities, laminates, and custom/FE/neural inclusions are outside the
 current scope. A script using them opens and is preserved, but those parts are

@@ -46,12 +46,12 @@ class Session:
         self.path: Optional[str] = None
         self.bridge = Bridge()
         self.lock = threading.Lock()
-        self._catalogue: Optional[dict] = None
+        self._catalog: Optional[dict] = None
 
-    def catalogue(self) -> dict:
-        if self._catalogue is None:
-            self._catalogue = self.bridge.catalogue()
-        return self._catalogue
+    def catalog(self) -> dict:
+        if self._catalog is None:
+            self._catalog = self.bridge.catalog()
+        return self._catalog
 
     def script(self) -> str:
         return generate(self.model)
@@ -102,8 +102,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/api/state":
                 return self._json(self._state())
-            if path == "/api/catalogue":
-                return self._json(self.session.catalogue())
+            if path == "/api/catalog":
+                return self._json(self.session.catalog())
             if path == "/api/script":
                 return self._json({"source": self.session.script()})
             if path == "/api/sidecar":
@@ -128,7 +128,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._save(body)
             if path == "/api/sidecar/restart":
                 self.session.bridge.restart()
-                self.session._catalogue = None
+                self.session._catalog = None
                 return self._json(self.session.bridge.status)
             return self._json({"error": f"unknown endpoint {path}"}, 404)
         except Exception as exc:  # noqa: BLE001
@@ -168,7 +168,7 @@ class Handler(BaseHTTPRequestHandler):
         if result.get("wedged"):
             try:
                 self.session.bridge.restart()
-                self.session._catalogue = None
+                self.session._catalog = None
             except Exception:
                 pass
         return self._json(result)
@@ -228,7 +228,7 @@ def serve(host: str = "127.0.0.1", port: int = 8765, open_browser: bool = True) 
     def warm() -> None:
         try:
             session.bridge.start()
-            session.catalogue()
+            session.catalog()
             print("Sidecar ready.")
         except Exception as exc:  # noqa: BLE001
             print(f"Sidecar unavailable: {exc}")

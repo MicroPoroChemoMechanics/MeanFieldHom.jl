@@ -24,7 +24,7 @@ const el = (tag, attrs = {}, ...kids) => {
 
 const S = {
   model: null,
-  catalogue: null,
+  catalog: null,
   cellId: null,
   phaseIdx: 0,
   problems: [],
@@ -82,9 +82,9 @@ const phases = () => (cell() ? cell().phases : []);
 const phase = () => phases()[S.phaseIdx] || null;
 
 const geomForm = (kind) =>
-  (S.catalogue.geometries || []).find((g) => g.kind === kind) || null;
+  (S.catalog.geometries || []).find((g) => g.kind === kind) || null;
 const propForm = (name) =>
-  (S.catalogue.properties || []).find((p) => p.name === name) || null;
+  (S.catalog.properties || []).find((p) => p.name === name) || null;
 
 /** Render a value as a Julia *float* literal.
  *
@@ -203,7 +203,7 @@ function phaseCard(ph, i) {
           ),
       geometryEditor(ph),
       field("Orientation average", select(
-        (S.catalogue.symmetrize || []).map((s) => [s.name, s.label]),
+        (S.catalog.symmetrize || []).map((s) => [s.name, s.label]),
         ph.symmetrize, (v) => { ph.symmetrize = v; push(); }
       )),
       el("h3", {}, "Properties",
@@ -232,7 +232,7 @@ function geometryEditor(ph) {
   const form = geomForm(g.kind);
   const box = el("div", {},
     field("Shape", select(
-      (S.catalogue.geometries || []).map((x) => [x.kind, x.name]),
+      (S.catalog.geometries || []).map((x) => [x.kind, x.name]),
       g.kind,
       (v) => {
         g.kind = v;
@@ -280,7 +280,7 @@ function layersEditor(g) {
           push();
         },
       }, "+")),
-    el("div", { class: "note" }, "Ascending radii, r = 0 implicit at the centre; layer 1 is the core.")
+    el("div", { class: "note" }, "Ascending radii, r = 0 implicit at the center; layer 1 is the core.")
   );
   (g.layers || []).forEach((l, i) => {
     box.append(el("div", { class: "card" },
@@ -292,10 +292,10 @@ function layersEditor(g) {
         field("μ", input(l.property.args.mu, (v) => { l.property.args.mu = +v || v; push(); }))
       ),
       field("Interface with the next layer", select(
-        (S.catalogue.interfaces || []).map((x) => [x.name, x.label]),
+        (S.catalog.interfaces || []).map((x) => [x.name, x.label]),
         (l.interface && l.interface.kind) || "PerfectInterface",
         (v) => {
-          const f = (S.catalogue.interfaces || []).find((x) => x.name === v);
+          const f = (S.catalog.interfaces || []).find((x) => x.name === v);
           const args = {};
           for (const fl of (f && f.fields) || []) args[fl.name] = fl.default;
           l.interface = { kind: v, args };
@@ -327,7 +327,7 @@ function propertyEditor(ph, pr, j) {
 
   if (pr.source === "builder") {
     box.append(field("Parametrization", select(
-      (S.catalogue.properties || []).map((p) => [p.name, p.label]),
+      (S.catalog.properties || []).map((p) => [p.name, p.label]),
       pr.form || "iso_kmu",
       (v) => {
         const f = propForm(v);
@@ -361,7 +361,7 @@ function propertyEditor(ph, pr, j) {
           (v) => { pr.cell = v; push(); }
         )),
         field("Homogenized with", select(
-          (S.catalogue.schemes || []).map((s) => [s.name, s.name]),
+          (S.catalog.schemes || []).map((s) => [s.name, s.name]),
           pr.scheme || "MoriTanaka",
           (v) => { pr.scheme = v; push(); }
         ))
@@ -372,9 +372,9 @@ function propertyEditor(ph, pr, j) {
   return box;
 }
 
-/** Editable solver options for a scheme, straight from the catalogue. */
+/** Editable solver options for a scheme, straight from the catalog. */
 function schemeOptions(name, target) {
-  const s = (S.catalogue.schemes || []).find((x) => x.name === name);
+  const s = (S.catalog.schemes || []).find((x) => x.name === name);
   const opts = ((s && s.options) || []).filter((o) => o.editable);
   if (!opts.length) return el("div", { class: "note" }, "No solver options.");
   return el("div", { class: "grid2" },
@@ -405,14 +405,14 @@ function renderSweep() {
     el("div", { class: "grid2" },
       field("Points", input(sw.length, (v) => { sw.length = Math.max(2, +v | 0); push(); })),
       field("Scheme", select(
-        (S.catalogue.schemes || []).map((s) => [s.name, s.name]),
+        (S.catalog.schemes || []).map((s) => [s.name, s.name]),
         sw.scheme, (v) => { sw.scheme = v; push(); }
       ))
     ),
     schemeOptions(sw.scheme, sw.scheme_options || (sw.scheme_options = {})),
     el("h3", {}, "What varies"),
     field("Lens", select(
-      (S.catalogue.lenses || []).map((l) => [l.name, l.label]),
+      (S.catalog.lenses || []).map((l) => [l.name, l.label]),
       sw.lens.kind, (v) => { sw.lens.kind = v; push(); }
     )),
     lensDoc(sw.lens.kind),
@@ -421,7 +421,7 @@ function renderSweep() {
     el("div", { class: "grid2" },
       field("Property", input(sw.property, (v) => { sw.property = v.startsWith(":") ? v : ":" + v; push(); })),
       field("Report as", select(
-        (S.catalogue.projections || []).map((p) => [p.name, p.label]),
+        (S.catalog.projections || []).map((p) => [p.name, p.label]),
         sw.projection, (v) => { sw.projection = v; push(); }
       ))
     ),
@@ -430,7 +430,7 @@ function renderSweep() {
 }
 
 function lensDoc(kind) {
-  const l = (S.catalogue.lenses || []).find((x) => x.name === kind);
+  const l = (S.catalog.lenses || []).find((x) => x.name === kind);
   return l && l.doc ? el("div", { class: "note" }, l.doc) : el("span");
 }
 
@@ -445,7 +445,7 @@ function lensFields(lens, inner) {
       ),
       el("h3", {}, "Inside that scale"),
       field("Lens", select(
-        (S.catalogue.lenses || []).filter((l) => l.name !== "nested").map((l) => [l.name, l.label]),
+        (S.catalog.lenses || []).filter((l) => l.name !== "nested").map((l) => [l.name, l.label]),
         inner.kind, (v) => { inner.kind = v; push(); }
       )),
       ...lensFields(inner, {})
@@ -497,7 +497,7 @@ function renderAlv() {
     ),
     field("", checkboxLabel("logarithmic time", a.log_time, (v) => { a.log_time = v; push(); })),
     field("Scheme", select(
-      (S.catalogue.schemes || []).map((s) => [s.name, s.name]),
+      (S.catalog.schemes || []).map((s) => [s.name, s.name]),
       a.scheme, (v) => { a.scheme = v; push(); }
     )),
     el("div", { class: "note" },
@@ -594,7 +594,7 @@ async function draw3d() {
     const sc = await api("/api/traces", { expr, cutaway: $("#cutaway").checked });
     Plotly.react("view3d", sc.data, sc.layout, { displayModeBar: false, responsive: true });
   } catch (e) {
-    // A shape the sidecar cannot build is a modelling error worth showing.
+    // A shape the sidecar cannot build is a modeling error worth showing.
     $("#shape-label").textContent = expr + " — " + e.message.split("\n")[0];
   }
 }
@@ -674,7 +674,7 @@ async function pollSidecar() {
     else if (s.running) { b.textContent = "loading MeanFieldHom…"; b.className = "badge"; }
     else if (s.error) { b.textContent = "Julia unavailable"; b.className = "badge bad"; b.title = s.error; }
     else { b.textContent = "starting…"; b.className = "badge"; }
-    if (s.ready && !S.catalogue) await boot();
+    if (s.ready && !S.catalog) await boot();
   } catch { /* the server will answer eventually */ }
 }
 
@@ -682,7 +682,7 @@ async function pollSidecar() {
 
 async function boot() {
   try {
-    S.catalogue = await api("/api/catalogue");
+    S.catalog = await api("/api/catalog");
   } catch (e) {
     return; // still loading; the poll will retry
   }

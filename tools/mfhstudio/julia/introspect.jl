@@ -1,5 +1,5 @@
 # =============================================================================
-#  introspect.jl — the MFH feature catalogue, discovered at run time.
+#  introspect.jl — the MFH feature catalog, discovered at run time.
 #
 #  Hard-coding the list of schemes, interfaces and inclusion types in the web
 #  UI would make the interface silently fall behind MeanFieldHom. Everything
@@ -185,7 +185,7 @@ const GEOMETRY_FORMS = [
     ),
     Dict(
         "name" => "LayeredSphere", "kind" => "layered_sphere", "dim" => 3,
-        "doc" => "Concentric layers, ascending radii, r = 0 implicit at the centre.",
+        "doc" => "Concentric layers, ascending radii, r = 0 implicit at the center.",
         "fields" => [], "layered" => true, "angles" => 0,
     ),
     Dict(
@@ -255,7 +255,7 @@ const PROPERTY_FORMS = [
 #
 # `symmetrize` is an exact rotational average applied inside the kernel;
 # `best_fit_*` is a least-squares projection used for reporting. Conflating
-# them changes the numbers, so the catalogue keeps them apart and says so.
+# them changes the numbers, so the catalog keeps them apart and says so.
 
 const SYMMETRIZE_FORMS = [
     Dict("name" => "none", "label" => "None", "emit" => "nothing"),
@@ -375,11 +375,11 @@ const VISCO_FORMS = [
 ]
 
 """
-    catalogue() -> Dict
+    catalog() -> Dict
 
 The whole feature list the web UI is built from.
 """
-function catalogue()
+function catalog()
     schemes = [scheme_entry(S) for S in concrete_subtypes(MeanFieldHom.HomogenizationScheme)]
     sort!(schemes; by = d -> d["name"])
     return Dict(

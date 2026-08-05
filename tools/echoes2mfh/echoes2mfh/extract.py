@@ -489,7 +489,7 @@ class Extractor:
                 "MFH LayeredSphere takes an explicit ascending radii tuple",
             )
         # Both libraries list the outer radius of every layer, ascending, with
-        # r = 0 implicit at the centre. A leading 0.0 is therefore a real
+        # r = 0 implicit at the center. A leading 0.0 is therefore a real
         # (degenerate) core layer, not padding -- `porous.py` grows exactly
         # that layer through set_radius(0, f^(1/3)) to sweep porosity.
         moduli: list[str] = []

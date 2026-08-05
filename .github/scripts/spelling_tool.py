@@ -27,11 +27,26 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
-DEFAULT_INCLUDE_GLOBS = ["src/**/*.jl", "docs/src/**/*.md", "scripts/*.jl"]
+DEFAULT_INCLUDE_GLOBS = [
+    "src/**/*.jl",
+    "docs/src/**/*.md",
+    "scripts/*.jl",
+    # The developer tools carry as much prose as the package does.
+    "tools/**/*.py",
+    "tools/**/*.jl",
+    "tools/**/*.js",
+    "tools/**/*.md",
+]
 DEFAULT_EXCLUDE_GLOBS = [
     "**/generated/**",
     "docs/build/**",
     "**/.git/**",
+    # Third-party bundles are not ours to spell-check, and a minified one is
+    # megabytes of tokens that would swamp the report.
+    "**/vendor/**",
+    "**/node_modules/**",
+    "**/__pycache__/**",
+    "**/*.min.js",
 ]
 
 DOCSTRING_KEYWORD_RE = re.compile(
@@ -272,6 +287,91 @@ def extract_jl_prose_spans(text: str, literals: list[str]) -> list[tuple[int, in
     return spans
 
 
+def extract_py_prose_spans(text: str, literals: list[str]) -> list[tuple[int, int, str]]:
+    """Prose spans of a Python file: docstrings and `#` comments.
+
+    Structurally the same job as `extract_jl_prose_spans` — both languages use
+    triple-quoted blocks and `#` comments — so the same helpers do the work.
+    What differs is which triple-quoted blocks count: Julia marks a docstring
+    by what *follows* it, Python by where it *sits*. A block that is not the
+    first statement of a module, class or function is ordinary string data
+    (an embedded code template, say) and is left alone.
+    """
+    spans = []
+    triple_blocks = find_triple_quote_blocks(text)
+
+    for block_start, _block_end, interior_start, interior_end in triple_blocks:
+        if not _py_is_docstring(text, block_start):
+            continue
+        interior = text[interior_start:interior_end]
+        spans.append((interior_start, interior_end, mask_markdown(interior, literals)))
+
+    # Blank the string blocks before looking for comments, so a '#' inside
+    # string content is never mistaken for one.
+    working = text
+    for block_start, block_end, _, _ in triple_blocks:
+        working = _blank(working, block_start, block_end)
+
+    for start, end in _find_comment_spans(working):
+        comment_text = text[start:end]
+        masked = mask_literals(mask_inline_code(comment_text), literals)
+        spans.append((start, end, masked))
+
+    return spans
+
+
+def _py_is_docstring(text: str, block_start: int) -> bool:
+    before = text[:block_start].rstrip()
+    if not before:
+        return True  # module docstring
+    last_line = before.splitlines()[-1].strip()
+    # A docstring opens the body of a `def`/`class`/etc., so the previous
+    # meaningful line ends with a colon. `X = """…"""` does not qualify.
+    return last_line.endswith(":")
+
+
+def extract_js_prose_spans(text: str, literals: list[str]) -> list[tuple[int, int, str]]:
+    """Prose spans of a JavaScript/CSS file: `//` and `/* … */` comments.
+
+    Strings and template literals are skipped so that a `//` inside a URL or a
+    regex-looking literal is not read as a comment.
+    """
+    spans: list[tuple[int, int, str]] = []
+    n = len(text)
+    i = 0
+    quote: str | None = None
+    while i < n:
+        c = text[i]
+        if quote is not None:
+            if c == "\\":
+                i += 2
+                continue
+            if c == quote:
+                quote = None
+            i += 1
+            continue
+        if c in "\"'`":
+            quote = c
+            i += 1
+            continue
+        if c == "/" and i + 1 < n:
+            nxt = text[i + 1]
+            if nxt == "/":
+                end = text.find("\n", i)
+                end = n if end < 0 else end
+                spans.append((i + 2, end, mask_literals(mask_inline_code(text[i + 2:end]), literals)))
+                i = end
+                continue
+            if nxt == "*":
+                end = text.find("*/", i + 2)
+                end = n if end < 0 else end
+                spans.append((i + 2, end, mask_markdown(text[i + 2:end], literals)))
+                i = end + 2
+                continue
+        i += 1
+    return spans
+
+
 def _find_comment_spans(working_text: str) -> list[tuple[int, int]]:
     spans = []
     offset = 0
@@ -406,6 +506,10 @@ def scan_text(path: Path, text: str, literals: list[str], simple_regex, context_
         spans = [(0, len(text), masked)]
     elif path.suffix == ".jl":
         spans = extract_jl_prose_spans(text, literals)
+    elif path.suffix == ".py":
+        spans = extract_py_prose_spans(text, literals)
+    elif path.suffix in (".js", ".css"):
+        spans = extract_js_prose_spans(text, literals)
     else:
         return []
 

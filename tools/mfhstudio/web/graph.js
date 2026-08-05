@@ -34,7 +34,7 @@
 
   const portId = (cellId, phaseName, key) => `${cellId}|${phaseName}|${key}`;
 
-  function centreOf(node) {
+  function centerOf(node) {
     const h = host().getBoundingClientRect();
     const r = node.getBoundingClientRect();
     return {
@@ -86,7 +86,7 @@
           const from = g.querySelector(`[data-out="${pr.cell}"]`);
           const to = g.querySelector(`[data-in="${CSS.escape(portId(c.id, ph.name, pr.key))}"]`);
           if (!from || !to) continue;
-          const d = curve(centreOf(from), centreOf(to));
+          const d = curve(centerOf(from), centerOf(to));
           svg.append(svgEl("path", { class: "edge", d, "marker-end": "url(#arrow)" }));
           // A fat invisible copy makes the thin curve clickable.
           const hit = svgEl("path", { class: "edge-hit", d });
@@ -175,7 +175,7 @@
       const svg = host().querySelector("svg.edges");
       const path = svgEl("path", { class: "edge pending" });
       svg.append(path);
-      drag = { kind: "link", from: c, path, start: centreOf(out) };
+      drag = { kind: "link", from: c, path, start: centerOf(out) };
       out.setPointerCapture(e.pointerId);
       e.preventDefault();
     });

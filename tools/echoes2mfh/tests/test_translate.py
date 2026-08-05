@@ -1,4 +1,4 @@
-"""Golden and behavioural tests for echoes2mfh.
+"""Golden and behavioral tests for echoes2mfh.
 
 Run with:  python3 -m pytest tools/echoes2mfh/tests -q
 (or plain `python3 tests/test_translate.py` for a dependency-free run).
@@ -234,8 +234,8 @@ for sch in [MT, DIFF]:
     )
 
 
-def test_unlabelled_series_stays_out_of_the_legend():
-    """matplotlib legends only labelled series; Plots.jl invents `y1`, `y2`, …"""
+def test_unlabeled_series_stays_out_of_the_legend():
+    """matplotlib legends only labeled series; Plots.jl invents `y1`, `y2`, …"""
     src = """
 import matplotlib.pyplot as plt
 plt.plot(x, y)

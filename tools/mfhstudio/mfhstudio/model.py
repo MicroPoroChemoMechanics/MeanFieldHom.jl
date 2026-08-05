@@ -42,7 +42,7 @@ class Property:
     key: str = ":C"
     source: str = "builder"
     builder: str = "iso_stiffness"
-    #: which catalogue entry produced this. Several entries share one builder
+    #: which catalog entry produced this. Several entries share one builder
     #: (`iso_stiffness` backs both the plain isotropic form and the near-zero
     #: pore preset), so the builder alone cannot identify the form.
     form: str = "iso_kmu"

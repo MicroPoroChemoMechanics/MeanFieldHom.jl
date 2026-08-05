@@ -33,7 +33,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 
 
 def find_julia() -> Optional[str]:
-    """The Julia executable, honouring `JULIA` if the user set one."""
+    """The Julia executable, honoring `JULIA` if the user set one."""
     return os.environ.get("JULIA") or shutil.which("julia")
 
 
@@ -200,8 +200,8 @@ class Bridge:
     def ping(self) -> dict:
         return self.call("ping", timeout=30)
 
-    def catalogue(self) -> dict:
-        return self.call("catalogue", timeout=120)
+    def catalog(self) -> dict:
+        return self.call("catalog", timeout=120)
 
     def traces(self, expr: str, **kw) -> dict:
         return self.call("traces", {"expr": expr, **kw}, timeout=60)
