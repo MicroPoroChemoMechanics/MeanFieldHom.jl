@@ -128,6 +128,41 @@ end
     @test rve3.phases[:I].geometry.semi_axes[1] isa ForwardDiff.Dual
 end
 
+@testset "GeometryParameter — the shape trait is recomputed, not carried over" begin
+    # The trait is not metadata: the Hill/Eshelby kernels dispatch on it, so
+    # carrying the old one over to new semi-axes silently returns the *old
+    # shape's* answer. A sphere whose third axis is set to 0.2 must become
+    # oblate and homogenize as such.
+    mk(geom) = begin
+        r = RVE(:SOLID)
+        add_matrix!(r, Spheroid(1.0), Dict(:C => iso_stiffness(72.0, 32.0)))
+        add_phase!(
+            r, :PORE, geom, Dict(:C => iso_stiffness(1.0e-6, 1.0e-6));
+            fraction = 0.1
+        )
+        r
+    end
+
+    built = mk(Spheroid(0.2))
+    updated = set_param(mk(Spheroid(1.0)), geometry(:PORE, :semi_axes, 3), 0.2)
+
+    g_built = built.phases[:PORE].geometry
+    g_upd = updated.phases[:PORE].geometry
+
+    @test shape_trait(g_upd) === shape_trait(g_built)
+    @test shape_trait(g_upd) === Oblate
+    @test collect(g_upd.semi_axes) ≈ collect(g_built.semi_axes)
+
+    # and the homogenized stiffness must agree with the directly-built spheroid
+    C_built = homogenize(built, MoriTanaka(), :C)
+    C_upd = homogenize(updated, MoriTanaka(), :C)
+    @test Array(C_upd) ≈ Array(C_built)
+
+    # growing an axis the other way round is classified prolate
+    prolate = set_param(mk(Spheroid(1.0)), geometry(:PORE, :semi_axes, 1), 4.0)
+    @test shape_trait(prolate.phases[:PORE].geometry) === Prolate
+end
+
 @testset "DistributionShapeParameter — UniformDistribution(Ellipsoid)" begin
     shape = Ellipsoid(2.0, 1.0, 0.5)
     rve = RVE(:M; distribution_shape = shape)

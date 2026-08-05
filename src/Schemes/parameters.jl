@@ -332,7 +332,15 @@ end
 # Ellipsoid because `S` (the shape trait) cannot be inferred from the
 # inner-constructor arguments.
 
-# Ellipsoid{dim, S, T, B} — preserves `dim, S, B`, recomputes `T`.
+# Ellipsoid{dim, S, T, B} — recomputes `T` **and** `S`.
+#
+# The shape trait is not incidental metadata: the Hill/Eshelby kernels
+# dispatch on it, so carrying the old `S` over to new semi-axes silently
+# returns the *old shape's* answer. Changing the third semi-axis of a
+# `Spherical` ellipsoid to 0.2 must yield an `Oblate` one, not a sphere
+# that merely stores oblate numbers. Reconstructing through the outer
+# constructor also restores the descending-axis sort, the matching basis
+# permutation, and the degenerate-limit redirection (Cylinder / crack).
 function _replace_geom_field(
         geom::Ellipsoid{dim, S, T, B},
         ::Val{:semi_axes},
@@ -340,7 +348,7 @@ function _replace_geom_field(
     ) where {dim, S, T, B, Tv}
     Tnew = promote_type(T, Tv)
     new_axes = ntuple(k -> k == idx ? convert(Tnew, value) : convert(Tnew, geom.semi_axes[k]), dim)
-    return Ellipsoid{dim, S, Tnew, B}(new_axes, geom.basis)
+    return Ellipsoid(new_axes..., geom.basis)
 end
 
 function _replace_geom_field(
@@ -351,7 +359,7 @@ function _replace_geom_field(
     ) where {dim, S, T, B, Tv}
     Tnew = promote_type(T, Tv)
     new_axes = ntuple(k -> convert(Tnew, value[k]), dim)
-    return Ellipsoid{dim, S, Tnew, B}(new_axes, geom.basis)
+    return Ellipsoid(new_axes..., geom.basis)
 end
 
 # =============================================================================
