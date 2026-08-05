@@ -14,6 +14,14 @@ python3 -m mfhstudio --project @env  # use another Julia environment
 
 On Windows the command is `python -m mfhstudio`.
 
+Over SSH or in a VS Code remote session the studio serves on the *remote*
+machine; open the printed URL locally, which VS Code and `ssh -L` both forward.
+The console says so when it detects one. It still asks the local browser to
+open — VS Code's helper forwards the request — but runs that helper with its
+streams redirected, because it is a Node script that otherwise prints a
+`url.parse()` deprecation warning into our output, right where it reads like a
+failure of ours.
+
 Requires Python 3.10+ (standard library only — no `pip install`) and a `julia`
 on `PATH` able to load MeanFieldHom. Set `JULIA` to point at a specific
 executable.

@@ -306,6 +306,44 @@ class Handler(BaseHTTPRequestHandler):
         return self._send(200, data, _MIME.get(ext, "application/octet-stream"))
 
 
+def _open_url(url: str) -> None:
+    """Open the browser without its output landing in our console.
+
+    Over SSH or in a VS Code remote session, `BROWSER` points at a helper that
+    forwards the URL to the local machine. It works — but Python's `webbrowser`
+    lets that helper inherit our stdio, and VS Code's is a Node script that
+    prints a `url.parse()` deprecation warning. Arriving right under "Starting
+    the Julia sidecar…", it reads like a failure of ours. Running the helper
+    ourselves with its streams redirected keeps the console honest.
+    """
+    import subprocess
+
+    browser = os.environ.get("BROWSER")
+    if browser:
+        try:
+            subprocess.Popen(
+                [browser, url],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            return
+        except Exception:  # noqa: BLE001 — fall through to the stdlib opener
+            pass
+    try:
+        import webbrowser
+
+        webbrowser.open(url)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _is_remote() -> bool:
+    return bool(
+        os.environ.get("SSH_CONNECTION") or os.environ.get("VSCODE_IPC_HOOK_CLI")
+    )
+
+
 def serve(
     host: str = "127.0.0.1", port: int = 8765, open_browser: bool = True,
     project: Optional[str] = None, julia: Optional[str] = None,
@@ -315,8 +353,14 @@ def serve(
     httpd = ThreadingHTTPServer((host, port), handler)
 
     url = f"http://{host}:{port}/"
-    print(f"MFH Studio → {url}")
-    print("Starting the Julia sidecar (MeanFieldHom takes ~10 s to load)…")
+    print(f"MFH Studio → {url}", flush=True)
+    if _is_remote():
+        print(
+            "  (remote session: open that URL on your own machine — VS Code "
+            "and `ssh -L` both forward the port)",
+            flush=True,
+        )
+    print("Starting the Julia sidecar (MeanFieldHom takes ~10 s to load)…", flush=True)
 
     def warm() -> None:
         # Reading the manifest is instant and names a missing local checkout
@@ -328,9 +372,9 @@ def serve(
         try:
             session.bridge.start()
             session.catalog()
-            print("Sidecar ready.")
+            print("Sidecar ready.", flush=True)
         except Exception as exc:  # noqa: BLE001
-            print(f"Sidecar unavailable: {exc}")
+            print(f"Sidecar unavailable: {exc}", flush=True)
             print(
                 "\nThe interface still runs; 3-D, read-back and Run are off.\n"
                 "Run `--check` for a diagnosis of the Julia environment."
@@ -339,9 +383,7 @@ def serve(
     threading.Thread(target=warm, daemon=True).start()
 
     if open_browser:
-        import webbrowser
-
-        threading.Timer(0.5, lambda: webbrowser.open(url)).start()
+        threading.Timer(0.5, lambda: _open_url(url)).start()
 
     try:
         httpd.serve_forever()

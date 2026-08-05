@@ -31,6 +31,16 @@ def _rule(title: str) -> str:
     return f"# ── {title} {bar}"
 
 
+def _tuple(items) -> str:
+    """A Julia tuple; only a 1-tuple needs the trailing comma."""
+    parts = [p for p in items if p]
+    if not parts:
+        return "()"
+    if len(parts) == 1:
+        return f"({parts[0]},)"
+    return "(" + ", ".join(parts) + ")"
+
+
 def _fnum(x) -> str:
     """Like `_num`, but never yields a bare integer.
 
@@ -283,8 +293,8 @@ class CodeGen:
             for l in g.layers
         )
         moduli = ", ".join(self._prop_expr(Property.from_dict(l["property"])) for l in g.layers)
-        radii_t = f"({radii},)" if len(g.layers) == 1 else f"({radii})"
-        mod_t = f"({moduli},)" if len(g.layers) == 1 else f"({moduli})"
+        radii_t = _tuple(radii.split(", ")) if radii else "()"
+        mod_t = _tuple(moduli.split(", ")) if moduli else "()"
         ifaces = [l.get("interface") for l in g.layers]
         if any(i and i.get("kind", "PerfectInterface") != "PerfectInterface" for i in ifaces):
             parts = []
@@ -298,19 +308,31 @@ class CodeGen:
         return f"LayeredSphere({radii_t}, {mod_t})"
 
     def _layered_spheroid(self, g) -> str:
-        axis = ", ".join(
-            (l["radius"] if isinstance(l.get("radius"), str) else _fnum(l.get("radius", 1.0)))
+        """`layered_spheroid_from_fractions`, not the raw constructor.
+
+        `LayeredSpheroid(axis_radii, disk_radii, …)` demands that every layer
+        share one focal distance, and radii typed in layer by layer essentially
+        never do — the old form here scaled one radius list by ω, which is not
+        confocal and threw. The fraction constructor takes the outer aspect
+        ratio and size and solves for the confocal inner radii itself, which is
+        the only form a person can drive.
+        """
+        fractions = _tuple(
+            (
+                l["fraction"] if isinstance(l.get("fraction"), str)
+                else _fnum(l.get("fraction", 1.0))
+            )
             for l in g.layers
         )
-        moduli = ", ".join(self._prop_expr(Property.from_dict(l["property"])) for l in g.layers)
-        n = len(g.layers)
-        axis_t = f"({axis},)" if n == 1 else f"({axis})"
-        mod_t = f"({moduli},)" if n == 1 else f"({moduli})"
+        moduli = _tuple(
+            self._prop_expr(Property.from_dict(l["property"])) for l in g.layers
+        )
         omega = g.args.get("omega", 0.5)
+        radius = g.args.get("radius", 1.0)
         ns = g.args.get("Nseries", 5)
         return (
-            f"LayeredSpheroid({axis_t}, {axis_t} ./ {_fnum(omega)}, {mod_t}; "
-            f"Nseries = {_num(ns)})"
+            f"layered_spheroid_from_fractions({_fnum(omega)}, {_fnum(radius)}, "
+            f"{fractions}, {moduli}; Nseries = {_num(ns)})"
         )
 
     def _properties(self, ph: Phase) -> str:
@@ -347,8 +369,9 @@ class CodeGen:
                 f"hoenig_stiffness({num('E1', 1.0)}, {num('h', 1.0)}, "
                 f"{num('nu1', 0.2)}, {num('nu2', 0.2)}, {num('gamma', 1.0)})"
             )
-        if b == "TensISO{2, 3}":
-            return f"TensISO{{2, 3}}({num('k', 1.0)})"
+        if b == "TensISO{3}":
+            # One argument to TensISO{dim} is the 2nd-order (conductivity) form.
+            return f"TensISO{{3}}({num('k', 1.0)})"
         return f"iso_stiffness({num('k', 1.0)}, {num('mu', 1.0)})"
 
     def _visco_expr(self, v: dict) -> str:

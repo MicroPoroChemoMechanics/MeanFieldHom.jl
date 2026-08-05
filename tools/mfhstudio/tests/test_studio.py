@@ -62,6 +62,46 @@ def test_solver_options_attach_to_the_scheme():
     assert "homogenize(cell, scheme, :C)" in src
 
 
+def _layered_spheroid_model() -> Model:
+    def layer(fr, k):
+        return {
+            "fraction": fr,
+            "property": {
+                "key": ":K", "source": "builder", "builder": "TensISO{3}",
+                "form": "iso_conduction", "args": {"k": k},
+            },
+        }
+
+    g = Geometry(
+        kind="layered_spheroid",
+        args={"omega": 0.5, "radius": 1.0, "Nseries": 5},
+        layers=[layer(0.3, 1.0), layer(0.7, 5.0)],
+    )
+    c = Cell(name="r", matrix_name="M", phases=[
+        Phase(name="M", is_matrix=True, properties=[
+            Property(key=":K", source="builder", builder="TensISO{3}",
+                     form="iso_conduction", args={"k": 2.0})]),
+        Phase(name="I", amount=0.2, geometry=g, properties=[]),
+    ])
+    return Model(cells=[c])
+
+
+def test_layered_spheroid_uses_the_fraction_constructor():
+    """The raw constructor demands confocal layers, which typed-in radii are
+    not: it threw, and the shape drew nothing."""
+    src = generate(_layered_spheroid_model(), embed_model=False)
+    assert "layered_spheroid_from_fractions(0.5, 1.0, (0.3, 0.7)" in src
+    assert "LayeredSpheroid(" not in src
+
+
+def test_conductivity_builder_has_the_right_arity():
+    """`TensISO{dim}` — one argument is the 2nd-order form. `TensISO{2, 3}`
+    named neither the right dimension nor the right order and threw."""
+    src = generate(_layered_spheroid_model(), embed_model=False)
+    assert "TensISO{3}(2.0)" in src
+    assert "TensISO{2, 3}" not in src
+
+
 def test_orientation_reaches_the_generated_call():
     c = Cell(name="r", matrix_name="M", phases=[
         Phase(name="M", is_matrix=True, properties=[Property()]),

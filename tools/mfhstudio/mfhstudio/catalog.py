@@ -72,12 +72,15 @@ GEOMETRIES = [
     },
     {
         "name": "LayeredSpheroid", "kind": "layered_spheroid", "dim": 3,
-        "doc": "Confocal spheroidal layers. Conduction only.",
+        "doc": "Confocal spheroidal layers, given by volume fraction. "
+               "Conduction only; ω = 1 is a LayeredSphere.",
         "fields": [
-            {"name": "omega", "label": "ω (aspect ratio)", "type": "number", "default": 0.5},
+            {"name": "omega", "label": "ω (outer aspect ratio)", "type": "number", "default": 0.5},
+            {"name": "radius", "label": "outer axial semi-axis", "type": "number", "default": 1.0},
             {"name": "Nseries", "label": "N (series order)", "type": "integer", "default": 5},
         ],
-        "layered": True, "angles": 2, "conduction_only": True,
+        "layered": True, "layer_by": "fraction", "layer_property": "iso_conduction",
+        "angles": 2, "conduction_only": True,
     },
 ]
 
@@ -114,7 +117,8 @@ PROPERTIES = [
     },
     {
         "name": "iso_conduction", "label": "Isotropic conductivity", "order": 2,
-        "builder": "TensISO{2, 3}",
+        "builder": "TensISO{3}",
+        "doc": "A single argument to TensISO{dim} gives the 2nd-order tensor.",
         "fields": [{"name": "k", "label": "κ", "type": "number", "default": 1.0}],
     },
     {

@@ -98,6 +98,13 @@ cut-away only the outermost shell is visible.
 Radii are ascending with ``r = 0`` implicit at the center, and layer 1 is the
 core — the same convention as [`LayeredSphere`](@ref).
 
+A [`LayeredSpheroid`](@ref) is described differently, because it must be
+*confocal*: every layer shares one focal distance, and radii entered one by one
+essentially never do. The form therefore asks for the outer aspect ratio, the
+outer semi-axis and a **volume fraction** per layer, and
+[`layered_spheroid_from_fractions`](@ref) solves for the confocal radii. It is
+a conduction geometry, so its layers carry a conductivity rather than moduli.
+
 ## Multiscale
 
 ![A two-scale model with the seam drawn](../assets/mfhstudio/multiscale.png)

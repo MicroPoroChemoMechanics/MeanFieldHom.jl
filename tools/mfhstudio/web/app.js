@@ -102,6 +102,11 @@ function jnum(v) {
   return Number.isInteger(v) ? v.toFixed(1) : String(v);
 }
 
+/** A Julia tuple; only a 1-tuple needs the trailing comma. */
+function jtuple(xs) {
+  return xs.length === 1 ? `(${xs[0]},)` : `(${xs.join(", ")})`;
+}
+
 /** `; euler_angles = (…)` for the preview, empty when the shape is unrotated. */
 function anglesExpr(g) {
   const a = (g.euler_angles || []).filter((x) => x !== "" && x != null);
@@ -134,8 +139,17 @@ function geomExpr(ph) {
       const r = (g.layers || []).map((l) => jnum(l.radius));
       if (!r.length) return "";
       const mods = (g.layers || []).map(() => "iso_stiffness(1.0, 1.0)");
-      const t = (xs) => (xs.length === 1 ? `(${xs[0]},)` : `(${xs.join(", ")})`);
-      return `LayeredSphere(${t(r)}, ${t(mods)})`;
+      return `LayeredSphere(${jtuple(r)}, ${jtuple(mods)})`;
+    }
+    case "layered_spheroid": {
+      // The moduli do not change the picture, so the preview uses placeholders
+      // and only the geometry has to be right.
+      const f = (g.layers || []).map((l) => jnum(l.fraction ?? 1));
+      if (!f.length) return "";
+      const mods = f.map(() => "TensISO{3}(1.0)");
+      return `layered_spheroid_from_fractions(${n("omega", 0.5)}, `
+        + `${n("radius", 1)}, ${jtuple(f)}, ${jtuple(mods)}; `
+        + `Nseries = ${Math.max(1, parseInt(a.Nseries, 10) || 5)})`;
     }
     default: return "";
   }
@@ -269,12 +283,10 @@ function geometryEditor(ph) {
         const f = geomForm(v);
         g.args = {};
         for (const fl of (f && f.fields) || []) g.args[fl.name] = fl.default;
-        if (f && f.layered && !(g.layers || []).length) {
-          g.layers = [
-            { radius: 0.6, property: { key: ":C", builder: "iso_stiffness", form: "void", args: { k: 1e-6, mu: 1e-6 }, source: "builder", scheme_options: {} }, interface: { kind: "PerfectInterface", args: {} } },
-            { radius: 1.0, property: { key: ":C", builder: "iso_stiffness", form: "iso_kmu", args: { k: 30, mu: 12 }, source: "builder", scheme_options: {} }, interface: { kind: "PerfectInterface", args: {} } },
-          ];
-        }
+        // Layers belong to the shape: switching kind rebuilds them so a
+        // sphere's radii never masquerade as a spheroid's fractions.
+        if (f && f.layered) g.layers = defaultLayers(f);
+        else g.layers = [];
         push();
       }
     ))
@@ -291,7 +303,7 @@ function geometryEditor(ph) {
       )));
   }
   if (form && form.angles) box.append(anglesEditor(g, form.angles));
-  if (form && form.layered) box.append(layersEditor(g));
+  if (form && form.layered) box.append(layersEditor(g, form));
   return box;
 }
 
@@ -350,33 +362,95 @@ function isTrailingZero(arr) {
   return last === 0 || last === 0.0;
 }
 
-function layersEditor(g) {
+/** The layer table.
+ *
+ * A layered sphere is described by the outer radius of each shell; a confocal
+ * spheroid cannot be, because the constructor requires one shared focal
+ * distance and hand-entered radii never give it. That one is described by
+ * volume fraction instead, and MFH solves for the confocal radii. The form
+ * follows whichever the geometry declares.
+ */
+function defaultLayers(form) {
+  const byFraction = form.layer_by === "fraction";
+  const propName = form.layer_property || "iso_kmu";
+  const pf = propForm(propName) || { builder: "iso_stiffness", fields: [] };
+  const mkArgs = (scale) => {
+    const a = {};
+    for (const fl of pf.fields || []) a[fl.name] = fl.default * scale;
+    return a;
+  };
+  const layer = (radius, fraction, scale) => ({
+    radius, fraction,
+    property: {
+      key: byFraction ? ":K" : ":C", source: "builder",
+      builder: pf.builder, form: propName, args: mkArgs(scale), scheme_options: {},
+    },
+    interface: { kind: "PerfectInterface", args: {} },
+  });
+  return [layer(0.6, 0.3, 1), layer(1.0, 0.7, 3)];
+}
+
+function layersEditor(g, form) {
+  const byFraction = (form && form.layer_by) === "fraction";
+  const propName = (form && form.layer_property) || "iso_kmu";
+  const mk = () => {
+    const f = propForm(propName) || { builder: "iso_stiffness", fields: [] };
+    const args = {};
+    for (const fl of f.fields || []) args[fl.name] = fl.default;
+    return {
+      radius: 1.0, fraction: 0.5,
+      property: {
+        key: byFraction ? ":K" : ":C", source: "builder",
+        builder: f.builder, form: propName, args, scheme_options: {},
+      },
+      interface: { kind: "PerfectInterface", args: {} },
+    };
+  };
+
   const box = el("div", {},
     el("h3", {}, "Layers",
       el("button", {
         class: "small",
         onclick: () => {
           g.layers = g.layers || [];
-          const last = g.layers.length ? g.layers[g.layers.length - 1].radius : 0.5;
-          g.layers.push({
-            radius: (+last || 0.5) + 0.5,
-            property: { key: ":C", source: "builder", builder: "iso_stiffness", form: "iso_kmu", args: { k: 10, mu: 5 }, scheme_options: {} },
-            interface: { kind: "PerfectInterface", args: {} },
-          });
+          const l = mk();
+          if (!byFraction) {
+            const last = g.layers.length ? +g.layers[g.layers.length - 1].radius : 0.5;
+            l.radius = (isFinite(last) ? last : 0.5) + 0.5;
+          }
+          g.layers.push(l);
           push();
         },
       }, "+")),
-    el("div", { class: "note" }, "Ascending radii, r = 0 implicit at the center; layer 1 is the core.")
+    el("div", { class: "note" }, byFraction
+      ? "Core first. Fractions are of the total volume and are normalized; "
+        + "the confocal radii are solved for."
+      : "Ascending radii, r = 0 implicit at the center; layer 1 is the core.")
   );
+
   (g.layers || []).forEach((l, i) => {
+    const pf = propForm(l.property && l.property.form) || propForm(propName);
+    const fields = (pf && pf.fields) || [];
+    const row = el("div", { class: fields.length > 1 ? "grid3" : "grid2" },
+      byFraction
+        ? field("fraction", input(l.fraction ?? 0.5, (v) => {
+            l.fraction = isFinite(+v) && v.trim() !== "" ? +v : v; push();
+          }))
+        : field("outer r", input(l.radius, (v) => {
+            l.radius = isFinite(+v) && v.trim() !== "" ? +v : v; push();
+          })),
+      ...fields.map((fl) => field(fl.label, input(
+        (l.property.args || {})[fl.name] ?? fl.default,
+        (v) => {
+          l.property.args[fl.name] = isFinite(+v) && v.trim() !== "" ? +v : v;
+          push();
+        }
+      )))
+    );
     box.append(el("div", { class: "card" },
       el("header", {}, el("b", {}, `layer ${i + 1}`),
-        el("button", { class: "small", onclick: () => { g.layers.splice(i, 1); push(); } }, "−")),
-      el("div", { class: "grid3" },
-        field("outer r", input(l.radius, (v) => { l.radius = +v || v; push(); })),
-        field("k", input(l.property.args.k, (v) => { l.property.args.k = +v || v; push(); })),
-        field("μ", input(l.property.args.mu, (v) => { l.property.args.mu = +v || v; push(); }))
-      ),
+        el("button", { class: "small", onclick: () => { g.layers.splice(i, 1); push(); } }, "\u2212")),
+      row,
       field("Interface with the next layer", select(
         (S.catalog.interfaces || []).map((x) => [x.name, x.label]),
         (l.interface && l.interface.kind) || "PerfectInterface",
