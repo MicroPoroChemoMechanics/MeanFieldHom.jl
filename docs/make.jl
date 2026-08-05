@@ -98,9 +98,6 @@ makedocs(;
             "manual/custom_inclusions.md",
             "manual/fe_inclusions.md",
             "manual/neural_inclusions.md",
-            "manual/from_echoes.md",
-            "manual/echoes2mfh.md",
-            "manual/mfhstudio.md",
             "manual/conductivity.md",
             "manual/schemes.md",
             "manual/laminates.md",
@@ -169,6 +166,15 @@ makedocs(;
             "applications/recycled_aggregate.md",
             "applications/bituminous.md",
             "applications/ageing_creep.md",
+        ],
+        # Getting work into and out of MeanFieldHom. These are companions to
+        # the library rather than chapters about it, which is why they sit
+        # together at the end of the user-facing material instead of
+        # interrupting the manual.
+        "Tools and migration" => [
+            "tools/from_echoes.md",
+            "tools/echoes2mfh.md",
+            "tools/mfhstudio.md",
         ],
         "Developer" => [
             "developer/architecture.md",

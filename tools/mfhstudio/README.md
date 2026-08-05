@@ -1,8 +1,7 @@
 # MFH Studio
 
-A local web interface for building MeanFieldHom scripts: draw the
-microstructure, run the model, and read existing scripts back without damaging
-them.
+A local web interface for building MeanFieldHom scripts: draw the shape of each
+phase, run the model, and read existing scripts back without damaging them.
 
 ```bash
 cd tools/mfhstudio
@@ -57,7 +56,7 @@ build and save a script, and a banner says what is off. Only the 3-D view,
 reading a script back, and Run need the sidecar.
 
 The user-facing guide, with screenshots, is
-`docs/src/manual/mfhstudio.md`. This file covers how the thing is put together.
+`docs/src/tools/mfhstudio.md`. This file covers how the thing is put together.
 
 ## Shape
 

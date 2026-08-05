@@ -231,7 +231,7 @@ constructs need code in `extract.py`/`emit.py`.
 
 ## Related
 
-- `docs/src/manual/from_echoes.md` — the prose porting guide this tool
+- `docs/src/tools/from_echoes.md` — the prose porting guide this tool
   operationalizes. `check-drift` asserts the two stay consistent.
 - `scripts/bench_echoes/` — the PyCall cross-check harness for numeric
   validation against a live Echoes.

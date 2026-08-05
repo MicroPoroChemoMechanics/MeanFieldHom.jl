@@ -410,5 +410,5 @@ gradient(mo, MoriTanaka(), [p]; indexer = C -> k_mu(C)[2])
 
 and the inner cells are still solved exactly once per evaluation. The
 three-scale worked example is
-[the multiscale tutorial](@ref laminate_multiscale), which writes one model
+[the multiscale tutorial](@ref tut-laminate-multiscale), which writes one model
 both ways and checks that the derivatives agree with finite differences.

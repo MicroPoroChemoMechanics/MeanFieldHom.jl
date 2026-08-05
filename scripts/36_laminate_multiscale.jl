@@ -1,4 +1,4 @@
-# # Multiscale chaining: explicit and declarative, side by side
+# # [Multiscale chaining: explicit and declarative, side by side](@id tut-laminate-multiscale)
 #
 # A multiscale model chains homogenizations: what one scale computes becomes a
 # phase property at the next. `MeanFieldHom` supports two ways of writing that

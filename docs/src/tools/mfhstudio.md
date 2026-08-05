@@ -1,9 +1,9 @@
-# [MFH Studio: building scripts graphically](@id man-mfhstudio)
+# [MFH Studio: building scripts graphically](@id tools-mfhstudio)
 
 MFH Studio is a local web interface that builds MeanFieldHom scripts. It draws
-the microstructure in 3-D, runs the model, and — the part that makes it safe to
-use on existing work — **reads a script back** and preserves everything it does
-not recognize.
+the shape of the phase being edited, runs the model, and — the part that makes
+it safe to use on existing work — **reads a script back** and preserves
+everything it does not recognize.
 
 The script stays the deliverable. The studio is a way of writing one, not a
 format to be locked into.
@@ -47,14 +47,21 @@ and names the missing checkouts itself.
 
 ![The porous benchmark in MFH Studio](../assets/mfhstudio/overview.png)
 
-Three columns: the model on the left, the 3-D shape and the results in the
-middle, the Julia on the right. The script is regenerated on every edit, so
-what is displayed is exactly what **Save** writes.
+Three columns: the model on the left, the shape and the results in the middle,
+the Julia on the right. The script is regenerated on every edit, so what is
+displayed is exactly what **Save** writes.
+
+The **Shape** panel draws the geometry of the phase currently selected — one
+inclusion, drawn from its semi-axes and orientation. It is not a picture of the
+microstructure: mean-field homogenization never builds one, and nothing here
+places inclusions in a volume or shows their spatial distribution. What the
+panel is good for is checking that the shape you described is the shape you
+meant.
 
 The screenshot shows the porous benchmark after pressing **Run** — a solid
 matrix ``(k, \mu) = (72, 32)`` with spherical pores swept over
 ``\varphi \in [0, 0.9]``. The numbers reproduce the reference values captured
-from Echoes 1.0 (see [From Echoes to MeanFieldHom](@ref man-from-echoes)).
+from Echoes 1.0 (see [From Echoes to MeanFieldHom](@ref tools-from-echoes)).
 
 Two conventions the interface removes rather than documents:
 
@@ -163,5 +170,5 @@ rather than through a dedicated form.
 
 - [Multiscale models](@ref man-multiscale) — what the seam means and what it
   costs.
-- [`echoes2mfh`](@ref man-echoes2mfh) — the Echoes translator, which shares
+- [`echoes2mfh`](@ref tools-echoes2mfh) — the Echoes translator, which shares
   this tool's code generator.

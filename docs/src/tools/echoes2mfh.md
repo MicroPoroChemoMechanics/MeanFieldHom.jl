@@ -1,6 +1,6 @@
-# [Translating Echoes scripts: `echoes2mfh`](@id man-echoes2mfh)
+# [Translating Echoes scripts: `echoes2mfh`](@id tools-echoes2mfh)
 
-[From Echoes to MeanFieldHom](@ref man-from-echoes) explains the correspondence
+[From Echoes to MeanFieldHom](@ref tools-from-echoes) explains the correspondence
 between the two APIs. `tools/echoes2mfh/` automates it: point it at an Echoes
 Python script and it writes the Julia one.
 
@@ -155,11 +155,11 @@ explicitly refused, and any mapping target MFH no longer exports.
 
 ## See also
 
-- [From Echoes to MeanFieldHom](@ref man-from-echoes) — the API correspondence
+- [From Echoes to MeanFieldHom](@ref tools-from-echoes) — the API correspondence
   the tool automates.
 - [Cross-validation against Echoes](@ref dev-validation) — the deliberate
   divergences, including the crack-compliance normalization
   (``\mathbb H_{\text{Echoes}} = \eta\, \mathbb H_{\text{MFH}}``, ``\eta = b/a``),
   which the translator never applies silently.
-- [MFH Studio](@ref man-mfhstudio) — the graphical builder, which shares this
+- [MFH Studio](@ref tools-mfhstudio) — the graphical builder, which shares this
   tool's code generator so both write the same style of Julia.
