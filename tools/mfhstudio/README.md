@@ -12,9 +12,22 @@ python3 -m mfhstudio --no-browser    # stay in the terminal
 python3 -m mfhstudio --check         # verify the Julia side and exit
 ```
 
+On Windows the command is `python -m mfhstudio`.
+
 Requires Python 3.10+ (standard library only — no `pip install`) and a `julia`
 on `PATH` able to load MeanFieldHom. Set `JULIA` to point at a specific
 executable.
+
+On a fresh checkout the package environment has not been instantiated, and the
+sidecar's `using JSON3` would die with a stack trace whose only advice is to
+run `Pkg.instantiate()`. The sidecar now runs it itself on first start, which
+can take a few minutes. To do it by hand:
+
+    julia --project=<MeanFieldHom.jl> -e 'using Pkg; Pkg.instantiate()'
+
+If Julia is unavailable for any reason the interface still comes up: you can
+build and save a script, and a banner says what is off. Only the 3-D view,
+reading a script back, and Run need the sidecar.
 
 The user-facing guide, with screenshots, is
 `docs/src/manual/mfhstudio.md`. This file covers how the thing is put together.
@@ -40,16 +53,26 @@ restarted after a wedge without losing work.
 | `mfhstudio/codegen.py` | model → Julia |
 | `mfhstudio/readback.py` | script → model, with verbatim preservation |
 | `mfhstudio/juliabridge.py` | the sidecar process: start, call, restart |
-| `mfhstudio/server.py` | HTTP endpoints and session state |
+| `mfhstudio/catalog.py` | the form definitions — available without Julia |
+| `mfhstudio/server.py` | HTTP endpoints, session state, the file browser |
 | `julia/sidecar.jl` | the JSON-lines loop |
 | `julia/introspect.jl` | the feature catalog, read from the live package |
 | `julia/geometry.jl` | 3-D traces |
 | `julia/parse_script.jl` | `Meta.parse` → nodes that tile the file exactly |
 | `web/graph.js` | the draggable scale graph |
+| `web/picker.js` | the file dialog |
 
 ## Three design decisions worth knowing
 
-**The catalog is introspected, never hard-coded.** Schemes come from
+**The catalog has two halves.** Form definitions — which fields a spheroid
+needs, which lenses exist — are interface concerns and live in Python, so they
+are there immediately. Only the scheme list and each scheme's solver options
+come from the sidecar, and they replace the fallback wholesale rather than
+merging, so a scheme MeanFieldHom drops disappears. Putting the forms behind
+the sidecar is what once made every control dead on a machine where Julia
+failed to start.
+
+**The scheme list is introspected, never hard-coded.** Schemes come from
 `subtypes(HomogenizationScheme)`, and each scheme's solver options are read
 from the constant it declares for the purpose (`_SC_SOLVER_KWARGS`,
 `_DIFF_RESERVED_OPTIONS`). Probing the constructor would not do: those schemes

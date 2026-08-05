@@ -173,6 +173,64 @@ def test_edited_parameter_is_regenerated():
 
 
 # ---------------------------------------------------------------------------
+# Working without Julia
+#
+# The interface must come up whether or not the sidecar does. When it did not,
+# `S.model` stayed null in the browser and every control threw a TypeError
+# nobody sees — the whole thing looked broken with no clue why.
+# ---------------------------------------------------------------------------
+
+
+def test_catalog_is_complete_without_julia():
+    from mfhstudio import catalog as catalog_module
+
+    cat = catalog_module.base_catalog()
+    assert cat["introspected"] is False
+    for key in ("schemes", "geometries", "properties", "symmetrize",
+                "projections", "interfaces", "lenses", "visco"):
+        assert cat[key], f"{key} is empty without Julia"
+
+
+def test_introspected_schemes_replace_the_fallback_wholesale():
+    """A scheme MeanFieldHom drops must disappear, not linger from a merge."""
+    from mfhstudio import catalog as catalog_module
+
+    merged = catalog_module.merge({
+        "schemes": [{"name": "OnlyOne", "options": [], "singleton": True}],
+        "mfh_version": "9.9.9", "julia_version": "1.x",
+    })
+    assert [s["name"] for s in merged["schemes"]] == ["OnlyOne"]
+    assert merged["introspected"] is True
+    assert merged["geometries"], "form definitions must survive the merge"
+
+
+def test_session_serves_a_catalog_when_the_sidecar_is_dead():
+    from mfhstudio.server import Session
+
+    s = Session()
+    s.bridge.julia = "/nonexistent-julia"
+    cat = s.catalog()
+    assert cat["introspected"] is False
+    assert cat["schemes"] and cat["geometries"]
+    assert s.catalog_error, "the failure must be reported, not swallowed"
+    # and the model still generates a script
+    assert "add_matrix!" in s.script()
+
+
+def test_startup_failure_is_diagnosed_not_dumped():
+    """A stack trace says what happened; the user needs to know what to do."""
+    from mfhstudio.juliabridge import _diagnose
+
+    log = ("ERROR: LoadError: ArgumentError: Package JSON3 [0f8b85d8] is "
+           "required but does not seem to be installed:\n"
+           " - Run `Pkg.instantiate()` to install all recorded dependencies.")
+    msg = _diagnose(log)
+    assert "instantiate" in msg
+    assert "julia --project=" in msg
+    assert log in msg, "the original error must still be there"
+
+
+# ---------------------------------------------------------------------------
 # Julia-backed
 # ---------------------------------------------------------------------------
 

@@ -29,6 +29,8 @@ const S = {
   phaseIdx: 0,
   problems: [],
   keptReport: null,
+  path: null,
+  catalogIntrospected: false,
 };
 
 /* ── server ─────────────────────────────────────────────────────── */
@@ -70,7 +72,8 @@ function apply(st) {
     ? `${S.problems.length} problem(s)`
     : "";
   $("#problems").className = S.problems.length ? "problem" : "muted";
-  if (st.path) $("#path").value = st.path;
+  S.path = st.path || S.path;
+  setPathLabel(S.path);
   render();
   draw3d();
 }
@@ -587,6 +590,13 @@ async function draw3d() {
   const expr = geomExpr(ph);
   $("#shape-label").textContent = expr || "";
   if (!expr) { Plotly.purge("view3d"); lastExpr = null; return; }
+  if (!S.catalogIntrospected) {
+    // The sidecar draws the shapes; without it, say so once rather than
+    // firing a request per edit that can only fail.
+    Plotly.purge("view3d");
+    $("#shape-label").textContent = expr + " — 3-D needs Julia";
+    return;
+  }
   const key = expr + "|" + $("#cutaway").checked;
   if (key === lastExpr) return;
   lastExpr = key;
@@ -638,8 +648,8 @@ function plotResults(res) {
 /* ── files ──────────────────────────────────────────────────────── */
 
 async function openFile() {
-  const path = $("#path").value.trim();
-  if (!path) return toast("Give a path first.", true);
+  const path = await Picker.pick("open", S.path || "");
+  if (!path) return;
   try {
     const st = await api("/api/open", { path });
     S.keptReport = st.read_report || null;
@@ -653,41 +663,85 @@ async function openFile() {
   }
 }
 
-async function saveFile() {
-  const path = $("#path").value.trim();
-  if (!path) return toast("Give a path first.", true);
+async function saveFile(askPath) {
+  let path = S.path;
+  if (askPath || !path) {
+    const suggested = (S.model && S.model.title ? S.model.title : "model") + ".jl";
+    path = await Picker.pick("save", S.path || "", suggested);
+    if (!path) return;
+  }
   try {
     const r = await api("/api/save", { path });
+    S.path = r.path;
+    setPathLabel(r.path);
     toast(`Saved ${r.bytes} bytes to ${r.path}`);
   } catch (e) {
     toast(e.message, true);
   }
 }
 
+function setPathLabel(p) {
+  const el = $("#path-label");
+  el.textContent = p || "untitled";
+  el.title = p || "No file yet";
+}
+
 /* ── sidecar status ─────────────────────────────────────────────── */
 
 async function pollSidecar() {
+  let s;
   try {
-    const s = await api("/api/sidecar");
-    const b = $("#sidecar");
-    if (s.ready) { b.textContent = "Julia ready"; b.className = "badge ok"; }
-    else if (s.running) { b.textContent = "loading MeanFieldHom…"; b.className = "badge"; }
-    else if (s.error) { b.textContent = "Julia unavailable"; b.className = "badge bad"; b.title = s.error; }
-    else { b.textContent = "starting…"; b.className = "badge"; }
-    if (s.ready && !S.catalog) await boot();
-  } catch { /* the server will answer eventually */ }
+    s = await api("/api/sidecar");
+  } catch {
+    return; // the server will answer eventually
+  }
+  const b = $("#sidecar");
+  const err = s.error || s.catalog_error;
+  if (s.ready && s.introspected) { b.textContent = "Julia ready"; b.className = "badge ok"; }
+  else if (s.running) { b.textContent = "loading MeanFieldHom…"; b.className = "badge"; }
+  else if (err) { b.textContent = "Julia unavailable"; b.className = "badge bad"; b.title = err; }
+  else { b.textContent = "starting…"; b.className = "badge"; }
+
+  // Say plainly what is off and what still works. A dead-looking interface
+  // with a stack trace only in the console is the worst of both.
+  const banner = $("#banner");
+  if (err && !s.ready) {
+    banner.hidden = false;
+    banner.replaceChildren(
+      el("b", {}, "Julia is not available — "),
+      el("span", {}, "you can still build and save a script; the 3-D view, "
+        + "reading a script back, and Run are off."),
+      el("pre", {}, String(err).split("\n").slice(0, 8).join("\n"))
+    );
+  } else {
+    banner.hidden = true;
+  }
+
+  // Upgrade the catalog as soon as the sidecar can answer.
+  if (s.ready && S.catalog && !S.catalogIntrospected) await loadCatalog();
 }
 
 /* ── boot ───────────────────────────────────────────────────────── */
 
+async function loadCatalog() {
+  const cat = await api("/api/catalog");
+  const was = S.catalogIntrospected;
+  S.catalog = cat;
+  S.catalogIntrospected = !!cat.introspected;
+  // Re-render once the live scheme options arrive, so their inputs appear.
+  if (S.model && S.catalogIntrospected && !was) render();
+}
+
 async function boot() {
   try {
-    S.catalog = await api("/api/catalog");
+    // The catalog answers with or without Julia; the model always does. The
+    // interface must come up either way — otherwise every control throws on
+    // a null model and the whole thing looks broken.
+    await loadCatalog();
+    apply(await api("/api/state"));
   } catch (e) {
-    return; // still loading; the poll will retry
+    toast("Could not reach the studio server: " + e.message, true);
   }
-  const st = await api("/api/state");
-  apply(st);
 }
 
 function wire() {
@@ -738,9 +792,11 @@ function wire() {
   $("#cutaway").addEventListener("change", () => { lastExpr = null; draw3d(); });
   $("#run").addEventListener("click", run);
   $("#open").addEventListener("click", openFile);
-  $("#save").addEventListener("click", saveFile);
+  $("#save").addEventListener("click", () => saveFile(false));
+  $("#saveas").addEventListener("click", () => saveFile(true));
 }
 
 wire();
+boot();
 pollSidecar();
 setInterval(pollSidecar, 2000);

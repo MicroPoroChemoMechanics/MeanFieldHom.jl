@@ -14,9 +14,18 @@ python3 -m mfhstudio            # starts the server and opens a browser
 python3 -m mfhstudio --check    # verify the Julia side and exit
 ```
 
+On Windows, `python -m mfhstudio`.
+
 It needs Python 3.10+ (standard library only) and a `julia` on `PATH` able to
 load MeanFieldHom. Loading the package takes about ten seconds, paid once when
 the interface starts; the badge in the top-right turns green when it is ready.
+On a fresh checkout the sidecar instantiates the package environment first,
+which takes a few minutes once.
+
+If Julia cannot start, the interface still comes up and says so in a banner:
+building and saving a script works, while the 3-D view, reading a script back
+and **Run** are off. Running `--check` first is the quickest way to see what
+the Julia side thinks.
 
 ## The layout
 
@@ -96,7 +105,14 @@ cell = set_param(base_cell, nested(:FOAM, :C, amount(:PORE)), φ)
 
 ## Reading an existing script
 
-**Open** reads a `.jl` file. Two things can happen.
+**Open…** browses the server's own filesystem — with shortcuts to `scripts/`,
+the package root and your home directory — rather than using the browser's file
+input. The browser never reveals a real path, and a path is exactly what saving
+back to the same file needs; listing server-side also keeps the picker correct
+when the studio runs on a remote machine. **Save** writes to the current file,
+**Save as…** asks for a new one.
+
+Reading a `.jl` file back, two things can happen.
 
 A script the studio wrote carries its model in a trailing comment block and
 reopens exactly. Any other script — a hand-written demo from `scripts/`, an

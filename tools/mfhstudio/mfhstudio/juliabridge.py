@@ -27,6 +27,35 @@ class SidecarUnavailable(RuntimeError):
     """The sidecar could not be started or has stopped responding."""
 
 
+def _diagnose(log: str) -> str:
+    """Turn a Julia start-up failure into something the user can act on.
+
+    A raw stack trace tells you what happened but not what to do, and the two
+    common failures here have a one-line remedy each.
+    """
+    hint = None
+    if "does not seem to be installed" in log or "Pkg.instantiate()" in log:
+        hint = (
+            "the MeanFieldHom project has not been instantiated. The sidecar "
+            "now does this itself on start-up; if you are seeing this, run it "
+            "by hand:\n"
+            "    julia --project=<MeanFieldHom.jl> -e 'using Pkg; Pkg.instantiate()'"
+        )
+    elif "MeanFieldHom" in log and "not found in current path" in log:
+        hint = (
+            "Julia started but could not find MeanFieldHom. Check that "
+            "tools/mfhstudio sits inside the package checkout, or point the "
+            "sidecar at it explicitly."
+        )
+    elif "UndefVarError" in log or "LoadError" in log:
+        hint = "the sidecar scripts failed to load; the Julia error is below."
+
+    head = "Julia exited during start-up"
+    if hint:
+        head += ": " + hint
+    return head + "\n\n" + log
+
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 SIDECAR_JL = os.path.join(HERE, "..", "julia", "sidecar.jl")
 PROJECT_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
@@ -42,7 +71,10 @@ class Bridge:
     julia: Optional[str] = None
     project: str = PROJECT_ROOT
     script: str = os.path.abspath(SIDECAR_JL)
-    boot_timeout: float = 180.0
+    # A first run may have to instantiate the project, which can take minutes.
+    # Waiting is safe: a sidecar that *dies* is detected at once, so this only
+    # bounds the "alive but slow" case.
+    boot_timeout: float = 900.0
 
     _proc: Optional[subprocess.Popen] = field(default=None, init=False, repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
@@ -103,9 +135,7 @@ class Bridge:
                 msg = self._replies.get(timeout=0.2)
             except queue.Empty:
                 if self._proc.poll() is not None:
-                    raise SidecarUnavailable(
-                        "Julia exited during start-up:\n" + "".join(self._stderr[-40:])
-                    )
+                    raise SidecarUnavailable(_diagnose("".join(self._stderr[-60:])))
                 continue
             if msg.get("event") == "ready":
                 self._ready = bool(msg.get("ok"))

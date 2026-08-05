@@ -5,14 +5,17 @@
 <header>
   <h1>MFH&nbsp;Studio</h1>
   <div class="file">
-    <input id="path" type="text" spellcheck="false" placeholder="path/to/script.jl">
-    <button id="open">Open</button>
+    <span id="path-label" class="pathlabel" title="No file yet">untitled</span>
+    <button id="open">Open…</button>
     <button id="save" class="primary">Save</button>
+    <button id="saveas">Save as…</button>
   </div>
   <div class="spacer"></div>
   <span id="sidecar" class="badge" title="Julia sidecar">starting…</span>
   <button id="run" class="primary">Run</button>
 </header>
+
+<div id="banner" hidden></div>
 
 <main>
   <!-- ── left: the model ─────────────────────────────────────────── -->
@@ -78,8 +81,27 @@
   </section>
 </main>
 
+<!-- file picker: the browser cannot hand back a real path, and a path is what
+     saving to the same file needs, so the server lists its own filesystem -->
+<div id="picker" class="modal" hidden>
+  <div class="dialog">
+    <header>
+      <b id="picker-title">Open a script</b>
+      <button id="picker-close" class="small">✕</button>
+    </header>
+    <div class="places" id="picker-places"></div>
+    <div class="crumb" id="picker-crumb"></div>
+    <div class="listing" id="picker-list"></div>
+    <footer>
+      <input id="picker-name" type="text" spellcheck="false" placeholder="file name.jl">
+      <button id="picker-ok" class="primary">Open</button>
+    </footer>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script src="/vendor/plotly.min.js"></script>
+<script src="/picker.js"></script>
 <script src="/graph.js"></script>
 <script src="/app.js"></script>

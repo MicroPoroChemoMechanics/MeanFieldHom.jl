@@ -12,7 +12,27 @@
 #  returned as data instead.
 # =============================================================================
 
-using JSON3
+import Pkg
+
+# The sidecar runs with `--project=<MeanFieldHom root>`. On a fresh checkout —
+# or after a dependency is added — that environment has not been instantiated,
+# and `using JSON3` dies with a stack trace whose only advice is to run
+# `Pkg.instantiate()`. Printing that advice at somebody is worse than following
+# it, so this does.
+function _ensure_dependencies()
+    try
+        @eval using JSON3
+        return nothing
+    catch
+        @info "mfhstudio: installing the project's dependencies (first run — this can take a few minutes)"
+        flush(stderr)
+        Pkg.instantiate()
+        @eval using JSON3
+        return nothing
+    end
+end
+
+_ensure_dependencies()
 
 const HERE = @__DIR__
 

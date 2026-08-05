@@ -15,10 +15,11 @@ import threading
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Optional
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
+from . import catalog as catalog_module
 from .codegen import extract_embedded, generate
-from .juliabridge import Bridge, SidecarError, SidecarUnavailable
+from .juliabridge import PROJECT_ROOT, Bridge, SidecarError, SidecarUnavailable
 from .model import Model, default_model
 from .readback import model_from_script
 
@@ -47,10 +48,29 @@ class Session:
         self.bridge = Bridge()
         self.lock = threading.Lock()
         self._catalog: Optional[dict] = None
+        self.catalog_error: Optional[str] = None
 
     def catalog(self) -> dict:
+        """The form definitions, upgraded with live facts once Julia answers.
+
+        This never raises. The interface has to be usable while MeanFieldHom
+        is still loading — otherwise every control is dead and the only clue
+        is a `TypeError` in the browser console.
+        """
         if self._catalog is None:
-            self._catalog = self.bridge.catalog()
+            introspected = None
+            try:
+                introspected = self.bridge.catalog()
+            except Exception as exc:  # noqa: BLE001
+                self.catalog_error = str(exc)
+            else:
+                self.catalog_error = None
+            cat = catalog_module.merge(introspected)
+            if not cat["introspected"]:
+                # Not cached: retry on the next request, so the interface
+                # upgrades itself as soon as the sidecar is ready.
+                return cat
+            self._catalog = cat
         return self._catalog
 
     def script(self) -> str:
@@ -106,8 +126,15 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(self.session.catalog())
             if path == "/api/script":
                 return self._json({"source": self.session.script()})
+            if path == "/api/browse":
+                return self._browse(parse_qs(urlparse(self.path).query))
             if path == "/api/sidecar":
-                return self._json(self.session.bridge.status)
+                st = dict(self.session.bridge.status)
+                st["catalog_error"] = self.session.catalog_error
+                st["introspected"] = bool(
+                    self.session._catalog and self.session._catalog.get("introspected")
+                )
+                return self._json(st)
             return self._static(path)
         except Exception as exc:  # noqa: BLE001
             return self._error(exc)
@@ -172,6 +199,68 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 pass
         return self._json(result)
+
+    def _browse(self, query: dict) -> None:
+        """List a directory for the file picker.
+
+        The browser cannot give a real path from `<input type="file">`, and a
+        path is exactly what saving back to the same file needs — so the
+        picker walks the server's filesystem instead. That also makes it work
+        when the studio runs on a remote machine, which the local file dialog
+        never would.
+        """
+        raw = (query.get("path") or [""])[0]
+        start = os.path.abspath(os.path.expanduser(raw)) if raw else self._default_dir()
+        if os.path.isfile(start):
+            start = os.path.dirname(start)
+        if not os.path.isdir(start):
+            start = self._default_dir()
+
+        dirs, files = [], []
+        try:
+            for name in sorted(os.listdir(start), key=str.lower):
+                if name.startswith("."):
+                    continue
+                full = os.path.join(start, name)
+                if os.path.isdir(full):
+                    dirs.append({"name": name, "path": full})
+                elif name.endswith(".jl"):
+                    files.append({
+                        "name": name, "path": full,
+                        "size": os.path.getsize(full),
+                    })
+        except PermissionError as exc:
+            raise ValueError(f"cannot read {start}: {exc}") from exc
+
+        parent = os.path.dirname(start)
+        return self._json({
+            "path": start,
+            "parent": parent if parent and parent != start else None,
+            "dirs": dirs,
+            "files": files,
+            "places": self._places(),
+            "sep": os.sep,
+        })
+
+    def _default_dir(self) -> str:
+        if self.session.path:
+            return os.path.dirname(os.path.abspath(self.session.path))
+        scripts = os.path.join(PROJECT_ROOT, "scripts")
+        return scripts if os.path.isdir(scripts) else os.getcwd()
+
+    @staticmethod
+    def _places() -> list:
+        """Shortcuts worth one click, and only the ones that exist."""
+        out = []
+        for label, p in (
+            ("scripts", os.path.join(PROJECT_ROOT, "scripts")),
+            ("package", PROJECT_ROOT),
+            ("home", os.path.expanduser("~")),
+            ("cwd", os.getcwd()),
+        ):
+            if os.path.isdir(p):
+                out.append({"label": label, "path": os.path.abspath(p)})
+        return out
 
     def _open(self, body: dict) -> None:
         path = body.get("path") or ""

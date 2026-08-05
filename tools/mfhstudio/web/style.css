@@ -25,6 +25,11 @@
 
 * { box-sizing: border-box; }
 
+/* `[hidden]` only sets `display: none` at user-agent specificity, so any rule
+   giving an element an explicit `display` silently defeats it. Several
+   elements here are flex containers that must still be hideable. */
+[hidden] { display: none !important; }
+
 html, body {
   height: 100%;
   margin: 0;
@@ -380,3 +385,104 @@ h3 {
   box-shadow: 0 6px 18px #0003;
 }
 #toast div.bad { background: var(--bad); color: #fff; }
+
+/* ── banner ─────────────────────────────────────────────────────── */
+
+#banner {
+  padding: 7px 12px;
+  font-size: 12px;
+  background: #a5580f18;
+  border-bottom: 1px solid var(--warn);
+  color: var(--warn);
+}
+#banner b { font-weight: 650; }
+#banner pre {
+  margin: 6px 0 0;
+  font: 11px/1.4 var(--mono);
+  white-space: pre-wrap;
+  max-height: 8em;
+  overflow: auto;
+  color: var(--muted);
+}
+
+.pathlabel {
+  font: 11.5px/1 var(--mono);
+  color: var(--muted);
+  max-width: 44ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;          /* keep the file name visible when it overflows */
+  text-align: left;
+}
+
+/* ── file picker ────────────────────────────────────────────────── */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: #0007;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+.modal .dialog {
+  width: min(680px, 92vw);
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 48px #0005;
+  overflow: hidden;
+}
+.modal .dialog > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.modal .dialog > header b { flex: 1; }
+.modal .dialog > footer {
+  display: flex;
+  gap: 8px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.modal .dialog > footer input { flex: 1; }
+
+.places {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px 0;
+  flex-wrap: wrap;
+}
+.places button { font-size: 11px; padding: 3px 8px; }
+
+.crumb {
+  padding: 8px 12px;
+  font: 11px/1.3 var(--mono);
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.listing { overflow: auto; padding: 0 6px 6px; }
+.listing .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+.listing .row:hover { background: var(--panel); }
+.listing .row.on { background: var(--accent); color: #fff; }
+.listing .row .ico { width: 1.2em; opacity: .75; }
+.listing .row .size { margin-left: auto; font: 10.5px/1 var(--mono); opacity: .6; }
+.listing .empty { padding: 14px; color: var(--muted); font-size: 12px; }
