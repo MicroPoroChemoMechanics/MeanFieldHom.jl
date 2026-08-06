@@ -140,6 +140,112 @@ cell = set_param(base_cell, nested(:FOAM, :C, amount(:PORE)), φ)
     would have to be re-expressible as a `ViscoLaw`. The interface refuses the
     combination instead of writing a script that fails at run time.
 
+## Choosing what to compute
+
+The **Sweep** tab decides the shape of the run.
+
+*One point* homogenizes once with the amounts entered in Scales — the answer
+when you simply want the number for the fractions you typed. *Sweep* varies one
+lens over a range and draws the curve.
+
+Either way the schemes are a **list**: adding a second one puts both on the
+same figure, which is usually the reason to draw one. Each carries its own
+solver options, and switching a scheme clears them, because they belong to the
+scheme that reads them — `MoriTanaka(; verbose = false)` is a `MethodError`,
+the singleton schemes taking no keywords at all.
+
+The **outputs** are chosen too, and this matters more than it looks:
+
+| Output | Defined for |
+| :--- | :--- |
+| `k`, `μ`, `E`, `ν` | an **isotropic** result only |
+| Kelvin-Mandel component `KM[i,j]` | any symmetry |
+| tensor component `C[i,j]` | 2nd-order properties (conduction) |
+| `tr/3` | mean conductivity |
+
+`k_mu` has a method for [`TensISO`](@ref) and nothing else. An oriented
+inclusion with no orientation average does not give an isotropic effective
+tensor, so asking for `k` there fails deep inside the run with a `MethodError`.
+The interface says so before you run: either pick a reporting projection, or
+plot components, which are defined whatever the symmetry.
+
+## Viscoelasticity
+
+A phase becomes viscoelastic through its **property**, not through a separate
+panel: in Scales → Properties → Parametrization, choose Maxwell, a Kelvin
+chain, an elastic (Heaviside) phase, or a custom ``J(t, t')``. The generated
+call uses MeanFieldHom's own signatures — `maxwell_iso(k, μ, η_k, η_μ)` takes
+*two* relaxation times, `kelvin_iso` takes whole branch vectors.
+
+![A creeping mortar under two schemes](../assets/mfhstudio/viscoelastic.png)
+
+The **Viscoelastic** tab then only decides the time grid and the curve. It
+lists which phases carry a law, so a run with nothing to age says so rather
+than failing later. `homogenize_alv` returns the effective relaxation operator
+as a ``6n \times 6n`` block matrix; the curve is its Volterra inverse read on
+one Kelvin-Mandel component — `(1, 1)` is the uniaxial creep response, the
+extraction used in [`scripts/62_alv_schemes.jl`](@ref).
+
+## Anisotropic properties
+
+Conductivity comes in three forms: isotropic ``\kappa``, transversely
+isotropic ``(\kappa_t, \kappa_a)``, and orthotropic ``(\kappa_1, \kappa_2,
+\kappa_3)``. Stiffness offers isotropic ``(k, \mu)`` or ``(E, \nu)``,
+transversely isotropic Hoenig parameters, and the nine orthotropic constants.
+Anything else is typed as a Julia expression, which the generator passes
+through untouched.
+
+### The frame the constants are written in
+
+An anisotropic tensor means nothing without its frame, so every anisotropic
+form carries its own **Orientation** block of ZYZ Euler angles. It is *not*
+the shape's orientation: a tilted fiber made of an untilted material and an
+untilted fiber made of a tilted material are different materials, and the two
+angle sets are stored and emitted separately.
+
+What the angles produce depends on the symmetry class. A transversely
+isotropic tensor carries an axis rather than a basis — ``\psi`` is irrelevant,
+the transverse plane being isotropic — so the studio emits the third vector of
+the frame:
+
+```julia
+hoenig_stiffness(30.0, 0.3, 0.2, 0.25, 0.5, vecbasis(RotatedBasis(π/4, 0.7, 0.0))[:, 3])
+TensTI{2}(1.0, 5.0, vecbasis(RotatedBasis(π/4, 0.7, 0.0))[:, 3])
+```
+
+An orthotropic tensor needs all three directions, and takes the basis itself.
+`Tens(A, basis)` stores `A` as the components **in that basis**, which is what
+"diagonal in the material frame" means:
+
+```julia
+TensOrtho(120.0, 90.0, 70.0, 40.0, 35.0, 30.0, 25.0, 22.0, 20.0, RotatedBasis(0.3, π/3, 0.0))
+Tens([1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 5.0], RotatedBasis(0.3, π/3, 0.0))
+```
+
+Angles are radians, and the field accepts arithmetic: `π/4`, `2pi/3` and plain
+decimals all work, an expression reaching the script as written rather than as
+its seventeen-digit decimal. The degree equivalent is shown beside each field.
+
+!!! note "The isotropic point of the Hoenig parametrization"
+    ``h = 1`` together with ``\nu_1 = \nu_2`` and ``\gamma = 1`` is not a
+    transversely isotropic material: it is the isotropic one, written in a
+    transversely isotropic type. The axis then carries no information, and the
+    schemes have a degenerate reference to work from. The defaults are away
+    from that corner for this reason.
+
+## Opening an Echoes script
+
+**Open** accepts a `.py` as well as a `.jl`. Picking a Python file makes the
+studio translate it with [`echoes2mfh`](@ref tools-echoes2mfh), ask where the
+Julia should go, write it, and open the result — one action rather than a
+separate convert button, because the extension already says which of the two is
+happening.
+
+The translator's findings come back with it. A script it could not translate
+whole reports how many constructs it refused, and each one sits in the written
+script as an `UNTRANSLATED` block that raises at run time, so a half-translated
+model cannot quietly produce numbers.
+
 ## Reading an existing script
 
 **Open…** browses the server's own filesystem — with shortcuts to `scripts/`,

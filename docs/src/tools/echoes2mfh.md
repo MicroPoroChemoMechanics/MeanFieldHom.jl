@@ -161,5 +161,6 @@ explicitly refused, and any mapping target MFH no longer exports.
   divergences, including the crack-compliance normalization
   (``\mathbb H_{\text{Echoes}} = \eta\, \mathbb H_{\text{MFH}}``, ``\eta = b/a``),
   which the translator never applies silently.
-- [MFH Studio](@ref tools-mfhstudio) — the graphical builder, which shares this
-  tool's code generator so both write the same style of Julia.
+- [MFH Studio](@ref tools-mfhstudio) — the graphical builder. It shares this
+  tool's code generator, so both write the same style of Julia, and its **Open**
+  runs this translator when handed a `.py`.

@@ -107,19 +107,117 @@ PROPERTIES = [
     {
         "name": "ti_hoenig", "label": "Transversely isotropic (Hoenig)", "order": 4,
         "builder": "hoenig_stiffness",
+        # h = 1 with ν₁ = ν₂ and γ = 1 is not a transversely isotropic material
+        # at all — it is the isotropic point of the parametrization, written in
+        # a TI type. Shipping it as the default put every new anisotropic model
+        # on that degenerate corner, where the axis carries no information and
+        # the numerics have nothing to grip. The defaults below are genuinely
+        # transversely isotropic (E₃/E₁ = 0.3, γ = 0.5).
+        "doc": "E₁ in the transverse plane, h = E₃/E₁, γ = G₁₃ / G₁₂. "
+               "h = 1 with ν₁ = ν₂ and γ = 1 is the isotropic point.",
         "fields": [
             {"name": "E1", "label": "E₁", "type": "number", "default": 30.0},
-            {"name": "h", "label": "h", "type": "number", "default": 1.0},
+            {"name": "h", "label": "h = E₃/E₁", "type": "number", "default": 0.3},
             {"name": "nu1", "label": "ν₁", "type": "number", "default": 0.2},
-            {"name": "nu2", "label": "ν₂", "type": "number", "default": 0.2},
-            {"name": "gamma", "label": "γ", "type": "number", "default": 1.0},
+            {"name": "nu2", "label": "ν₂", "type": "number", "default": 0.25},
+            {"name": "gamma", "label": "γ", "type": "number", "default": 0.5},
         ],
+        "orientation": 2,
     },
     {
         "name": "iso_conduction", "label": "Isotropic conductivity", "order": 2,
         "builder": "TensISO{3}",
         "doc": "A single argument to TensISO{dim} gives the 2nd-order tensor.",
         "fields": [{"name": "k", "label": "κ", "type": "number", "default": 1.0}],
+    },
+    {
+        "name": "ti_conduction", "label": "Transversely isotropic conductivity",
+        "order": 2, "builder": "TensTI2",
+        "doc": "κₜ acts across the axis, κₐ along it.",
+        "fields": [
+            {"name": "kt", "label": "κₜ (transverse)", "type": "number", "default": 1.0},
+            {"name": "ka", "label": "κₐ (axial)", "type": "number", "default": 5.0},
+        ],
+        "orientation": 2,
+    },
+    {
+        "name": "ortho_conduction", "label": "Orthotropic conductivity",
+        "order": 2, "builder": "TensDiag2",
+        "doc": "The three principal conductivities, in the phase's own frame.",
+        "fields": [
+            {"name": "k1", "label": "κ₁", "type": "number", "default": 1.0},
+            {"name": "k2", "label": "κ₂", "type": "number", "default": 2.0},
+            {"name": "k3", "label": "κ₃", "type": "number", "default": 5.0},
+        ],
+        "orientation": 3,
+    },
+    {
+        "name": "ortho_stiffness", "label": "Orthotropic (9 constants)",
+        "order": 4, "builder": "TensOrtho",
+        "doc": "The nine constants in the material frame; the frame itself is "
+               "the Orientation block below.",
+        "fields": [
+            {"name": "C11", "label": "C₁₁", "type": "number", "default": 120.0},
+            {"name": "C22", "label": "C₂₂", "type": "number", "default": 90.0},
+            {"name": "C33", "label": "C₃₃", "type": "number", "default": 70.0},
+            {"name": "C12", "label": "C₁₂", "type": "number", "default": 40.0},
+            {"name": "C13", "label": "C₁₃", "type": "number", "default": 35.0},
+            {"name": "C23", "label": "C₂₃", "type": "number", "default": 30.0},
+            {"name": "C44", "label": "C₄₄", "type": "number", "default": 25.0},
+            {"name": "C55", "label": "C₅₅", "type": "number", "default": 22.0},
+            {"name": "C66", "label": "C₆₆", "type": "number", "default": 20.0},
+        ],
+        "orientation": 3,
+    },
+    # ── viscoelastic laws ────────────────────────────────────────────────
+    #
+    # A phase carries one of these under the same key as a stiffness would be;
+    # `homogenize_alv` finds it there. The signatures below are the ones
+    # MeanFieldHom actually declares — `maxwell_iso` takes two relaxation
+    # times, not one, and `kelvin_iso` takes whole branch vectors.
+    {
+        "name": "maxwell_iso", "label": "Viscoelastic — Maxwell (relaxation)",
+        "order": 4, "builder": "maxwell_iso", "visco": True, "mode": "relaxation",
+        "doc": "R(t,t′) = 3k·e^(−Δt/η_k)·𝕁 + 2μ·e^(−Δt/η_μ)·𝕂",
+        "fields": [
+            {"name": "k", "label": "k", "type": "number", "default": 10.0},
+            {"name": "mu", "label": "μ", "type": "number", "default": 5.0},
+            {"name": "eta_k", "label": "η_k (bulk time)", "type": "number", "default": 1.0},
+            {"name": "eta_mu", "label": "η_μ (shear time)", "type": "number", "default": 1.0},
+        ],
+    },
+    {
+        "name": "kelvin_iso", "label": "Viscoelastic — Kelvin chain (creep)",
+        "order": 4, "builder": "kelvin_iso", "visco": True, "mode": "creep",
+        "doc": "Instantaneous (k₀, μ₀) plus one Kelvin branch.",
+        "fields": [
+            {"name": "k0", "label": "k₀", "type": "number", "default": 10.0},
+            {"name": "mu0", "label": "μ₀", "type": "number", "default": 5.0},
+            {"name": "k1", "label": "k branch", "type": "number", "default": 20.0},
+            {"name": "mu1", "label": "μ branch", "type": "number", "default": 10.0},
+            {"name": "tau_k", "label": "τ_k", "type": "number", "default": 1.0},
+            {"name": "tau_mu", "label": "τ_μ", "type": "number", "default": 1.0},
+        ],
+    },
+    {
+        "name": "visco_elastic", "label": "Viscoelastic — elastic (Heaviside)",
+        "order": 4, "builder": "heaviside_law", "visco": True, "mode": "relaxation",
+        "doc": "A non-ageing elastic phase inside a viscoelastic RVE.",
+        "fields": [
+            {"name": "k", "label": "k", "type": "number", "default": 10.0},
+            {"name": "mu", "label": "μ", "type": "number", "default": 5.0},
+        ],
+    },
+    {
+        "name": "visco_custom", "label": "Viscoelastic — custom J(t, t′)",
+        "order": 4, "builder": "ViscoLaw", "visco": True, "mode": "creep",
+        "doc": "Any Julia expression in t and t′ returning a 4th-order tensor.",
+        "fields": [
+            {"name": "expr", "label": "expression in t, t′", "type": "code",
+             "default": "iso_stiffness(1 / (1 / 10 + 0.01 * (t - t\u2032)), 5.0)"},
+            {"name": "mode", "label": "mode (creep or relaxation)", "type": "text",
+             "default": "creep"},
+        ],
     },
     {
         "name": "void", "label": "Void / pore (near-zero)", "order": 4,

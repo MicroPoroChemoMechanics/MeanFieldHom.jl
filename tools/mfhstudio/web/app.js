@@ -316,10 +316,37 @@ function geometryEditor(ph) {
  */
 const ANGLE_NAMES = ["θ", "φ", "ψ"];
 
+/** Evaluate an angle written as a small arithmetic expression, or NaN.
+ *
+ * Angles are the one place where the exact value has a name: `π/4` is worth
+ * writing, and rounding it to seventeen digits in the script loses both the
+ * intent and the exactness. So the field accepts `pi`/`π` arithmetic, keeps
+ * the text for the script, and evaluates it only to show the degrees and to
+ * orient the 3-D preview.
+ *
+ * The grammar is restricted to numbers, π and `+ - * / ^ ( )` — anything else
+ * is refused rather than handed to the evaluator.
+ */
+function angleValue(v) {
+  if (typeof v === "number") return v;
+  if (typeof v !== "string" || v.trim() === "") return NaN;
+  const src = v.replace(/π/g, "pi").trim();
+  if (!/^[-+*/^().\s\d]*(pi[-+*/^().\s\d]*)*$/.test(src)) return NaN;
+  // `2pi` is Julia's implicit multiplication, not JavaScript's syntax error.
+  const js = src.replace(/(\d)\s*pi/g, "$1*pi").replace(/\bpi\b/g, "Math.PI")
+                .replace(/\^/g, "**");
+  try {
+    const x = Function(`"use strict"; return (${js});`)();
+    return typeof x === "number" && isFinite(x) ? x : NaN;
+  } catch (e) {
+    return NaN;
+  }
+}
+
 function anglesEditor(g, count) {
   g.euler_angles = g.euler_angles || [];
   const deg = (v) => {
-    const x = parseFloat(v);
+    const x = angleValue(v);
     return isFinite(x) ? `${(x * 180 / Math.PI).toFixed(1)}°` : "";
   };
   const box = el("div", {},
@@ -330,7 +357,9 @@ function anglesEditor(g, count) {
         onclick: () => { g.euler_angles = []; push(); },
       }, "reset")),
     el("div", { class: "note" },
-      "ZYZ Euler angles in radians. " + (count === 2
+      "ZYZ Euler angles in radians — `π/4`, `2pi/3` and plain decimals all "
+      + "work, and an expression is kept as written in the script. "
+      + (count === 2
         ? "θ and φ point the symmetry axis."
         : "θ, φ, ψ orient the principal axes."))
   );
@@ -343,7 +372,7 @@ function anglesEditor(g, count) {
         const t = v.trim();
         // Keep the array dense up to the last angle the user set: MFH takes a
         // tuple of 0-3 and reads it positionally.
-        g.euler_angles[i] = t === "" ? 0.0 : (isFinite(+t) ? +t : t);
+        g.euler_angles[i] = t === "" ? 0.0 : (isFinite(+t) && t !== "" ? +t : t);
         while (g.euler_angles.length && isTrailingZero(g.euler_angles)) {
           g.euler_angles.pop();
         }
@@ -499,6 +528,7 @@ function propertyEditor(ph, pr, j) {
       }
     )));
     const f = propForm(pr.form || "iso_kmu");
+    if (f && f.doc) box.append(el("div", { class: "note" }, f.doc));
     const fields = (f && f.fields) || [];
     box.append(el("div", { class: fields.length > 2 ? "grid3" : "grid2" },
       ...fields.map((fl) =>
@@ -507,6 +537,14 @@ function propertyEditor(ph, pr, j) {
           push();
         }))
       )));
+    // An anisotropic tensor means nothing without the frame its constants are
+    // written in. This is *not* the shape's orientation above: the two are
+    // independent, and a tilted fiber made of an untilted material is a
+    // different material from an untilted fiber made of a tilted one.
+    if (f && f.orientation) {
+      pr.euler_angles = pr.euler_angles || [];
+      box.append(anglesEditor(pr, f.orientation));
+    }
   } else if (pr.source === "expr") {
     box.append(field("Julia", input(pr.expr || "", (v) => { pr.expr = v; push(); })));
   } else if (pr.source === "cell") {
@@ -550,43 +588,129 @@ function schemeOptions(name, target) {
 
 /* ── sweep ──────────────────────────────────────────────────────── */
 
+const OUTPUT_KINDS = [
+  ["k", "k (bulk)"], ["mu", "μ (shear)"], ["E", "E"], ["nu", "ν"],
+  ["km", "Kelvin-Mandel component"], ["comp", "tensor component (2nd order)"],
+  ["trace3", "tr/3 (mean conductivity)"],
+];
+const ISOTROPIC_ONLY = ["k", "mu", "E", "nu"];
+
 function renderSweep() {
   const sw = S.model.sweep;
+  sw.schemes = sw.schemes && sw.schemes.length
+    ? sw.schemes : [{ name: "MoriTanaka", options: {} }];
+  sw.outputs = sw.outputs && sw.outputs.length ? sw.outputs : [{ kind: "k" }];
   const t = $("#tab-sweep");
   const inner = sw.lens.inner || (sw.lens.inner = { kind: "amount", phase: "", property: ":C", field_name: "semi_axes", index: 1, member: "", inner: null });
+  const sweeping = sw.enabled && sw.mode !== "single";
 
-  t.replaceChildren(
-    field("", checkboxLabel("Sweep a parameter", sw.enabled, (v) => { sw.enabled = v; push(); })),
-    el("div", { class: "grid3" },
-      field("Variable", input(sw.variable, (v) => { sw.variable = v || "x"; push(); })),
-      field("From", input(sw.start, (v) => { sw.start = +v; push(); })),
-      field("To", input(sw.stop, (v) => { sw.stop = +v; push(); }))
-    ),
-    el("div", { class: "grid2" },
-      field("Points", input(sw.length, (v) => { sw.length = Math.max(2, +v | 0); push(); })),
-      field("Scheme", select(
-        (S.catalog.schemes || []).map((s) => [s.name, s.name]),
-        sw.scheme, (v) => { sw.scheme = v; push(); }
-      ))
-    ),
-    schemeOptions(sw.scheme, sw.scheme_options || (sw.scheme_options = {})),
-    el("h3", {}, "What varies"),
-    field("Lens", select(
-      (S.catalog.lenses || []).map((l) => [l.name, l.label]),
-      sw.lens.kind, (v) => { sw.lens.kind = v; push(); }
+  const kids = [
+    field("What to compute", select(
+      [["single", "one point, with the amounts above"], ["sweep", "sweep a parameter"]],
+      sw.mode || "sweep",
+      (v) => { sw.mode = v; sw.enabled = true; push(); }
     )),
-    lensDoc(sw.lens.kind),
-    ...lensFields(sw.lens, inner),
-    el("h3", {}, "Output"),
+    el("div", { class: "note" }, sw.mode === "single"
+      ? "Homogenizes once with the fractions entered in Scales."
+      : "Varies one lens over a range and draws the curve."),
+  ];
+
+  if (sweeping) {
+    kids.push(
+      el("div", { class: "grid3" },
+        field("Variable", input(sw.variable, (v) => { sw.variable = v || "x"; push(); })),
+        field("From", input(sw.start, (v) => { sw.start = +v; push(); })),
+        field("To", input(sw.stop, (v) => { sw.stop = +v; push(); }))
+      ),
+      field("Points", input(sw.length, (v) => { sw.length = Math.max(2, +v | 0); push(); })),
+      el("h3", {}, "What varies"),
+      field("Lens", select(
+        (S.catalog.lenses || []).map((l) => [l.name, l.label]),
+        sw.lens.kind, (v) => { sw.lens.kind = v; push(); }
+      )),
+      lensDoc(sw.lens.kind),
+      ...lensFields(sw.lens, inner)
+    );
+  }
+
+  // ── schemes: a list, so several land on one figure
+  kids.push(el("h3", {}, "Schemes",
+    el("button", {
+      class: "small",
+      onclick: () => { sw.schemes.push({ name: "MoriTanaka", options: {} }); push(); },
+    }, "+")));
+  sw.schemes.forEach((sc, i) => {
+    kids.push(el("div", { class: "card" },
+      el("header", {}, el("b", {}, sc.name),
+        sw.schemes.length > 1
+          ? el("button", { class: "small", onclick: () => { sw.schemes.splice(i, 1); push(); } }, "\u2212")
+          : null),
+      field("Scheme", select(
+        (S.catalog.schemes || []).map((x) => [x.name, x.name]),
+        sc.name,
+        (v) => {
+          sc.name = v;
+          // Options belong to the scheme that reads them; the server prunes
+          // the rest, and clearing here keeps the form from flashing stale
+          // inputs in between.
+          sc.options = {};
+          push();
+        }
+      )),
+      schemeOptions(sc.name, sc.options || (sc.options = {}))
+    ));
+  });
+
+  // ── outputs
+  kids.push(el("h3", {}, "Outputs",
+    el("button", {
+      class: "small",
+      onclick: () => { sw.outputs.push({ kind: "km", i: 1, j: 1 }); push(); },
+    }, "+")));
+  const needsIso = sw.outputs.some((o) => ISOTROPIC_ONLY.includes(o.kind));
+  const anyFree = S.model.cells.some((c) => c.phases.some((p) => p.symmetrize === "none"));
+  if (needsIso && sw.projection === "none" && anyFree) {
+    kids.push(el("div", { class: "note problem" },
+      "k, μ, E and ν exist only for an isotropic tensor. This model has phases "
+      + "with no orientation average, so the result need not be isotropic — "
+      + "pick a reporting projection below, or plot Kelvin-Mandel components."));
+  }
+  sw.outputs.forEach((o, i) => {
+    const row = [field("Quantity", select(OUTPUT_KINDS, o.kind, (v) => { o.kind = v; push(); }))];
+    if (o.kind === "km" || o.kind === "comp") {
+      row.push(
+        field("i", input(o.i ?? 1, (v) => { o.i = Math.max(1, +v | 0); push(); })),
+        field("j", input(o.j ?? 1, (v) => { o.j = Math.max(1, +v | 0); push(); }))
+      );
+    }
+    kids.push(el("div", { class: "card" },
+      el("header", {}, el("b", {}, outputLabel(o)),
+        sw.outputs.length > 1
+          ? el("button", { class: "small", onclick: () => { sw.outputs.splice(i, 1); push(); } }, "\u2212")
+          : null),
+      el("div", { class: row.length > 1 ? "grid3" : "grid2" }, ...row)
+    ));
+  });
+
+  kids.push(
     el("div", { class: "grid2" },
       field("Property", input(sw.property, (v) => { sw.property = v.startsWith(":") ? v : ":" + v; push(); })),
       field("Report as", select(
         (S.catalog.projections || []).map((p) => [p.name, p.label]),
         sw.projection, (v) => { sw.projection = v; push(); }
       ))
-    ),
-    field("Plot", checkboxLabel("draw a figure", sw.plot, (v) => { sw.plot = v; push(); }))
+    )
   );
+  if (sweeping) {
+    kids.push(field("Plot", checkboxLabel("draw a figure", sw.plot, (v) => { sw.plot = v; push(); })));
+  }
+  t.replaceChildren(...kids);
+}
+
+function outputLabel(o) {
+  const i = o.i ?? 1, j = o.j ?? 1;
+  return { k: "k", mu: "μ", E: "E", nu: "ν", trace3: "tr/3",
+           km: `KM[${i},${j}]`, comp: `C[${i},${j}]` }[o.kind] || o.kind;
 }
 
 function lensDoc(kind) {
@@ -639,30 +763,59 @@ function lensFields(lens, inner) {
 
 function renderAlv() {
   const a = S.model.alv;
+  a.component = a.component && a.component.length === 2 ? a.component : [1, 1];
   const blocked = S.model.cells.some((c) =>
     c.phases.some((p) => (p.properties || []).some((x) => x.source === "cell")));
+  const viscoPhases = [];
+  for (const c of S.model.cells) {
+    for (const ph of c.phases) {
+      for (const pr of ph.properties || []) {
+        const f = propForm(pr.form);
+        if (f && f.visco) viscoPhases.push(`${c.name}.${ph.name}${pr.key}`);
+      }
+    }
+  }
 
   $("#tab-alv").replaceChildren(
     blocked
       ? el("div", { class: "note problem" },
           "Ageing viscoelasticity cannot be combined with a nested scale: "
-          + "MeanFieldHom cannot re-express a homogenized inner result as a ViscoLaw. "
-          + "Remove the seam first.")
+          + "MeanFieldHom cannot re-express a homogenized inner result as a "
+          + "ViscoLaw. Remove the seam first.")
       : el("span"),
+    el("div", { class: "note" },
+      "Give a phase a viscoelastic law in Scales → Properties → Parametrization "
+      + "(Maxwell, Kelvin chain, elastic, or a custom J(t, t′)). "
+      + (viscoPhases.length
+          ? "Found on: " + viscoPhases.join(", ") + "."
+          : "No phase carries one yet, so this run has nothing to age.")),
     field("", checkboxLabel("Ageing linear viscoelastic run", a.enabled, (v) => { a.enabled = v; push(); })),
     el("div", { class: "grid3" },
-      field("t from", input(a.t_start, (v) => { a.t_start = +v; push(); })),
-      field("t to", input(a.t_stop, (v) => { a.t_stop = +v; push(); })),
+      field(a.log_time ? "log₁₀ t from" : "t from", input(a.t_start, (v) => { a.t_start = +v; push(); })),
+      field(a.log_time ? "log₁₀ t to" : "t to", input(a.t_stop, (v) => { a.t_stop = +v; push(); })),
       field("Steps", input(a.length, (v) => { a.length = Math.max(2, +v | 0); push(); }))
     ),
     field("", checkboxLabel("logarithmic time", a.log_time, (v) => { a.log_time = v; push(); })),
-    field("Scheme", select(
-      (S.catalog.schemes || []).map((s) => [s.name, s.name]),
-      a.scheme, (v) => { a.scheme = v; push(); }
-    )),
+    el("div", { class: "grid2" },
+      field("Property", input(a.property, (v) => { a.property = v.startsWith(":") ? v : ":" + v; push(); })),
+      field("Scale", select(
+        S.model.cells.map((c) => [c.id, c.name]),
+        a.cell || (S.model.cells[0] && S.model.cells[0].id),
+        (v) => { a.cell = v; push(); }
+      ))
+    ),
+    el("h3", {}, "Curve"),
     el("div", { class: "note" },
-      "Give a phase a viscoelastic property by choosing “Julia expression” and "
-      + "writing e.g. maxwell_iso(10.0, 5.0, 1.0) or ViscoLaw((t, t′) -> …, :creep).")
+      "The effective relaxation operator is inverted to a creep operator; the "
+      + "curve is the response to a unit step, read on one Kelvin-Mandel "
+      + "component. (1, 1) is uniaxial."),
+    el("div", { class: "grid2" },
+      field("component i", input(a.component[0], (v) => { a.component[0] = Math.max(1, +v | 0); push(); })),
+      field("component j", input(a.component[1], (v) => { a.component[1] = Math.max(1, +v | 0); push(); }))
+    ),
+    field("Plot", checkboxLabel("draw a figure", a.plot !== false, (v) => { a.plot = v; push(); })),
+    el("div", { class: "note" },
+      "The schemes come from the Sweep tab, so several can share the figure.")
   );
 }
 
@@ -839,17 +992,53 @@ function plotResults(res) {
 async function openFile() {
   const path = await Picker.pick("open", S.path || "");
   if (!path) return;
+
+  // An Echoes script is opened by translating it. The extension already says
+  // which of the two is happening, so there is no separate convert button —
+  // only the one extra question of where the Julia should go.
+  let output = null;
+  if (/\.py$/i.test(path)) {
+    const suggested = path.replace(/\.py$/i, ".jl");
+    output = await Picker.pick(
+      "save",
+      suggested.replace(/[^\\/]*$/, ""),
+      suggested.replace(/^.*[\\/]/, "")
+    );
+    if (!output) return;
+  }
+
   try {
-    const st = await api("/api/open", { path });
+    const st = await api("/api/open", output ? { path, output } : { path });
     S.keptReport = st.read_report || null;
     apply(st);
-    const r = st.read_report || {};
-    toast(r.exact
-      ? "Reopened from the model embedded in the file."
-      : `Read: ${r.recognized || 0} construct(s) understood, ${r.opaque || 0} kept as written.`);
+    if (st.conversion) {
+      showConversion(st.conversion);
+    } else {
+      const r = st.read_report || {};
+      toast(r.exact
+        ? "Reopened from the model embedded in the file."
+        : `Read: ${r.recognized || 0} construct(s) understood, ${r.opaque || 0} kept as written.`);
+    }
   } catch (e) {
     toast(e.message, true);
   }
+}
+
+/** What the translation did, and what it refused. */
+function showConversion(c) {
+  toast(`${c.source.replace(/^.*[\\/]/, "")} → ${c.output.replace(/^.*[\\/]/, "")}: ${c.summary}`,
+        c.blocking > 0);
+  const banner = $("#banner");
+  if (!c.findings.length) { banner.hidden = true; return; }
+  banner.hidden = false;
+  banner.replaceChildren(
+    el("b", {}, `Translated from ${c.source.replace(/^.*[\\/]/, "")} — `),
+    el("span", {}, c.summary),
+    el("pre", {}, c.findings
+      .slice(0, 10)
+      .map((f) => `line ${f.line}  [${f.severity}]  ${f.reason}`)
+      .join("\n"))
+  );
 }
 
 async function saveFile(askPath) {

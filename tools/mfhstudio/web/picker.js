@@ -78,19 +78,21 @@ const Picker = (() => {
     for (const d of data.dirs) rows.push(row("📁", d.name, () => show(d.path)));
     for (const f of data.files) {
       rows.push(
-        row("📄", f.name, (el, dbl) => {
+        row(f.echoes ? "🐍" : "📄", f.name, (el, dbl) => {
           list_.querySelectorAll(".row.on").forEach((n) => n.classList.remove("on"));
           el.classList.add("on");
           state.selected = f.path;
           q("#picker-name").value = f.name;
           if (dbl) accept();
-        }, humanSize(f.size))
+        }, f.echoes ? "Echoes · " + humanSize(f.size) : humanSize(f.size))
       );
     }
     if (!rows.length) {
       const e = document.createElement("div");
       e.className = "empty";
-      e.textContent = "No Julia scripts here.";
+      e.textContent = state.mode === "save"
+        ? "Nothing here yet — type a name below."
+        : "No Julia or Echoes scripts here.";
       rows.push(e);
     }
     list_.replaceChildren(...rows);
@@ -126,7 +128,9 @@ const Picker = (() => {
   /** Open the dialog; resolves with a path, or null if dismissed. */
   function pick(mode, startDir, suggestedName) {
     state.mode = mode;
-    q("#picker-title").textContent = mode === "save" ? "Save the script as" : "Open a script";
+    q("#picker-title").textContent = mode === "save"
+      ? "Save the script as"
+      : "Open a script  (.jl to edit, .py to translate from Echoes)";
     q("#picker-ok").textContent = mode === "save" ? "Save" : "Open";
     q("#picker-name").value = suggestedName || "";
     q("#picker").hidden = false;

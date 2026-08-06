@@ -18,6 +18,7 @@ from typing import Any, Optional
 from urllib.parse import parse_qs, urlparse
 
 from . import catalog as catalog_module
+from . import convert as convert_module
 from .codegen import extract_embedded, generate
 from .juliabridge import PROJECT_ROOT, Bridge, SidecarError, SidecarUnavailable
 from .model import Model, default_model
@@ -129,6 +130,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"source": self.session.script()})
             if path == "/api/browse":
                 return self._browse(parse_qs(urlparse(self.path).query))
+            if path == "/api/convert/available":
+                return self._json({"available": convert_module.available()})
             if path == "/api/sidecar":
                 st = dict(self.session.bridge.status)
                 st["catalog_error"] = self.session.catalog_error
@@ -176,8 +179,41 @@ class Handler(BaseHTTPRequestHandler):
 
     def _set_model(self, body: dict) -> None:
         with self.session.lock:
-            self.session.model = Model.from_dict(body.get("model", {}))
+            model = Model.from_dict(body.get("model", {}))
+            self._prune_scheme_options(model)
+            self.session.model = model
         return self._json(self._state())
+
+    def _prune_scheme_options(self, model: Model) -> None:
+        """Drop solver options the chosen scheme does not read.
+
+        Switching from `SelfConsistent` to `MoriTanaka` used to carry the old
+        scheme's options along, and `MoriTanaka(; verbose = false)` is a
+        MethodError — the singleton schemes take no keywords at all. Doing this
+        on the model rather than in the browser also cleans a model reopened
+        from a file that carries stale options.
+        """
+        cat = self.session.catalog()
+        allowed = {
+            s["name"]: {o["name"] for o in s.get("options", []) if o.get("editable")}
+            for s in cat.get("schemes", [])
+        }
+        if not allowed:
+            return  # the sidecar has not answered yet; leave the model alone
+
+        def clean(name: str, options: dict) -> dict:
+            keep = allowed.get(name)
+            if keep is None:
+                return options  # unknown scheme: not ours to second-guess
+            return {k: v for k, v in (options or {}).items() if k in keep}
+
+        for entry in model.sweep.schemes:
+            entry["options"] = clean(entry.get("name", ""), entry.get("options"))
+        for c in model.cells:
+            for ph in c.phases:
+                for pr in ph.properties:
+                    if pr.source == "cell" and pr.scheme:
+                        pr.scheme_options = clean(pr.scheme, pr.scheme_options)
 
     def _traces(self, body: dict) -> None:
         expr = body.get("expr") or ""
@@ -225,10 +261,13 @@ class Handler(BaseHTTPRequestHandler):
                 full = os.path.join(start, name)
                 if os.path.isdir(full):
                     dirs.append({"name": name, "path": full})
-                elif name.endswith(".jl"):
+                elif name.endswith((".jl", ".py")):
                     files.append({
                         "name": name, "path": full,
                         "size": os.path.getsize(full),
+                        # An Echoes script is opened by translating it; saying
+                        # so in the listing beats a surprise afterwards.
+                        "echoes": name.endswith(".py"),
                     })
         except PermissionError as exc:
             raise ValueError(f"cannot read {start}: {exc}") from exc
@@ -266,6 +305,12 @@ class Handler(BaseHTTPRequestHandler):
     def _open(self, body: dict) -> None:
         path = body.get("path") or ""
         source = body.get("source")
+
+        # An Echoes script is not a thing the studio can read — it is a thing
+        # it can translate. Same button, one extra question.
+        if convert_module.is_echoes_script(path):
+            return self._convert_and_open(body, path)
+
         if source is None:
             if not os.path.isfile(path):
                 raise ValueError(f"no such file: {path}")
@@ -278,6 +323,33 @@ class Handler(BaseHTTPRequestHandler):
             self.session.path = path or None
         out = self._state()
         out["read_report"] = report
+        return self._json(out)
+
+    def _convert_and_open(self, body: dict, path: str) -> None:
+        """Translate an Echoes script, write the Julia, then open that."""
+        if not os.path.isfile(path):
+            raise ValueError(f"no such file: {path}")
+        conv = convert_module.convert(path)
+
+        target = body.get("output") or convert_module.suggest_output(path)
+        os.makedirs(os.path.dirname(os.path.abspath(target)) or ".", exist_ok=True)
+        with open(target, "w", encoding="utf-8") as fh:
+            fh.write(conv.julia)
+
+        model, report = model_from_script(conv.julia, self.session.bridge)
+        with self.session.lock:
+            self.session.model = model
+            self.session.path = target
+
+        out = self._state()
+        out["read_report"] = report
+        out["conversion"] = {
+            "source": path,
+            "output": target,
+            "summary": conv.summary(),
+            "findings": conv.findings,
+            "blocking": conv.blocking,
+        }
         return self._json(out)
 
     def _save(self, body: dict) -> None:

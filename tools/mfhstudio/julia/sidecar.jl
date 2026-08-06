@@ -110,6 +110,11 @@ function _run(payload)
     timeout = Float64(get(payload, "timeout", 300.0))
 
     result = Dict{String, Any}("ok" => false, "stdout" => "", "error" => nothing)
+    # The sidecar is a server: there is never a display to open. Without this,
+    # a script that calls `display(p)` prints "GKS: cannot open display" into
+    # the captured output, where it reads like a failure of the model.
+    get!(ENV, "GKSwstype", "100")
+
     mod = Module(:MFHStudioRun)
     Base.eval(mod, :(using MeanFieldHom, TensND, LinearAlgebra, Printf))
 

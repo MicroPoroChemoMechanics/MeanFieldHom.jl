@@ -88,6 +88,7 @@ restarted after a wedge without losing work.
 | `mfhstudio/readback.py` | script → model, with verbatim preservation |
 | `mfhstudio/juliabridge.py` | the sidecar process: start, call, restart |
 | `mfhstudio/catalog.py` | the form definitions — available without Julia |
+| `mfhstudio/convert.py` | Open on a `.py` runs echoes2mfh in-process |
 | `mfhstudio/server.py` | HTTP endpoints, session state, the file browser |
 | `julia/sidecar.jl` | the JSON-lines loop |
 | `julia/introspect.jl` | the feature catalog, read from the live package |
@@ -122,6 +123,15 @@ numeric layer under them (`ellipsoid_surface`, `cylinder_surface`,
 `disc_surface`, `param_surface`) returns plain arrays, so real JSON is built
 from those. Shapes therefore look the same in the interface as in the manual,
 without the injection.
+
+**A property's frame is not its phase's frame.** Anisotropic forms carry their
+own Euler angles, separate from the shape's: a tilted fiber made of an untilted
+material and an untilted fiber made of a tilted material are different
+materials. What the angles become depends on the symmetry class — a
+transversely isotropic tensor takes an *axis* (`vecbasis(RotatedBasis(...))[:, 3]`,
+ψ being irrelevant), an orthotropic one takes the basis itself. The angle fields
+accept `π/4` and `2pi/3` and the expression reaches the script as written,
+which is both exact and readable where the decimal is neither.
 
 **Read-back only claims what it can prove.** Beyond the structural checks,
 before accepting a construct the reader renders it exactly as it would be saved
@@ -162,8 +172,6 @@ and written back, and no line may be lost.
 
 - Sensitivities, laminates and custom/FE/neural inclusions are not modeled.
   Scripts using them open and are preserved, but those parts are not editable.
-- Viscoelastic properties are entered as Julia expressions rather than through
-  a form.
 
 - An inner `Homogenized` cannot sit inside an ALV chain (MeanFieldHom cannot
   re-express a homogenized result as a `ViscoLaw`); the interface blocks the

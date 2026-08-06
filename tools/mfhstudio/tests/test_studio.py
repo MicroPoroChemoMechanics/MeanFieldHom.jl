@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import glob
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -55,11 +56,138 @@ def test_physical_moduli_not_raw_tensiso():
 
 def test_solver_options_attach_to_the_scheme():
     m = default_model()
-    m.sweep.scheme = "SelfConsistent"
-    m.sweep.scheme_options = {"abstol": 1e-10, "maxiters": 300, "select_best": True}
+    m.sweep.schemes = [{
+        "name": "SelfConsistent",
+        "options": {"abstol": 1e-10, "maxiters": 300, "select_best": True},
+    }]
     src = generate(m, embed_model=False)
     assert "SelfConsistent(; abstol = 1.0e-10, maxiters = 300, select_best = true)" in src
     assert "homogenize(cell, scheme, :C)" in src
+
+
+def test_several_schemes_share_one_figure():
+    m = default_model()
+    m.sweep.schemes = [
+        {"name": "MoriTanaka", "options": {}},
+        {"name": "Voigt", "options": {}},
+    ]
+    src = generate(m, embed_model=False)
+    assert '("MoriTanaka", MoriTanaka())' in src
+    assert '("Voigt", Voigt())' in src
+    assert "for (name, scheme) in SCHEMES" in src
+
+
+def test_single_point_uses_the_amounts_as_entered():
+    """The answer to "just compute with the fractions I typed"."""
+    m = default_model()
+    m.sweep.mode = "single"
+    src = generate(m, embed_model=False)
+    assert "One homogenization with the amounts entered" in src
+    assert "set_param" not in src
+    assert "homogenize(cell, MoriTanaka(), :C)" in src
+
+
+def test_kelvin_mandel_output_needs_no_isotropy():
+    """`k_mu` has a method for TensISO alone; an oriented inclusion with no
+    orientation average does not give one, and the run dies with a
+    MethodError deep inside. Components are defined whatever the symmetry."""
+    m = default_model()
+    m.sweep.projection = "none"
+    m.sweep.outputs = [{"kind": "km", "i": 1, "j": 1}, {"kind": "km", "i": 3, "j": 3}]
+    src = generate(m, embed_model=False)
+    assert "KM(C)[1, 1]" in src and "KM(C)[3, 3]" in src
+    assert "k_mu" not in src
+
+
+def test_isotropic_only_output_without_a_projection_is_flagged():
+    m = default_model()
+    m.sweep.projection = "none"
+    m.sweep.outputs = [{"kind": "k"}]
+    for c in m.cells:
+        for ph in c.phases:
+            ph.symmetrize = "none"
+    assert any("isotropic result" in p for p in m.validate())
+
+
+def test_viscoelastic_laws_use_the_real_signatures():
+    """`maxwell_iso` takes two relaxation times, not one."""
+    from mfhstudio.codegen import CodeGen
+
+    g = CodeGen(Model())
+    assert g._prop_expr(Property(
+        builder="maxwell_iso",
+        args={"k": 10.0, "mu": 5.0, "eta_k": 2.0, "eta_mu": 3.0},
+    )) == "maxwell_iso(10.0, 5.0, 2.0, 3.0)"
+    assert g._prop_expr(Property(
+        builder="kelvin_iso",
+        args={"k0": 10.0, "mu0": 5.0, "k1": 20.0, "mu1": 10.0,
+              "tau_k": 1.0, "tau_mu": 2.0},
+    )) == "kelvin_iso(10.0, 5.0, [20.0], [10.0], [1.0], [2.0])"
+
+
+def test_anisotropic_conductivity_forms():
+    from mfhstudio.codegen import CodeGen
+
+    g = CodeGen(Model())
+    # The OUTER constructor: `TensTI{2, Float64, 2}(data, n)` demands a 3-tuple
+    # axis and rejects the vector an oriented frame yields.
+    assert g._prop_expr(Property(builder="TensTI2", args={"kt": 1.0, "ka": 5.0})) == (
+        "TensTI{2}(1.0, 5.0, (0.0, 0.0, 1.0))"
+    )
+    assert g._prop_expr(Property(
+        builder="TensDiag2", args={"k1": 1.0, "k2": 2.0, "k3": 5.0}
+    )) == "Tens([1.0 0.0 0.0; 0.0 2.0 0.0; 0.0 0.0 5.0])"
+
+
+def test_anisotropic_properties_carry_their_own_frame():
+    """The frame a tensor's constants are written in is not the shape's.
+
+    A transversely isotropic tensor takes an axis (the third vector of the
+    frame); an orthotropic one takes the basis itself, its components then
+    being read *in* that basis.
+    """
+    from mfhstudio.codegen import CodeGen
+
+    g = CodeGen(Model())
+    ang = ["pi/4", 0.7, 0.0]
+
+    ti = g._prop_expr(Property(builder="TensTI2", args={"kt": 1.0, "ka": 5.0},
+                               euler_angles=ang))
+    assert ti == "TensTI{2}(1.0, 5.0, vecbasis(RotatedBasis(pi/4, 0.7, 0.0))[:, 3])"
+
+    # `hoenig_stiffness` declares no five-argument method: the axis is required.
+    hoenig = g._prop_expr(Property(builder="hoenig_stiffness", euler_angles=ang))
+    assert hoenig.startswith("hoenig_stiffness(")
+    assert hoenig.endswith("vecbasis(RotatedBasis(pi/4, 0.7, 0.0))[:, 3])")
+    assert g._prop_expr(Property(builder="hoenig_stiffness")).endswith("(0.0, 0.0, 1.0))")
+
+    ortho = g._prop_expr(Property(builder="TensDiag2",
+                                  args={"k1": 1.0, "k2": 2.0, "k3": 5.0},
+                                  euler_angles=ang))
+    assert ortho.endswith(", RotatedBasis(pi/4, 0.7, 0.0))")
+
+    # `RotatedBasis` with fewer than three angles builds a 2-D basis, so the
+    # frame is always spelled out in full.
+    assert g._prop_expr(Property(builder="TensOrtho", euler_angles=[0.3])) \
+        .endswith("RotatedBasis(0.3, 0.0, 0.0))")
+
+
+def test_hoenig_defaults_are_not_the_isotropic_point():
+    """h = 1 with ν₁ = ν₂ and γ = 1 is isotropy wearing a TI type."""
+    from mfhstudio.catalog import PROPERTIES
+
+    form = next(f for f in PROPERTIES if f["name"] == "ti_hoenig")
+    d = {f["name"]: f["default"] for f in form["fields"]}
+    assert not (d["h"] == 1.0 and d["nu1"] == d["nu2"] and d["gamma"] == 1.0)
+
+
+def test_alv_curve_follows_the_documented_extraction():
+    m = default_model()
+    m.alv.enabled = True
+    src = generate(m, embed_model=False)
+    assert "volterra_inverse(R; block_size = 6)" in src
+    assert "homogenize_alv(" in src
+    assert "using Plots" in src, "the ALV run plots too"
 
 
 def _layered_spheroid_model() -> Model:
@@ -384,13 +512,17 @@ def test_generated_script_matches_the_echoes_reference():
     try:
         m = default_model()
         m.sweep.start, m.sweep.stop, m.sweep.length = 0.3, 0.3, 2
+        m.sweep.plot = False
         r = b.run(generate(m, embed_model=False), timeout=300)
         assert r["ok"], r.get("error")
-        rows = [l.split() for l in r["stdout"].splitlines() if l.strip().startswith("0.3")]
-        assert rows, r["stdout"]
-        k, mu = float(rows[0][1]), float(rows[0][2])
-        assert abs(k - 33.460582) < 1e-5, k
-        assert abs(mu - 17.626742) < 1e-5, mu
+        got = {}
+        for line in r["stdout"].splitlines():
+            mm = re.match(r"\s*MoriTanaka (\w+)\s+first = ([-\d.eE+]+)", line)
+            if mm:
+                got[mm.group(1)] = float(mm.group(2))
+        assert got, r["stdout"]
+        assert abs(got["k"] - 33.460582) < 1e-5, got
+        assert abs(got["mu"] - 17.626742) < 1e-5, got
     finally:
         b.stop()
 

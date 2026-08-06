@@ -31,6 +31,52 @@ def _rule(title: str) -> str:
     return f"# ── {title} {bar}"
 
 
+def _angles(euler) -> list:
+    """The ZYZ angles, padded to three and stripped of a canonical frame."""
+    a = [x for x in (euler or []) if x != "" and x is not None]
+    a = (a + [0.0, 0.0, 0.0])[:3]
+    return [] if all(x == 0 for x in a) else a
+
+
+def _angle_num(x) -> str:
+    """An angle is a number *or* a Julia expression the user typed.
+
+    `π/4` says what `0.7853981633974483` only approximates, and it is what
+    comes back out when the script is read again, so a typed expression is
+    emitted verbatim rather than evaluated here.
+    """
+    return x if isinstance(x, str) else _fnum(x)
+
+
+def _frame_expr(euler) -> str:
+    """The basis the constants are written in.
+
+    `TensOrtho` and `Tens(…, basis)` both demand a basis object, so the
+    canonical frame has to be spelled out rather than omitted.
+    """
+    a = _angles(euler)
+    if not a:
+        return "CanonicalBasis{3, Float64}()"
+    return "RotatedBasis(" + ", ".join(_angle_num(x) for x in a) + ")"
+
+
+def _axis_expr(euler, axis=None) -> str:
+    """The symmetry axis of a transversely isotropic tensor.
+
+    TI tensors carry an axis, not a basis — the third vector of the frame the
+    Euler angles define, ψ being irrelevant since the transverse plane is
+    isotropic. Taking it from `vecbasis` rather than writing
+    `(sinθcosφ, sinθsinφ, cosθ)` keeps one definition of "the frame" in the
+    script: change the angles and the axis follows.
+    """
+    a = _angles(euler)
+    if a:
+        return f"vecbasis({_frame_expr(a)})[:, 3]"
+    if isinstance(axis, (list, tuple)) and len(axis) == 3:
+        return _tuple(_fnum(x) for x in axis)
+    return "(0.0, 0.0, 1.0)"
+
+
 def _tuple(items) -> str:
     """A Julia tuple; only a 1-tuple needs the trailing comma."""
     parts = [p for p in items if p]
@@ -148,7 +194,9 @@ class CodeGen:
         self.w("using TensND")
         self.w("using LinearAlgebra")
         self.w("using Printf")
-        if self.m.sweep.enabled and self.m.sweep.plot:
+        if (self.m.sweep.enabled and self.m.sweep.plot) or (
+            self.m.alv.enabled and self.m.alv.plot
+        ):
             self.w("using Plots")
             self.w("gr()")
         self.blank()
@@ -365,13 +413,61 @@ class CodeGen:
         if b == "iso_stiffness_E_nu":
             return f"iso_stiffness_E_nu({num('E', 1.0)}, {num('nu', 0.2)})"
         if b == "hoenig_stiffness":
+            # The axis is a required argument, not a keyword with a default:
+            # MeanFieldHom declares only the six-argument method.
             return (
-                f"hoenig_stiffness({num('E1', 1.0)}, {num('h', 1.0)}, "
-                f"{num('nu1', 0.2)}, {num('nu2', 0.2)}, {num('gamma', 1.0)})"
+                f"hoenig_stiffness({num('E1', 30.0)}, {num('h', 0.3)}, "
+                f"{num('nu1', 0.2)}, {num('nu2', 0.25)}, {num('gamma', 0.5)}, "
+                f"{_axis_expr(p.euler_angles)})"
             )
         if b == "TensISO{3}":
             # One argument to TensISO{dim} is the 2nd-order (conductivity) form.
             return f"TensISO{{3}}({num('k', 1.0)})"
+        if b == "TensTI2":
+            # The outer constructor, not `TensTI{2, Float64, 2}(data, n)`: the
+            # fully parameterized one takes the axis as a 3-*tuple* and rejects
+            # the vector `vecbasis(...)[:, 3]` returns.
+            return (
+                f"TensTI{{2}}({num('kt', 1.0)}, {num('ka', 1.0)}, "
+                f"{_axis_expr(p.euler_angles, a.get('axis'))})"
+            )
+        if b == "TensDiag2":
+            # `Tens(A, basis)` stores A as the components *in that basis*, which
+            # is what "the conductivity is diagonal in the material frame" means.
+            diag = (
+                f"[{num('k1', 1.0)} 0.0 0.0; 0.0 {num('k2', 1.0)} 0.0; "
+                f"0.0 0.0 {num('k3', 1.0)}]"
+            )
+            if _angles(p.euler_angles):
+                return f"Tens({diag}, {_frame_expr(p.euler_angles)})"
+            return f"Tens({diag})"
+        if b == "TensOrtho":
+            consts = ", ".join(
+                num(k, d) for k, d in (
+                    ("C11", 120.0), ("C22", 90.0), ("C33", 70.0),
+                    ("C12", 40.0), ("C13", 35.0), ("C23", 30.0),
+                    ("C44", 25.0), ("C55", 22.0), ("C66", 20.0),
+                )
+            )
+            return f"TensOrtho({consts}, {_frame_expr(p.euler_angles)})"
+        if b == "maxwell_iso":
+            return (
+                f"maxwell_iso({num('k', 10.0)}, {num('mu', 5.0)}, "
+                f"{num('eta_k', 1.0)}, {num('eta_mu', 1.0)})"
+            )
+        if b == "kelvin_iso":
+            return (
+                f"kelvin_iso({num('k0', 10.0)}, {num('mu0', 5.0)}, "
+                f"[{num('k1', 20.0)}], [{num('mu1', 10.0)}], "
+                f"[{num('tau_k', 1.0)}], [{num('tau_mu', 1.0)}])"
+            )
+        if b == "heaviside_law":
+            return f"heaviside_law(iso_stiffness({num('k', 10.0)}, {num('mu', 5.0)}))"
+        if b == "ViscoLaw":
+            expr = a.get("expr") or "iso_stiffness(10.0, 5.0)"
+            mode = str(a.get("mode") or "creep").strip().lstrip(":")
+            mode = mode if mode in ("creep", "relaxation") else "creep"
+            return f"ViscoLaw((t, t\u2032) -> {expr}, :{mode})"
         return f"iso_stiffness({num('k', 1.0)}, {num('mu', 1.0)})"
 
     def _visco_expr(self, v: dict) -> str:
@@ -424,118 +520,213 @@ class CodeGen:
         if root is None:
             return
         self.w(_rule("Result"))
-
-        sw = self.m.sweep
-        alv = self.m.alv
-
-        if alv.enabled:
+        if self.m.alv.enabled:
             self._alv_main(root)
-            return
-
-        if not sw.enabled:
-            call = f"{root.builder}(" + ", ".join(root.params) + ")"
-            scheme = self._scheme(sw.scheme, sw.scheme_options)
-            self.w(f"C = homogenize({call}, {scheme}, {sw.property})")
-            self._report("C", sw)
-            return
-
-        self._sweep_main(root, sw)
-
-    def _report(self, var: str, sw) -> None:
-        proj = {"iso": "best_fit_iso", "ti": "best_fit_ti", "ortho": "best_fit_ortho"}
-        v = var
-        if sw.projection in proj:
-            self.w(f"{var}_fit = {proj[sw.projection]}({var})")
-            v = f"{var}_fit"
-        if sw.property == ":C":
-            self.w(f'@printf "k = %.6f   μ = %.6f\\n" k_mu({v})[1] k_mu({v})[2]')
+        elif not self.m.sweep.enabled or self.m.sweep.mode == "single":
+            self._single_main(root)
         else:
-            self.w(f"@show {v}")
+            self._sweep_main(root, self.m.sweep)
+
+    # -- outputs ----------------------------------------------------------
+
+    _PROJECTIONS = {
+        "iso": "best_fit_iso", "ti": "best_fit_ti", "ortho": "best_fit_ortho",
+    }
+
+    def _project(self, var: str) -> str:
+        fn = self._PROJECTIONS.get(self.m.sweep.projection)
+        return f"{fn}({var})" if fn else var
+
+    def _output_expr(self, o: dict, var: str = "C") -> str:
+        """One plotted quantity.
+
+        `k`/`μ`/`E`/`ν` exist only for an isotropic tensor — MeanFieldHom's
+        `k_mu` has no method for anything else, which is exactly the error an
+        oriented inclusion without an orientation average produces. Kelvin-
+        Mandel components are defined whatever the symmetry, so they are the
+        way out rather than a silent projection.
+        """
+        kind = o.get("kind", "k")
+        i, j = int(o.get("i", 1)), int(o.get("j", 1))
+        if kind == "k":
+            return f"k_mu({var})[1]"
+        if kind == "mu":
+            return f"k_mu({var})[2]"
+        if kind == "E":
+            return f"E_nu({var})[1]"
+        if kind == "nu":
+            return f"E_nu({var})[2]"
+        if kind == "km":
+            return f"KM({var})[{i}, {j}]"
+        if kind == "comp":
+            return f"Array({var})[{i}, {j}]"
+        if kind == "trace3":
+            return f"tr(Array({var})) / 3"
+        return f"k_mu({var})[1]"
+
+    @staticmethod
+    def _output_label(o: dict) -> str:
+        kind = o.get("kind", "k")
+        i, j = int(o.get("i", 1)), int(o.get("j", 1))
+        return {
+            "k": "k", "mu": "mu", "E": "E", "nu": "nu",
+            "km": f"KM{i}{j}", "comp": f"C{i}{j}", "trace3": "tr/3",
+        }.get(kind, kind)
+
+    def _scheme_list(self, sw) -> list:
+        return [
+            (x.get("name", "MoriTanaka"), self._scheme(x.get("name", "MoriTanaka"),
+                                                       x.get("options") or {}))
+            for x in (sw.schemes or [{"name": "MoriTanaka", "options": {}}])
+        ]
+
+    # -- single point ------------------------------------------------------
+
+    def _single_main(self, root: Cell) -> None:
+        sw = self.m.sweep
+        call = f"{root.builder}(" + ", ".join(root.params) + ")"
+        self.w("# One homogenization with the amounts entered in the model.")
+        self.w(f"const cell = {call}")
+        self.blank()
+        names = [self._output_label(o) for o in sw.outputs] or ["value"]
+        for scheme_name, scheme in self._scheme_list(sw):
+            var = f"C_{scheme_name}"
+            self.w(f"{var} = homogenize(cell, {scheme}, {sw.property})")
+            proj = self._project(var)
+            if proj != var:
+                self.w(f"{var} = {proj}")
+            # `@printf` takes its arguments space-separated: commas would make
+            # them a single tuple and the format-specifier count would not match.
+            vals = " ".join(self._output_expr(o, var) for o in sw.outputs) or var
+            fmt = "  ".join(f"{n} = %.6f" for n in names)
+            nl = "\\n"
+            self.w(f'@printf "{scheme_name:<24}  {fmt}{nl}" {vals}')
+        self.blank()
+
+    # -- sweep -------------------------------------------------------------
 
     def _sweep_main(self, root: Cell, sw) -> None:
         lens = self._lens_expr(sw.lens)
-        scheme = self._scheme(sw.scheme, sw.scheme_options)
-        proj = {"iso": "best_fit_iso", "ti": "best_fit_ti", "ortho": "best_fit_ortho"}
+        names = [self._output_label(o) for o in sw.outputs] or ["value"]
+        schemes = self._scheme_list(sw)
 
-        self.w(f"const {sw.variable}s = range({_num(sw.start)}, {_num(sw.stop)}; length = {sw.length})")
+        self.w(
+            f"const {sw.variable}s = range({_fnum(sw.start)}, {_fnum(sw.stop)}; "
+            f"length = {_num(sw.length)})"
+        )
         self.blank()
         self.w("#")
         self.w("# `set_param` returns a *new* cell, leaving the original intact,")
         self.w("# so the sweep is a pure map rather than a mutation.")
         self.w(f"const base_cell = {root.builder}(" + ", ".join(root.params) + ")")
-        self.w(f"const scheme = {scheme}")
         self.blank()
-        self.w(f"function evaluate({sw.variable})")
+        self.w(f"function evaluate(scheme, {sw.variable})")
         self.w(f"{IND}cell = set_param(base_cell, {lens}, {sw.variable})")
         self.w(f"{IND}C = homogenize(cell, scheme, {sw.property})")
-        if sw.projection in proj:
-            self.w(f"{IND}C = {proj[sw.projection]}(C)")
-        outs = []
-        if sw.property == ":C":
-            for o in sw.outputs:
-                if o == "k":
-                    outs.append("k_mu(C)[1]")
-                elif o == "mu":
-                    outs.append("k_mu(C)[2]")
-                elif o == "E":
-                    outs.append("E_nu(C)[1]")
-                elif o == "nu":
-                    outs.append("E_nu(C)[2]")
-        if not outs:
-            outs = ["tr(Array(C)) / 3"]
-        self.w(f"{IND}return ({', '.join(outs)})")
+        proj = self._project("C")
+        if proj != "C":
+            self.w(f"{IND}C = {proj}")
+        outs = ", ".join(self._output_expr(o) for o in sw.outputs) or "C"
+        self.w(f"{IND}return ({outs},)" if len(names) == 1 else f"{IND}return ({outs})")
         self.w("end")
         self.blank()
-        self.w(f"const results = [evaluate({sw.variable}) for {sw.variable} in {sw.variable}s]")
-        for i, o in enumerate(sw.outputs or ["value"]):
-            self.w(f"const {o}s = [r[{i + 1}] for r in results]")
+
+        self.w("const SCHEMES = [")
+        for scheme_name, scheme in schemes:
+            self.w(f'{IND}("{scheme_name}", {scheme}),')
+        self.w("]")
+        self.blank()
+        self.w("const RESULTS = Dict{String, Any}()")
+        self.w("for (name, scheme) in SCHEMES")
+        self.w(f"{IND}rows = [evaluate(scheme, {sw.variable}) for {sw.variable} in {sw.variable}s]")
+        for i, n in enumerate(names):
+            self.w(f'{IND}RESULTS["$(name) {n}"] = [r[{i + 1}] for r in rows]')
+        self.w("end")
         self.blank()
 
-        # A machine-readable handle for the interface to plot without parsing
-        # the script's stdout.
-        names = sw.outputs or ["value"]
-        pairs = ", ".join(f'"{o}" => {o}s' for o in names)
         self.w("# Published for MFH Studio; harmless when the script runs alone.")
         self.w(
-            f'const MFHSTUDIO_RESULTS = Dict("x" => collect({sw.variable}s), '
-            f'"xlabel" => "{sw.variable}", {pairs})'
+            f'const MFHSTUDIO_RESULTS = merge('
+            f'Dict("x" => collect({sw.variable}s), "xlabel" => "{sw.variable}"), RESULTS)'
         )
         self.blank()
-
-        self.w('@printf "%10s' + '%14s' * len(names) + '\\n" "' + sw.variable + '" ' +
-               " ".join(f'"{o}"' for o in names))
-        self.w(f"for (i, {sw.variable}) in enumerate({sw.variable}s)")
-        self.w(
-            f'{IND}@printf "%10.4f' + "%14.6f" * len(names) + '\\n" '
-            + sw.variable + " " + " ".join(f"{o}s[i]" for o in names)
-        )
+        self.w("for (label, ys) in sort!(collect(RESULTS); by = first)")
+        self.w(f'{IND}@printf "%-28s  first = %.6f   last = %.6f\\n" label first(ys) last(ys)')
         self.w("end")
 
         if sw.plot:
             self.blank()
-            self.w("p = plot(; xlabel = \"" + sw.variable + "\", ylabel = \"effective property\", legend = :best)")
-            for o in names:
-                self.w(f'plot!(p, {sw.variable}s, {o}s; label = "{o}", lw = 2)')
+            self.w(
+                f'p = plot(; xlabel = "{sw.variable}", ylabel = "effective property", '
+                f"legend = :best)"
+            )
+            self.w("for (label, ys) in sort!(collect(RESULTS); by = first)")
+            self.w(f"{IND}plot!(p, {sw.variable}s, ys; label = label, lw = 2)")
+            self.w("end")
             self.w("display(p)")
+
+    # -- ageing viscoelasticity -------------------------------------------
 
     def _alv_main(self, root: Cell) -> None:
         alv = self.m.alv
         cell = self.m.cell(alv.cell) or root
         call = f"{cell.builder}(" + ", ".join(cell.params) + ")"
-        scheme = self._scheme(alv.scheme, {})
+        i, j = int(alv.component[0]), int(alv.component[1])
+        names_schemes = self._scheme_list(self.m.sweep)
+
         if alv.log_time:
             self.w(
-                f"const times = 10 .^ range({_num(alv.t_start)}, {_num(alv.t_stop)}; "
-                f"length = {alv.length})"
+                f"const times = vcat(0.0, 10 .^ range({_fnum(alv.t_start)}, "
+                f"{_fnum(alv.t_stop)}; length = {_num(alv.length)}))"
             )
         else:
             self.w(
-                f"const times = range({_num(alv.t_start)}, {_num(alv.t_stop)}; "
-                f"length = {alv.length})"
+                f"const times = range({_fnum(alv.t_start)}, {_fnum(alv.t_stop)}; "
+                f"length = {_num(alv.length)})"
             )
         self.blank()
-        self.w(f"const R = homogenize_alv({call}, {scheme}, {alv.property}; times = times)")
-        self.w("@show size(R)")
+        self.w(f"const cell = {call}")
+        self.blank()
+        self.w("#")
+        self.w("# `homogenize_alv` returns the effective relaxation operator as a")
+        self.w("# 6n x 6n block matrix on the time grid. Its Volterra inverse is")
+        self.w("# the creep operator, and the response to a unit stress step is")
+        self.w(f"# the row sum of its ({i}{j}) blocks.")
+        self.w("function uniaxial(R)")
+        self.w(f"{IND}J = volterra_inverse(R; block_size = 6)")
+        self.w(f"{IND}n = size(J, 1) ÷ 6")
+        self.w(
+            f"{IND}return [sum(J[6 * (a - 1) + {i}, 6 * (b - 1) + {j}] for b in 1:n) "
+            f"for a in 1:n]"
+        )
+        self.w("end")
+        self.blank()
+        self.w("const RESULTS = Dict{String, Any}()")
+        for scheme_name, scheme in names_schemes:
+            self.w(
+                f'RESULTS["{scheme_name}"] = uniaxial(homogenize_alv(cell, {scheme}, '
+                f"{alv.property}; times = times))"
+            )
+        self.blank()
+        self.w("# Published for MFH Studio; harmless when the script runs alone.")
+        self.w(
+            'const MFHSTUDIO_RESULTS = merge('
+            'Dict("x" => collect(times), "xlabel" => "t"), RESULTS)'
+        )
+        self.blank()
+        self.w("for (label, ys) in sort!(collect(RESULTS); by = first)")
+        self.w(f'{IND}@printf "%-24s  J(t₁) = %.6g   J(t_end) = %.6g\\n" label first(ys) last(ys)')
+        self.w("end")
+        if alv.plot:
+            self.blank()
+            self.w(
+                'p = plot(; xlabel = "t", ylabel = "uniaxial creep", legend = :best'
+                + (", xscale = :log10)" if alv.log_time else ")")
+            )
+            self.w("for (label, ys) in sort!(collect(RESULTS); by = first)")
+            self.w(f"{IND}plot!(p, times, ys; label = label, lw = 2)")
+            self.w("end")
+            self.w("display(p)")
 
     # -- the embedded model ----------------------------------------------
 

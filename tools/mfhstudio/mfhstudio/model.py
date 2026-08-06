@@ -48,6 +48,11 @@ class Property:
     form: str = "iso_kmu"
     args: dict = field(default_factory=lambda: {"k": 10.0, "mu": 5.0})
     expr: str = ""
+    #: ZYZ Euler angles of the frame the anisotropic constants are written in.
+    #: A tensor's frame is not the inclusion's: a tilted fiber in an untilted
+    #: matrix and an untilted fiber in a tilted matrix are different materials,
+    #: so the two orientations are stored and emitted separately.
+    euler_angles: list = field(default_factory=list)
     # multiscale seam
     cell: Optional[str] = None
     scheme: Optional[str] = None
@@ -226,27 +231,48 @@ class Lens:
 
 @dataclass
 class Sweep:
-    """A parametric sweep over one lens, plotted."""
+    """What to compute and what to plot.
+
+    `mode` decides the shape of the run:
+
+    - ``"single"`` — homogenize once with the amounts entered in Scales. This
+      is the answer to "I just want the number for the fractions I typed".
+    - ``"sweep"``  — vary one lens over a range and plot.
+
+    `schemes` is a *list*, so several can share one figure; comparing schemes
+    on the same microstructure is the usual reason to draw one at all.
+
+    `outputs` are explicit specs rather than the fixed `k`/`μ` pair: those two
+    only exist for an isotropic result, and an oriented inclusion without an
+    orientation average does not give one.
+    """
 
     enabled: bool = False
+    mode: str = "sweep"
     variable: str = "φ"
     start: float = 0.0
     stop: float = 1.0
     length: int = 21
     lens: Lens = field(default_factory=Lens)
-    #: which cell the sweep drives
     cell: Optional[str] = None
-    scheme: str = "MoriTanaka"
-    scheme_options: dict = field(default_factory=dict)
+    #: [{"name": "MoriTanaka", "options": {...}}, …]
+    schemes: list = field(default_factory=lambda: [{"name": "MoriTanaka", "options": {}}])
     property: str = ":C"
-    #: reporting projection applied to the result: none | iso | ti | ortho
     projection: str = "none"
-    #: which scalars to extract and plot
-    outputs: list = field(default_factory=lambda: ["k", "mu"])
+    outputs: list = field(default_factory=lambda: [{"kind": "k"}, {"kind": "mu"}])
     plot: bool = True
 
+    #: kinds that are only defined for an isotropic tensor
+    ISOTROPIC_ONLY = ("k", "mu", "E", "nu")
+
+    def needs_isotropy(self) -> bool:
+        return any(o.get("kind") in Sweep.ISOTROPIC_ONLY for o in self.outputs)
+
     def to_dict(self) -> dict:
-        d = asdict(self)
+        d = {
+            k: v for k, v in asdict(self).items()
+            if k not in ("lens", "ISOTROPIC_ONLY")
+        }
         d["lens"] = self.lens.to_dict()
         return d
 
@@ -254,12 +280,29 @@ class Sweep:
     def from_dict(d: dict) -> "Sweep":
         s = Sweep(
             **{
-                k: v
-                for k, v in d.items()
-                if k in Sweep.__annotations__ and k != "lens"
+                k: v for k, v in d.items()
+                if k in Sweep.__annotations__ and k not in ("lens", "schemes", "outputs")
             }
         )
         s.lens = Lens.from_dict(d.get("lens", {}))
+
+        # Models written before schemes became a list, and before outputs were
+        # specs, still open: migrate rather than lose them.
+        schemes = d.get("schemes")
+        if not schemes:
+            schemes = [{
+                "name": d.get("scheme") or "MoriTanaka",
+                "options": dict(d.get("scheme_options") or {}),
+            }]
+        s.schemes = [
+            {"name": x.get("name", "MoriTanaka"), "options": dict(x.get("options") or {})}
+            for x in schemes
+        ]
+
+        outs = d.get("outputs") or []
+        s.outputs = [
+            {"kind": o} if isinstance(o, str) else dict(o) for o in outs
+        ] or [{"kind": "k"}, {"kind": "mu"}]
         return s
 
 
@@ -275,13 +318,19 @@ class Alv:
     cell: Optional[str] = None
     scheme: str = "MoriTanaka"
     property: str = ":C"
+    #: which Kelvin-Mandel component of the creep operator to follow; (1, 1)
+    #: is the uniaxial response.
+    component: list = field(default_factory=lambda: [1, 1])
+    plot: bool = True
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @staticmethod
     def from_dict(d: dict) -> "Alv":
-        return Alv(**{k: v for k, v in d.items() if k in Alv.__annotations__})
+        a = Alv(**{k: v for k, v in d.items() if k in Alv.__annotations__})
+        a.component = list(a.component or [1, 1])[:2] or [1, 1]
+        return a
 
 
 @dataclass
@@ -407,6 +456,25 @@ class Model:
                 if pn.count(n) > 1:
                     problems.append(f"cell `{c.name}` has two phases named `{n}`")
 
+        # `k_mu` and `E_nu` have methods for TensISO only. Asking for them
+        # from an oriented inclusion with no orientation average throws a
+        # MethodError deep in the run; saying it here costs nothing.
+        if (
+            self.sweep.enabled
+            and self.sweep.needs_isotropy()
+            and self.sweep.projection == "none"
+            and any(
+                ph.symmetrize == "none"
+                for c in self.cells for ph in c.phases
+            )
+        ):
+            problems.append(
+                "k, μ, E and ν are only defined for an isotropic result. This "
+                "model has phases with no orientation average, so the effective "
+                "tensor need not be isotropic: pick a reporting projection, or "
+                "plot Kelvin-Mandel components instead."
+            )
+
         # Documented MFH constraint: an inner Homogenized cannot sit inside an
         # ageing-viscoelastic chain, because the inner result would have to be
         # re-expressible as a ViscoLaw (src/Core/cells.jl).
@@ -469,8 +537,9 @@ def default_model() -> Model:
     cell = Cell(name="rve", matrix_name="SOLID", phases=[solid, pore])
     m = Model(title="porous_benchmark", cells=[cell], root_cell=cell.id)
     m.sweep = Sweep(
-        enabled=True, variable="φ", start=0.0, stop=0.9, length=19,
+        enabled=True, mode="sweep", variable="φ", start=0.0, stop=0.9, length=19,
         lens=Lens(kind="amount", phase="PORE"), cell=cell.id,
-        scheme="MoriTanaka", projection="iso", outputs=["k", "mu"],
+        schemes=[{"name": "MoriTanaka", "options": {}}],
+        projection="iso", outputs=[{"kind": "k"}, {"kind": "mu"}],
     )
     return m

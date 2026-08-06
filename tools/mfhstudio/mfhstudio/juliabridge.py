@@ -121,6 +121,11 @@ class Bridge:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            # Julia speaks UTF-8; `text=True` alone decodes with the locale
+            # encoding, which on Windows is cp1252 — enough to turn a `φ` in
+            # the script's output into `Ï†` on its way back through the pipe.
+            encoding="utf-8",
+            errors="replace",
             bufsize=1,
         )
         self._replies = queue.Queue()
