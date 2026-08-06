@@ -11,6 +11,13 @@
 #   7. ForwardDiff sensitivity through the volume fraction.
 #   8. NewtonDefault (built-in, dependency-free) agrees with AndersonDefault.
 #   9. Symbol shortcuts.
+#  10. ASC compliance branch: `⟨C:A⟩` of an ANISOTROPIC phase under an
+#      isotropic orientation average — the average does not commute with the
+#      tensor product, so the result must come back isotropic and
+#      major-symmetric.
+#  11. ASC ≡ SC only when every phase shares one Hill tensor (`Σ f_r A_r = 𝟙`);
+#      equal-but-oblate shapes agree, unequal shapes differ by percents.
+#      Item 4's agreement is a consequence of this, not of the branch taken.
 #
 #  NonlinearSolve.jl-backed algorithms (NewtonRaphson, TrustRegion, …)
 #  and AutoNonlinear are covered separately in
@@ -62,7 +69,9 @@ end
 end
 
 @testset "AsymmetricSelfConsistent — matches SC when matrix is soft" begin
-    # Inclusion stiffer than matrix → stiffness form preferred → ASC ≡ SC
+    # ASC ≡ SC here because BOTH phases are spheres, i.e. share one Hill
+    # tensor — not because the stiffness form was selected. See the testset
+    # "ASC ≡ SC iff every phase shares one Hill tensor" below.
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
     add_phase!(
@@ -189,4 +198,127 @@ end
     @test homogenize(rve, :SC) ≈ homogenize(rve, SelfConsistent())
     @test homogenize(rve, :self_consistent) ≈ homogenize(rve, SelfConsistent())
     @test homogenize(rve, :asc) ≈ homogenize(rve, AsymmetricSelfConsistent())
+end
+
+# =============================================================================
+#  The orientation average does NOT commute with the tensor product, so
+#  `⟨C:A⟩` has to be built from the RAW localization tensor and averaged
+#  afterwards. The ASC compliance branch used to assemble it as
+#  `C_i ⊡ ⟨A⟩` — the raw (anisotropic) phase stiffness times the
+#  already-averaged concentration — which is a different tensor unless `C_i`
+#  is isotropic. An iso-symmetrized phase then came back transversely
+#  isotropic instead of isotropic, and not even major-symmetric.
+#
+#  The conjunction is what makes it rare: an ANISOTROPIC phase property AND
+#  `symmetrize` on AND the compliance branch. The `_asc_use_stiffness`
+#  assertion is load-bearing — without it the RVE could drift to the
+#  stiffness branch and stop covering the bug silently.
+# =============================================================================
+@testset "ASC — iso orientation average of an anisotropic phase" begin
+    C_m = TensISO{3}(3 * 1.0, 2 * 0.4)            # soft isotropic matrix
+    # A transversely isotropic aggregate from engineering constants, aligned
+    # with e₃ in its own frame. Built this way it is stored as the 5-component
+    # (major-symmetric) flavor, so any asymmetry downstream was created by the
+    # scheme rather than inherited from the input.
+    C_i = TensND.tens_TI_eng(2.0, 1.0, 0.25, 0.2, 0.45, (0.0, 0.0, 1.0))
+    @test C_i isa TensND.TensTI{4, Float64, 5}
+
+    function build(sym)
+        rve = RVE(:M)
+        add_matrix!(rve, Ellipsoid(1.0), Dict(:C => C_m))
+        add_phase!(
+            rve, :agg, Ellipsoid(1.0), Dict(:C => C_i);
+            fraction = 0.3, symmetrize = sym
+        )
+        return rve
+    end
+
+    # The branch this test exists to cover.
+    @test MeanFieldHom.Schemes._asc_use_stiffness(build(:iso), :C) == false
+
+    tol = (abstol = 1.0e-13, maxiters = 600)
+    C_asc = homogenize(build(:iso), AsymmetricSelfConsistent(; tol...), :C)
+    C_sc = homogenize(build(:iso), SelfConsistent(; tol...), :C)
+
+    # Averaging over all orientations of the aggregate leaves nothing
+    # anisotropic behind.
+    @test C_asc isa TensND.TensISO
+    # …and the result is an admissible stiffness.
+    KM = collect(TensND.KM(C_asc))
+    @test maximum(abs, KM - KM') / maximum(abs, KM) < 1.0e-12
+    # Both formulations share one fixed point; only the dynamics differ.
+    @test k_mu(C_asc)[1] ≈ k_mu(C_sc)[1] rtol = 1.0e-8
+    @test k_mu(C_asc)[2] ≈ k_mu(C_sc)[2] rtol = 1.0e-8
+
+    # Control: with nothing to average, the aggregate's own anisotropy must
+    # survive — the fix must not isotropize unconditionally.
+    C_raw = homogenize(build(:none), AsymmetricSelfConsistent(; tol...), :C)
+    @test !(C_raw isa TensND.TensISO)
+    @test C_raw isa TensND.TensTI
+end
+
+# =============================================================================
+#  ASC and SC are two SCHEMES, not two solvers for one answer. Their fixed
+#  points coincide exactly when `Σ_r f_r A_r = 𝟙`, which "every phase shares
+#  one Hill tensor" guarantees (derivation atop src/Schemes/self_consistent.jl).
+#  Sphericity is only the usual such case — what matters is that the shapes be
+#  EQUAL, not that they be spheres. The code used to claim the fixed points
+#  always coincide.
+# =============================================================================
+@testset "ASC ≡ SC iff every phase shares one Hill tensor" begin
+    C_m, C_i = TensISO{3}(3 * 1.0, 2 * 0.4), TensISO{3}(3 * 8.0, 2 * 3.0)
+    tol = (abstol = 1.0e-13, maxiters = 800)
+
+    function build(mshape, ishape; sym = :none)
+        r = RVE(:M)
+        add_matrix!(r, mshape, Dict(:C => C_m))
+        add_phase!(r, :I, ishape, Dict(:C => C_i); fraction = 0.3, symmetrize = sym)
+        return r
+    end
+
+    # `Σ_r f_r A_r`, matrix INCLUDED — the quantity the equivalence turns on.
+    function sum_fA(rve, C)
+        tot = zero(C)
+        for name in keys(rve.phases)
+            f = name == rve.matrix_name ?
+                MeanFieldHom.Schemes.matrix_volume_fraction(rve) :
+                MeanFieldHom.Schemes.amount_value(rve.amounts[name])
+            tot += f * MeanFieldHom.Schemes._phase_dilute_concentration(rve, name, :C, C)
+        end
+        return tot
+    end
+    dev_I(T) = maximum(abs, collect(TensND.KM(T)) - Matrix{Float64}(I, 6, 6))
+
+    @testset "equal shapes — spheres" begin
+        rve = build(Ellipsoid(1.0), Ellipsoid(1.0))
+        C_sc = homogenize(rve, SelfConsistent(; tol...), :C)
+        @test dev_I(sum_fA(rve, C_sc)) < 1.0e-7
+        @test homogenize(rve, AsymmetricSelfConsistent(; tol...), :C) ≈ C_sc rtol = 1.0e-6
+    end
+
+    @testset "equal shapes — both strongly oblate, so NOT about sphericity" begin
+        for ω in (0.2, 0.05)
+            rve = build(Spheroid(ω), Spheroid(ω))
+            C_sc = homogenize(rve, SelfConsistent(; tol...), :C)
+            @test dev_I(sum_fA(rve, C_sc)) < 1.0e-7
+            @test homogenize(rve, AsymmetricSelfConsistent(; tol...), :C) ≈ C_sc rtol = 1.0e-6
+        end
+    end
+
+    @testset "unequal shapes disagree, and the gap tracks ‖Σ f A − 𝟙‖" begin
+        gaps, devs = Float64[], Float64[]
+        for ω in (0.2, 0.05)
+            rve = build(Ellipsoid(1.0), Spheroid(ω); sym = :iso)
+            C_sc = homogenize(rve, SelfConsistent(; tol...), :C)
+            C_asc = homogenize(rve, AsymmetricSelfConsistent(; tol...), :C)
+            push!(devs, dev_I(sum_fA(rve, C_sc)))
+            push!(gaps, abs(k_mu(C_asc)[1] - k_mu(C_sc)[1]) / k_mu(C_sc)[1])
+        end
+        # Percent-level: genuinely different effective media, not solver noise.
+        @test all(>(1.0e-2), gaps)
+        @test all(>(1.0e-2), devs)
+        # Flatter inclusion → identity further from 𝟙 → wider gap.
+        @test devs[2] > devs[1]
+        @test gaps[2] > gaps[1]
+    end
 end

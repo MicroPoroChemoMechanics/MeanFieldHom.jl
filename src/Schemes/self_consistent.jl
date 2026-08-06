@@ -604,9 +604,38 @@ end
 #  the resulting dilute correction is added to the matrix property
 #  (`C_m` or `S_m`) — not to the iterating estimate. This is the
 #  "asymmetric" formulation: the matrix retains its privileged role
-#  even in the SC iteration. The fixed point coincides with the
-#  Hill-symmetric SC fixed point, but the iteration dynamics differ
-#  (different basins of attraction).
+#  even in the SC iteration.
+#
+#  WHEN the two fixed points coincide — they do NOT in general. Write
+#  `A_r = A_r^dil(C)` at the fixed point. The Hill-symmetric SC solves
+#
+#      Σ_r f_r (C_r − C) : A_r = 0        (sum over ALL phases, matrix included)
+#
+#  while the asymmetric form solves
+#
+#      C − C_m = Σ_i f_i (C_i − C_m) : A_i     (sum over INCLUSIONS only).
+#
+#  Splitting `C_i − C_m = (C_i − C) + (C − C_m)` in the second and injecting
+#  the first turns the pair into
+#
+#      (C − C_m) : [𝟙 − Σ_r f_r A_r] = 0 ,
+#
+#  so the two agree exactly when `Σ_r f_r A_r = 𝟙`. That identity is not
+#  free: it holds when every phase shares ONE Hill tensor `P` (same shape,
+#  same orientation, same reference), because then `C_r − C = P⁻¹ : (A_r⁻¹ − 𝟙)`
+#  and `Σ_r f_r (C_r − C) : A_r = P⁻¹ : (𝟙 − Σ_r f_r A_r)`, making the SC
+#  condition *equivalent* to it. With unequal shapes the `P`s differ, the
+#  equivalence breaks, and the two schemes converge to genuinely different
+#  effective media — 2.5 % apart on `k` for an oblate ω = 0.2 inclusion in a
+#  spherical matrix, 6 % at ω = 0.05, the gap tracking `‖Σ f_r A_r − 𝟙‖`.
+#  Sphericity is only the common special case: a matrix and an inclusion that
+#  are BOTH oblate ω = 0.05 satisfy the identity and agree again.
+#
+#  An orientation average does not rescue it: `⟨A⟩` of an averaged spheroid is
+#  not the `A` of a sphere.
+#
+#  The iteration dynamics differ in every case (different basins of
+#  attraction), which is the point of offering both.
 #
 #  Stiffness form  : C^{n+1} = C_m + Σ_i f_i (C_i − C_m) A_{εε,i}^{(C^n)}
 #  Compliance form : S^{n+1} = S_m + (⟨A_{εε}⟩ − S_m ⟨C_i A_{εε}⟩) S^n
@@ -624,10 +653,21 @@ end
 Asymmetric self-consistent scheme. Iterates a Mori-Tanaka-like update
 where the dilute concentration tensors use the *current effective
 medium* as reference but the dilute correction is added to the
-*matrix property*. The iteration dynamics differ from the Hill
-symmetric SC even though the fixed point is the same — for porous and
-crack RVEs the asymmetric form converges to a different physical
-branch (the matrix-distinguished branch).
+*matrix property*. For porous and crack RVEs the asymmetric form
+converges to a different physical branch (the matrix-distinguished
+branch).
+
+!!! warning "This is a different scheme, not just a different iteration"
+    The asymmetric fixed point coincides with the Hill-symmetric
+    [`SelfConsistent`](@ref) one **only when every phase shares one Hill
+    tensor** — the same shape, orientation and reference — which makes
+    `Σ_r f_r A_r = 𝟙` (see the derivation at the top of
+    `self_consistent.jl`). All-spherical phases are the usual such case.
+    With unequal shapes the two converge to genuinely different effective
+    media: about 2.5 % apart on `k` for an oblate `ω = 0.2` inclusion in a
+    spherical matrix, 6 % at `ω = 0.05`. An orientation average does not
+    restore the identity. Pick the scheme on physical grounds, not on the
+    assumption that it is the cheaper route to the same answer.
 
 Compliance form is selected when the matrix property is "stiffer"
 (in squared Frobenius norm) than the Voigt upper bound — the
@@ -772,10 +812,21 @@ function _asc_step_compliance_dispatch(
         # added directly to S^{n+1} via `compliance_contribution`.
         if a isa VolumeFraction
             f = amount_value(a)
-            C_i = phase_property(rve, name, prop)
-            A_dil = _phase_dilute_concentration(rve, name, prop, C_n; kw...)
+            # `⟨C:A⟩`, NOT `C ⊡ ⟨A⟩`: the orientation average does not commute
+            # with the tensor product, so the product has to be formed on the
+            # RAW localization tensor and averaged afterwards — which is what
+            # the bundle does.  Building it here from the already-averaged
+            # `A_dil` and the raw `C_i` was wrong whenever the phase property
+            # is anisotropic and `symmetrize` is on (an ISO `C_i` commutes with
+            # the average, which is why the stiffness branch and every
+            # isotropic-phase RVE agreed anyway): an iso-symmetrized phase came
+            # back transversely isotropic, and not even major-symmetric.
+            # The bundle also routes heterogeneous inclusions through
+            # `loc_and_stress_average`, whose stress average the declared
+            # (placeholder) property of a `LayeredSphere` cannot give.
+            A_dil, CA = _phase_dilute_and_stress_average(rve, name, prop, C_n; kw...)
             A_avg += f * A_dil
-            CA_avg += f * (C_i ⊡ A_dil)
+            CA_avg += f * CA
         end
     end
     S_new = S_m + (A_avg - S_m ⊡ CA_avg) ⊡ S_n
@@ -802,10 +853,10 @@ function _asc_step_compliance_dispatch(
         a = rve.amounts[name]
         a isa VolumeFraction || continue
         f = amount_value(a)
-        K_i = phase_property(rve, name, prop)
-        A_dil = _phase_dilute_concentration(rve, name, prop, K_n; kw...)
+        # `⟨K·A⟩`, not `K ⋅ ⟨A⟩` — see the order-4 dispatch above.
+        A_dil, KA = _phase_dilute_and_stress_average(rve, name, prop, K_n; kw...)
         A_avg += f * A_dil
-        KA_avg += f * (K_i ⋅ A_dil)
+        KA_avg += f * KA
     end
     R_new = R_m + (A_avg - R_m ⋅ KA_avg) ⋅ R_n
     return inv(R_new)

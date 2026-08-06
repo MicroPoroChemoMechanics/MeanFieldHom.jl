@@ -11,9 +11,13 @@
 #  References:
 #    * PCW : Ponte-Castañeda & Willis 1995 — coincides with Maxwell in
 #      the single-shape case.
-#    * ASC : same fixed point as
-#      `self_consistent_alv` but the iteration update is anchored on
-#      the matrix property `C_M` rather than on the running estimate.
+#    * ASC : the iteration update is anchored on the matrix property
+#      `C_M` rather than on the running estimate.  Its fixed point
+#      coincides with `self_consistent_alv`'s only when every phase
+#      shares one Hill tensor (all-spherical being the usual case) —
+#      see the derivation atop `Schemes/self_consistent.jl`; with
+#      unequal shapes the two are different schemes, not two routes to
+#      one answer.
 #    * DIFF : Norris 1985 ; user's hand-written DEM N-component note.
 #      Solved as a SciML ODE on the fictitious incorporation time
 #      `τ ∈ [0, 1]` (`Tsit5` default ; user-overridable via the
