@@ -77,9 +77,21 @@ class Bridge:
     boot_timeout: float = 900.0
 
     _proc: Optional[subprocess.Popen] = field(default=None, init=False, repr=False)
+    # `_lock` serializes round-trips (the sidecar handles one request at a
+    # time); `_boot_lock` serializes start-up.  They are distinct on purpose:
+    # start-up can take minutes, and holding the round-trip lock for it would
+    # make every queued request inherit that wait as if it were its own.
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False, repr=False)
-    _replies: "queue.Queue[dict]" = field(
-        default_factory=queue.Queue, init=False, repr=False
+    _boot_lock: threading.Lock = field(
+        default_factory=threading.Lock, init=False, repr=False
+    )
+    # One reply queue PER pending request id.  A single shared queue lets
+    # concurrent waiters steal each other's messages: whoever calls `get`
+    # first receives whatever arrives and drops it if the id does not match,
+    # which silently loses the readiness event to an in-flight request.
+    _pending: dict = field(default_factory=dict, init=False, repr=False)
+    _ready_evt: threading.Event = field(
+        default_factory=threading.Event, init=False, repr=False
     )
     _reader: Optional[threading.Thread] = field(default=None, init=False, repr=False)
     _next_id: int = field(default=0, init=False, repr=False)
@@ -100,8 +112,20 @@ class Bridge:
         }
 
     def start(self) -> None:
-        """Launch the sidecar and wait for its readiness line."""
-        if self._proc is not None and self._proc.poll() is None:
+        """Launch the sidecar and wait for its readiness line.
+
+        Idempotent and safe to call from several threads: the first caller
+        boots, the others wait for the same readiness event instead of
+        starting a second Julia or — worse — proceeding as if the first one
+        were already usable.
+        """
+        with self._boot_lock:
+            if self._ready and self._proc is not None and self._proc.poll() is None:
+                return
+            self._start_locked()
+
+    def _start_locked(self) -> None:
+        if self._proc is not None and self._proc.poll() is None and self._ready:
             return
         exe = self.julia or find_julia()
         if exe is None:
@@ -115,6 +139,8 @@ class Bridge:
         self._ready = False
         self._boot_error = None
         self._stderr = []
+        self._ready_evt.clear()
+        self._pending = {}
         self._proc = subprocess.Popen(
             [exe, f"--project={self.project}", "--startup-file=no", self.script],
             stdin=subprocess.PIPE,
@@ -128,36 +154,35 @@ class Bridge:
             errors="replace",
             bufsize=1,
         )
-        self._replies = queue.Queue()
         self._reader = threading.Thread(target=self._read_loop, daemon=True)
         self._reader.start()
         threading.Thread(target=self._drain_stderr, daemon=True).start()
 
-        # The first line is the readiness event.
+        # The readiness event is routed to us by the reader thread, so an
+        # in-flight request can no longer consume it.
         deadline = time.time() + self.boot_timeout
         while time.time() < deadline:
-            try:
-                msg = self._replies.get(timeout=0.2)
-            except queue.Empty:
-                if self._proc.poll() is not None:
-                    raise SidecarUnavailable(_diagnose("".join(self._stderr[-60:])))
-                continue
-            if msg.get("event") == "ready":
-                self._ready = bool(msg.get("ok"))
-                self._boot_error = msg.get("error")
+            if self._ready_evt.wait(0.2):
                 if not self._ready:
                     raise SidecarUnavailable(
                         "MeanFieldHom failed to load in the sidecar:\n"
                         + str(self._boot_error)
                     )
                 return
+            if self._proc.poll() is not None:
+                raise SidecarUnavailable(_diagnose("".join(self._stderr[-60:])))
         raise SidecarUnavailable(
-            f"sidecar did not become ready within {self.boot_timeout:.0f} s"
+            f"sidecar did not become ready within {self.boot_timeout:.0f} s. "
+            "A first run on a fresh checkout has to instantiate and precompile "
+            "the whole dependency tree; re-running is cheaper because that "
+            "work is cached. Run `--check` for a diagnosis."
         )
 
     def stop(self) -> None:
         proc, self._proc = self._proc, None
         self._ready = False
+        self._ready_evt.clear()
+        self._pending = {}
         if proc is None:
             return
         try:
@@ -180,11 +205,23 @@ class Bridge:
             if not line:
                 continue
             try:
-                self._replies.put(json.loads(line))
+                msg = json.loads(line)
             except json.JSONDecodeError:
                 # Anything the sidecar prints outside the protocol is kept for
                 # diagnostics rather than silently dropped.
                 self._stderr.append(line + "\n")
+                continue
+            if msg.get("event") == "ready":
+                self._ready = bool(msg.get("ok"))
+                self._boot_error = msg.get("error")
+                self._ready_evt.set()
+                continue
+            # Route to the waiter that asked for it.  A reply with no pending
+            # waiter is stale (its caller timed out, or a restart intervened)
+            # and is dropped rather than handed to whoever asks next.
+            q = self._pending.get(msg.get("id"))
+            if q is not None:
+                q.put(msg)
 
     def _drain_stderr(self) -> None:
         proc = self._proc
@@ -195,36 +232,49 @@ class Bridge:
             del self._stderr[:-200]
 
     def call(self, op: str, payload: Optional[dict] = None, timeout: float = 300.0) -> Any:
-        """One request, one reply."""
+        """One request, one reply.
+
+        `timeout` bounds the time the sidecar spends *answering*, so the wait
+        for it to finish booting is taken first and separately.  Sending on a
+        process that is alive but still loading MeanFieldHom would spend the
+        whole budget waiting for a reply that cannot come yet, and report a
+        wedged sidecar when nothing is wrong but a cold precompilation.
+        """
+        # Not under `_lock`: booting can take minutes and is shared work.
+        self.start()
+
         with self._lock:
-            if self._proc is None or self._proc.poll() is not None:
+            if self._proc is None or self._proc.poll() is not None or not self._ready:
                 self.start()
             assert self._proc is not None and self._proc.stdin is not None
 
             self._next_id += 1
             rid = self._next_id
+            inbox: "queue.Queue[dict]" = queue.Queue()
+            self._pending[rid] = inbox
             req = {"id": rid, "op": op, "payload": payload or {}}
             try:
-                self._proc.stdin.write(json.dumps(req) + "\n")
-                self._proc.stdin.flush()
-            except (BrokenPipeError, ValueError) as exc:
-                raise SidecarUnavailable(f"sidecar pipe closed: {exc}") from exc
-
-            deadline = time.time() + timeout
-            while time.time() < deadline:
                 try:
-                    msg = self._replies.get(timeout=0.2)
-                except queue.Empty:
-                    if self._proc.poll() is not None:
-                        raise SidecarUnavailable(
-                            "sidecar died:\n" + "".join(self._stderr[-40:])
-                        )
-                    continue
-                if msg.get("id") != rid:
-                    continue  # a stale reply from before a restart
-                if not msg.get("ok"):
-                    raise SidecarError(msg.get("error") or "unknown sidecar error")
-                return msg.get("result")
+                    self._proc.stdin.write(json.dumps(req) + "\n")
+                    self._proc.stdin.flush()
+                except (BrokenPipeError, ValueError) as exc:
+                    raise SidecarUnavailable(f"sidecar pipe closed: {exc}") from exc
+
+                deadline = time.time() + timeout
+                while time.time() < deadline:
+                    try:
+                        msg = inbox.get(timeout=0.2)
+                    except queue.Empty:
+                        if self._proc.poll() is not None:
+                            raise SidecarUnavailable(
+                                "sidecar died:\n" + "".join(self._stderr[-40:])
+                            )
+                        continue
+                    if not msg.get("ok"):
+                        raise SidecarError(msg.get("error") or "unknown sidecar error")
+                    return msg.get("result")
+            finally:
+                self._pending.pop(rid, None)
 
         raise SidecarUnavailable(
             f"no reply to `{op}` within {timeout:.0f} s; the sidecar may be wedged"
