@@ -14,19 +14,19 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # augmenter le timeout pour laisser Pages le temps de sortir de la file
+    timeout-minutes: 40
     permissions:
       actions: write
       pull-requests: read
       contents: write
       statuses: write
+      pages: write            # <-- ajouté : permet au workflow d'interagir correctement avec Pages
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
           version: '1'
-      # Same reason as in CI.yml: building the docs loads MeanFieldHom →
-      # TensND → SymPy, which needs the Python `sympy` module that the
-      # runner's /usr/bin/python3 lacks.
       - name: Install dependencies (PyCall/SymPy)
         run: |
           julia -e '
