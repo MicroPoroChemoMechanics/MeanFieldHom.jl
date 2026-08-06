@@ -14,14 +14,13 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # augmenter le timeout pour laisser Pages le temps de sortir de la file
-    timeout-minutes: 40
+    # timeout-minutes: 120
     permissions:
       actions: write
       pull-requests: read
       contents: write
       statuses: write
-      pages: write            # <-- ajouté : permet au workflow d'interagir correctement avec Pages
+      pages: write
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
