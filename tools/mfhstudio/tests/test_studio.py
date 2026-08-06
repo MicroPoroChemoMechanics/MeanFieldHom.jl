@@ -214,6 +214,25 @@ def _layered_spheroid_model() -> Model:
     return Model(cells=[c])
 
 
+def test_layered_spheroid_orientation_reaches_the_generated_call():
+    """A spheroid of revolution is orientable and the solver honors it —
+    `scheme_integration.jl` returns `TensTI{2}(αt, αa, s.axis)`. The angles
+    used to be dropped for this shape alone, leaving the axis at its (0,0,1)
+    default: the interface's orientation fields did nothing, in the
+    computation as much as in the 3-D view.
+
+    `axis::Tuple` is the declared type, so the vector `vecbasis(...)[:, 3]`
+    returns has to be wrapped — the trap the `TensTI{2}` builder documents.
+    """
+    m = _layered_spheroid_model()
+    m.cells[0].phases[1].geometry.euler_angles = [0.7, 1.1]
+    src = generate(m, embed_model=False)
+    assert "axis = Tuple(vecbasis(RotatedBasis(0.7, 1.1" in src
+    # …and no axis keyword at all when the shape is left unrotated.
+    m2 = _layered_spheroid_model()
+    assert "axis" not in generate(m2, embed_model=False)
+
+
 def test_layered_spheroid_uses_the_fraction_constructor():
     """The raw constructor demands confocal layers, which typed-in radii are
     not: it threw, and the shape drew nothing."""
@@ -539,12 +558,71 @@ def test_traces_come_back_as_real_json():
         b.stop()
 
 
+def test_a_tilted_layered_spheroid_is_drawn_tilted():
+    """`LayeredSpheroid` stores a unit revolution axis, not a `.basis`, and
+    `inclusion_basis` returns the canonical one whatever that axis is. The
+    trace builder parametrized every layer with the axis hard-coded along z,
+    so a tilted spheroid drew upright — the picture disagreeing with the
+    script, exactly the failure the `_rot(::Ellipsoid)` comment records.
+    """
+    import math
+
+    b = _bridge()
+    try:
+        mods = "(TensISO{3}(1.0), TensISO{3}(5.0))"
+        base = f"layered_spheroid_from_fractions(0.5, 1.0, (0.3, 0.7), {mods}; Nseries = 5"
+        th, ph = 0.9, 0.4
+        axis = (
+            math.sin(th) * math.cos(ph),
+            math.sin(th) * math.sin(ph),
+            math.cos(th),
+        )
+        upright = b.traces(base + ")")
+        tilted = b.traces(base + f", axis = {axis})")
+
+        def revolution_dir(scene):
+            """Shortest principal direction of the outer layer's point cloud.
+
+            ω = 0.5 is oblate, so the *short* semi-axis is the revolution one.
+            """
+            tr = scene["data"][-1]
+            pts = [
+                (x, y, z)
+                for xs, ys, zs in zip(tr["x"], tr["y"], tr["z"])
+                for x, y, z in zip(xs, ys, zs)
+            ]
+            n = len(pts)
+            cov = [[sum(p[i] * p[j] for p in pts) / n for j in range(3)] for i in range(3)]
+            # Power iteration on (tr(C)·I − C) converges to C's *smallest*
+            # eigenvector, avoiding a numpy dependency in the test suite.
+            tr_c = sum(cov[i][i] for i in range(3))
+            v = [0.3, 0.5, 0.81]
+            for _ in range(400):
+                w = [
+                    sum((tr_c * (i == j) - cov[i][j]) * v[j] for j in range(3))
+                    for i in range(3)
+                ]
+                nrm = math.sqrt(sum(c * c for c in w)) or 1.0
+                v = [c / nrm for c in w]
+            return v
+
+        d_up = revolution_dir(upright)
+        d_tl = revolution_dir(tilted)
+        # A principal direction has no sign, so compare |cos|.
+        assert abs(d_up[2]) > 0.99, d_up
+        assert abs(sum(a * b_ for a, b_ in zip(d_tl, axis))) > 0.99, d_tl
+        assert abs(d_tl[2]) < 0.9, d_tl
+    finally:
+        b.stop()
+
+
 JULIA_TESTS = {
     "test_catalog_covers_every_exported_scheme",
     "test_self_consistent_offers_only_what_it_reads",
     "test_preserves_every_demo_script",
     "test_generated_script_matches_the_echoes_reference",
     "test_traces_come_back_as_real_json",
+    "test_a_tilted_layered_spheroid_is_drawn_tilted",
 }
 
 

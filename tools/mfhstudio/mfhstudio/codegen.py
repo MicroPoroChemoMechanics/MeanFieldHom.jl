@@ -77,6 +77,17 @@ def _axis_expr(euler, axis=None) -> str:
     return "(0.0, 0.0, 1.0)"
 
 
+def _axis_tuple_expr(euler, axis=None) -> str:
+    """`_axis_expr`, but as a Julia *tuple*.
+
+    `LayeredSpheroid` and `layered_spheroid_from_fractions` declare
+    `axis::Tuple`, which rejects the `Vector` that `vecbasis(...)[:, 3]`
+    returns — the same trap the `TensTI{2}` builder documents above.
+    """
+    e = _axis_expr(euler, axis)
+    return e if e.startswith("(") else f"Tuple({e})"
+
+
 def _tuple(items) -> str:
     """A Julia tuple; only a 1-tuple needs the trailing comma."""
     parts = [p for p in items if p]
@@ -378,9 +389,18 @@ class CodeGen:
         omega = g.args.get("omega", 0.5)
         radius = g.args.get("radius", 1.0)
         ns = g.args.get("Nseries", 5)
+        # A spheroid of revolution is orientable, and the solver honors it:
+        # `scheme_integration.jl` returns `TensTI{2}(αt, αa, s.axis)`, so the
+        # concentration tensors come back TI about the axis the geometry
+        # carries. Dropping the angles here left the axis at its (0,0,1)
+        # default, silently ignoring the interface's own orientation fields —
+        # in the computation as much as in the 3-D view.
+        axis = ""
+        if _angles(g.euler_angles):
+            axis = f", axis = {_axis_tuple_expr(g.euler_angles)}"
         return (
             f"layered_spheroid_from_fractions({_fnum(omega)}, {_fnum(radius)}, "
-            f"{fractions}, {moduli}; Nseries = {_num(ns)})"
+            f"{fractions}, {moduli}; Nseries = {_num(ns)}{axis})"
         )
 
     def _properties(self, ph: Phase) -> str:

@@ -105,6 +105,25 @@ function _rot(ell::MeanFieldHom.Ellipsoid)
     end
 end
 
+# A `LayeredSpheroid` stores its orientation as the unit revolution axis, not
+# as a basis, so there is no `.basis` to read here — and `inclusion_basis`
+# returns the canonical one whatever the axis. Build a frame whose third
+# vector IS that axis; the transverse plane of a body of revolution is
+# isotropic, so any orthonormal complement draws the same surface.
+function _rot(ls::MeanFieldHom.LayeredSpheroid)
+    e3 = Float64.(collect(ls.axis))
+    nrm = norm(e3)
+    nrm ≈ 0 && return Matrix{Float64}(I, 3, 3)
+    e3 ./= nrm
+    # Cross with the canonical vector least aligned with e3, so the complement
+    # never degenerates (a fixed choice fails when e3 is that very vector).
+    t = zeros(3)
+    t[argmin(abs.(e3))] = 1.0
+    e1 = normalize(cross(t, e3))
+    e2 = cross(e3, e1)
+    return hcat(e1, e2, e3)
+end
+
 # ── Per-geometry traces ─────────────────────────────────────────────────────
 
 traces(x; kw...) = Dict{String, Any}[]
@@ -192,20 +211,30 @@ end
 
 function traces(ls::MeanFieldHom.LayeredSpheroid; cutaway::Bool = true, guides::Bool = false, kw...)
     out = Dict{String, Any}[]
-    axis = Float64.(collect(MeanFieldHom.outer_semiaxes(ls)))
+    semi = Float64.(collect(MeanFieldHom.outer_semiaxes(ls)))
     n = MeanFieldHom.layer_count(ls)
     colors = _layer_colors(n)
     ulim = cutaway ? 1.0π : 2.0π
+    R = _rot(ls)
     for i in 1:n
         c, aeq = try
             Float64.(MeanFieldHom.layer_semiaxes(ls, i))
         catch
-            (axis[1] * i / n, axis[end] * i / n)
+            (semi[1] * i / n, semi[end] * i / n)
         end
-        f = (u, v) -> (aeq * cos(v) * cos(u), aeq * cos(v) * sin(u), c * sin(v))
+        # The parametrization is written in the spheroid's own frame (revolution
+        # axis along local ê₃) and rotated into the global one, because
+        # `param_surface` samples a point map and takes no `R` of its own.
+        f = function (u, v)
+            p = R * [aeq * cos(v) * cos(u), aeq * cos(v) * sin(u), c * sin(v)]
+            return (p[1], p[2], p[3])
+        end
         X, Y, Z = param_surface(f, range(0, ulim; length = 41), range(-π / 2, π / 2; length = 21))
         push!(out, surface(X, Y, Z; color = colors[i], opacity = i == n ? 0.55 : 0.9, name = "layer $i"))
     end
+    guides && append!(
+        out, axis_guides(R, (semi[end], semi[end], semi[1]), ("ρt", "ρt", "ρa"))
+    )
     return out
 end
 
