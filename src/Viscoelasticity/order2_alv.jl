@@ -479,12 +479,12 @@ function _homogenize_alv_order2(
     end
     T_block = isempty(per_phase) ? eltype(K_0) :
         promote_type(
-        eltype(K_0),
-        (
-            promote_type(eltype(q.K_r), eltype(q.A_dut), eltype(q.N_dut))
+            eltype(K_0),
+            (
+                promote_type(eltype(q.K_r), eltype(q.A_dut), eltype(q.N_dut))
                 for q in per_phase
-        )...
-    )
+            )...
+        )
 
     fractions = T_amount[_amount_value(rve, name) for name in incl_names]
     K_phases = Matrix{T_block}[K_0]
