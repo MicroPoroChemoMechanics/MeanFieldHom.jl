@@ -280,7 +280,71 @@ Result is a `(3n × 3n)` block matrix. See
 The order-2 pipeline implements the bounds, `Dilute`, `DiluteDual`,
 `MoriTanaka`, `Maxwell` and `DifferentialScheme`.
 
-## 7. The differential scheme in ALV
+`symmetrize` is honored in both orders. The projection is applied to the
+dilute quantities (`Ã_α`, `Ñ_α`) block by block, with the projector of the
+right tensor order — 6×6 Mandel blocks for order 4, plain 2-tensor blocks
+for order 2. It is exact in both cases: the SO(3) average of a 2-tensor is
+its spherical part `(tr B / 3) 𝟙`, and the azimuthal average about `n̂`
+keeps the axial component, the transverse mean and the axial antisymmetric
+part.
+
+Note that the bounds are shape-blind: `Voigt` and `Reuss` average the phase
+relaxation matrices directly, so `symmetrize` cannot change their result.
+
+## [7. Isotropic reference: what it costs the reference-updating schemes](@id man-alv-iso-reference)
+
+Every ALV Hill kernel — order 2 and order 4 alike — is built for an
+**isotropic** reference medium: that is the condition under which the
+time and space parts decouple and a closed form exists at all. This is
+not a restriction on the *result*, which is generally anisotropic; it is
+a restriction on what the kernel may be evaluated *against*.
+
+That splits the schemes in two:
+
+* `Voigt`, `Reuss`, `Dilute`, `DiluteDual`, `MoriTanaka`, `Maxwell`, `PCW`
+  evaluate the kernel against the **matrix**, which is fixed and
+  isotropic. Any inclusion shape and orientation is fine.
+* `SelfConsistent` and `DifferentialScheme` evaluate it against their
+  **running estimate** — the fixed point for the former, `C̃(τ)` for the
+  latter. An aligned non-spherical inclusion, or a crack (whose
+  contribution is transversely isotropic in its own frame), drags that
+  estimate out of the isotropic class, and the kernel would no longer be
+  valid there.
+
+!!! warning "Reference-updating ALV schemes need an isotropic running medium"
+    With `SelfConsistent` or `DifferentialScheme` in ALV, every inclusion
+    phase must keep the running estimate isotropic. Two ways to satisfy
+    that: **spherical inclusions** with an isotropic phase law
+    (`LayeredSphere` also qualifies — its contribution is isotropic by
+    construction), or an **isotropic orientation average**,
+    `symmetrize = :iso`, which is also what randomly oriented inclusions or
+    cracks mean physically.
+
+    An RVE that satisfies neither raises an explicit `ArgumentError` naming
+    the offending phase, rather than silently reading iso parameters off a
+    matrix that is no longer isotropic. A non-isotropic ALV *matrix* is
+    refused for the same reason.
+
+```julia
+# randomly oriented cracks — the orientation average makes this legitimate
+add_phase!(rve, :CR, PennyCrack(1.0), Dict(:C => law_M);
+           density = 0.1, symmetrize = :iso)
+
+# aligned spheroids, order 2: same requirement, same fix
+add_phase!(rve_κ, :I, Spheroid(5.0), Dict(:K => heaviside_law(TensISO{2,3}(10.0)));
+           fraction = 0.2, symmetrize = :iso)
+homogenize_alv(rve_κ, DifferentialScheme(), :K; times = times)
+```
+
+!!! note "The elastic schemes have no such restriction"
+    This is specific to ALV. In the elastic pipeline the Hill tensor is
+    available for anisotropic references, so `homogenize(rve,
+    SelfConsistent())` and `homogenize(rve, DifferentialScheme())` handle a
+    running medium of any symmetry class — the differential scheme even
+    tracks it, growing its ODE state from the iso to the TI, ortho or fully
+    anisotropic layout as the phases require.
+
+## 8. The differential scheme in ALV
 
 `DifferentialScheme` is available in both tensor orders, with the same
 keywords as the elastic scheme — `trajectory`, `nsteps`, `abstol` /
@@ -292,27 +356,10 @@ homogenize_alv(rve, DifferentialScheme(; formulation = :compliance), :C; times =
 ```
 
 Supported inclusions: ellipsoids and spheroids, `LayeredSphere`, and
-crack families through their density.
+crack families through their density — subject to the isotropic-reference
+requirement of [section 7](@ref man-alv-iso-reference).
 
-One restriction is specific to ALV, and specific to this scheme. The ALV
-Hill kernel is built for an **isotropic** reference; Mori-Tanaka and the
-dilute schemes evaluate it against the (isotropic) matrix, but the
-differential scheme evaluates it against its *running* effective medium,
-which an aligned non-spherical inclusion — or a crack, whose
-contribution is transversely isotropic in its own frame — progressively
-takes out of the isotropic class. Those RVEs raise an explicit
-`ArgumentError` instead of returning a wrong answer. The way out is an
-isotropic orientation average, which is also what randomly oriented
-inclusions or cracks mean physically:
-
-```julia
-add_phase!(rve, :CR, PennyCrack(1.0), Dict(:C => law_M);
-           density = 0.1, symmetrize = :iso)
-```
-
-A non-isotropic ALV matrix is refused for the same reason.
-
-## 8. Symmetry-class fast paths
+## 9. Symmetry-class fast paths
 
 When all phases share an iso / TI / ortho symmetry with compatible
 axes, [`homogenize_alv`](@ref) automatically routes through a fast
@@ -352,12 +399,12 @@ Matrix(K_iso)                      # back to dense (6n × 6n) on demand
 does not accept them as inputs — use `Matrix(K)` to cross the boundary
 (`scripts/58_alv_kernel_types.jl`).
 
-## 9. Sensitivities (autodiff via ForwardDiff)
+## 10. Sensitivities (autodiff via ForwardDiff)
 
 The pipeline supports `ForwardDiff.Dual` end-to-end so derivatives of
 effective properties wrt RVE parameters are direct.
 
-### 8.1 Sensitivity wrt volume fraction — recommended `set_param` lens
+### 10.1 Sensitivity wrt volume fraction — recommended `set_param` lens
 
 ```julia
 using ForwardDiff
@@ -379,7 +426,7 @@ end
 dμ_df = ForwardDiff.derivative(eff_mu, 0.20)        # ≈ 1.66 (validated FD ≤ 1e-7)
 ```
 
-### 8.2 Sensitivity wrt a material parameter — closure-captured
+### 10.2 Sensitivity wrt a material parameter — closure-captured
 
 When the parameter lives **inside** the kernel function (e.g. a
 modulus, relaxation time, ageing exponent), close it into the kernel
@@ -403,7 +450,7 @@ end
 dμ_dμM = ForwardDiff.derivative(eff_mu_vs_μM, 1.0)
 ```
 
-### 8.3 Joint gradient over multiple parameters
+### 10.3 Joint gradient over multiple parameters
 
 ```julia
 function eff_mu_vs_p(p)
@@ -425,7 +472,7 @@ The complete suite of sensitivity patterns lives in
 `scripts/59_alv_sensitivities.jl`. Each derivative is validated against
 a central finite difference at `rtol ≤ 1e-7`.
 
-## 10. Validation against ECHOES C++
+## 11. Validation against ECHOES C++
 
 | script | benchmark | agreement |
 | :--- | :--- | :--- |

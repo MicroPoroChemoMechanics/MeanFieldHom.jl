@@ -96,10 +96,21 @@ function self_consistent_alv(
         C_r_law = phase_property(rve, name, prop)
         C_r_law isa ViscoLaw ||
             throw(ArgumentError("self_consistent_alv: phase $name property is not a ViscoLaw"))
-        push!(C_phases, _trapezoidal_relaxation(C_r_law, times, 6))
+        C_r = _trapezoidal_relaxation(C_r_law, times, 6)
+        sym = phase_symmetrize(rve, name)
+        # Like the differential scheme, the self-consistent one uses its
+        # RUNNING estimate as the reference of the ALV Hill kernel, and the
+        # Picard loop reads that estimate's iso parameters directly
+        # (`iso_params_from_blocks(C_m)`).  A phase that drags the estimate
+        # out of the isotropic class would therefore be silently answered
+        # with the iso projection of a non-iso matrix, so it is refused for
+        # exactly the same reason and with the same two ways out.
+        _alv_diff_keeps_iso(ph.geometry, sym, C_r) ||
+            _alv_diff_iso_error(name, "the shape or the anisotropy")
+        push!(C_phases, C_r)
         push!(geometries, ph.geometry)
         push!(fractions, _amount_value(rve, name))
-        push!(symmetrizes, phase_symmetrize(rve, name))
+        push!(symmetrizes, sym)
     end
 
     # 2. Pre-compute the Mandel forms of U^A, V^A for each phase

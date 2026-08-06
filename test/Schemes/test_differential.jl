@@ -258,6 +258,116 @@ end
     @test df > 0
 end
 
+# The volume fraction and the matrix property reach the ODE through `x0`, so
+# they promote the state eltype on their own.  Everything else — an inclusion
+# property, an inclusion geometry, a crack semi-axis, a nested cell — reaches
+# it ONLY through the RHS, and the solver's `du` buffer keeps the eltype fixed
+# by `x0`.  The state eltype must therefore be promoted from what the phase
+# kernels return, not just from the matrix property and the amounts.
+@testset "Differential — ForwardDiff through inputs seen only by the RHS" begin
+    _fd(f, x, h) = (f(x + h) - f(x - h)) / (2h)
+    idx = C -> get_array(C)[1, 1, 1, 1]
+    iso(k, μ) = TensISO{3}(3k, 2μ)
+
+    @testset "formulation = :$form" for form in (:stiffness, :compliance)
+        sch = DifferentialScheme(; nsteps = 50, formulation = form)
+
+        # (a) property of an INCLUSION phase
+        f_prop = ki -> begin
+            rve = RVE(:M)
+            add_matrix!(rve, Ellipsoid(1.0), Dict(:C => iso(10.0, 5.0)))
+            add_phase!(rve, :I, Ellipsoid(1.0), Dict(:C => iso(ki, 20.0)); fraction = 0.3)
+            return idx(homogenize(rve, sch))
+        end
+        @test ForwardDiff.derivative(f_prop, 40.0) ≈ _fd(f_prop, 40.0, 1.0e-4) rtol = 1.0e-5
+
+        # (b) GEOMETRY of an inclusion phase (aspect ratio)
+        f_geom = ω -> begin
+            rve = RVE(:M)
+            add_matrix!(rve, Ellipsoid(1.0), Dict(:C => iso(10.0, 5.0)))
+            add_phase!(
+                rve, :I, Spheroid(ω), Dict(:C => iso(40.0, 20.0));
+                fraction = 0.2, symmetrize = :iso
+            )
+            return idx(homogenize(rve, sch))
+        end
+        @test ForwardDiff.derivative(f_geom, 3.0) ≈ _fd(f_geom, 3.0, 1.0e-5) rtol = 1.0e-5
+
+        # (c) semi-axis of a CRACK family (the crack-density kernel)
+        f_crack = b -> begin
+            rve = RVE(:M)
+            add_matrix!(rve, Ellipsoid(1.0), Dict(:C => iso(10.0, 5.0)))
+            add_phase!(
+                rve, :crk, EllipticCrack(1.0, b), Dict{Symbol, Any}();
+                density = 0.05, symmetrize = :iso
+            )
+            return idx(homogenize(rve, sch))
+        end
+        @test ForwardDiff.derivative(f_crack, 0.6) ≈ _fd(f_crack, 0.6, 1.0e-6) rtol = 1.0e-5
+
+        # (d) conductivity — same story on the 2-tensor state layout
+        f_cond = ki -> begin
+            rve = RVE(:M)
+            add_matrix!(rve, Ellipsoid(1.0), Dict(:K => TensISO{3}(1.0)))
+            add_phase!(rve, :I, Ellipsoid(1.0), Dict(:K => TensISO{3}(ki)); fraction = 0.3)
+            return get_array(homogenize(rve, sch, :K))[1, 1]
+        end
+        @test ForwardDiff.derivative(f_cond, 10.0) ≈ _fd(f_cond, 10.0, 1.0e-5) rtol = 1.0e-5
+
+        # (e) TI running medium (aligned spheroid, no orientation average):
+        #     the state is the 5-component TI layout, not the iso one.
+        f_ti = ki -> begin
+            rve = RVE(:M)
+            add_matrix!(rve, Ellipsoid(1.0), Dict(:C => iso(10.0, 5.0)))
+            add_phase!(rve, :I, Spheroid(4.0), Dict(:C => iso(ki, 20.0)); fraction = 0.2)
+            return idx(homogenize(rve, sch))
+        end
+        @test ForwardDiff.derivative(f_ti, 40.0) ≈ _fd(f_ti, 40.0, 1.0e-4) rtol = 1.0e-5
+    end
+
+    # (f) a parameter buried in a NESTED cell: neither the matrix property nor
+    #     the amounts of the outer RVE carry the `Dual` at all.
+    @testset "nested cell (multiscale lens)" begin
+        function outer()
+            micro = RVE(:SOLID)
+            add_matrix!(micro, Ellipsoid(1.0), Dict(:C => iso(3.0, 1.2)))
+            add_phase!(
+                micro, :pore, Ellipsoid(1.0), Dict(:C => iso(1.0e-9, 1.0e-9));
+                fraction = 0.2
+            )
+            rve = RVE(:BINDER)
+            add_matrix!(rve, Ellipsoid(1.0), Dict(:C => iso(1.0, 0.4)))
+            add_phase!(
+                rve, :agg, Ellipsoid(1.0),
+                Dict(:C => Homogenized(micro, MoriTanaka()));
+                fraction = 0.3, symmetrize = :iso
+            )
+            return rve
+        end
+        sch = DifferentialScheme(; nsteps = 50)
+        p = nested(:agg, :C, property(:SOLID, :C, :shear))
+        μ_eff = C -> k_mu(C)[2]
+
+        ∂_ad = derivative(outer(), sch, p; indexer = μ_eff)
+        x₀ = get_param(outer(), p)
+        ∂_fd = _fd(
+            x -> μ_eff(homogenize(set_param(outer(), p, x), sch; property = :C)),
+            x₀, 1.0e-6
+        )
+        @test isfinite(∂_ad)
+        @test ∂_ad ≈ ∂_fd rtol = 1.0e-5
+
+        # …and as one component of a gradient mixing lenses from both scales.
+        ps = [p, nested(:agg, :C, amount(:pore))]
+        g = gradient(outer(), sch, ps; indexer = μ_eff)
+        @test length(g) == 2
+        # Not bit-exact against `derivative`: a 2-partial `Dual` state changes
+        # the norm the adaptive solver controls, hence the step sequence.
+        @test g[1] ≈ ∂_ad rtol = 1.0e-6
+        @test g[2] < 0                      # porosity softens the aggregate
+    end
+end
+
 @testset "Differential — Symbol shortcuts" begin
     rve = RVE(:M)
     add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))

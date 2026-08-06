@@ -263,6 +263,15 @@ end
 
 # ── Schemes ─────────────────────────────────────────────────────────────────
 
+# Element type spanning EVERY per-phase block a kernel accumulates, not just
+# the first one or the matrix block.  The kernels below allocate their
+# accumulators up front, so a block the promotion misses is rejected by the
+# broadcast that adds it: differentiating with respect to a phase property or
+# an inclusion geometry makes `contribs` / `A_duts` (and any phase's `K̃_r`)
+# `Dual` while `K̃_0` and the fractions stay `Float64`.  `Bool` is the neutral
+# seed — it promotes away against any numeric type.
+_alv2_blocks_eltype(mats) = mapreduce(eltype, promote_type, mats; init = Bool)
+
 """
     voigt_alv_order2(matrices, fractions) -> Matrix
 
@@ -275,7 +284,7 @@ function voigt_alv_order2(
     length(matrices) == length(fractions) ||
         throw(ArgumentError("voigt_alv_order2: phase counts mismatch"))
     isempty(matrices) && throw(ArgumentError("voigt_alv_order2: at least one phase required"))
-    T = promote_type(eltype(matrices[1]), eltype(fractions))
+    T = promote_type(_alv2_blocks_eltype(matrices), eltype(fractions))
     out = zeros(T, size(matrices[1])...)
     @inbounds for r in eachindex(matrices)
         @. out += fractions[r] * matrices[r]
@@ -311,7 +320,10 @@ function dilute_alv_order2(
     )
     length(contribs) == length(fractions) ||
         throw(ArgumentError("dilute_alv_order2: phase counts mismatch"))
-    out = copy(K_0)
+    T = promote_type(
+        eltype(K_0), _alv2_blocks_eltype(contribs), eltype(fractions)
+    )
+    out = T.(K_0)
     @inbounds for r in eachindex(contribs)
         @. out += fractions[r] * contribs[r]
     end
@@ -350,7 +362,10 @@ function mori_tanaka_alv_order2(
     sz = size(K_0, 1)
     sz % 3 == 0 || throw(ArgumentError("mori_tanaka_alv_order2: size not divisible by 3"))
     n = sz ÷ 3
-    T = promote_type(eltype(K_0), eltype(fractions), typeof(f_M))
+    T = promote_type(
+        eltype(K_0), eltype(fractions), typeof(f_M),
+        _alv2_blocks_eltype(A_duts), _alv2_blocks_eltype(contribs)
+    )
     Id = zeros(T, sz, sz)
     @inbounds for i in 1:n
         rows = (3 * (i - 1) + 1):(3 * i)
@@ -384,7 +399,10 @@ function maxwell_alv_order2(
     sz = size(K_0, 1)
     sz % 3 == 0 || throw(ArgumentError("maxwell_alv_order2: size not divisible by 3"))
     n = sz ÷ 3
-    T = promote_type(eltype(K_0), eltype(fractions), eltype(H_0))
+    T = promote_type(
+        eltype(K_0), eltype(fractions), eltype(H_0),
+        _alv2_blocks_eltype(contribs)
+    )
     Id = zeros(T, sz, sz)
     @inbounds for i in 1:n
         rows = (3 * (i - 1) + 1):(3 * i)
@@ -430,23 +448,52 @@ function _homogenize_alv_order2(
     # order-4 path which already promotes correctly (`homogenize_alv.jl`).
     T_amount = isempty(incl_names) ? Float64 :
         promote_type((typeof(_amount_value(rve, n)) for n in incl_names)...)
-    fractions = T_amount[]
-    contribs = Matrix{eltype(K_0)}[]
-    A_duts = Matrix{eltype(K_0)}[]
-    K_phases = Matrix{eltype(K_0)}[K_0]
-    for name in incl_names
+
+    # The per-phase blocks are computed BEFORE their containers are typed:
+    # their element type is not implied by the matrix law either.
+    # Differentiating with respect to a phase property (through `K_r`) or an
+    # inclusion geometry (through the Hill kernel `P_r`, hence `A_dut` /
+    # `N_dut`) makes them `Dual` while `K_0` stays `Float64`, and a container
+    # typed from `eltype(K_0)` alone rejects them on `push!` — the same trap
+    # as the hard-coded `Float64[]` documented above for `fractions`.
+    per_phase = map(incl_names) do name
         ph = rve.phases[name]
         K_r_law = phase_property(rve, name, prop)
         K_r_law isa ViscoLaw ||
             throw(ArgumentError("homogenize_alv_order2: phase $name property is not a ViscoLaw"))
         K_r = _trapezoidal_relaxation(K_r_law, times, 3)
         P_r = hill_kernel_order2(ph.geometry, K_M_law, times)
-        A_dut = dilute_concentration_alv_order2(K_r, K_0, P_r)
-        N_dut = dilute_contribution_alv_order2(K_r, K_0, P_r)
-        push!(K_phases, K_r)
-        push!(A_duts, A_dut)
-        push!(contribs, N_dut)
-        push!(fractions, _amount_value(rve, name))
+        # `symmetrize` is honored on the dilute quantities, exactly as the
+        # order-4 pipeline does (`homogenize_alv.jl`), and with the order-2
+        # projector: the blocks here are 2-tensors, not 6×6 Mandel blocks.
+        sym = phase_symmetrize(rve, name)
+        return (
+            K_r = K_r,
+            A_dut = _maybe_symmetrize_alv2(
+                dilute_concentration_alv_order2(K_r, K_0, P_r), sym
+            ),
+            N_dut = _maybe_symmetrize_alv2(
+                dilute_contribution_alv_order2(K_r, K_0, P_r), sym
+            ),
+        )
+    end
+    T_block = isempty(per_phase) ? eltype(K_0) :
+        promote_type(
+        eltype(K_0),
+        (
+            promote_type(eltype(q.K_r), eltype(q.A_dut), eltype(q.N_dut))
+                for q in per_phase
+        )...
+    )
+
+    fractions = T_amount[_amount_value(rve, name) for name in incl_names]
+    K_phases = Matrix{T_block}[K_0]
+    A_duts = Matrix{T_block}[]
+    contribs = Matrix{T_block}[]
+    for q in per_phase
+        push!(K_phases, q.K_r)
+        push!(A_duts, q.A_dut)
+        push!(contribs, q.N_dut)
     end
 
     return _homogenize_alv2_dispatch(
@@ -621,9 +668,20 @@ function differential_alv_order2(
         _resolve_paths_alv(Schemes.Proportional(), rve, nsteps) :
         _resolve_paths_alv(trajectory, rve, nsteps)
 
+    # State eltype: the matrix law, the phase laws and the targets are not
+    # the only inputs the RHS touches — it also rebuilds the order-2 ALV Hill
+    # kernel against the running medium at every step
+    # (`hill_kernel_order2_at(r.geom, K_curr)`), so an inclusion GEOMETRY
+    # reaches the state through that kernel alone.  Probing it once per phase
+    # (against hundreds of evaluations during the integration) reports the
+    # eltype it actually produces, exactly as `T_contrib` does for the
+    # elastic `DifferentialScheme`.
     Tp = eltype(K_0)
     for sd in solid_data
-        Tp = promote_type(Tp, eltype(sd.K_r), typeof(sd.target))
+        Tp = promote_type(
+            Tp, eltype(sd.K_r), typeof(sd.target),
+            eltype(hill_kernel_order2_at(sd.geom, K_0))
+        )
     end
     sz = 3 * n
     dual = formulation === :compliance
@@ -668,7 +726,12 @@ function _diff_alv2_ode_rhs!(du, u, p, τ)
         iszero(dφᵢ) && continue
         P_r = hill_kernel_order2_at(r.geom, K_curr)
         contrib = dilute_contribution_alv_order2(r.K_r, K_curr, P_r)
-        contrib = _maybe_symmetrize_alv(contrib, r.sym)
+        # Order-2 projector: `K_curr` is a (3n × 3n) matrix of 2-tensor
+        # blocks.  Using the order-4 (6×6 Mandel) one here silently mixed two
+        # consecutive TIME blocks, so the "averaged" contribution was not
+        # isotropic and the running medium drifted out of the class the
+        # order-2 Hill kernel needs.
+        contrib = _maybe_symmetrize_alv2(contrib, r.sym)
         term = p.dual ? -(P_curr * contrib * P_curr) : contrib
         @. Δ += dφᵢ * term
     end

@@ -97,6 +97,26 @@ end
     end
 end
 
+# Same lens on the iterative/differential schemes.  An INCLUSION property is
+# invisible to the differential scheme's initial state (only the matrix
+# property and the amounts are read there) and reaches its ODE through the
+# right-hand side alone — see `T_contrib` in `Schemes/differential.jl`.
+@testset "derivative vs FD — PropertyParameter (iterative schemes)" begin
+    for sch in _ITER_SCHEMES
+        rve = _ref_rve()
+        p = property(:I, :C, :bulk)
+        ∂_ad = derivative(rve, sch, p; indexer = idxC)
+        K0 = get_param(rve, p)
+        f_eval = h -> begin
+            rve2 = set_param(_ref_rve(), p, K0 + h)
+            return idxC(homogenize(rve2, sch))
+        end
+        ∂_fd = _fd_centered(f_eval, 0.0, 1.0e-3)
+        @test isfinite(∂_ad)
+        @test isapprox(∂_ad, ∂_fd; rtol = RTOL_ITER, atol = 1.0e-7)
+    end
+end
+
 @testset "derivative — Christensen 1990 closed form for ∂k_MT/∂f" begin
     # k_MT(f) = k_m + f·Δk·ζm / [ζm + (1-f)·Δk]   (Christensen 1990)
     # ⇒ ∂k_MT/∂f = Δk·ζm·(ζm + Δk) / [ζm + (1-f)·Δk]²

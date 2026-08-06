@@ -156,14 +156,23 @@ function _diff_integrate_ode(
     # fallback).  `proto` carries the matrix values in the smallest
     # symmetry class the running estimate can stay in — the matrix's own
     # class when every phase preserves it, a wider one otherwise (see
-    # `_diff_state_proto`).  For ForwardDiff sensitivity we promote the
-    # state eltype to whichever type accommodates both the matrix
-    # property and the per-phase targets.
+    # `_diff_state_proto`).
+    #
+    # For ForwardDiff sensitivity the state eltype must accommodate every
+    # input the integration touches.  The matrix property (through `x0`) and
+    # the per-phase targets are only two of them: differentiating with
+    # respect to an INCLUSION property, an inclusion geometry, an interface
+    # stiffness or anything buried in a nested cell leaves both of those
+    # `Float64` while the right-hand side returns `Dual`s — and the solver's
+    # `du` buffer, whose eltype is fixed once and for all by `x0`, would then
+    # reject them.  `T_contrib` closes that gap: it is the eltype the phase
+    # kernels actually produce, read off the same probe that fixes the state
+    # layout.
     dual = formulation === :compliance
-    proto = _diff_state_proto(rve, P_init, prop, dual; kw...)
+    proto, T_contrib = _diff_state_proto(rve, P_init, prop, dual; kw...)
     sym_tag = _symmetry_tag(proto)
     x0 = _diff_initial_state(sym_tag, P_init, proto)
-    T_state = promote_type(eltype(x0), T_target)
+    T_state = promote_type(eltype(x0), T_target, T_contrib)
     x0 = T_state.(x0)
     ode_kw = (
         rve = rve,
@@ -290,9 +299,14 @@ end
 #
 # The probe costs a few kernel evaluations, against the hundreds the
 # integration itself performs.
+#
+# The same probe also reports the eltype the kernels produce (second
+# return value), which is what the ODE state must be able to hold — see
+# `T_contrib` in `_diff_integrate_ode`.
 function _diff_state_proto(rve::RVE, P_init::TensND.AbstractTens, prop::Symbol, dual::Bool; kw...)
     incl = inclusion_phase_names(rve)
-    isempty(incl) && return P_init
+    T_contrib = eltype(P_init)
+    isempty(incl) && return P_init, T_contrib
     proto = P_init
     for pass in 1:4
         # The kernels always take the stiffness-like tensor; in the dual
@@ -300,7 +314,7 @@ function _diff_state_proto(rve::RVE, P_init::TensND.AbstractTens, prop::Symbol, 
         ref = dual ? inv(proto) : proto
         acc = proto
         for name in incl
-            acc += try
+            contribution = try
                 _diff_probe_contribution(rve, name, prop, ref, dual; kw...)
             catch err
                 # The widened reference is a fully anisotropic *type* holding,
@@ -325,11 +339,13 @@ function _diff_state_proto(rve::RVE, P_init::TensND.AbstractTens, prop::Symbol, 
                     )
                 )
             end
+            T_contrib = promote_type(T_contrib, eltype(contribution))
+            acc += contribution
         end
         _diff_same_layout(acc, proto) && break
         proto = _diff_embed(P_init, acc)
     end
-    return proto
+    return proto, T_contrib
 end
 
 # `P_init`, re-expressed in the symmetry class of `acc` (a wider class,

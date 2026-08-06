@@ -130,6 +130,121 @@ axis).
 @inline _maybe_symmetrize_alv(M::AbstractMatrix, sym::TISymmetrize) =
     _ti_project_blocks(M, sym.axis)
 
+# ── Order-2 counterparts (3 × 3 time blocks) ───────────────────────────────
+#
+# The projectors above slice 6 × 6 MANDEL blocks, so they apply to the
+# order-4 `(6n × 6n)` ALV matrices only.  The order-2 (conduction /
+# diffusion) pipeline carries `(3n × 3n)` matrices whose blocks are plain
+# 2-tensors, and feeding those to `_iso_project_blocks` either throws
+# ("size not divisible by 6", odd `n`) or — worse, for even `n` — silently
+# reinterprets two consecutive TIME blocks as one Mandel block and returns
+# a matrix that is not an orientation average of anything.
+
+"""
+    _iso_project_blocks3(M::AbstractMatrix) -> Matrix
+
+Exact SO(3) orientation average of every 3×3 block of a `(3n × 3n)`
+order-2 ALV matrix.  The isotropic part of a 2-tensor is
+`(tr B / 3) 𝟙`, so each block collapses onto its spherical part.
+"""
+function _iso_project_blocks3(M::AbstractMatrix)
+    sz = size(M, 1)
+    sz == size(M, 2) ||
+        throw(ArgumentError("_iso_project_blocks3: matrix must be square"))
+    sz % 3 == 0 ||
+        throw(ArgumentError("_iso_project_blocks3: size $(sz) not divisible by 3"))
+    n = sz ÷ 3
+    out = zeros(float(eltype(M)), sz, sz)
+    @inbounds for i in 1:n, j in 1:n
+        r = 3 * (i - 1)
+        c = 3 * (j - 1)
+        a = (M[r + 1, c + 1] + M[r + 2, c + 2] + M[r + 3, c + 3]) / 3
+        for k in 1:3
+            out[r + k, c + k] = a
+        end
+    end
+    return out
+end
+
+"""
+    _ti_project_blocks3(M::AbstractMatrix, axis) -> Matrix
+
+Exact azimuthal average about `axis` of every 3×3 block of a
+`(3n × 3n)` order-2 ALV matrix.  Averaging a 2-tensor `B` over the
+rotations about the unit vector `n̂` keeps three invariants — the axial
+component `a_n = n̂·B·n̂`, the transverse mean
+`a_t = (tr B − a_n) / 2`, and the axial antisymmetric part (the
+component of `B` along `[n̂]×`, which commutes with those rotations) —
+and averages everything else to zero:
+
+    ⟨B⟩ = a_t (𝟙 − n̂⊗n̂) + a_n n̂⊗n̂ + c [n̂]×  ,   c = (B_skew : [n̂]×) / 2 .
+
+The antisymmetric term is preserved rather than dropped, mirroring
+[`_ti_project_blocks`](@ref), which likewise keeps the block content a
+symmetric closure cannot represent.
+"""
+function _ti_project_blocks3(M::AbstractMatrix, axis)
+    sz = size(M, 1)
+    sz == size(M, 2) ||
+        throw(ArgumentError("_ti_project_blocks3: matrix must be square"))
+    sz % 3 == 0 ||
+        throw(ArgumentError("_ti_project_blocks3: size $(sz) not divisible by 3"))
+    n = sz ÷ 3
+    nv = _alv_unit_axis3(axis)
+    T = float(eltype(M))
+    out = zeros(T, sz, sz)
+    @inbounds for i in 1:n, j in 1:n
+        r = 3 * (i - 1)
+        c = 3 * (j - 1)
+        B = @view M[(r + 1):(r + 3), (c + 1):(c + 3)]
+        tr_B = B[1, 1] + B[2, 2] + B[3, 3]
+        a_n = zero(T)
+        for k in 1:3, l in 1:3
+            a_n += nv[k] * B[k, l] * nv[l]
+        end
+        a_t = (tr_B - a_n) / 2
+        # c = (B_skew : [n̂]×) / 2, with [n̂]×_{kl} = -ε_{klm} n̂_m.
+        cc = (
+            (B[3, 2] - B[2, 3]) * nv[1] +
+                (B[1, 3] - B[3, 1]) * nv[2] +
+                (B[2, 1] - B[1, 2]) * nv[3]
+        ) / 2
+        for k in 1:3, l in 1:3
+            nn = nv[k] * nv[l]
+            δ = (k == l) ? one(T) : zero(T)
+            out[r + k, c + l] = a_t * (δ - nn) + a_n * nn
+        end
+        # + c [n̂]×
+        out[r + 1, c + 2] -= cc * nv[3]; out[r + 2, c + 1] += cc * nv[3]
+        out[r + 2, c + 3] -= cc * nv[1]; out[r + 3, c + 2] += cc * nv[1]
+        out[r + 3, c + 1] -= cc * nv[2]; out[r + 1, c + 3] += cc * nv[2]
+    end
+    return out
+end
+
+# The axis reaches us either as a plain 3-vector/tuple or as a TensND
+# 1-tensor, exactly as `TISymmetrize` stores it.
+function _alv_unit_axis3(axis)
+    v = axis isa TensND.AbstractTens ? collect(TensND.get_array(axis)) :
+        collect(axis)
+    length(v) == 3 || throw(ArgumentError("ALV TI average: axis must have 3 components"))
+    nrm = sqrt(sum(abs2, v))
+    iszero(nrm) && throw(ArgumentError("ALV TI average: axis must be non-zero"))
+    return v ./ nrm
+end
+
+"""
+    _maybe_symmetrize_alv2(M, sym) -> Matrix
+
+Order-2 counterpart of [`_maybe_symmetrize_alv`](@ref), for `(3n × 3n)`
+ALV matrices whose blocks are 2-tensors.
+"""
+@inline _maybe_symmetrize_alv2(M::AbstractMatrix, ::NoSymmetrize) = M
+@inline _maybe_symmetrize_alv2(M::AbstractMatrix, ::IsoSymmetrize) =
+    _iso_project_blocks3(M)
+@inline _maybe_symmetrize_alv2(M::AbstractMatrix, sym::TISymmetrize) =
+    _ti_project_blocks3(M, sym.axis)
+
 """
     _trapezoidal_relaxation(law::ViscoLaw, times, B) -> Matrix
 
@@ -205,6 +320,31 @@ Supports two inclusion-geometry families (order-4 only):
     needed.  In this case `phase_property(rve, name, :C)` is ignored
     (the per-layer moduli stored in the geometry are used instead);
     pass any `ViscoLaw` (e.g. `heaviside_law(C_0)`) as a placeholder.
+
+`symmetrize` is honored in both orders, with the projector of the matching
+tensor order (6×6 Mandel blocks for order 4, 2-tensor blocks for order 2 —
+see [`_maybe_symmetrize_alv`](@ref) and [`_maybe_symmetrize_alv2`](@ref)).
+`Voigt` and `Reuss` average the phase matrices directly, so the geometry —
+and hence `symmetrize` — does not enter them.
+
+!!! warning "Reference-updating schemes need an isotropic running medium"
+    Every ALV Hill kernel, order 2 and order 4 alike, is built for an
+    **isotropic** reference: that is what decouples the time and space
+    parts.  `Voigt`, `Reuss`, `Dilute`, `DiluteDual`, `MoriTanaka`,
+    `Maxwell` and `PCW` evaluate it against the fixed, isotropic matrix and
+    accept any inclusion shape or orientation.  `SelfConsistent` and
+    `DifferentialScheme` evaluate it against their *running* estimate, so
+    every inclusion phase must keep that estimate isotropic — either a
+    spherical inclusion with an isotropic phase law (`LayeredSphere`
+    qualifies, its contribution being isotropic by construction), or an
+    isotropic orientation average `symmetrize = :iso`, which is also what
+    randomly oriented inclusions and cracks mean physically.
+
+    An RVE satisfying neither raises an `ArgumentError` naming the phase,
+    rather than reading iso parameters off a matrix that is not isotropic.
+    A non-isotropic ALV matrix is refused for the same reason.  The elastic
+    pipeline has no such restriction — its Hill tensor is available for
+    anisotropic references.
 """
 function homogenize_alv(
         rve::RVE, scheme::HomogenizationScheme,

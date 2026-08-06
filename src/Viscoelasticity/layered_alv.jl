@@ -286,9 +286,12 @@ function bulk_amplitude_seq_alv(
     n = length(times)
     radii = sphere.radii
 
+    # Over EVERY layer, not just the first: the amplitudes are propagated
+    # outward, so a `Dual` in any layer's modulus (autodiff with respect to
+    # one layer of the coating) reaches `A` / `B` before the recurrence ends.
     Telt = promote_type(
-        eltype(layers[1][1]), eltype(layers[1][2]),
-        eltype(M_κ_0), eltype(M_μ_0)
+        eltype(M_κ_0), eltype(M_μ_0),
+        (eltype(m) for lay in layers for m in lay)...
     )
     Id = Matrix{Telt}(I, n, n)
     Z = zeros(Telt, n, n)
@@ -852,10 +855,16 @@ interface) plus the matrix-side states `s_a`, `s_b` at `r_N⁺`.
 
 `layers` must be the same `(M_κ_k, M_μ_k)` tuple produced by
 `_bulk_layer_moduli_alv`.
+
+`layers` is annotated `Tuple`, NOT `NTuple{N, <:Tuple}`: `NTuple` requires
+every element to have the *same* type, and `_bulk_layer_moduli_alv` builds it
+with `ntuple`, so differentiating with respect to ONE layer's modulus yields a
+heterogeneous tuple (that layer's blocks `Dual`, the others `Float64`) which
+the `NTuple` signature rejects outright.
 """
 function _shear_state_seq_alv(
         sphere::LayeredSphere{T, N},
-        layers::NTuple{N, <:Tuple},
+        layers::Tuple,
         M_κ_0, M_μ_0,
         times::AbstractVector{<:Real}
     ) where {T, N}
@@ -865,8 +874,16 @@ function _shear_state_seq_alv(
     M_κ_1, M_μ_1 = layers[1]
     sa, sb = _shear_seed_states_alv(radii[1], M_κ_1, M_μ_1, n)
 
-    inside_a = Vector{Matrix{eltype(sa)}}(undef, N)
-    inside_b = Vector{Matrix{eltype(sb)}}(undef, N)
+    # The propagated state picks up the eltype of every layer it crosses, so
+    # the seed's own eltype (layer 1) is only a floor — a `Dual` in any OUTER
+    # layer, or in the matrix reference, widens `sa` / `sb` further down the
+    # loop.  Type the containers from the promotion over all of them.
+    T_state = promote_type(
+        eltype(sa), eltype(sb), eltype(M_κ_0), eltype(M_μ_0),
+        (eltype(m) for lay in layers for m in lay)...
+    )
+    inside_a = Vector{Matrix{T_state}}(undef, N)
+    inside_b = Vector{Matrix{T_state}}(undef, N)
     @inbounds for k in 1:N
         inside_a[k] = sa
         inside_b[k] = sb
