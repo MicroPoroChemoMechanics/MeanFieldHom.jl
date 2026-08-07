@@ -19,7 +19,7 @@ follows in closed form from two continuity conditions:
 
 The exported [`Laminate`](@ref) is therefore an
 [`AbstractHomogenizationCell`](@ref) alongside `RVE`, solved by the
-[`Laminated`](@ref) scheme, and it plugs into the multiscale chain like any
+[`Laminated`](@ref MeanFieldHom.Schemes.Laminated) scheme, and it plugs into the multiscale chain like any
 other cell — including declaratively, as the value of a phase property (see
 [`Homogenized`](@ref)).
 

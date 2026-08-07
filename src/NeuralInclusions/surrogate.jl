@@ -85,7 +85,8 @@ entitled to be believed.
 
 # Construction
 
-Built by [`train_surrogate!`](@ref) or read back by [`load_surrogate`](@ref).
+Built by [`train_surrogate`](@ref MeanFieldHom.train_surrogate) or read back by
+[`load_surrogate`](@ref).
 The direct constructor is keyword-only and validates every length against the
 network's own input and output widths, because a surrogate whose feature list
 and input layer disagree is a silent mis-evaluation rather than an error.

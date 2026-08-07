@@ -22,7 +22,7 @@ Ageing linear viscoelastic (ALV) homogenization.  Provides:
     ([barthelemyIJSS2016](@cite), App. *ALV Hill kernel*).
   * Time-domain viscoelastic homogenization schemes (Voigt, Reuss,
     Dilute, DiluteDual, Mori-Tanaka, Maxwell, Self-Consistent),
-    plugged into the existing [`homogenize`](@ref Schemes.homogenize)
+    plugged into the existing [`homogenize`](@ref MeanFieldHom.Core.homogenize)
     dispatcher whenever a phase carries a `ViscoLaw` property.
 
 All ALV operators are stored as dense `Matrix{T}` of size `(B·n)×(B·n)`

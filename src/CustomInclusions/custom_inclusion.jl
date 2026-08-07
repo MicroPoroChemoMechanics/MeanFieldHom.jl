@@ -42,7 +42,7 @@ const _CUSTOM_CALLBACKS = (
 
 Inclusion whose mechanical / transport response is supplied by user
 callbacks, so that an arbitrary morphology becomes a first-class citizen of
-every [`homogenize`](@ref MeanFieldHom.Schemes.homogenize) scheme without
+every [`homogenize`](@ref MeanFieldHom.Core.homogenize) scheme without
 defining a new type.
 
 # Construction

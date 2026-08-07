@@ -28,6 +28,7 @@ matrix_property
 volume_fraction
 crack_density
 matrix_volume_fraction
+phase_property_raw
 validate_rve
 promote_rve
 ```
@@ -38,6 +39,7 @@ promote_rve
 HomogenizationScheme
 Voigt
 Reuss
+Laminated
 Dilute
 DiluteDual
 MoriTanaka

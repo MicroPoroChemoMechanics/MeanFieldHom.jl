@@ -349,6 +349,18 @@ struct NestedParameter{P <: AbstractParameter} <: AbstractParameter
     inner::P
 end
 
+"""
+    nested(member, property, inner) -> NestedParameter
+
+Convenience constructor for [`NestedParameter`](@ref), which documents the
+lens itself: `member` is the phase or layer name in the outer cell, `property`
+the key under which a [`Homogenized`](@ref) is stored, and `inner` a lens into
+that `Homogenized`'s cell.
+
+```julia
+nested(:agg, :C, property(:L1, :C, :bulk))
+```
+"""
 nested(member::Symbol, property::Symbol, inner::AbstractParameter) =
     NestedParameter(member, property, inner)
 
