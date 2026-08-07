@@ -47,15 +47,15 @@ p = mfhstudio(wait = false)  # keep the REPL; later `wait(p)` or `kill(p)`
 ```
 """
 function mfhstudio(;
-    host::AbstractString = "127.0.0.1",
-    port::Integer = 8765,
-    no_browser::Bool = false,
-    project::Union{AbstractString,Nothing} = nothing,
-    julia::Union{AbstractString,Nothing} = nothing,
-    python::Union{AbstractString,Nothing} = nothing,
-    check::Bool = false,
-    wait::Bool = true,
-)
+        host::AbstractString = "127.0.0.1",
+        port::Integer = 8765,
+        no_browser::Bool = false,
+        project::Union{AbstractString, Nothing} = nothing,
+        julia::Union{AbstractString, Nothing} = nothing,
+        python::Union{AbstractString, Nothing} = nothing,
+        check::Bool = false,
+        wait::Bool = true,
+    )
     cmd = _studio_cmd(;
         host, port, no_browser, project, julia, python, check,
     )
@@ -84,15 +84,15 @@ function _studio_dir()
     dir = joinpath(root, "tools", "mfhstudio")
     isdir(dir) || error(
         "MFH Studio lives in the MeanFieldHom checkout at `tools/mfhstudio`, " *
-        "which is missing here ($dir). It is not part of the released package: " *
-        "develop a clone and start the studio from there\n" *
-        "    julia -e 'using Pkg; Pkg.develop(path = raw\"<MeanFieldHom.jl>\")'",
+            "which is missing here ($dir). It is not part of the released package: " *
+            "develop a clone and start the studio from there\n" *
+            "    julia -e 'using Pkg; Pkg.develop(path = raw\"<MeanFieldHom.jl>\")'",
     )
     return dir
 end
 
 """A Python interpreter able to run the studio, or a helpful error."""
-function _find_python(explicit::Union{AbstractString,Nothing})
+function _find_python(explicit::Union{AbstractString, Nothing})
     explicit !== nothing && return String(explicit)
     env = get(ENV, "MFHSTUDIO_PYTHON", nothing)
     env !== nothing && return env
@@ -102,21 +102,21 @@ function _find_python(explicit::Union{AbstractString,Nothing})
     end
     error(
         "MFH Studio needs Python 3.10+ (standard library only), and no `python3` " *
-        "was found on PATH. Install it, or point the launcher at an interpreter " *
-        "with `mfhstudio(python = ...)` or the `MFHSTUDIO_PYTHON` environment variable.",
+            "was found on PATH. Install it, or point the launcher at an interpreter " *
+            "with `mfhstudio(python = ...)` or the `MFHSTUDIO_PYTHON` environment variable.",
     )
 end
 
 """The `Cmd` that starts the studio — kept pure so the launcher is testable."""
 function _studio_cmd(;
-    host::AbstractString = "127.0.0.1",
-    port::Integer = 8765,
-    no_browser::Bool = false,
-    project::Union{AbstractString,Nothing} = nothing,
-    julia::Union{AbstractString,Nothing} = nothing,
-    python::Union{AbstractString,Nothing} = nothing,
-    check::Bool = false,
-)
+        host::AbstractString = "127.0.0.1",
+        port::Integer = 8765,
+        no_browser::Bool = false,
+        project::Union{AbstractString, Nothing} = nothing,
+        julia::Union{AbstractString, Nothing} = nothing,
+        python::Union{AbstractString, Nothing} = nothing,
+        check::Bool = false,
+    )
     args = [_find_python(python), "-m", "mfhstudio"]
     append!(args, ["--host", String(host)])
     append!(args, ["--port", string(port)])
