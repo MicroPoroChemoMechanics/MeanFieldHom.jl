@@ -147,37 +147,53 @@ Both agree to the last captured digit. Note that it is the **symmetric**
 `AsymmetricSelfConsistent`: the two solve different fixed points, and the next
 section is where that becomes visible.
 
-## Where the two self-consistent forms part company
+## Two self-consistent forms, two percolation thresholds
 
 `SelfConsistent` iterates on the stiffness, `AsymmetricSelfConsistent` on the
-compliance. For cracks the compliance form is the classical
-Budiansky–O'Connell construction, and it **percolates**: the effective moduli
-reach zero at a finite crack density. The stiffness form does not.
+compliance. **Both percolate** — the effective moduli reach zero at a finite
+crack density, unlike Mori-Tanaka, which only decays asymptotically — but they
+do so at *different* densities, and that is the practical difference between
+them. The compliance form gives up first.
 
 ````@example crack_distributions
-εs = range(0.0, 0.9; length = 91)
+εs = range(0.0, 1.3; length = 131)
 curves = Dict(
     "Mori-Tanaka" => [kμ_iso(rve_isotropic(e), MoriTanaka()) for e in εs],
     "SelfConsistent" => [kμ_iso(rve_isotropic(e), SC) for e in εs],
     "Asym. SC" => [kμ_iso(rve_isotropic(e), ASC) for e in εs],
 )
+````
 
-# The percolation threshold of the compliance-form fixed point. `k` decays
-# linearly to zero and then sits on the solver floor (`abstol`), so asking
-# "where is it below 1e-8" would report the tolerance rather than the physics.
-# The zero of the last linear stretch is the threshold.
-function percolation_threshold(ks, εs; floor = 1.0e-4)
-    i = findlast(k -> k > floor, ks)
-    slope = (ks[i] - ks[i - 1]) / (εs[i] - εs[i - 1])
-    return εs[i] - ks[i] / slope
+Theory gives both thresholds, independently of the matrix Poisson ratio:
+``9/16`` exactly for the compliance form (Budiansky–O'Connell) and
+``\varepsilon \approx 1.158``, not a simple fraction, for the stiffness one.
+
+Reading them off the numerics needs one precaution: the fixed point converges
+ever more slowly near a threshold, so just past it the solver returns a small
+positive `k` that is not converged and merely tracks `abstol`. Extrapolate the
+linear decay from the region where the answer is tolerance-independent instead.
+
+````@example crack_distributions
+const SC_TIGHT = SelfConsistent(; abstol = 1.0e-15, maxiters = 50_000, select_best = true)
+const ASC_TIGHT = AsymmetricSelfConsistent(; abstol = 1.0e-15, maxiters = 50_000, select_best = true)
+
+function percolation_threshold(scheme, ε₁, ε₂)
+    k₁ = kμ_iso(rve_isotropic(ε₁), scheme)[1]
+    k₂ = kμ_iso(rve_isotropic(ε₂), scheme)[1]
+    slope = (k₂ - k₁) / (ε₂ - ε₁)
+    return ε₂ - k₂ / slope
 end
 
-ε_perc = percolation_threshold([c[1] for c in curves["Asym. SC"]], collect(εs))
-@printf "compliance-form SC percolates at ε ≈ %.4f   (9/16 = %.4f)\n" ε_perc 9 / 16
+# Both pairs sit where `k/k₀` is a few 10⁻³ — small enough for the linear
+# extrapolation to be short, large enough to be converged.
+ε_asc = percolation_threshold(ASC_TIGHT, 0.5600, 0.5620)
+ε_sc = percolation_threshold(SC_TIGHT, 1.1560, 1.1570)
+@printf "percolation : Asym. SC at ε = %.6f   (9/16 = %.6f, Δ = %.1e)\n" ε_asc 9/16 abs(ε_asc - 9/16)
+@printf "              SC       at ε = %.6f   — later by a factor %.3f\n" ε_sc ε_sc / ε_asc
 
 p_iso = plot(;
     xlabel = "crack density ε", ylabel = "normalized modulus",
-    framestyle = :box, legend = :topright, size = (760, 480),
+    framestyle = :box, legend = :topright, size = (780, 500),
     title = "Isotropic crack distribution (E₀ = 1, ν₀ = 0.2)"
 )
 for (name, color) in (("Mori-Tanaka", :black), ("SelfConsistent", :orange),
@@ -187,7 +203,10 @@ for (name, color) in (("Mori-Tanaka", :black), ("SelfConsistent", :orange),
     plot!(p_iso, εs, [c[2] / μ₀ for c in curves[name]]; label = "$name  μ/μ₀",
         color = color, lw = 2, ls = :dash)
 end
-vline!(p_iso, [9 / 16]; color = :gray, ls = :dot, lw = 2, label = "ε = 9/16")
+vline!(p_iso, [ε_asc]; color = :red, ls = :dot, lw = 2,
+    label = "Asym. SC percolation")
+vline!(p_iso, [ε_sc]; color = :orange, ls = :dot, lw = 2,
+    label = "SC percolation")
 scatter!(p_iso, [ε, ε], [echoes_iso["MT"].k / k₀, echoes_iso["MT"].μ / μ₀];
     marker = :circle, ms = 5, color = :black, label = "Echoes MT")
 scatter!(p_iso, [ε, ε], [echoes_iso["SC"].k / k₀, echoes_iso["SC"].μ / μ₀];
@@ -195,18 +214,16 @@ scatter!(p_iso, [ε, ε], [echoes_iso["SC"].k / k₀, echoes_iso["SC"].μ / μ�
 p_iso
 ````
 
-The dotted line is ``9/16 = 0.5625``, the Budiansky–O'Connell density at which
-a solid weakened by randomly oriented cracks loses all stiffness. The
-compliance-form fixed point reproduces it: extrapolating the linear decay of
-``k`` to zero lands within a thousandth of ``9/16``. Past that density
-`AsymmetricSelfConsistent` sits on the solver tolerance — numerically zero,
-which is the only admissible solution on that branch — and this is why the
-chosen ``\varepsilon = 0.6`` gave a null result above while the other two
-schemes still returned a finite medium.
+The numerics confirm both: ``9/16`` to six decimals, and ``1.158`` for the
+stiffness form — later by a factor ``2.06``, so very nearly **twice** the crack
+density.
 
-Beware of reading the threshold off the raw output rather than off the decay:
-below it the returned moduli are the `abstol` floor of the fixed-point solver,
-so a test of the form `k < 1e-8` reports the tolerance, not the physics.
+That gap is what makes the chosen ``\varepsilon = 0.6`` a revealing test point:
+it sits *between* the two thresholds, so `AsymmetricSelfConsistent` returns zero
+there while `SelfConsistent` still returns the finite medium that Echoes
+reports. Neither is wrong — they are two different definitions of "embed each
+phase in the effective medium", and which one to trust is a modeling decision,
+not a numerical one.
 
 ## Parallel cracks
 
