@@ -83,6 +83,18 @@ picture at tensor order 2, and ageing viscoelasticity the same picture with
 Volterra products in place of tensor products. The contract is written up in
 [Adding a new inclusion](@ref dev-adding-inclusion).
 
+## Installation
+
+`MeanFieldHom` is registered in Julia's General registry.
+
+```julia
+julia> import Pkg; Pkg.add("MeanFieldHom")
+```
+
+Six optional package extensions cover the cubature backend, the SciML fixed-point
+solvers, symbolic closed forms, the two finite-element backends and neural-surrogate
+training — see [Installation](@ref man-installation).
+
 ## Where to start
 
 | If you want to… | Go to |

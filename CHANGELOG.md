@@ -2,6 +2,51 @@
 
 ## Unreleased
 
+## v0.1.0 — 2026-08-07
+
+First public release of MeanFieldHom.jl — a mean-field homogenization toolkit
+for elasticity, conductivity and ageing linear viscoelasticity, ported from and
+cross-validated against the C++ ECHOES code.
+
+### Core
+
+- **`RVE` container** — representative volume element (`add_matrix!` /
+  `add_phase!`); volume fractions and crack densities stored at RVE level;
+  solid inclusions (`VolumeFraction`) and flat cracks (`CrackDensity`).
+- **Ten homogenization schemes** — Voigt, Reuss, Dilute, DiluteDual,
+  MoriTanaka, Maxwell, PonteCastanedaWillis, SelfConsistent,
+  AsymmetricSelfConsistent, DifferentialScheme — via a single
+  `homogenize(rve, scheme, property)` entry point.
+- **Elasticity (`:C`) and conductivity (`:K`)** — order-4 and order-2 tensor
+  algebra, crack contributions, and Sevostianov-style interface stiffness
+  (spring / Kapitza / membrane) in every pipeline.
+- **Self-consistent solvers** — symmetric Hill/Budiansky SC with a built-in
+  Newton-Raphson solver (quadratic convergence, backtracking line search) or
+  Anderson/Picard, positive-definite guard near percolation; NonlinearSolve.jl
+  algorithms available via weak extension.
+
+### Ageing linear viscoelasticity (ALV)
+
+- **`Viscoelasticity` sub-module** — time-domain ALV homogenization after
+  Sanahuja (2013) and Barthélémy et al. (2016, 2019): `ViscoLaw` relaxation /
+  creep kernels, Sanahuja trapezoidal discretisation, block-Volterra inverse,
+  discrete ALV Hill kernel.
+- **`homogenize_alv(rve, scheme, prop; times)`** for all schemes, order-4 and
+  order-2; iso and TI Walpole-basis fast paths; BLAS/LAPACK Volterra fast path.
+- **Differential scheme as an adaptive SciML ODE** on the fictitious
+  incorporation time `τ ∈ [0,1]` (`Tsit5` default), with functional
+  `Path` / `Sequential` / `Proportional` incorporation trajectories.
+- **N-layer composite spheres** — full bulk + shear Hervé–Zaoui recurrence in
+  elastic and ALV form, with perfect / spring / membrane interfaces.
+
+### Differentiability
+
+- **ForwardDiff throughout** — `derivative`, `gradient`, `jacobian`,
+  `sensitivity` of any homogenization result w.r.t. physical, geometric,
+  volume-fraction or crack-density parameters (lens API); multi-scale chain
+  rule by closure composition.
+- RVE-level orientation projection (`symmetrize`: iso / TI Reynolds averaging).
+
 ### Added
 
 - **Periodic multilayer homogenization**, `MeanFieldHom.Laminates` — a second
@@ -82,14 +127,6 @@
     `applications/cement_paste_diffusion.md` now show the declarative variant
     next to their production (explicit) model, and say when each is preferable.
 
-### Fixed
-
-- `set_param(rve, PropertyParameter(...), x)` narrowed the rebuilt property
-  dict to `Dict{Symbol,TensND.AbstractTens}` although `Phase.properties` is
-  `Dict{Symbol,Any}`. It therefore **threw** on any RVE carrying a non-tensor
-  property — every ageing-viscoelastic RVE (`ViscoLaw`) included. Undetected
-  because the ALV sensitivity tests only exercised `AmountParameter`.
-
 - **Inclusions whose response is a trained neural network**,
   `MeanFieldHom.NeuralInclusions` — a fourth route into the custom-inclusion
   contract, after the analytic families, the layered patterns and the
@@ -130,25 +167,6 @@
   the optimizer, and the only part of the surrogate pipeline that needs one. It
   writes its result back into a dependency-free `MLP`, so evaluating a trained
   model needs nothing beyond the package.
-
-### Fixed
-
-- **The order-2 (transport) Hill tensor lost the orientation of a rotated
-  inclusion.** `_hill_order2_3d_iso` read the Newton-potential components in the
-  inclusion's own basis and wrapped them into a *canonical* `Tens`, so
-  `hill_tensor(ell, K₀)` returned the tensor of the **unrotated** inclusion —
-  exactly, hence silently. Both the ellipsoid and the cylinder kernels were
-  affected, in the isotropic-matrix branch only; the anisotropic branch always
-  built the shape tensor with the rotation in it, and elasticity was never
-  affected. Consequence: any transport homogenization with *oriented*
-  non-spherical inclusions was wrong off-axis, and an orientation distribution
-  collapsed to a single orientation. The existing `s = ℙ·K₀` consistency test
-  could not catch it — both sides dropped the rotation identically — so the new
-  guard in `test/Conductivity/test_hill_order2.jl` tests rotation
-  **equivariance** and cross-checks the isotropic kernel against the independent
-  anisotropic derivation.
-
-### Added
 
 - **Inclusions solved by finite elements**, `MeanFieldHom.FiniteElements`, both
   using the finite Eshelby cell with the first-order corrected boundary
@@ -245,6 +263,27 @@
   relaxation-time derivative that has no elastic counterpart. Every value
   validated against a central finite difference.
 
+- **`RVE{T}(:M)` / `RVE{T,S}(:M)` constructors**, strictly equivalent to the
+  `RVE(:M; T = …)` keyword form, which is kept.
+- **`promote_rve(rve, T)` and `convert(RVE{T}, rve)`** to force an
+  element-type floor on an already-built RVE.
+
+- **Bundled localization helpers** — `Core.loc_and_stiffness` /
+  `Core.loc_and_stress_average` (plus
+  `Cracks.compliance_and_stiffness_contribution` and the `Schemes`-level
+  `_phase_*_and_*` wrappers) share the single expensive `hill_tensor` /
+  `cod_tensor` / layered-recurrence solve between the two quantities that
+  Mori-Tanaka and the self-consistent kernels always request together. They
+  used to be computed independently, i.e. twice with identical arguments.
+  Results are **bitwise identical**; measured effect: −50 % time and
+  allocations on an anisotropic matrix or a crack phase, −18.6 % on a 20-bin
+  orientation family (40 → 20 Hill solves).
+
+- **Benchmark suite** (`scripts/bench/bench_suite.jl` + `harness.jl`) with a
+  committed baseline, three independent measurement channels (time,
+  allocations, work counters), a calibrated noise floor and a bitwise
+  checksum gate. See `scripts/bench/README.md` and `scripts/bench/DIAGNOSTIC.md`.
+
 ### Changed
 
 - **Documentation reorganized along the Theory / Manual / Tutorials /
@@ -333,6 +372,27 @@
   bituminous application, have been corrected.
 
 ### Fixed
+
+- `set_param(rve, PropertyParameter(...), x)` narrowed the rebuilt property
+  dict to `Dict{Symbol,TensND.AbstractTens}` although `Phase.properties` is
+  `Dict{Symbol,Any}`. It therefore **threw** on any RVE carrying a non-tensor
+  property — every ageing-viscoelastic RVE (`ViscoLaw`) included. Undetected
+  because the ALV sensitivity tests only exercised `AmountParameter`.
+
+- **The order-2 (transport) Hill tensor lost the orientation of a rotated
+  inclusion.** `_hill_order2_3d_iso` read the Newton-potential components in the
+  inclusion's own basis and wrapped them into a *canonical* `Tens`, so
+  `hill_tensor(ell, K₀)` returned the tensor of the **unrotated** inclusion —
+  exactly, hence silently. Both the ellipsoid and the cylinder kernels were
+  affected, in the isotropic-matrix branch only; the anisotropic branch always
+  built the shape tensor with the rotation in it, and elasticity was never
+  affected. Consequence: any transport homogenization with *oriented*
+  non-spherical inclusions was wrong off-axis, and an orientation distribution
+  collapsed to a single orientation. The existing `s = ℙ·K₀` consistency test
+  could not catch it — both sides dropped the rotation identically — so the new
+  guard in `test/Conductivity/test_hill_order2.jl` tests rotation
+  **equivariance** and cross-checks the isotropic kernel against the independent
+  anisotropic derivation.
 
 - **`Maxwell()` ignored the RVE's distribution shape on the ageing-viscoelastic
   path.** `_homogenize_alv_dispatch(::Maxwell, …)` built its Hill kernel on a
@@ -428,15 +488,6 @@
 - `homogenize_alv(rve, DifferentialScheme(), prop; times)` honours `prop`
   instead of always homogenising `:C`.
 
-### Added
-
-- **`RVE{T}(:M)` / `RVE{T,S}(:M)` constructors**, strictly equivalent to the
-  `RVE(:M; T = …)` keyword form, which is kept.
-- **`promote_rve(rve, T)` and `convert(RVE{T}, rve)`** to force an
-  element-type floor on an already-built RVE.
-
-### Fixed
-
 - **The n-layer sphere's shear localization `β_k` is validated against ECHOES.**
   `benchmark_nlayers.jl` had dropped the comparison, citing a 1–50 % gap blamed
   on an `echoes.layer_eE` indexing convention. The gap was ours: `β_k` was the
@@ -494,24 +545,6 @@
   subtracted vectors of different lengths (`DimensionMismatch`).
   `AndersonDefault` was unaffected, since Picard simply propagates whatever the
   step returns. The parametrization is now seeded from `step(x0)`.
-
-### Added
-
-- **Bundled localization helpers** — `Core.loc_and_stiffness` /
-  `Core.loc_and_stress_average` (plus
-  `Cracks.compliance_and_stiffness_contribution` and the `Schemes`-level
-  `_phase_*_and_*` wrappers) share the single expensive `hill_tensor` /
-  `cod_tensor` / layered-recurrence solve between the two quantities that
-  Mori-Tanaka and the self-consistent kernels always request together. They
-  used to be computed independently, i.e. twice with identical arguments.
-  Results are **bitwise identical**; measured effect: −50 % time and
-  allocations on an anisotropic matrix or a crack phase, −18.6 % on a 20-bin
-  orientation family (40 → 20 Hill solves).
-
-- **Benchmark suite** (`scripts/bench/bench_suite.jl` + `harness.jl`) with a
-  committed baseline, three independent measurement channels (time,
-  allocations, work counters), a calibrated noise floor and a bitwise
-  checksum gate. See `scripts/bench/README.md` and `scripts/bench/DIAGNOSTIC.md`.
 
 ### Performance
 
@@ -578,55 +611,9 @@ through pure floating-point reassociation.
   the wrapper "all downstream sub-modules should go through", and no call site
   had ever used it.
 
-
-## v0.1.0 — Initial release
-
-First public release of MeanFieldHom.jl — a mean-field homogenization toolkit
-for elasticity, conductivity and ageing linear viscoelasticity, ported from and
-cross-validated against the C++ ECHOES code.
-
-### Core
-
-- **`RVE` container** — representative volume element (`add_matrix!` /
-  `add_phase!`); volume fractions and crack densities stored at RVE level;
-  solid inclusions (`VolumeFraction`) and flat cracks (`CrackDensity`).
-- **Ten homogenization schemes** — Voigt, Reuss, Dilute, DiluteDual,
-  MoriTanaka, Maxwell, PonteCastanedaWillis, SelfConsistent,
-  AsymmetricSelfConsistent, DifferentialScheme — via a single
-  `homogenize(rve, scheme, property)` entry point.
-- **Elasticity (`:C`) and conductivity (`:K`)** — order-4 and order-2 tensor
-  algebra, crack contributions, and Sevostianov-style interface stiffness
-  (spring / Kapitza / membrane) in every pipeline.
-- **Self-consistent solvers** — symmetric Hill/Budiansky SC with a built-in
-  Newton-Raphson solver (quadratic convergence, backtracking line search) or
-  Anderson/Picard, positive-definite guard near percolation; NonlinearSolve.jl
-  algorithms available via weak extension.
-
-### Ageing linear viscoelasticity (ALV)
-
-- **`Viscoelasticity` sub-module** — time-domain ALV homogenization after
-  Sanahuja (2013) and Barthélémy et al. (2016, 2019): `ViscoLaw` relaxation /
-  creep kernels, Sanahuja trapezoidal discretisation, block-Volterra inverse,
-  discrete ALV Hill kernel.
-- **`homogenize_alv(rve, scheme, prop; times)`** for all schemes, order-4 and
-  order-2; iso and TI Walpole-basis fast paths; BLAS/LAPACK Volterra fast path.
-- **Differential scheme as an adaptive SciML ODE** on the fictitious
-  incorporation time `τ ∈ [0,1]` (`Tsit5` default), with functional
-  `Path` / `Sequential` / `Proportional` incorporation trajectories.
-- **N-layer composite spheres** — full bulk + shear Hervé–Zaoui recurrence in
-  elastic and ALV form, with perfect / spring / membrane interfaces.
-
-### Differentiability
-
-- **ForwardDiff throughout** — `derivative`, `gradient`, `jacobian`,
-  `sensitivity` of any homogenization result w.r.t. physical, geometric,
-  volume-fraction or crack-density parameters (lens API); multi-scale chain
-  rule by closure composition.
-- RVE-level orientation projection (`symmetrize`: iso / TI Reynolds averaging).
-
 ### Compatibility & validation
 
-- Aligned with TensND 0.2 (snake_case + UPPERCASE-acronym API).
+- Aligned with TensND 0.3 (snake_case + UPPERCASE-acronym API).
 - Cross-validated against C++ ECHOES to ≤ ~1e-3 (moduli) and machine precision
   (elastic limits) across schemes, porous, layered and ALV benchmarks.
 - ~3900 tests.

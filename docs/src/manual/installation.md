@@ -1,18 +1,23 @@
 # [Installation](@id man-installation)
 
-`MeanFieldHom` is not (yet) in the General registry; install it directly from
-GitHub:
+`MeanFieldHom` is registered in Julia's General registry.
 
 ```julia
-using Pkg
-Pkg.add(url = "https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl")
+julia> import Pkg; Pkg.add("MeanFieldHom")
 ```
 
-Its dependencies (`TensND.jl`, `OrdinaryDiffEq.jl`, `Elliptic.jl`, `QuadGK.jl`,
-`Polynomials.jl`, `PolynomialRoots.jl`, `Tensors.jl`, …) come from the Julia
-General registry. The `DECUHR` cubature backend (`import DECUHR, Integrals`)
-and `SymPy` symbolic closed forms are optional package extensions. Type-generic
-elliptic integrals are bundled internally as the
+or, from the Pkg REPL mode (`]`):
+
+```julia
+pkg> add MeanFieldHom
+```
+
+No additional registry is required: its dependencies (`TensND.jl`,
+`OrdinaryDiffEq.jl`, `Elliptic.jl`, `QuadGK.jl`, `Polynomials.jl`,
+`PolynomialRoots.jl`, `Tensors.jl`, …) come from General as well. The `DECUHR`
+cubature backend (`import DECUHR, Integrals`) and `SymPy` symbolic closed forms
+are optional package extensions. Type-generic elliptic integrals are bundled
+internally as the
 [`MeanFieldHom.Elliptic`](@ref MeanFieldHom.Elliptic) submodule.
 
 For development from a clone of the repository, instantiate the project

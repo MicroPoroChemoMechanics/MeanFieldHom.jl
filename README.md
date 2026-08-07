@@ -63,17 +63,24 @@ section of the docs.
 
 ## Installation
 
-`MeanFieldHom.jl` is not (yet) in the General registry; install it directly
-from GitHub:
+`MeanFieldHom.jl` is registered in Julia's General registry.
+
+In Pkg REPL mode (press `]` in the Julia REPL):
+
+```julia-repl
+pkg> add MeanFieldHom
+```
+
+Or via the `Pkg` API:
 
 ```julia
 using Pkg
-Pkg.add(url = "https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl")
+Pkg.add("MeanFieldHom")
 ```
 
-All dependencies (`TensND.jl`, `OrdinaryDiffEq.jl`, `Elliptic.jl`,
-`Polynomials.jl`, `PolynomialRoots.jl`, `QuadGK.jl`, `Tensors.jl`, …) are
-resolved from the Julia General registry.
+No additional registry is required: every dependency (`TensND.jl`,
+`OrdinaryDiffEq.jl`, `Elliptic.jl`, `Polynomials.jl`, `PolynomialRoots.jl`,
+`QuadGK.jl`, `Tensors.jl`, …) resolves from General as well.
 
 Six package extensions activate on weak dependencies, each optional:
 

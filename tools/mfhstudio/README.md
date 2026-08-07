@@ -40,24 +40,30 @@ By hand:
 
     julia --project=<MeanFieldHom.jl> -e 'using Pkg; Pkg.instantiate()'
 
-**The committed `Manifest.toml` pins dependencies to sibling checkouts.** It
-records, for instance:
+**The clone's local `Manifest.toml` pins dependencies to sibling checkouts.**
+That file is untracked (`.gitignore`) and specific to each development machine;
+on one of ours it records, for instance:
 
     [[deps.TensND]]
     path = "../TensND.jl"
 
 which only resolves when `TensND.jl` sits next to `MeanFieldHom.jl`. That is a
-development override: MeanFieldHom is not registered, but its dependencies are,
-so on a machine with only the MeanFieldHom clone the way out is a separate
-environment that takes them from the registry:
+development override, and the way out is a separate environment resolved from
+the General registry, where MeanFieldHom itself now lives:
+
+    julia -e 'using Pkg; Pkg.activate("mfhstudio", shared=true); \
+              Pkg.add("MeanFieldHom")'
+
+then `python -m mfhstudio --project @mfhstudio`. To point that environment at a
+clone you are editing instead of the released version, add the dependencies
+first and develop the clone on top —
 
     julia -e 'using Pkg; Pkg.activate("mfhstudio", shared=true); \
               Pkg.add("TensND"); Pkg.develop(path=raw"<MeanFieldHom.jl>")'
 
-then `python -m mfhstudio --project @mfhstudio`. Adding the dependencies before
-the develop is what stops the resolver from turning them back into path
-entries. `--check` reads the manifest and names the missing checkout itself, so
-it will tell you which packages to add.
+— the `Pkg.add` before the develop being what stops the resolver from turning
+those dependencies back into path entries. `--check` reads the manifest and
+names the missing checkout itself, so it will tell you which packages to add.
 
 If Julia is unavailable for any reason the interface still comes up: you can
 build and save a script, and a banner says what is off. Only the 3-D view,

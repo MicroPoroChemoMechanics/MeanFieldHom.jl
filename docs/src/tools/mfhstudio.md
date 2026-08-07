@@ -27,21 +27,28 @@ building and saving a script works, while the 3-D view, reading a script back
 and **Run** are off. `--check` diagnoses the Julia side without paying the load
 time, and is the right first command on a new machine.
 
-One failure is worth knowing about. The committed `Manifest.toml` pins some
-dependencies to sibling checkouts (`path = "../TensND.jl"`), which only resolve
-when those siblings are there. Those are development overrides — MeanFieldHom
-is not registered, but its dependencies are — so on a machine holding only the
-MeanFieldHom clone, build an environment that takes them from the registry:
+One failure is worth knowing about. A development machine's local
+`Manifest.toml` — untracked, one per clone — may pin some dependencies to
+sibling checkouts (`path = "../TensND.jl"`), which only resolve when those
+siblings are there. If yours does and they are not, the studio does not need
+the clone's environment at all: MeanFieldHom is registered in General, so a
+shared environment resolves everything from the registry.
 
 ```julia
 using Pkg
 Pkg.activate("mfhstudio", shared = true)
-Pkg.add("TensND")
+Pkg.add("MeanFieldHom")
+```
+
+To run the studio against a clone you are editing rather than the released
+version, develop it into that same environment instead:
+
+```julia
 Pkg.develop(path = raw"<path to MeanFieldHom.jl>")
 ```
 
-and start the studio with `--project @mfhstudio`. `--check` reads the manifest
-and names the missing checkouts itself.
+Either way, start the studio with `--project @mfhstudio`. `--check` reads the
+manifest and names the missing checkouts itself.
 
 ## The layout
 
