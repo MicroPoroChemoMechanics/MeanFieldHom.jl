@@ -1,13 +1,13 @@
 """
-    MeanFieldHomGridapExt
+    MeanFieldHomogenizationGridapExt
 
 Second finite-element backend of the axisymmetric Fourier solve, activated by
 `import Gridap, GridapGmsh`.
 
-Implements the nine methods of the [`MeanFieldHom.FEBackend`](@ref) contract
-for [`MeanFieldHom.GridapBackend`](@ref), and nothing else: the Fourier
+Implements the nine methods of the [`MeanFieldHomogenization.FEBackend`](@ref) contract
+for [`MeanFieldHomogenization.GridapBackend`](@ref), and nothing else: the Fourier
 operators, the boundary data, the fixed point of the corrected boundary
-condition and the memoization all live in `MeanFieldHom.FiniteElements`, shared
+condition and the memoization all live in `MeanFieldHomogenization.FiniteElements`, shared
 with the Ferrite backend.
 
 The point of having two is partly cross-validation — two unrelated
@@ -24,12 +24,12 @@ adapting this to another morphology has one line of physics to change.
 
 `GridapGmsh` carries its own copy of the gmsh API over the same `gmsh_jll`, so
 `Gmsh.jl` is not needed on this path. The mesh itself is built by the shared
-`MeanFieldHom.FiniteElements._build_gmsh_axi_model`, written to a temporary
+`MeanFieldHomogenization.FiniteElements._build_gmsh_axi_model`, written to a temporary
 `.msh` file and read back by `GmshDiscreteModel`.
 """
-module MeanFieldHomGridapExt
+module MeanFieldHomogenizationGridapExt
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Gridap
 using Gridap.FESpaces: get_cell_dof_ids
@@ -42,12 +42,12 @@ using GridapGmsh: gmsh
 using LinearAlgebra
 using Tensors
 
-const FE = MeanFieldHom.FiniteElements
+const FE = MeanFieldHomogenization.FiniteElements
 const GB = FE.GridapBackend
 
 # ─── Mesh ────────────────────────────────────────────────────────────────────
 
-function FE.fe_axi_grid(::GB, incl::MeanFieldHom.FEExcenteredSphere)
+function FE.fe_axi_grid(::GB, incl::MeanFieldHomogenization.FEExcenteredSphere)
     a = Float64(incl.a)
     a_core = Float64(FE.core_radius(incl))
     d = Float64(FE.core_offset(incl))
@@ -305,7 +305,7 @@ end
 
 const _E3 = VectorValue(0.0, 0.0, 1.0)
 
-function FE.fe_crack_grid(::GB, crack::MeanFieldHom.FEEllipticCrack)
+function FE.fe_crack_grid(::GB, crack::MeanFieldHomogenization.FEEllipticCrack)
     a, b = Float64(crack.a), Float64(crack.b)
     opts = crack.mesh
     path = joinpath(mktempdir(), "mfh_crack.msh")

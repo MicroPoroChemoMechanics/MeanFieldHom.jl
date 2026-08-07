@@ -23,7 +23,7 @@ correction ``\Delta\mathbb{S}`` to the effective compliance; independently,
 ``\boldsymbol{B}`` gives the stress and displacement intensity factors
 ``\underline{K}``, ``\underline{N}`` at the crack front.
 
-`MeanFieldHom` computes ``\boldsymbol{B}`` first — the intensity factors need
+`MeanFieldHomogenization` computes ``\boldsymbol{B}`` first — the intensity factors need
 it, and rebuilding ``\mathbb{H}`` from it avoids inverting a rank-deficient
 order-4 tensor. Its normalization is not unique in the literature, hence the
 *Conventions* section below.
@@ -52,7 +52,7 @@ major and minor semi-axes ``a\ge b``, and ``\underline{n}`` the unit normal.
 Two families matter, and they are **genuinely different objects**, not two
 regimes of one:
 
-| | geometry | in-plane aspect ratio | `MeanFieldHom` type |
+| | geometry | in-plane aspect ratio | `MeanFieldHomogenization` type |
 | :-- | :-- | :-- | :-- |
 | **elliptic** (3-D) | bounded ellipse, semi-axes ``a\ge b`` | ``\eta\in(0,1]`` | [`EllipticCrack`](@ref), [`PennyCrack`](@ref) for ``\eta=1`` |
 | **ribbon** (2-D) | infinite tunnel along ``\underline{\ell}``, half-width ``b`` | ``a\to\infty``, so ``\eta\to 0`` | [`RibbonCrack`](@ref) |
@@ -78,7 +78,7 @@ of the ellipse, the half-width of the ribbon. This makes ``\boldsymbol{B}``
 **size-independent**: it depends on the crack *shape* (through ``\eta``) and on
 its orientation, never on how big it is. This is the convention of
 [barthelemySifAniso](@cite), following [kachanov1992](@cite),
-[kachanov1993](@cite), and it is the one `MeanFieldHom` implements
+[kachanov1993](@cite), and it is the one `MeanFieldHomogenization` implements
 ([`cod_tensor`](@ref), alias [`B_tensor`](@ref)).
 
 ### The shape coefficient ``\chi``
@@ -189,16 +189,16 @@ three sources normalize the **limit** differently, while agreeing on
 
 | convention | elliptic ``\mathbb{H}^{\mathcal{E}}`` | ribbon ``\mathbb{H}^{\mathcal{R}}`` |
 | :--------- | :------------------------------------ | :---------------------------------- |
-| **`MeanFieldHom`** — limit normalized by ``b``, uniformly | ``\lim (c/b)\,\mathbb{Q}^{-1} = \tfrac{3}{4}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` | ``\tfrac{2}{\pi}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` |
+| **`MeanFieldHomogenization`** — limit normalized by ``b``, uniformly | ``\lim (c/b)\,\mathbb{Q}^{-1} = \tfrac{3}{4}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` | ``\tfrac{2}{\pi}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` |
 | **Echoes** and [barthelemyMMS2023](@cite) — elliptic normalized by ``a`` | ``\lim \omega\,\mathbb{Q}^{-1} = \tfrac{3\eta}{4}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` | ``\tfrac{2}{\pi}\,\underline{n}\stackrel{s}{\otimes}\boldsymbol{B}\stackrel{s}{\otimes}\underline{n}`` |
 
 So the two elliptic compliances differ by exactly ``\eta``:
 
 ```math
-\mathbb{H}^{\mathcal{E}}_{\texttt{MeanFieldHom}}
+\mathbb{H}^{\mathcal{E}}_{\texttt{MeanFieldHomogenization}}
 = \frac{1}{\eta}\;\mathbb{H}^{\mathcal{E}}_{\text{Echoes}},
 \qquad
-\mathbb{H}^{\mathcal{R}}_{\texttt{MeanFieldHom}}
+\mathbb{H}^{\mathcal{R}}_{\texttt{MeanFieldHomogenization}}
 = \mathbb{H}^{\mathcal{R}}_{\text{Echoes}} .
 ```
 
@@ -214,7 +214,7 @@ Measured, not inferred from the papers — Echoes' `crack_compliance` against
 | :-- | :-- | :-- | :-- | :-- | :-- |
 | ``\mathbb{H}_{\text{Echoes}}/\mathbb{H}_{\texttt{MFH}}`` | 1.0000 | 0.7000 | 0.5000 | 0.3000 | 0.1000 |
 
-On the `MeanFieldHom` side the ``3/4`` is ``\eta``-independent to machine
+On the `MeanFieldHomogenization` side the ``3/4`` is ``\eta``-independent to machine
 precision (``\mathbb{H}_{3333}/B_{33} = 0.750000`` for every ``\eta``).
 
 !!! warning "``\boldsymbol{B}`` is the same, ``\mathbb{H}`` is not"
@@ -237,7 +237,7 @@ agreement with [`compliance_contribution`](@ref) is evidence rather than
 tautology:
 
 ```@example Horacle
-using MeanFieldHom, TensND, Plots
+using MeanFieldHomogenization, TensND, Plots
 gr()  # headless backend; GKSwstype is set to "100" in make.jl
 
 E, ν = 210.0, 0.3

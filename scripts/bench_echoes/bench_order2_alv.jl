@@ -13,7 +13,7 @@ Pkg.activate(@__DIR__; io = devnull)
 using LinearAlgebra
 using Printf
 using PyCall
-using MeanFieldHom
+using MeanFieldHomogenization
 
 const echoes = pyimport("echoes")
 const np = pyimport("numpy")

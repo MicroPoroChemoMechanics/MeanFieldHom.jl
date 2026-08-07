@@ -1,7 +1,7 @@
 # =============================================================================
 #  abstractions.jl
 #
-#  Unified inclusion-type hierarchy used throughout `MeanFieldHom`.
+#  Unified inclusion-type hierarchy used throughout `MeanFieldHomogenization`.
 #
 #  Every inclusion geometry (ellipsoid, crack, multi-layer, user-defined, …)
 #  subtypes `AbstractInclusion{T}`, where `T` is the element type of the
@@ -35,7 +35,7 @@
     AbstractInclusion{T<:Number}
 
 Root abstract supertype for every inclusion geometry recognized by
-`MeanFieldHom`.  The type parameter `T` is the element type of the
+`MeanFieldHomogenization`.  The type parameter `T` is the element type of the
 geometric scalars (semi-axes, half-widths, …) and propagates through
 every tensor produced by the package, supporting `Float64`,
 `ForwardDiff.Dual`, `SymPy.Sym`, `Symbolics.Num`, …
@@ -80,7 +80,7 @@ abstract type AbstractLayeredInclusion{dim, T} <: AbstractInclusion{T} end
 Supertype for **user-supplied inclusion morphologies** that do not fit any of
 the built-in families — non-ellipsoidal shapes, patterns whose response is
 obtained from an external solver (finite elements, series expansion, …), or
-hand-crafted approximate formulas.  It is the `MeanFieldHom` counterpart of
+hand-crafted approximate formulas.  It is the `MeanFieldHomogenization` counterpart of
 the `user_inclusion` extension point of the C++/Python *echoes* codebase.
 
 Subtyping this abstract type is *not* mandatory — an inclusion may equally
@@ -89,7 +89,7 @@ or [`AbstractLayeredInclusion`](@ref) when it genuinely belongs to that
 family, and will then inherit that family's dispatch rules.  What this branch
 buys is a neutral home for morphologies that belong to none of them: it is
 disjoint from the other three, so adding methods for it can never create a
-dispatch ambiguity, and [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor)
+dispatch ambiguity, and [`hill_tensor`](@ref MeanFieldHomogenization.Elasticity.hill_tensor)
 accepts it directly (the ellipsoid-typed entry point does not).
 
 See the developer page *Adding a new inclusion* for the full interface
@@ -193,10 +193,10 @@ an `AbstractTens{4, 3}` (elasticity) triggers the double contraction
 ``\\mathbf P \\cdot \\mathbf K_0``.
 
 All keyword arguments (`method`, `abstol`, `reltol`, `maxiters`) are
-forwarded verbatim to [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor); see its docstring for the
+forwarded verbatim to [`hill_tensor`](@ref MeanFieldHomogenization.Elasticity.hill_tensor); see its docstring for the
 set of admissible algorithm traits.
 
-See also [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor).
+See also [`hill_tensor`](@ref MeanFieldHomogenization.Elasticity.hill_tensor).
 """
 function eshelby_tensor end
 
@@ -208,7 +208,7 @@ function eshelby_tensor end
 #  `import ..Core: stiffness_contribution` + method definition, all
 #  attaching to a single generic function.  Definitions live in
 #  `src/localization.jl` and `src/contribution.jl` (loaded at
-#  MeanFieldHom top level after all sub-modules).
+#  MeanFieldHomogenization top level after all sub-modules).
 # =============================================================================
 
 """
@@ -312,8 +312,8 @@ matrix `P₀`.  For a dilute family of volume fraction `f`:
 
 The **two-argument** form is the *flat-object* flavor used by cracks and,
 more generally, by any inclusion registered in an
-[`RVE`](@ref MeanFieldHom.Schemes.RVE) with a
-[`CrackDensity`](@ref MeanFieldHom.Schemes.CrackDensity) amount: the
+[`RVE`](@ref MeanFieldHomogenization.Schemes.RVE) with a
+[`CrackDensity`](@ref MeanFieldHomogenization.Schemes.CrackDensity) amount: the
 inclusion carries no property of its own, and the amount is applied
 afterwards by the three-argument [`delta_compliance`](@ref).
 
@@ -350,7 +350,7 @@ it carries the geometric prefactor relating a density-like amount to the
 effective correction (`4π/3` for an elliptical crack of Budiansky density
 `ε³ᵈ = N a b²`, `π` for a ribbon crack of `ε²ᵈ = N b²`).  Every inclusion
 meant to be registered with a
-[`CrackDensity`](@ref MeanFieldHom.Schemes.CrackDensity) amount must provide
+[`CrackDensity`](@ref MeanFieldHomogenization.Schemes.CrackDensity) amount must provide
 the three-argument methods of `delta_compliance`, [`delta_stiffness`](@ref),
 [`delta_conductivity`](@ref) and [`delta_resistivity`](@ref).
 """
@@ -376,7 +376,7 @@ reference medium, sharing the single expensive Hill / recurrence solve.
 
 Both quantities are needed per phase by Mori-Tanaka and by the
 self-consistent kernels; computing them separately evaluates
-[`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor) — the dominant cost — twice with byte-identical
+[`hill_tensor`](@ref MeanFieldHomogenization.Elasticity.hill_tensor) — the dominant cost — twice with byte-identical
 arguments.
 
 !!! note "Contract"
@@ -407,7 +407,7 @@ function loc_and_stress_average end
 Bundled two-argument contribution pair of a **flat** inclusion — the
 density-amount counterpart of [`loc_and_stiffness`](@ref), sharing whatever
 single expensive solve produces both (for a crack, one
-[`cod_tensor`](@ref MeanFieldHom.Cracks.cod_tensor)).
+[`cod_tensor`](@ref MeanFieldHomogenization.Cracks.cod_tensor)).
 
 Returns `(compliance_contribution, stiffness_contribution)` for a 4th-order
 `P₀` and `(compliance_contribution, conductivity_contribution)` for a

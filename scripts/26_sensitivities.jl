@@ -1,7 +1,7 @@
 # =============================================================================
 #  26_sensitivities.jl
 #
-#  Tour of the autodiff sensitivity API of MeanFieldHom:
+#  Tour of the autodiff sensitivity API of MeanFieldHomogenization:
 #    * derivative(rve, scheme, lens; indexer)        — scalar sensitivity,
 #    * gradient(rve, scheme, lenses; indexer)        — multi-parameter gradient,
 #    * jacobian(rve, scheme, lenses)                 — full Jacobian.
@@ -19,13 +19,13 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using ForwardDiff
 using TensND
 using Printf
 
 println("="^78)
-println("MeanFieldHom — autodiff sensitivities tour")
+println("MeanFieldHomogenization — autodiff sensitivities tour")
 println("="^78)
 
 # 2-phase RVE with spherical inclusions ──────────────────────────────────────

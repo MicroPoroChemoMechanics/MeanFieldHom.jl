@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -14,12 +14,12 @@ using LinearAlgebra
     C₁ = TensISO{3}(3κ₀ * 2, 2μ₀ * 2)
 
     s_perfect = LayeredSphere((0.5, 1.0), (C₁, C₀))
-    α_perfect = MeanFieldHom.LayeredSpheres._bulk_localization(s_perfect, κ₀, μ₀)
+    α_perfect = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s_perfect, κ₀, μ₀)
 
     # k → 0 ≡ perfect interface (normal-only)
     intf_tight = (SpringInterface(1.0e-14), PerfectInterface{Float64}())
     s_tight = LayeredSphere((0.5, 1.0), (C₁, C₀); interfaces = intf_tight)
-    α_tight = MeanFieldHom.LayeredSpheres._bulk_localization(s_tight, κ₀, μ₀)
+    α_tight = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s_tight, κ₀, μ₀)
     for k in 1:2
         @test α_tight[k] ≈ α_perfect[k] rtol = 1.0e-10
     end
@@ -27,7 +27,7 @@ using LinearAlgebra
     # k → ∞ : core decoupled → core bulk localization → 0
     intf_loose = (SpringInterface(1.0e9), PerfectInterface{Float64}())
     s_loose = LayeredSphere((0.5, 1.0), (C₁, C₀); interfaces = intf_loose)
-    α_loose = MeanFieldHom.LayeredSpheres._bulk_localization(s_loose, κ₀, μ₀)
+    α_loose = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s_loose, κ₀, μ₀)
     @test abs(α_loose[1]) < 1.0e-6
 end
 
@@ -43,7 +43,7 @@ end
             (0.5, 1.0), (C₁, C₀);
             interfaces = (SpringInterface(k), PerfectInterface{Float64}())
         )
-        push!(αs, MeanFieldHom.LayeredSpheres._bulk_localization(s, κ₀, μ₀)[1])
+        push!(αs, MeanFieldHomogenization.LayeredSpheres._bulk_localization(s, κ₀, μ₀)[1])
     end
     for i in 1:(length(ks) - 1)
         @test αs[i] ≥ αs[i + 1]
@@ -66,10 +66,10 @@ end
 
     # κs = μs = 0 recovers perfect interface.
     s_perfect = LayeredSphere((0.5, 1.0), (C₁, C₀))
-    α_perfect = MeanFieldHom.LayeredSpheres._bulk_localization(s_perfect, κ₀, μ₀)
+    α_perfect = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s_perfect, κ₀, μ₀)
     intf_zero = (MembraneInterface(0.0, 0.0), PerfectInterface{Float64}())
     s_zero = LayeredSphere((0.5, 1.0), (C₁, C₀); interfaces = intf_zero)
-    α_zero = MeanFieldHom.LayeredSpheres._bulk_localization(s_zero, κ₀, μ₀)
+    α_zero = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s_zero, κ₀, μ₀)
     for k in 1:2
         @test α_zero[k] ≈ α_perfect[k] rtol = 1.0e-12
     end
@@ -78,7 +78,7 @@ end
     # should differ from perfect case.
     intf_m = (MembraneInterface(1.0, 0.5), PerfectInterface{Float64}())
     s_m = LayeredSphere((0.5, 1.0), (C₁, C₀); interfaces = intf_m)
-    α_m = MeanFieldHom.LayeredSpheres._bulk_localization(s_m, κ₀, μ₀)
+    α_m = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s_m, κ₀, μ₀)
     @test α_m[1] != α_perfect[1]
 end
 

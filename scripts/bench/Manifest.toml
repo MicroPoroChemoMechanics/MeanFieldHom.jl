@@ -1048,17 +1048,17 @@ weakdeps = ["SparseArrays"]
     [deps.MaybeInplace.extensions]
     MaybeInplaceSparseArraysExt = "SparseArrays"
 
-[[deps.MeanFieldHom]]
+[[deps.MeanFieldHomogenization]]
 deps = ["Elliptic", "ForwardDiff", "JSON3", "LinearAlgebra", "OrdinaryDiffEq", "PolynomialRoots", "Polynomials", "QuadGK", "StaticArrays", "TensND", "Tensors"]
 path = "../.."
 uuid = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 version = "0.1.0"
 weakdeps = ["DECUHR", "Integrals", "NonlinearSolve", "SymPy"]
 
-    [deps.MeanFieldHom.extensions]
-    MeanFieldHomDECUHRExt = ["DECUHR", "Integrals"]
-    MeanFieldHomNonlinearSolveExt = "NonlinearSolve"
-    MeanFieldHomSymPyExt = "SymPy"
+    [deps.MeanFieldHomogenization.extensions]
+    MeanFieldHomogenizationDECUHRExt = ["DECUHR", "Integrals"]
+    MeanFieldHomogenizationNonlinearSolveExt = "NonlinearSolve"
+    MeanFieldHomogenizationSymPyExt = "SymPy"
 
 [[deps.Missings]]
 deps = ["DataAPI"]

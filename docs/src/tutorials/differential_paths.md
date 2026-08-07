@@ -46,7 +46,7 @@ way becomes a modeling choice, exposed through the `trajectory` keyword:
 ## Seeing the path dependence
 
 ```@example tutdiff
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

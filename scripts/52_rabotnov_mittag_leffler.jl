@@ -25,7 +25,7 @@
 #  `homogenize_alv` and overlays the closed-form curves.  The
 #  Mittag-Leffler implementation is borrowed from the ECHOES Python
 #  test suite via PyCall (no Julia-native ML library is currently a
-#  dependency of `MeanFieldHom`).
+#  dependency of `MeanFieldHomogenization`).
 #
 #  Usage  : julia --project scripts/52_rabotnov_mittag_leffler.jl
 #  Output : scripts/figures/52_rabotnov_mittag_leffler.png
@@ -34,7 +34,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf

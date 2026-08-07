@@ -1,6 +1,6 @@
 # [Homogenization schemes](@id th-homogenization)
 
-`MeanFieldHom.Schemes` computes the *effective* property tensor of a
+`MeanFieldHomogenization.Schemes` computes the *effective* property tensor of a
 multi-phase medium from (i) the phase geometries, (ii) the phase properties and
 (iii) the phase volume fractions or crack densities.
 
@@ -82,7 +82,7 @@ a fixed point:
 
 The default solver is a damped Picard fixed point (Anderson with memory
 1, Dual-safe). Loading `NonlinearSolve.jl` activates the
-`MeanFieldHomNonlinearSolveExt` extension, which accepts every SciML
+`MeanFieldHomogenizationNonlinearSolveExt` extension, which accepts every SciML
 non-linear algorithm (`NewtonRaphson()`, `TrustRegion()`,
 `Anderson()`, …) via the `algorithm` keyword of [`SelfConsistent`](@ref).
 

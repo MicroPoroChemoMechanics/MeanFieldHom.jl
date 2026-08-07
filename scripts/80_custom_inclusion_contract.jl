@@ -1,6 +1,6 @@
 # # The custom-inclusion contract: three entry gates, one answer
 #
-# `MeanFieldHom` lets an arbitrary morphology take part in every homogenization
+# `MeanFieldHomogenization` lets an arbitrary morphology take part in every homogenization
 # scheme, in elasticity and in transport, without touching the package. This is
 # the counterpart of the `user_inclusion` mechanism of the C++/Python `echoes`
 # codebase, but leveled: you implement the **lowest gate you can reach** and
@@ -22,7 +22,7 @@
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using LinearAlgebra
@@ -39,7 +39,7 @@ K₁ = TensISO{3}(7.0)
 
 ell = Ellipsoid(3.0, 1.0, 1.0; euler_angles = (0.3, 0.7, 0.0))
 semi = (3.0, 1.0, 1.0)
-basis = MeanFieldHom.inclusion_basis(ell)
+basis = MeanFieldHomogenization.inclusion_basis(ell)
 
 # ## Gate A — the Hill tensor
 #
@@ -165,7 +165,7 @@ end
 crack = EllipticCrack(1.0, 0.25)
 flat = CustomInclusion(
     (1.0, 0.25, 0.0);
-    basis = MeanFieldHom.inclusion_basis(crack),
+    basis = MeanFieldHomogenization.inclusion_basis(crack),
     density_factor = 4π / 3,
     compliance_contribution = (P₀; kw...) -> compliance_contribution(crack, P₀; kw...),
     stiffness_contribution = (P₀; kw...) -> stiffness_contribution(crack, P₀; kw...),
@@ -207,7 +207,7 @@ end
 spheroid_at(θ) = Ellipsoid(3.0, 1.0, 1.0; euler_angles = (θ, 0.0, 0.0))
 custom_at(θ) = let e = spheroid_at(θ)
     CustomInclusion(
-        semi; basis = MeanFieldHom.inclusion_basis(e),
+        semi; basis = MeanFieldHomogenization.inclusion_basis(e),
         hill_tensor = (P₀; kw...) -> hill_tensor(e, P₀; kw...)
     )
 end

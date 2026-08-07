@@ -48,11 +48,11 @@ end
 
 Flat elliptical crack whose **crack-opening-displacement tensor is computed by
 finite elements** instead of the closed form of
-[`EllipticCrack`](@ref MeanFieldHom.Cracks.EllipticCrack).
+[`EllipticCrack`](@ref MeanFieldHomogenization.Cracks.EllipticCrack).
 
 It subtypes [`AbstractCrack`](@ref Core.AbstractCrack) and declares the standard
-[`shape_trait`](@ref MeanFieldHom.Core.shape_trait), so implementing
-[`cod_tensor`](@ref MeanFieldHom.Cracks.cod_tensor) is *all* it takes: ℍ, ℕ,
+[`shape_trait`](@ref MeanFieldHomogenization.Core.shape_trait), so implementing
+[`cod_tensor`](@ref MeanFieldHomogenization.Cracks.cod_tensor) is *all* it takes: ℍ, ℕ,
 𝐑, 𝐍_K, the bundled pair and the four `delta_*` with the Budiansky `4π/3`
 prefactor are inherited. It is a drop-in replacement for `EllipticCrack` in
 every scheme — the point of the exercise being that the same machinery accepts
@@ -80,7 +80,7 @@ is `Float64`-only), so use finite differences for sensitivities.
 # Example
 
 ```julia
-using MeanFieldHom, Ferrite, FerriteGmsh, Gmsh
+using MeanFieldHomogenization, Ferrite, FerriteGmsh, Gmsh
 
 crack = FEEllipticCrack(1.0, 0.25; htipdiv = 12.0)
 C₀ = iso_stiffness(0.8333, 0.3846)          # E = 1, ν = 0.3

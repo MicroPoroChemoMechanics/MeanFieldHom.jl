@@ -85,7 +85,7 @@ entitled to be believed.
 
 # Construction
 
-Built by [`train_surrogate`](@ref MeanFieldHom.NeuralInclusions.train_surrogate) or read back by
+Built by [`train_surrogate`](@ref MeanFieldHomogenization.NeuralInclusions.train_surrogate) or read back by
 [`load_surrogate`](@ref).
 The direct constructor is keyword-only and validates every length against the
 network's own input and output widths, because a surrogate whose feature list

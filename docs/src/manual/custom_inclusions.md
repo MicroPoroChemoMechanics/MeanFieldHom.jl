@@ -1,6 +1,6 @@
 # [Custom inclusions](@id man-custom-inclusions)
 
-`MeanFieldHom` ships ellipsoids, cylinders, elliptical and ribbon cracks and
+`MeanFieldHomogenization` ships ellipsoids, cylinders, elliptical and ribbon cracks and
 multi-layer patterns. When your morphology is none of those — a non-ellipsoidal
 shape, a pattern whose response comes out of a finite-element solve, a
 hand-crafted approximate formula — you can still plug it into **every**
@@ -12,7 +12,7 @@ This is the counterpart of the `user_inclusion` mechanism of the C++/Python
 
 - **subtype** [`AbstractCustomInclusion`](@ref) and add methods — the durable
   option for a morphology you will reuse;
-- instantiate [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion) with
+- instantiate [`CustomInclusion`](@ref MeanFieldHomogenization.CustomInclusion) with
   **callbacks** — the quick option for prototyping.
 
 Both go through the same contract, spelled out in full on the developer page
@@ -51,13 +51,13 @@ In transport the gate-B pair is `gradient_gradient_loc` / `flux_gradient_loc`.
 Callbacks are keyword arguments named after the generic they implement.
 
 ```julia
-using MeanFieldHom, TensND
+using MeanFieldHomogenization, TensND
 
 # A morphology whose Hill tensor you happen to know (here: delegate to a
 # spheroid — replace by your own formula or solver).
 ell  = Ellipsoid(3.0, 1.0, 1.0)
 blob = CustomInclusion((3.0, 1.0, 1.0);
-    basis       = MeanFieldHom.inclusion_basis(ell),
+    basis       = MeanFieldHomogenization.inclusion_basis(ell),
     hill_tensor = (P₀; kw...) -> hill_tensor(ell, P₀; kw...))
 
 rve = RVE(:M)
@@ -88,7 +88,7 @@ the **two-argument** contributions:
 crack = EllipticCrack(1.0, 0.25)
 
 flat = CustomInclusion((1.0, 0.25, 0.0);
-    basis          = MeanFieldHom.inclusion_basis(crack),
+    basis          = MeanFieldHomogenization.inclusion_basis(crack),
     density_factor = 4π / 3,                      # Budiansky, elliptical crack
     compliance_contribution = (P₀; kw...) -> compliance_contribution(crack, P₀; kw...),
     stiffness_contribution  = (P₀; kw...) -> stiffness_contribution(crack, P₀; kw...))
@@ -126,7 +126,7 @@ percent. `check_inclusion_interface` catches it.
 ### An arbitrary outer shape
 
 `semi_axes` is optional. It only feeds
-[`shape_tensor`](@ref MeanFieldHom.Core.shape_tensor), which describes an
+[`shape_tensor`](@ref MeanFieldHomogenization.Core.shape_tensor), which describes an
 *equivalent ellipsoidal envelope* and which no kernel reads. A morphology with
 no such envelope simply omits it:
 
@@ -137,7 +137,7 @@ blob = CustomInclusion(; hill_tensor = (P₀; kw...) -> my_solver(P₀))
 ## Durable route — subtyping
 
 ```julia
-struct MyBlob{T, B <: TensND.AbstractBasis} <: MeanFieldHom.AbstractCustomInclusion{T}
+struct MyBlob{T, B <: TensND.AbstractBasis} <: MeanFieldHomogenization.AbstractCustomInclusion{T}
     radius::T
     eccentricity::T
     basis::B
@@ -146,12 +146,12 @@ end
 _equivalent(b::MyBlob) =
     Ellipsoid(b.radius, b.radius * (1 - b.eccentricity), b.radius * (1 - b.eccentricity)^2)
 
-MeanFieldHom.dimension(::MyBlob)          = 3
-MeanFieldHom.inclusion_basis(b::MyBlob)   = b.basis
-MeanFieldHom.shape_trait(b::MyBlob)       = MeanFieldHom.shape_trait(_equivalent(b))
-MeanFieldHom.shape_tensor(b::MyBlob)      = MeanFieldHom.shape_tensor(_equivalent(b))
+MeanFieldHomogenization.dimension(::MyBlob)          = 3
+MeanFieldHomogenization.inclusion_basis(b::MyBlob)   = b.basis
+MeanFieldHomogenization.shape_trait(b::MyBlob)       = MeanFieldHomogenization.shape_trait(_equivalent(b))
+MeanFieldHomogenization.shape_tensor(b::MyBlob)      = MeanFieldHomogenization.shape_tensor(_equivalent(b))
 
-MeanFieldHom.Elasticity.hill_tensor(b::MyBlob, P₀::TensND.AbstractTens; kw...) =
+MeanFieldHomogenization.Elasticity.hill_tensor(b::MyBlob, P₀::TensND.AbstractTens; kw...) =
     hill_tensor(_equivalent(b), P₀; kw...)
 ```
 
@@ -171,23 +171,23 @@ fall back to finite differences there.
 ### A crack, from `cod_tensor` alone
 
 Subtyping [`AbstractCrack`](@ref) and declaring the right
-[`shape_trait`](@ref MeanFieldHom.Core.shape_trait) is the most economical case
+[`shape_trait`](@ref MeanFieldHomogenization.Core.shape_trait) is the most economical case
 in the whole package: **one** method unlocks the entire chain — ℍ, ℕ, 𝐑, 𝐍_K,
 the bundled pair, and the four `delta_*` with their Budiansky prefactor.
 
 ```julia
-struct MyCrack{T, B <: TensND.AbstractBasis} <: MeanFieldHom.AbstractCrack{T}
+struct MyCrack{T, B <: TensND.AbstractBasis} <: MeanFieldHomogenization.AbstractCrack{T}
     a::T
     b::T
     basis::B          # column 3 is the crack normal
 end
 
-MeanFieldHom.shape_trait(::MyCrack)  = MeanFieldHom.EllipticShape
-MeanFieldHom.shape_tensor(c::MyCrack) = ...
+MeanFieldHomogenization.shape_trait(::MyCrack)  = MeanFieldHomogenization.EllipticShape
+MeanFieldHomogenization.shape_tensor(c::MyCrack) = ...
 
 # One method per tensor order — a single `AbstractTens` method is ambiguous.
-MeanFieldHom.Cracks.cod_tensor(c::MyCrack, C₀::TensND.AbstractTens{4,3}; kw...) = ...
-MeanFieldHom.Cracks.cod_tensor(c::MyCrack, K₀::TensND.AbstractTens{2,3}; kw...) = ...
+MeanFieldHomogenization.Cracks.cod_tensor(c::MyCrack, C₀::TensND.AbstractTens{4,3}; kw...) = ...
+MeanFieldHomogenization.Cracks.cod_tensor(c::MyCrack, K₀::TensND.AbstractTens{2,3}; kw...) = ...
 ```
 
 ## Check before you wire
@@ -236,7 +236,7 @@ wrong — `check_inclusion_interface` is there to catch that.
 
 ## Two worked examples in the package
 
-Both live in [`MeanFieldHom.FiniteElements`](@ref) and both take the same
+Both live in [`MeanFieldHomogenization.FiniteElements`](@ref) and both take the same
 route: a finite-element resolution of the Eshelby problem, plugged in through
 the contract, with nothing downstream aware of it.
 
@@ -248,7 +248,7 @@ the contract, with nothing downstream aware of it.
 ## See also
 
 - [Adding a new inclusion](@ref dev-adding-inclusion) — the complete contract, level by level.
-- [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion),
-  [`check_inclusion_interface`](@ref MeanFieldHom.check_inclusion_interface).
+- [`CustomInclusion`](@ref MeanFieldHomogenization.CustomInclusion),
+  [`check_inclusion_interface`](@ref MeanFieldHomogenization.check_inclusion_interface).
 - `scripts/27_user_inclusion_sensitivity.jl` — sensitivities through a
   user-defined type.

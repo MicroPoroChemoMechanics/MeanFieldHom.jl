@@ -1,6 +1,6 @@
 # # Frequency or time? Two routes to the same viscoelastic composite
 #
-# `MeanFieldHom` reaches the effective behavior of a linear viscoelastic
+# `MeanFieldHomogenization` reaches the effective behavior of a linear viscoelastic
 # composite by two entirely separate roads:
 #
 # - the **frequency route** — replace every modulus by its complex counterpart
@@ -34,7 +34,7 @@
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using QuadGK

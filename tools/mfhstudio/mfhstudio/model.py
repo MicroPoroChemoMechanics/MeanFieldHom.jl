@@ -1,7 +1,7 @@
 """The authoring model.
 
 This is what the interface edits and what the code generator reads. It is a
-*graph of cells*, not a single RVE, because MeanFieldHom chains scales
+*graph of cells*, not a single RVE, because MeanFieldHomogenization chains scales
 declaratively: a phase property may hold a `Homogenized(inner_cell, scheme)`
 instead of a tensor, and the outer scheme resolves the inner scale when it
 reads the property.
@@ -481,7 +481,7 @@ class Model:
         if self.alv.enabled and self.uses_multiscale():
             problems.append(
                 "ageing viscoelasticity cannot be combined with a nested scale: "
-                "MeanFieldHom cannot re-express a homogenized inner result as a "
+                "MeanFieldHomogenization cannot re-express a homogenized inner result as a "
                 "ViscoLaw"
             )
         return problems

@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -24,7 +24,7 @@ using LinearAlgebra
     @test all(size(α) == (n, n) for α in α_alv)
 
     # Reference elastic α_k from the existing recurrence.
-    α_elas = MeanFieldHom.LayeredSpheres._bulk_localization(sphere, 10.0, 4.0)
+    α_elas = MeanFieldHomogenization.LayeredSpheres._bulk_localization(sphere, 10.0, 4.0)
 
     for k in 1:2
         # Diagonal entries match the elastic constant.
@@ -48,7 +48,7 @@ end
     times = collect(0.0:0.5:1.0)
 
     α_alv = bulk_localization_alv(sphere, heaviside_law(C_M), times)
-    α_elas = MeanFieldHom.LayeredSpheres._bulk_localization(sphere, 10.0, 4.0)
+    α_elas = MeanFieldHomogenization.LayeredSpheres._bulk_localization(sphere, 10.0, 4.0)
     diag_α = [α_alv[1][i, i] for i in 1:length(times)]
     @test maximum(abs.(diag_α .- α_elas[1])) ≤ 1.0e-12
 end
@@ -92,7 +92,7 @@ end
     times = collect(0.0:0.5:1.0)
 
     α_alv = bulk_localization_alv(sphere, heaviside_law(C_M), times)
-    α_elas = MeanFieldHom.LayeredSpheres._bulk_localization(sphere, 10.0, 4.0)
+    α_elas = MeanFieldHomogenization.LayeredSpheres._bulk_localization(sphere, 10.0, 4.0)
     for k in 1:2
         diag_α = [α_alv[k][i, i] for i in 1:length(times)]
         @test maximum(abs.(diag_α .- α_elas[k])) ≤ 1.0e-12
@@ -111,7 +111,7 @@ end
     times = collect(0.0:0.5:1.0)
 
     α_alv = bulk_localization_alv(sphere, heaviside_law(C_M), times)
-    α_elas = MeanFieldHom.LayeredSpheres._bulk_localization(sphere, 10.0, 4.0)
+    α_elas = MeanFieldHomogenization.LayeredSpheres._bulk_localization(sphere, 10.0, 4.0)
     for k in 1:2
         diag_α = [α_alv[k][i, i] for i in 1:length(times)]
         @test maximum(abs.(diag_α .- α_elas[k])) ≤ 1.0e-12
@@ -128,13 +128,13 @@ end
     times = collect(0.0:0.25:1.0)
     n = length(times)
 
-    β_alv = MeanFieldHom.Viscoelasticity.shear_localization_alv(
+    β_alv = MeanFieldHomogenization.Viscoelasticity.shear_localization_alv(
         sphere, heaviside_law(C_M), times
     )
     @test length(β_alv) == 2
     @test all(size(β) == (n, n) for β in β_alv)
 
-    β_elas = MeanFieldHom.LayeredSpheres._shear_localization(sphere, C_M)
+    β_elas = MeanFieldHomogenization.LayeredSpheres._shear_localization(sphere, C_M)
     for k in 1:2
         diag_β = [β_alv[k][i, i] for i in 1:n]
         @test maximum(abs.(diag_β .- β_elas[k])) ≤ 1.0e-10
@@ -153,10 +153,10 @@ end
     sphere = LayeredSphere((1.0,), (C_1,))
     times = collect(0.0:0.5:1.0)
 
-    β_alv = MeanFieldHom.Viscoelasticity.shear_localization_alv(
+    β_alv = MeanFieldHomogenization.Viscoelasticity.shear_localization_alv(
         sphere, heaviside_law(C_M), times
     )
-    β_elas = MeanFieldHom.LayeredSpheres._shear_localization(sphere, C_M)
+    β_elas = MeanFieldHomogenization.LayeredSpheres._shear_localization(sphere, C_M)
     diag_β = [β_alv[1][i, i] for i in 1:length(times)]
     @test maximum(abs.(diag_β .- β_elas[1])) ≤ 1.0e-10
 end
@@ -169,7 +169,7 @@ end
     n = length(times)
     law = maxwell_iso(10.0, 4.0, 1.0, 0.5)
 
-    β_alv = MeanFieldHom.Viscoelasticity.shear_localization_alv(sphere, law, times)
+    β_alv = MeanFieldHomogenization.Viscoelasticity.shear_localization_alv(sphere, law, times)
     @test length(β_alv) == 2
     @test all(size(β) == (n, n) for β in β_alv)
     for k in 1:2
@@ -192,10 +192,10 @@ end
     )
     times = collect(0.0:0.5:1.0)
 
-    β_alv = MeanFieldHom.Viscoelasticity.shear_localization_alv(
+    β_alv = MeanFieldHomogenization.Viscoelasticity.shear_localization_alv(
         sphere, heaviside_law(C_M), times
     )
-    β_elas = MeanFieldHom.LayeredSpheres._shear_localization(sphere, C_M)
+    β_elas = MeanFieldHomogenization.LayeredSpheres._shear_localization(sphere, C_M)
     for k in 1:2
         diag_β = [β_alv[k][i, i] for i in 1:length(times)]
         @test maximum(abs.(diag_β .- β_elas[k])) ≤ 1.0e-10
@@ -213,10 +213,10 @@ end
     )
     times = collect(0.0:0.5:1.0)
 
-    β_alv = MeanFieldHom.Viscoelasticity.shear_localization_alv(
+    β_alv = MeanFieldHomogenization.Viscoelasticity.shear_localization_alv(
         sphere, heaviside_law(C_M), times
     )
-    β_elas = MeanFieldHom.LayeredSpheres._shear_localization(sphere, C_M)
+    β_elas = MeanFieldHomogenization.LayeredSpheres._shear_localization(sphere, C_M)
     for k in 1:2
         diag_β = [β_alv[k][i, i] for i in 1:length(times)]
         @test maximum(abs.(diag_β .- β_elas[k])) ≤ 1.0e-10
@@ -238,7 +238,7 @@ end
 
     # Reference elastic stiffness contribution.
     N_elas = stiffness_contribution(sphere, C_M)
-    N_elas_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(N_elas)
+    N_elas_M = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(N_elas)
 
     # Diagonal 6×6 blocks must match the elastic 6×6, off-diag must vanish.
     for i in 1:n
@@ -271,7 +271,7 @@ end
     )
     for sphere in spheres
         N_alv = stiffness_contribution_alv(sphere, heaviside_law(C_M), times)
-        N_elas_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(
+        N_elas_M = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(
             stiffness_contribution(sphere, C_M)
         )
         for i in 1:n
@@ -303,7 +303,7 @@ end
     # Reference elastic dilute.
     N_elas = stiffness_contribution(sphere, C_M)
     C_eff_elas = C_M + f_I * N_elas
-    C_eff_elas_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(C_eff_elas)
+    C_eff_elas_M = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(C_eff_elas)
 
     for i in 1:n
         rows = (6 * (i - 1) + 1):(6 * i)
@@ -337,7 +337,7 @@ end
     C0_law = maxwell_iso(k0, mu0, eta_k0, eta_mu0)
 
     α_jl = bulk_localization_alv(sphere, C0_law, times)
-    β_jl = MeanFieldHom.Viscoelasticity.shear_localization_alv(sphere, C0_law, times)
+    β_jl = MeanFieldHomogenization.Viscoelasticity.shear_localization_alv(sphere, C0_law, times)
 
     # ECHOES Python diagonal (== single-time elastic limit) reference values.
     α_py_diag_core = [0.5952381, 0.4792996, 0.4792996, 0.4792996, 0.4792996]
@@ -382,7 +382,7 @@ end
     block11 = C_alv[1:6, 1:6]
     @test isapprox(
         block11,
-        MeanFieldHom.Viscoelasticity._tens_to_mandel66(C_eff_t0);
+        MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(C_eff_t0);
         rtol = 1.0e-10, atol = 1.0e-10
     )
 end

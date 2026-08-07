@@ -5,7 +5,7 @@ The [self-consistent scheme](bounds_and_schemes.md) is a fixed point
 (see [Homogenization schemes](../manual/schemes.md)): the default damped Picard
 [`AndersonDefault`](@ref), the dependency-free [`NewtonDefault`](@ref), and —
 the subject of this page — the weak extension
-`MeanFieldHomNonlinearSolveExt`, which hands the same fixed point to any
+`MeanFieldHomogenizationNonlinearSolveExt`, which hands the same fixed point to any
 [NonlinearSolve.jl](https://github.com/SciML/NonlinearSolve.jl) algorithm.
 
 Two things need checking: that they agree, and that `ForwardDiff`
@@ -14,7 +14,7 @@ differentiates *through* an external solve correctly.
 ## The three solver families
 
 ```@example tutnls
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 using NonlinearSolve
@@ -92,7 +92,7 @@ contrast and the proximity to a bifurcation — hence the keyword.
 the RVE, so the nonlinear solver sees `Dual`-valued inputs and would seed *its
 own* `Dual` on top — **nested** duals, fragile in tag ordering and wasteful.
 
-`MeanFieldHomNonlinearSolveExt` avoids this with an implicit-function-theorem
+`MeanFieldHomogenizationNonlinearSolveExt` avoids this with an implicit-function-theorem
 (IFT) **lift**: it solves the *primal* problem (inputs stripped to `Float64`
 via `ForwardDiff.value`, explicit finite-difference Jacobian, so
 `NonlinearSolve` never seeds a `Dual`) and recovers the caller's partials with

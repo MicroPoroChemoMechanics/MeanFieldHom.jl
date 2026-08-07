@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="./docs/src/assets/logo.svg" alt="MeanFieldHom.jl" width="100">
+  <img src="./docs/src/assets/logo.svg" alt="MeanFieldHomogenization.jl" width="100">
 </p>
 
-# MeanFieldHom
+# MeanFieldHomogenization
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/dev/)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/dev/)
 
-[![CI](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/MicroPoroChemoMechanics/MeanFieldHom.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/MicroPoroChemoMechanics/MeanFieldHom.jl)
+[![CI](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/MicroPoroChemoMechanics/MeanFieldHomogenization.jl)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/blob/main/LICENSE)
 [![code style: runic](https://img.shields.io/badge/code_style-%E1%9A%B1%E1%9A%A2%E1%9A%BE%E1%9B%81%E1%9A%B2-pink)](https://github.com/fredrikekre/Runic.jl)
 
-`MeanFieldHom.jl` is a Julia framework for **mean-field homogenization**
+`MeanFieldHomogenization.jl` is a Julia framework for **mean-field homogenization**
 of heterogeneous materials: it predicts effective elastic, transport and
 viscoelastic properties from the properties, shapes, orientations and
 volume fractions of the phases in a microstructure.
@@ -40,42 +40,42 @@ A gallery of full micromechanical models built on the package —
 hydrating cement paste, chloride diffusivity, the interfacial transition
 zone in concrete, quasi-brittle strength, bituminous mixtures, ageing
 creep — lives under [`docs/src/applications/`](docs/src/applications)
-and the [Applications](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/applications/cement_paste/)
+and the [Applications](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/stable/applications/cement_paste/)
 section of the docs.
 
 ## Features
 
 | Sub-module | Responsibility |
 | --- | --- |
-| `MeanFieldHom.Elliptic` | Type-generic Legendre and Carlson elliptic integrals (`ForwardDiff`/`Sym`-compatible). |
-| `MeanFieldHom.Core` | Abstractions, traits, shared numerics (Green / Newton kernels, Masson residue, DECUHR). |
-| `MeanFieldHom.Elasticity` | Hill polarization tensor for ellipsoidal inclusions and cylinders (2D / 3D, iso / aniso / TI-coaxial). |
-| `MeanFieldHom.Cracks` | COD tensor, compliance contribution, SIF and DIF for elliptic / ribbon cracks. |
-| `MeanFieldHom.Conductivity` | 2nd-order Hill tensor for transport problems; closed form for any matrix anisotropy. |
-| `MeanFieldHom.LayeredSpheres` | `n`-layer composite spheres, 5 interface types (perfect, spring, membrane, Kapitza, surface-conductive), volume-average and pointwise localization. |
-| `MeanFieldHom.LayeredSpheroids` | `n`-layer confocal spheroids, conduction, with Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
-| `MeanFieldHom.Laminates` | Periodic **multilayer** cell: parallel layers, no matrix, no Eshelby problem — an *exact* solution in elasticity and transport, with the same 4 imperfect-interface models, per-layer localization and an ageing-viscoelastic twin. |
-| `MeanFieldHom.CustomInclusions` | The user-defined inclusion contract: `CustomInclusion` and `check_inclusion_interface`. |
-| `MeanFieldHom.FiniteElements` | Inclusions whose response comes out of a finite-element resolution of the Eshelby problem — elliptical crack (3-D) and sphere with an off-centre core (axisymmetric Fourier) — behind a two-backend contract. |
-| `MeanFieldHom.NeuralInclusions` | Inclusions whose response comes out of a trained network, with the sampling and fitting machinery; differentiable in the morphology, where a finite-element solve is not. |
-| `MeanFieldHom.Schemes` | The cell abstraction (`RVE`, and `Laminate` beside it) and `homogenize`; declarative multiscale chaining (`Homogenized`, `NestedParameter`); bounds, dilute, Mori–Tanaka, self-consistent (+ asymmetric), PCW, Maxwell, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
-| `MeanFieldHom.Viscoelasticity` | Ageing linear viscoelasticity via Volterra operators, with structured ISO/TI/orthotropic kernel storage — every scheme, cracks and layered spheres included. |
+| `MeanFieldHomogenization.Elliptic` | Type-generic Legendre and Carlson elliptic integrals (`ForwardDiff`/`Sym`-compatible). |
+| `MeanFieldHomogenization.Core` | Abstractions, traits, shared numerics (Green / Newton kernels, Masson residue, DECUHR). |
+| `MeanFieldHomogenization.Elasticity` | Hill polarization tensor for ellipsoidal inclusions and cylinders (2D / 3D, iso / aniso / TI-coaxial). |
+| `MeanFieldHomogenization.Cracks` | COD tensor, compliance contribution, SIF and DIF for elliptic / ribbon cracks. |
+| `MeanFieldHomogenization.Conductivity` | 2nd-order Hill tensor for transport problems; closed form for any matrix anisotropy. |
+| `MeanFieldHomogenization.LayeredSpheres` | `n`-layer composite spheres, 5 interface types (perfect, spring, membrane, Kapitza, surface-conductive), volume-average and pointwise localization. |
+| `MeanFieldHomogenization.LayeredSpheroids` | `n`-layer confocal spheroids, conduction, with Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
+| `MeanFieldHomogenization.Laminates` | Periodic **multilayer** cell: parallel layers, no matrix, no Eshelby problem — an *exact* solution in elasticity and transport, with the same 4 imperfect-interface models, per-layer localization and an ageing-viscoelastic twin. |
+| `MeanFieldHomogenization.CustomInclusions` | The user-defined inclusion contract: `CustomInclusion` and `check_inclusion_interface`. |
+| `MeanFieldHomogenization.FiniteElements` | Inclusions whose response comes out of a finite-element resolution of the Eshelby problem — elliptical crack (3-D) and sphere with an off-centre core (axisymmetric Fourier) — behind a two-backend contract. |
+| `MeanFieldHomogenization.NeuralInclusions` | Inclusions whose response comes out of a trained network, with the sampling and fitting machinery; differentiable in the morphology, where a finite-element solve is not. |
+| `MeanFieldHomogenization.Schemes` | The cell abstraction (`RVE`, and `Laminate` beside it) and `homogenize`; declarative multiscale chaining (`Homogenized`, `NestedParameter`); bounds, dilute, Mori–Tanaka, self-consistent (+ asymmetric), PCW, Maxwell, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
+| `MeanFieldHomogenization.Viscoelasticity` | Ageing linear viscoelasticity via Volterra operators, with structured ISO/TI/orthotropic kernel storage — every scheme, cracks and layered spheres included. |
 
 ## Installation
 
-`MeanFieldHom.jl` is registered in Julia's General registry.
+`MeanFieldHomogenization.jl` is registered in Julia's General registry.
 
 In Pkg REPL mode (press `]` in the Julia REPL):
 
 ```julia-repl
-pkg> add MeanFieldHom
+pkg> add MeanFieldHomogenization
 ```
 
 Or via the `Pkg` API:
 
 ```julia
 using Pkg
-Pkg.add("MeanFieldHom")
+Pkg.add("MeanFieldHomogenization")
 ```
 
 No additional registry is required: every dependency (`TensND.jl`,
@@ -104,12 +104,12 @@ Six package extensions activate on weak dependencies, each optional:
   of them: the trained network carries no machine-learning dependency.
 
 Type-generic elliptic integrals themselves are always bundled, as the
-`MeanFieldHom.Elliptic` submodule.
+`MeanFieldHomogenization.Elliptic` submodule.
 
 ## Quick start
 
 ```julia
-using MeanFieldHom, TensND
+using MeanFieldHomogenization, TensND
 
 # Isotropic matrix, bulk/shear moduli (k, μ) = (30, 10) GPa
 C₀ = iso_stiffness(30.0, 10.0)
@@ -135,7 +135,7 @@ Every entry point accepts `method = :auto | :residues | :decuhr` and
 the keyword tuple `(abstol, reltol, maxiters)`; every entry point also
 differentiates through `ForwardDiff` and accepts symbolic (`SymPy`/
 `Symbolics`) coefficients. See the in-line docstrings and the
-[Tutorials](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/tutorials/)
+[Tutorials](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/stable/tutorials/)
 for details.
 
 ## Tests
@@ -151,12 +151,12 @@ roughly in reading order:
 
 | Section | Content |
 | --- | --- |
-| [Theory](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/theory/) | the Eshelby/Hill chain — polarization tensor → localization → schemes — and its specializations (cracks, layered inclusions, viscoelasticity). |
-| [Manual](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/manual/installation/) | installation and a topic-by-topic reference for each inclusion family. |
-| [Tutorials](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/tutorials/) | worked examples: bounds and schemes, layered spheres/spheroids, viscoelasticity, sensitivities, symbolic computation. |
-| [Applications](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/applications/cement_paste/) | full micromechanical models — cement paste, ITZ concrete, bituminous mixtures, strength, ageing creep. |
-| [Developer guide](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/developer/architecture/) | architecture, dispatch, and how to add an inclusion / algorithm / scheme. |
-| [API reference](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/stable/api/elliptic/) | every public docstring, grouped by sub-module. |
+| [Theory](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/stable/theory/) | the Eshelby/Hill chain — polarization tensor → localization → schemes — and its specializations (cracks, layered inclusions, viscoelasticity). |
+| [Manual](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/stable/manual/installation/) | installation and a topic-by-topic reference for each inclusion family. |
+| [Tutorials](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/stable/tutorials/) | worked examples: bounds and schemes, layered spheres/spheroids, viscoelasticity, sensitivities, symbolic computation. |
+| [Applications](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/stable/applications/cement_paste/) | full micromechanical models — cement paste, ITZ concrete, bituminous mixtures, strength, ageing creep. |
+| [Developer guide](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/stable/developer/architecture/) | architecture, dispatch, and how to add an inclusion / algorithm / scheme. |
+| [API reference](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/stable/api/elliptic/) | every public docstring, grouped by sub-module. |
 
 Build locally:
 
@@ -176,10 +176,10 @@ See [CITATION.cff](CITATION.cff) for citation details.
 **BibTeX entry:**
 
 ```bibtex
-@software{meanfieldhom_jl,
+@software{meanfieldhomogenization_jl,
   author = {Barthélémy, Jean-François},
-  title  = {MeanFieldHom.jl: Mean-field homogenization of heterogeneous materials},
-  url    = {https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl},
+  title  = {MeanFieldHomogenization.jl: Mean-field homogenization of heterogeneous materials},
+  url    = {https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl},
   year   = {2026}
 }
 ```

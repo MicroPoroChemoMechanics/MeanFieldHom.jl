@@ -9,7 +9,7 @@ n-layer composite sphere. Uses random per-layer moduli and a random
 reference matrix, and adds a per-layer bar chart of the bulk and
 shear localization factors ``(\alpha_k, \beta_k)``.
 
-The `MeanFieldHom.jl` API used here:
+The `MeanFieldHomogenization.jl` API used here:
 - [`LayeredSphere`](@ref)`(radii, moduli)` — geometry + per-layer stiffness;
 - [`strain_strain_loc`](@ref)`(sphere, C₀; layer=k)` — per-layer iso ``A_k``;
 - [`stiffness_contribution`](@ref)`(sphere, C₀)` — size-independent ``N``;
@@ -25,7 +25,7 @@ is reconstructed and cross-checked against the dilute-scheme identity
 \mathbb{N} = \langle(\mathbb{C}_k - \mathbb{C}_0) : \mathbb{A}_{\varepsilon\varepsilon}\rangle``.
 
 ````@example layered_sphere
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Random
 using Printf

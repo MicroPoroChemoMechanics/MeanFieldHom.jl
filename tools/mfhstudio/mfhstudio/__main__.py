@@ -1,4 +1,4 @@
-"""MFH Studio — a graphical builder for MeanFieldHom scripts.
+"""MFH Studio — a graphical builder for MeanFieldHomogenization scripts.
 
     python3 -m mfhstudio                 start and open a browser
     python3 -m mfhstudio --port 9000     pick the port
@@ -26,7 +26,7 @@ def main(argv: list | None = None) -> int:
         default=os.environ.get("MFHSTUDIO_PROJECT"),
         help=(
             "Julia environment to run in: a directory, or `@name` for a shared "
-            "one. Defaults to the MeanFieldHom checkout this tool sits in. Use "
+            "one. Defaults to the MeanFieldHomogenization checkout this tool sits in. Use "
             "it when that checkout's Manifest.toml pins packages to local paths "
             "you do not have."
         ),
@@ -91,7 +91,7 @@ def _check(args) -> int:
         return 1
     try:
         cat = b.catalog()
-        print(f"\nMeanFieldHom {cat['mfh_version']} on Julia {cat['julia_version']}")
+        print(f"\nMeanFieldHomogenization {cat['mfh_version']} on Julia {cat['julia_version']}")
         print(f"  schemes: {len(cat['schemes'])}")
         return 0
     finally:

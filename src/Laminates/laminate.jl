@@ -16,7 +16,7 @@
     Layer(properties)
 
 One layer of a [`Laminate`](@ref). Carries only material properties: unlike
-a [`Phase`](@ref MeanFieldHom.Schemes.Phase), a layer has no inclusion geometry of its own — its
+a [`Phase`](@ref MeanFieldHomogenization.Schemes.Phase), a layer has no inclusion geometry of its own — its
 geometry is the stacking direction, shared by the whole cell.
 
 A property value may itself be a [`Homogenized`](@ref) cell + scheme,
@@ -32,8 +32,8 @@ Layer(properties::AbstractDict) = Layer(Dict{Symbol, Any}(properties...))
     Laminate{T<:Number, B<:TensND.AbstractBasis{3}} <: AbstractHomogenizationCell
 
 Periodic unit cell of parallel layers normal to `n` — the deterministic,
-matrix-free counterpart of an [`RVE`](@ref MeanFieldHom.Schemes.RVE), solved
-exactly by [`Laminated`](@ref MeanFieldHom.Schemes.Laminated).
+matrix-free counterpart of an [`RVE`](@ref MeanFieldHomogenization.Schemes.RVE), solved
+exactly by [`Laminated`](@ref MeanFieldHomogenization.Schemes.Laminated).
 
 Fields:
 
@@ -55,7 +55,7 @@ both `f_i = h_i/L` and `L`, and one dict gives both. `L` is what carries the
 interface *density*. With perfect interfaces the result depends on the `f_i`
 alone and `L` is irrelevant.
 
-`T` is the declared element-type **floor**, exactly as in [`RVE`](@ref MeanFieldHom.Schemes.RVE): a
+`T` is the declared element-type **floor**, exactly as in [`RVE`](@ref MeanFieldHomogenization.Schemes.RVE): a
 `Dual` or symbolic thickness lives happily in a plain `Laminate()`.
 
 Construction is two-step, mirroring `RVE`:

@@ -30,7 +30,7 @@ using Base.ScopedValues: ScopedValue, with
 Supertype of every *cell* accepted by [`homogenize`](@ref): a morphological
 description of a heterogeneous unit whose effective property can be computed.
 
-Two concrete cells ship with `MeanFieldHom`:
+Two concrete cells ship with `MeanFieldHomogenization`:
 
 - `RVE` — a matrix phase plus named inclusion phases, the container behind
   every scheme built on the Eshelby auxiliary problem (`Voigt`, `Reuss`,

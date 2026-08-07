@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -10,7 +10,7 @@ using LinearAlgebra
 #  numerator), SC / ASC (cracks iterated against the running estimate).
 # =============================================================================
 
-const _to_mandel = MeanFieldHom.Viscoelasticity._tens_to_mandel66
+const _to_mandel = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66
 
 function _setup_crack_elastic(; k_M = 5.0, μ_M = 2.0, ε = 0.1, n_times = 4)
     times = collect(range(0.0, 1.0; length = n_times))
@@ -121,8 +121,8 @@ end
     ctx = _setup_crack_elastic()
     crack = ctx.crack
     times = ctx.times
-    C_M = MeanFieldHom.Viscoelasticity._trapezoidal_relaxation(ctx.law_M, times, 6)
-    Ñ = MeanFieldHom.Viscoelasticity.stiffness_contribution_alv_at(crack, C_M)
+    C_M = MeanFieldHomogenization.Viscoelasticity._trapezoidal_relaxation(ctx.law_M, times, 6)
+    Ñ = MeanFieldHomogenization.Viscoelasticity.stiffness_contribution_alv_at(crack, C_M)
     H̃ = compliance_contribution_alv(crack, ctx.law_M, times)
     # Ñ = -C̃·H̃·C̃ — round-trip identity at machine precision.
     @test isapprox(Ñ, -(C_M * H̃ * C_M); atol = 1.0e-12)

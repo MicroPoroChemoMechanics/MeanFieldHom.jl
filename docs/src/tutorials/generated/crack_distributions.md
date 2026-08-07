@@ -20,7 +20,7 @@ The realizations are drawn with a fixed seed, so the two pictures differ only
 in the orientation rule — the crack positions are the same.
 
 ````@example crack_distributions
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -29,7 +29,7 @@ gr()
 
 # Interactive-3-D helpers; `pkgdir` rather than `@__DIR__` so the include also
 # resolves inside a Documenter `@example` block.
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 
 const E₀, ν₀ = 1.0, 0.2
 const C₀ = iso_stiffness_E_nu(E₀, ν₀)

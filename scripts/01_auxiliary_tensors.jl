@@ -3,7 +3,7 @@
 #
 #  Auxiliary geometric tensors  I^A, U^A, V^A  for ellipsoidal inclusions.
 #
-#  Run from the MeanFieldHom.jl root:
+#  Run from the MeanFieldHomogenization.jl root:
 #    julia --project=. scripts/01_auxiliary_tensors.jl
 #
 #  Mathematical definitions (hill_tensors.qmd §2):
@@ -18,7 +18,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 
@@ -52,7 +52,7 @@ end
 
 # ─────────────────────────────────────────────────────────────────────────────
 println("="^70)
-println("  AUXILIARY TENSORS  I^A, U^A, V^A  —  MeanFieldHom.jl")
+println("  AUXILIARY TENSORS  I^A, U^A, V^A  —  MeanFieldHomogenization.jl")
 println("="^70)
 println("  Normalization: Σᵢ I^A_i = 1 (3D),  I^A_1+I^A_2 = 1 (2D)")
 

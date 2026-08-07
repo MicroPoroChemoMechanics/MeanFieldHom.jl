@@ -97,7 +97,7 @@ function _aniso_default_algo(C₀::TensND.AbstractTens)
 end
 
 _decuhr_available() =
-    Base.get_extension(parentmodule(@__MODULE__), :MeanFieldHomDECUHRExt) !== nothing
+    Base.get_extension(parentmodule(@__MODULE__), :MeanFieldHomogenizationDECUHRExt) !== nothing
 
 # Ellipsoidal inclusions — 3D anisotropic default (see `_aniso_default_algo`)
 _resolve_algo(::Val{:auto}, ::AbstractEllipsoidalInclusion, C₀::TensND.AbstractTens{4, 3}) = _aniso_default_algo(C₀)

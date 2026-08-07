@@ -15,12 +15,12 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using StaticArrays
 using SymPy
 
-const MFHC_S = MeanFieldHom.Core
+const MFHC_S = MeanFieldHomogenization.Core
 
 # Kelvin-Mandel matrix of an isotropic stiffness, built symbolically.
 function _iso_km_sym(λ, μ)

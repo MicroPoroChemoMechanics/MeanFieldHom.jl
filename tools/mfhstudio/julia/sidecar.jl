@@ -1,7 +1,7 @@
 # =============================================================================
 #  sidecar.jl — the long-lived Julia companion of MFH Studio.
 #
-#  Loading MeanFieldHom costs ~10 s, so it is paid once and the process then
+#  Loading MeanFieldHomogenization costs ~10 s, so it is paid once and the process then
 #  answers requests on stdin. The protocol is JSON lines: one request object
 #  per line in, one response object per line out. Everything the interface
 #  needs from Julia goes through here -- the feature catalog, 3-D traces,
@@ -14,7 +14,7 @@
 
 import Pkg
 
-# The sidecar runs with `--project=<MeanFieldHom root>`. On a fresh checkout —
+# The sidecar runs with `--project=<MeanFieldHomogenization root>`. On a fresh checkout —
 # or after a dependency is added — that environment has not been instantiated,
 # and `using JSON3` dies with a stack trace whose only advice is to run
 # `Pkg.instantiate()`. Printing that advice at somebody is worse than following
@@ -90,7 +90,7 @@ end
 # user-typed string; they are evaluated in a bare module holding only the names
 # a geometry can legitimately use.
 module GeomSandbox
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 end
 
@@ -103,7 +103,7 @@ end
 Run a generated script and return its output.
 
 Each run gets a fresh anonymous module, so definitions from one run cannot
-leak into the next, while MeanFieldHom itself stays loaded in the session.
+leak into the next, while MeanFieldHomogenization itself stays loaded in the session.
 """
 function _run(payload)
     src = String(payload["source"])
@@ -116,7 +116,7 @@ function _run(payload)
     get!(ENV, "GKSwstype", "100")
 
     mod = Module(:MFHStudioRun)
-    Base.eval(mod, :(using MeanFieldHom, TensND, LinearAlgebra, Printf))
+    Base.eval(mod, :(using MeanFieldHomogenization, TensND, LinearAlgebra, Printf))
 
     # The protocol itself travels on stdout, so the redirect has to be undone
     # no matter how the script ends. The `do` form restores it while unwinding,

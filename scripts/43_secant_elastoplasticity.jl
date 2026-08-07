@@ -1,6 +1,6 @@
 # # Nonlinear homogenization: the secant method on a porous plastic solid
 #
-# Every scheme in `MeanFieldHom` is linear: it maps phase stiffnesses to an
+# Every scheme in `MeanFieldHomogenization` is linear: it maps phase stiffnesses to an
 # effective stiffness. A *nonlinear* material can still be treated with those
 # same tools, by replacing each phase with a **linear comparison material**
 # whose modulus is re-estimated from the strain the phase actually sees. This
@@ -87,7 +87,7 @@
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 using Printf
@@ -125,7 +125,7 @@ const FPORE = 0.1     # porosity
 # outwards from the cavity is resolved shell by shell. Cut open, with the void
 # core at the center:
 
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 
 let n = 5, f = FPORE
     radii = ntuple(i -> i == 1 ? f^(1 / 3) : (f + (1 - f) * (i - 1) / n)^(1 / 3), n + 1)
@@ -159,7 +159,7 @@ end
 # rather than of dilute voids in a matrix.
 #
 # The property declared for the phase is irrelevant here — for a heterogeneous
-# inclusion `MeanFieldHom` reads the moduli from the inclusion, not from the
+# inclusion `MeanFieldHomogenization` reads the moduli from the inclusion, not from the
 # phase dictionary — but one must be supplied, so the solid stiffness is used.
 
 function kmu_hom(μs, f)

@@ -223,7 +223,7 @@ function phaseCard(ph, i) {
       )),
       ph.is_matrix
         ? el("div", { class: "note" },
-            "The matrix amount is derived as 1 − Σ f of the inclusions; MeanFieldHom raises if it is set.")
+            "The matrix amount is derived as 1 − Σ f of the inclusions; MeanFieldHomogenization raises if it is set.")
         : el("div", { class: "grid2" },
             field("Amount", select(
               [["fraction", "volume fraction"], ["density", "crack density"]],
@@ -309,7 +309,7 @@ function geometryEditor(ph) {
 
 /** Euler angles, as many as the shape has.
  *
- * Radians, because that is what MeanFieldHom takes and what the generated
+ * Radians, because that is what MeanFieldHomogenization takes and what the generated
  * script must contain: converting here would either put `deg2rad(...)` in the
  * script or leave an opaque decimal in it, and neither reads back cleanly.
  * The degree equivalent is shown beside the field instead.
@@ -780,7 +780,7 @@ function renderAlv() {
     blocked
       ? el("div", { class: "note problem" },
           "Ageing viscoelasticity cannot be combined with a nested scale: "
-          + "MeanFieldHom cannot re-express a homogenized inner result as a "
+          + "MeanFieldHomogenization cannot re-express a homogenized inner result as a "
           + "ViscoLaw. Remove the seam first.")
       : el("span"),
     el("div", { class: "note" },
@@ -1076,7 +1076,7 @@ async function pollSidecar() {
   const b = $("#sidecar");
   const err = s.error || s.catalog_error;
   if (s.ready && s.introspected) { b.textContent = "Julia ready"; b.className = "badge ok"; }
-  else if (s.running) { b.textContent = "loading MeanFieldHom…"; b.className = "badge"; }
+  else if (s.running) { b.textContent = "loading MeanFieldHomogenization…"; b.className = "badge"; }
   else if (err) { b.textContent = "Julia unavailable"; b.className = "badge bad"; b.title = err; }
   else { b.textContent = "starting…"; b.className = "badge"; }
 

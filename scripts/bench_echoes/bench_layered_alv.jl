@@ -3,7 +3,7 @@
 #
 #  Loads the per-layer ALV concentration tensors computed by ECHOES Python
 #  (the trusted reference) and compares them to those produced by
-#  `MeanFieldHom.jl`'s `bulk_localization_alv` / `shear_localization_alv`.
+#  `MeanFieldHomogenization.jl`'s `bulk_localization_alv` / `shear_localization_alv`.
 #
 #  Run order :
 #    1. python scripts/bench_echoes/bench_layered_alv.py
@@ -13,7 +13,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, "..", ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using JSON3

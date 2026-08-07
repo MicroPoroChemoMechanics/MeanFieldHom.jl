@@ -1,4 +1,4 @@
-"""Declarative Echoes -> MeanFieldHom correspondence tables.
+"""Declarative Echoes -> MeanFieldHomogenization correspondence tables.
 
 This module is the single source of truth for the translation. It is data,
 not logic: `extract.py` and `emit.py` consult these tables, and

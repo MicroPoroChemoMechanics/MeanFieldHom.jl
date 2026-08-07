@@ -1,9 +1,9 @@
 # [Architecture](@id dev-architecture)
 
-`MeanFieldHom` is organized around a single principle:
+`MeanFieldHomogenization` is organized around a single principle:
 
 > every high-level entry point dispatches via
-> `MeanFieldHom.Core._resolve_algo` on
+> `MeanFieldHomogenization.Core._resolve_algo` on
 > `(Val(method), inclusion, C₀)`.
 
 The resolved [`AbstractAlgorithm`](@ref) instance is then passed to an
@@ -14,7 +14,7 @@ Sub-modules may *extend* (but not redefine) both `_resolve_algo` and
 ## Cells: what `homogenize` accepts
 
 `RVE` is no longer the only container. Everything `homogenize` accepts is an
-[`AbstractHomogenizationCell`](@ref MeanFieldHom.Core.AbstractHomogenizationCell),
+[`AbstractHomogenizationCell`](@ref MeanFieldHomogenization.Core.AbstractHomogenizationCell),
 declared in `src/Core/cells.jl` alongside the rest of the package's generics:
 
 | Cell | Morphology | Solved by |
@@ -58,7 +58,7 @@ when touching it:
 | `Viscoelasticity`  | ageing linear viscoelasticity (Volterra pipeline, ALV variant of every scheme)                      |
 
 | `CustomInclusions` | the user-defined inclusion contract: `CustomInclusion`, `check_inclusion_interface` |
-| `FiniteElements`   | inclusions solved by finite elements (`FEEllipticCrack`, `FEExcenteredSphere`); the physics lives here, the discretization in a backend extension (`MeanFieldHomFerriteExt`, `MeanFieldHomGridapExt`) |
+| `FiniteElements`   | inclusions solved by finite elements (`FEEllipticCrack`, `FEExcenteredSphere`); the physics lives here, the discretization in a backend extension (`MeanFieldHomogenizationFerriteExt`, `MeanFieldHomogenizationGridapExt`) |
 
 Two files sit at the **top level** rather than in a sub-module, and are loaded
 after every geometry sub-module on purpose: `localization.jl` and

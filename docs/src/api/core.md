@@ -1,28 +1,28 @@
 # [API — Core](@id api-core)
 
 ```@docs
-MeanFieldHom.Core
-MeanFieldHom.AbstractInclusion
-MeanFieldHom.AbstractEllipsoidalInclusion
-MeanFieldHom.AbstractCrack
-MeanFieldHom.AbstractLayeredInclusion
-MeanFieldHom.AbstractAlgorithm
-MeanFieldHom.Analytical
-MeanFieldHom.Residue
-MeanFieldHom.DECUHR
-MeanFieldHom.CylinderQuadrature
-MeanFieldHom.MaterialSymmetry
-MeanFieldHom.material_symmetry
-MeanFieldHom.Core.extract_iso_moduli
-MeanFieldHom.Core.extract_ti_moduli
-MeanFieldHom.Core.newton_potential_3d
-MeanFieldHom.Core.newton_potential_2d
-MeanFieldHom.Core.newton_potential_3d_cylinder
-MeanFieldHom.Core.dimension
-MeanFieldHom.Core.element_type
-MeanFieldHom.Core.inclusion_basis
-MeanFieldHom.Core.shape_trait
-MeanFieldHom.Core.shape_tensor
+MeanFieldHomogenization.Core
+MeanFieldHomogenization.AbstractInclusion
+MeanFieldHomogenization.AbstractEllipsoidalInclusion
+MeanFieldHomogenization.AbstractCrack
+MeanFieldHomogenization.AbstractLayeredInclusion
+MeanFieldHomogenization.AbstractAlgorithm
+MeanFieldHomogenization.Analytical
+MeanFieldHomogenization.Residue
+MeanFieldHomogenization.DECUHR
+MeanFieldHomogenization.CylinderQuadrature
+MeanFieldHomogenization.MaterialSymmetry
+MeanFieldHomogenization.material_symmetry
+MeanFieldHomogenization.Core.extract_iso_moduli
+MeanFieldHomogenization.Core.extract_ti_moduli
+MeanFieldHomogenization.Core.newton_potential_3d
+MeanFieldHomogenization.Core.newton_potential_2d
+MeanFieldHomogenization.Core.newton_potential_3d_cylinder
+MeanFieldHomogenization.Core.dimension
+MeanFieldHomogenization.Core.element_type
+MeanFieldHomogenization.Core.inclusion_basis
+MeanFieldHomogenization.Core.shape_trait
+MeanFieldHomogenization.Core.shape_tensor
 ```
 
 ## Exact rotation-group averages
@@ -33,6 +33,6 @@ best-fit projections in [API — Schemes](schemes.md). See
 the comparison between the two.
 
 ```@docs
-MeanFieldHom.Core.isotropify
-MeanFieldHom.Core.transverse_isotropify
+MeanFieldHomogenization.Core.isotropify
+MeanFieldHomogenization.Core.transverse_isotropify
 ```

@@ -16,7 +16,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -50,7 +50,7 @@ end
     # with the matrix axis n_axis.
     for ratio in (0.1, 0.3, 0.5, 0.7, 0.9)
         ell = Ellipsoid(1.0, 1.0, ratio)
-        @test ell isa Ellipsoid{3, MeanFieldHom.Oblate}
+        @test ell isa Ellipsoid{3, MeanFieldHomogenization.Oblate}
         P_ana = hill_tensor(ell, C_TI)                   # analytical
         P_res = hill_tensor(ell, C_TI; method = :residues)
         diff = maximum(abs.(get_array(P_ana) .- get_array(P_res)))
@@ -76,8 +76,8 @@ end
     ell = Ellipsoid(1.0, 1.0, 0.4)
     C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
 
-    algo = MeanFieldHom.Core._resolve_algo(Val(:auto), ell, C_TI)
-    @test algo isa MeanFieldHom.Core.Analytical
+    algo = MeanFieldHomogenization.Core._resolve_algo(Val(:auto), ell, C_TI)
+    @test algo isa MeanFieldHomogenization.Core.Analytical
 end
 
 @testset "Hill TI coaxial — dispatcher falls back when non-coaxial" begin
@@ -90,10 +90,10 @@ end
     # extension is loaded, else NestedQuadGK) — not the residue algorithm,
     # which degenerates on an anisotropically-typed isotropic-valued
     # reference and is therefore reachable on `:residues` only.
-    algo = MeanFieldHom.Core._resolve_algo(Val(:auto), ell, C_TI)
-    @test algo isa Union{MeanFieldHom.Core.DECUHR, MeanFieldHom.Core.NestedQuadGK}
-    @test MeanFieldHom.Core._resolve_algo(Val(:residues), ell, C_TI) isa
-        MeanFieldHom.Core.Residue
+    algo = MeanFieldHomogenization.Core._resolve_algo(Val(:auto), ell, C_TI)
+    @test algo isa Union{MeanFieldHomogenization.Core.DECUHR, MeanFieldHomogenization.Core.NestedQuadGK}
+    @test MeanFieldHomogenization.Core._resolve_algo(Val(:residues), ell, C_TI) isa
+        MeanFieldHomogenization.Core.Residue
 
     # And the residue / DECUHR path should still produce a finite answer.
     P_dec = hill_tensor(ell, C_TI; method = :decuhr)

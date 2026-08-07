@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 import Elliptic
 import ForwardDiff
 
@@ -76,7 +76,7 @@ end
 
 if sympy_loaded
     @testset "Elliptic — SymPy weak extension" begin
-        ext = Base.get_extension(MeanFieldHom, :MeanFieldHomSymPyExt)
+        ext = Base.get_extension(MeanFieldHomogenization, :MeanFieldHomogenizationSymPyExt)
         @test ext !== nothing
 
         m = SymPy.symbols("m")

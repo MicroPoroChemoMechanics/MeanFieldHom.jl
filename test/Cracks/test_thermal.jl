@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -49,7 +49,7 @@ end
             b = cod_tensor(crack, K₀)
             # Analytical: b = η/(π k₀ ℰ_η)
             k² = 1 - η^2
-            ℰ = MeanFieldHom.Elliptic.ell_E(k²)
+            ℰ = MeanFieldHomogenization.Elliptic.ell_E(k²)
             @test b ≈ η / (π * k₀ * ℰ) rtol = 1.0e-13
         end
     end

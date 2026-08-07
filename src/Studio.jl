@@ -2,7 +2,7 @@
 #  Studio.jl — the Julia entry point for MFH Studio.
 #
 #  MFH Studio (tools/mfhstudio) is a local web interface for building
-#  MeanFieldHom scripts. It is implemented in Python (standard library only)
+#  MeanFieldHomogenization scripts. It is implemented in Python (standard library only)
 #  and drives a Julia "sidecar" for 3-D traces, script read-back and running
 #  models. This file is a thin launcher: it finds the studio in the checkout,
 #  resolves a Python interpreter and runs `python3 -m mfhstudio`, forwarding
@@ -15,12 +15,12 @@
               project=nothing, julia=nothing, python=nothing,
               check=false, wait=true)
 
-Start MFH Studio, the graphical builder for MeanFieldHom scripts, and block
+Start MFH Studio, the graphical builder for MeanFieldHomogenization scripts, and block
 until it stops (press Ctrl-C in the REPL — the SIGINT reaches the server in the
 same process group and shuts it down cleanly). With `wait = false`, spawn the
 server and return its `Process` handle immediately, leaving the REPL free.
 
-The server is the Python app under `tools/mfhstudio` of the MeanFieldHom
+The server is the Python app under `tools/mfhstudio` of the MeanFieldHomogenization
 checkout, run as `python3 -m mfhstudio`. Python 3.10+ (standard library only)
 must be on `PATH`, or pointed at with the `python` keyword argument or the
 `MFHSTUDIO_PYTHON` environment variable.
@@ -30,7 +30,7 @@ must be on `PATH`, or pointed at with the `python` keyword argument or the
   Pick a different `port` when the default 8765 is taken.
 - `no_browser` — start without asking the browser to open.
 - `project` — Julia environment for the sidecar: a directory, or `@name` for a
-  shared one. Defaults to the MeanFieldHom checkout (as the Python app does),
+  shared one. Defaults to the MeanFieldHomogenization checkout (as the Python app does),
   honoring `MFHSTUDIO_PROJECT`.
 - `julia` — Julia executable for the sidecar if it is not on `PATH` (the
   `JULIA` environment variable is honored too).
@@ -39,7 +39,7 @@ must be on `PATH`, or pointed at with the `python` keyword argument or the
 
 # Examples
 ```julia
-using MeanFieldHom
+using MeanFieldHomogenization
 mfhstudio()                  # http://127.0.0.1:8765, opens a browser
 mfhstudio(port = 9000)       # pick a different port
 mfhstudio(no_browser = true) # stay in the terminal
@@ -80,13 +80,13 @@ end
 
 """The MFH Studio application directory in this checkout, or a helpful error."""
 function _studio_dir()
-    root = pkgdir(MeanFieldHom)
+    root = pkgdir(MeanFieldHomogenization)
     dir = joinpath(root, "tools", "mfhstudio")
     isdir(dir) || error(
-        "MFH Studio lives in the MeanFieldHom checkout at `tools/mfhstudio`, " *
+        "MFH Studio lives in the MeanFieldHomogenization checkout at `tools/mfhstudio`, " *
             "which is missing here ($dir). It is not part of the released package: " *
             "develop a clone and start the studio from there\n" *
-            "    julia -e 'using Pkg; Pkg.develop(path = raw\"<MeanFieldHom.jl>\")'",
+            "    julia -e 'using Pkg; Pkg.develop(path = raw\"<MeanFieldHomogenization.jl>\")'",
     )
     return dir
 end

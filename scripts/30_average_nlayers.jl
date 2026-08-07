@@ -5,7 +5,7 @@
 # reference matrix, and adds a per-layer bar chart of the bulk and
 # shear localization factors ``(\alpha_k, \beta_k)``.
 #
-# The `MeanFieldHom.jl` API used here:
+# The `MeanFieldHomogenization.jl` API used here:
 # - [`LayeredSphere`](@ref)`(radii, moduli)` — geometry + per-layer stiffness;
 # - [`strain_strain_loc`](@ref)`(sphere, C₀; layer=k)` — per-layer iso ``A_k``;
 # - [`stiffness_contribution`](@ref)`(sphere, C₀)` — size-independent ``N``;
@@ -23,7 +23,7 @@
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Random
 using Printf

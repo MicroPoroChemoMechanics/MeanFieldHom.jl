@@ -17,7 +17,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using ForwardDiff
@@ -126,7 +126,7 @@ end
     ps = [thickness(:A), property(:A, :C, :shear), interface_param(1, :kn)]
     # Qualified: `gradient` is exported by Tensors, Ferrite, Symbolics and
     # Zygote too, all of which are loaded by the time the full suite runs.
-    g = MeanFieldHom.gradient(lam, Laminated(), ps; indexer = _C33)
+    g = MeanFieldHomogenization.gradient(lam, Laminated(), ps; indexer = _C33)
     @test length(g) == 3
     @test g[1] ≈ _fd(x -> _C33(homogenize(_cell(; hA = x, kn = 1.0e-2), Laminated(), :C)), 0.3) rtol = RTOL_AD
     @test g[2] ≈ _fd(x -> _C33(homogenize(_cell(; μA = x / 2, kn = 1.0e-2), Laminated(), :C)), 1.6) rtol = RTOL_AD

@@ -53,7 +53,7 @@ the core center can travel before the core touches the outer surface, so
 by construction. Values above 1 are geometrically impossible and rejected.
 
 ``\alpha = 0`` is the concentric two-layer sphere, for which
-[`LayeredSphere`](@ref MeanFieldHom.LayeredSpheres.LayeredSphere) gives the
+[`LayeredSphere`](@ref MeanFieldHomogenization.LayeredSpheres.LayeredSphere) gives the
 exact Hervé-Zaoui answer — the reference everything below is checked against.
 The response is transversely isotropic about ``z``, and isotropic at
 ``\alpha = 0``.
@@ -404,7 +404,7 @@ and only the core is left to see.
 ## Using it
 
 ```julia
-using MeanFieldHom
+using MeanFieldHomogenization
 import Ferrite, FerriteGmsh, Gmsh        # or: import Gridap, GridapGmsh
 
 C_agg   = iso_stiffness(70.0 / (3 * (1 - 2 * 0.2)), 70.0 / (2 * (1 + 0.2)))
@@ -423,7 +423,7 @@ homogenize(rve, MoriTanaka(), :C)
 ```
 
 The constituents live **in the geometry object**, core first then shell, as for
-[`LayeredSphere`](@ref MeanFieldHom.LayeredSpheres.LayeredSphere); the `Dict`
+[`LayeredSphere`](@ref MeanFieldHomogenization.LayeredSpheres.LayeredSphere); the `Dict`
 handed to `add_phase!` is a placeholder the kernel ignores. Build one object
 per physics — a pair of `Tens{4,3}` for elasticity, a pair of `Tens{2,3}` for
 transport.
@@ -442,7 +442,7 @@ See [`FEAxiMeshOptions`](@ref) for what each knob does.
 Two finite-element libraries can perform this solve, and the physics is shared
 between them: the Fourier operators, the boundary data, the fixed point of the
 corrected boundary condition and the memoization all live in
-`MeanFieldHom.FiniteElements`. What a backend supplies is a mesh, scalar
+`MeanFieldHomogenization.FiniteElements`. What a backend supplies is a mesh, scalar
 Lagrange spaces, an assembly and a quadrature — nine methods in all.
 
 ```julia
@@ -571,7 +571,7 @@ julia scripts/83_fe_excentered_sphere.jl      # the runnable demonstration
 and the test file that guards all of it:
 
 ```shell
-julia --project=. -e 'using MeanFieldHom, Ferrite, FerriteGmsh, Gmsh, Test;
+julia --project=. -e 'using MeanFieldHomogenization, Ferrite, FerriteGmsh, Gmsh, Test;
                       include("test/FiniteElements/test_axi_excentered_sphere.jl")'
 ```
 
@@ -579,7 +579,7 @@ and, if `Gridap` and `GridapGmsh` are installed in the test environment, the
 cross-backend file:
 
 ```shell
-julia --project=. -e 'using MeanFieldHom, Ferrite, FerriteGmsh, Gmsh,
+julia --project=. -e 'using MeanFieldHomogenization, Ferrite, FerriteGmsh, Gmsh,
                             Gridap, GridapGmsh, Test;
                       include("test/FiniteElements/test_axi_gridap.jl")'
 ```

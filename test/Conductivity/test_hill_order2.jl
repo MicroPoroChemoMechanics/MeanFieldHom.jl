@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
 @testset "Conductivity — order-2 Hill tensor" begin
@@ -38,7 +38,7 @@ _canon2(t) = Matrix(TensND.components_canon(t))
         for axes in ((1.0, 1.0, 0.4), (2.5, 1.0, 1.0), (3.0, 2.0, 1.0))
             e0 = Ellipsoid(axes...)
             e1 = Ellipsoid(axes...; euler_angles = ang)
-            R = _rot(MeanFieldHom.inclusion_basis(e1))
+            R = _rot(MeanFieldHomogenization.inclusion_basis(e1))
             P0, P1 = _canon2(hill_tensor(e0, K)), _canon2(hill_tensor(e1, K))
             @test P1 ≈ R * P0 * transpose(R) atol = 1.0e-12
             # And it really is rotated: a non-spherical shape must *change*.
@@ -49,7 +49,7 @@ _canon2(t) = Matrix(TensND.components_canon(t))
     @testset "cylinder" begin
         c0 = Cylinder(1.0, 0.4)
         c1 = Cylinder(1.0, 0.4; euler_angles = ang)
-        R = _rot(MeanFieldHom.inclusion_basis(c1))
+        R = _rot(MeanFieldHomogenization.inclusion_basis(c1))
         P0, P1 = _canon2(hill_tensor(c0, K)), _canon2(hill_tensor(c1, K))
         @test P1 ≈ R * P0 * transpose(R) atol = 1.0e-12
         @test !isapprox(P1, P0; atol = 1.0e-6)
@@ -61,7 +61,7 @@ _canon2(t) = Matrix(TensND.components_canon(t))
         # affected. Reaching for the private kernel is deliberate — the public
         # entry point dispatches `TensISO` to the analytic branch, so there is no
         # other way to compare the two on the same input.
-        C = MeanFieldHom.Conductivity
+        C = MeanFieldHomogenization.Conductivity
         K = TensISO{3}(1.7)
         for axes in ((1.0, 1.0, 0.4), (3.0, 2.0, 1.0))
             for angles in ((), (0.3, 0.7, 0.2))

@@ -426,7 +426,7 @@ class Extractor:
                     JuliaExpr(self.tr.translate(law)),
                     mode,
                 )
-            self.script.imports.add("MeanFieldHom")
+            self.script.imports.add("MeanFieldHomogenization")
 
         # amount
         if not pd.is_matrix:
@@ -1335,7 +1335,7 @@ class Extractor:
         if flavour == "alv":
             times = kw.get("time_series")
             t = self.tr.translate(times) if times is not None else "times"
-            self.script.imports.add("MeanFieldHom")
+            self.script.imports.add("MeanFieldHomogenization")
             return f"homogenize_alv({rve_expr}, {scheme}, {prop}; times = {t})"
 
         if flavour == "derivative":

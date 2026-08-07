@@ -12,12 +12,12 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Random
 using ForwardDiff
-const MC = MeanFieldHom.Core
+const MC = MeanFieldHomogenization.Core
 
 # ── helpers ─────────────────────────────────────────────────────────────────
 

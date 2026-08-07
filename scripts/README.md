@@ -1,4 +1,4 @@
-# `scripts/` — MeanFieldHom.jl demos & validation
+# `scripts/` — MeanFieldHomogenization.jl demos & validation
 
 Numbered demonstration / validation scripts, grouped in blocks by theme.
 Each is self-contained (`Pkg.activate(joinpath(@__DIR__, ".."))`) and, where
@@ -127,7 +127,7 @@ under `src/NeuralInclusions/models/`. *Training* them is
 carrying `Lux`, `Optimisers` and `Zygote` (weak dependencies).
 
 Scripts 81 to 83 need `Ferrite`, `FerriteGmsh` and `Gmsh` (weak dependencies of
-`MeanFieldHom`). 81 and 82 take a minute or so — they mesh a ball and factorize
+`MeanFieldHomogenization`). 81 and 82 take a minute or so — they mesh a ball and factorize
 a ~10⁵-dof system per case; 83 is two-dimensional and runs in seconds.
 
 All three also run on the second backend if `Gridap` and `GridapGmsh` are added
@@ -189,7 +189,7 @@ Converting a script to the contract, whether or not it ends up promoted:
 - **`Pkg.activate`.** Suffix both the `import Pkg` and `Pkg.activate(...)`
   lines with `#jl` — kept in the standalone script and the generated
   "cleaned script", stripped from the generated markdown/notebook (which
-  run inside the `docs` environment, where `MeanFieldHom` is already
+  run inside the `docs` environment, where `MeanFieldHomogenization` is already
   available via `[sources] path=".."`).
 - **Figures.** End the plotting code with the plot object as a bare,
   unmarked final expression (captured inline by `@example`/notebook

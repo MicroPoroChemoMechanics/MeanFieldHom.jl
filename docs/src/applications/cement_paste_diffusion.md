@@ -24,7 +24,7 @@ diffusivity (`:D`, a 2nd-order tensor). All diffusivities are normalized by the
 bulk-water value ``D_\text{bulk} = 1``.
 
 ```@example diffusion
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots
@@ -559,7 +559,7 @@ values, exactly as the Echoes book renders them with Plotly:
 # `plotly_surface` comes from the shared figure helpers — it emits a `<div>` plus
 # a `<script>` that pulls plotly.js in *through* require.js, which is what
 # Documenter pages need (see scripts/common/docviz.jl for why).
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 
 plotly_surface(logω, logω, Ze; title = "Elastic percolation threshold φ_elas (%)",
     zlabel = "φ_elas (%)", uid = "surf-phi-elas",
@@ -586,4 +586,4 @@ simultaneously load-bearing and diffusive — the prolate gel pores are what kee
     Evaluated with the compiled Echoes library, ``\varphi^{\rm elas}`` and
     ``\varphi^{\rm diff}`` at these points coincide with the values above to the
     third decimal (identical Poisson ratio at the elastic root), confirming that
-    `MeanFieldHom` and Echoes share the same Hill/dual-Hill kernels.
+    `MeanFieldHomogenization` and Echoes share the same Hill/dual-Hill kernels.

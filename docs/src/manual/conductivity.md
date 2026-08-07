@@ -7,7 +7,7 @@ four — the dispatch is on the **order of the property tensor you pass**, not o
 a keyword.
 
 ```julia
-using MeanFieldHom, TensND
+using MeanFieldHomogenization, TensND
 
 C₀ = TensISO{3}(3 * 70.0, 2 * 30.0)   # order 4 → elasticity
 K₀ = TensISO{3}(5.0)                  # order 2 → conduction
@@ -25,7 +25,7 @@ Isotropic, transversely isotropic and fully anisotropic conductivities are
 `TensND` order-2 tensors:
 
 ```julia
-using MeanFieldHom, TensND, LinearAlgebra
+using MeanFieldHomogenization, TensND, LinearAlgebra
 
 K_iso   = TensISO{3}(2.5)                              # isotropic
 K_ti    = TensND.TensTI{2}(1.0, 4.0, (0., 0., 1.))     # transverse, axial, axis
@@ -105,7 +105,7 @@ Composite particles with imperfect interfaces are available in conduction only
 ```julia
 s = LayeredSpheroid(
     (1.0,), (2.0,), (TensISO{3}(1e-6),);            # insulating oblate core
-    interfaces = (MeanFieldHom.SurfaceConductiveInterface(2.0),),
+    interfaces = (MeanFieldHomogenization.SurfaceConductiveInterface(2.0),),
     Nseries = 5,
 )
 

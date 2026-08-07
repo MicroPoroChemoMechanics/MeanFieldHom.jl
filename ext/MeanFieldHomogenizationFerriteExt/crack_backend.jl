@@ -50,7 +50,7 @@ end
 
 # ─── Mesh ────────────────────────────────────────────────────────────────────
 
-function FE.fe_crack_grid(::FE.FerriteBackend, crack::MeanFieldHom.FEEllipticCrack)
+function FE.fe_crack_grid(::FE.FerriteBackend, crack::MeanFieldHomogenization.FEEllipticCrack)
     a, b = Float64(crack.a), Float64(crack.b)
     opts = crack.mesh
     path = joinpath(mktempdir(), "mfh_crack.msh")

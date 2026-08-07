@@ -1,6 +1,6 @@
 # [Elliptic integrals](@id th-elliptic-integrals)
 
-The [`MeanFieldHom.Elliptic`](@ref MeanFieldHom.Elliptic) submodule provides
+The [`MeanFieldHomogenization.Elliptic`](@ref MeanFieldHomogenization.Elliptic) submodule provides
 type-generic Legendre and Carlson integrals that flow end-to-end through
 automatic differentiation (`ForwardDiff.Dual`), arbitrary precision
 (`BigFloat`) and symbolic scalars (`SymPy.Sym`, `Symbolics.Num`).
@@ -111,9 +111,9 @@ subtype.
 !!! note "Why a SymPy weak extension?"
     The AGM unrolls ~60 nested `sqrt(a*b)` operations. On a `SymPy.Sym`
     input this builds a deeply nested symbolic tree that overflows
-    SymPy's pretty-printer. The weak extension `MeanFieldHomSymPyExt`
+    SymPy's pretty-printer. The weak extension `MeanFieldHomogenizationSymPyExt`
     (loaded automatically whenever `SymPy` is loaded alongside
-    `MeanFieldHom`) routes `ell_K`, `ell_E`, `ell_F` on `Sym` arguments
+    `MeanFieldHomogenization`) routes `ell_K`, `ell_E`, `ell_F` on `Sym` arguments
     directly to `sympy.elliptic_{k,e,f}`, returning the native closed
     form instead.
 

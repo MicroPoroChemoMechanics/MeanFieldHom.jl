@@ -23,7 +23,7 @@
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                  #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using SymPy
 using Printf
@@ -176,7 +176,7 @@ println("  § 6  SELF-CONSISTENT — hand-derived equation (never symbolic via A
 println("="^78)                                                                    #jl
 println("""
   The self-consistent scheme is intrinsically a numerical fixed-point
-  iteration in MeanFieldHom (Anderson/Picard, convergence tests, positive-
+  iteration in MeanFieldHomogenization (Anderson/Picard, convergence tests, positive-
   definiteness guards) — none of that can run on a Sym scalar. Instead, the
   self-consistent condition is written by hand and solved with SymPy's
   `solve`.  For two isotropic spherical phases it separates into two SCALAR

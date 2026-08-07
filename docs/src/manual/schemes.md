@@ -1,6 +1,6 @@
 # [Homogenization schemes — user manual](@id man-schemes)
 
-The `MeanFieldHom.Schemes` module provides ten classical mean-field
+The `MeanFieldHomogenization.Schemes` module provides ten classical mean-field
 homogenization schemes plus a [`RVE`](@ref) container holding the
 matrix and inclusion phases with their geometries, properties and
 volume fractions or crack densities.
@@ -15,7 +15,7 @@ cracks and coated spheres, in whatever mix.
 ![Matrix carrying ellipsoids and coated spheres — the morphology an `RVE` with a matrix phase describes (from the Echoes book [echoes](@cite))](../assets/schemes/rve_mori_tanaka.png)
 
 ```julia
-using MeanFieldHom, TensND
+using MeanFieldHomogenization, TensND
 
 rve = RVE(:M)                                            # matrix is named :M
 add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
@@ -116,7 +116,7 @@ Three solver families are available for [`SelfConsistent`](@ref) /
 | :--- | :--- | :--- | :--- |
 | [`AndersonDefault`](@ref) (default) | none | — (damped Picard) | always, and especially near a bifurcation: the positive-definite guard and `select_best` track the physical branch |
 | [`NewtonDefault`](@ref) | none | `ForwardDiff` on the canonical components | a smooth, well-separated fixed point; fails on complex moduli |
-| `NonlinearSolve.jl` algorithm, or [`AutoNonlinear`](@ref) | `MeanFieldHomNonlinearSolveExt` | the SciML algorithm's own | you already depend on SciML and want `TrustRegion`, `LevenbergMarquardt`, … |
+| `NonlinearSolve.jl` algorithm, or [`AutoNonlinear`](@ref) | `MeanFieldHomogenizationNonlinearSolveExt` | the SciML algorithm's own | you already depend on SciML and want `TrustRegion`, `LevenbergMarquardt`, … |
 
 `AutoNonlinear` resolves to a SciML algorithm when the extension is loaded and
 to the built-in Newton otherwise. It is **not** the default: a root-finder is

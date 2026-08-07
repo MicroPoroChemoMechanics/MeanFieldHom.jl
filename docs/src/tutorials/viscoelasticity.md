@@ -21,7 +21,7 @@ before propagates that complex modulus through the homogenization
 algebra — every scheme is `Complex{Float64}`-safe:
 
 ```@example tutvisco
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots
@@ -81,7 +81,7 @@ interaction.
 The frequency-domain view above assumes properties that do not evolve
 with the material's age. For **ageing** viscoelasticity — a material
 whose relaxation spectrum itself changes with time, as in curing cement
-paste — `MeanFieldHom` provides a full time-domain (ALV) pipeline built
+paste — `MeanFieldHomogenization` provides a full time-domain (ALV) pipeline built
 on discretized Volterra operators. A [`ViscoLaw`](@ref) wraps a
 two-argument relaxation kernel `R(t, t')`, and
 [`homogenize_alv`](@ref) takes the place of `homogenize`:

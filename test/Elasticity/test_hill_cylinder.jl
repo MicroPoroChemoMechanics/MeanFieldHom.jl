@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 
@@ -86,9 +86,9 @@ using ForwardDiff
         @test Ellipsoid(Inf, 2.0, 1.0) isa Cylinder{EllipticCylindrical}
         @test Ellipsoid(1.0, 1.0, Inf) isa Cylinder{CircularCylindrical}
         @test Ellipsoid(Inf, 1.5, 1.5) isa Cylinder{CircularCylindrical}
-        @test Ellipsoid(2.0, 1.0, 0.0) isa MeanFieldHom.Cracks.EllipticCrack
-        @test Ellipsoid(1.0, 1.0, 0.0) isa MeanFieldHom.Cracks.EllipticCrack
-        @test Ellipsoid(Inf, 1.0, 0.0) isa MeanFieldHom.Cracks.RibbonCrack
+        @test Ellipsoid(2.0, 1.0, 0.0) isa MeanFieldHomogenization.Cracks.EllipticCrack
+        @test Ellipsoid(1.0, 1.0, 0.0) isa MeanFieldHomogenization.Cracks.EllipticCrack
+        @test Ellipsoid(Inf, 1.0, 0.0) isa MeanFieldHomogenization.Cracks.RibbonCrack
         @test_throws ArgumentError Ellipsoid(Inf, Inf, 1.0)
         @test_throws ArgumentError Ellipsoid(2.0, 0.0, 0.0)
         @test_throws ArgumentError Ellipsoid(0.0, 0.0, 0.0)

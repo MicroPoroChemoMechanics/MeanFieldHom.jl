@@ -43,7 +43,7 @@ normalized so that this dependence is explicit.
 Theory: [Layered spheroid](../../theory/layered_spheroid.md).
 
 ````@example layered_spheroid_hc
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using Plots
@@ -72,7 +72,7 @@ function _particle(ϖ, β; ρ_t = 1.0)
     ρ_a = ϖ * ρ_t
     return LayeredSpheroid(
         (ρ_a,), (ρ_t,), (KC,);
-        interfaces = (MeanFieldHom.SurfaceConductiveInterface(β),),
+        interfaces = (MeanFieldHomogenization.SurfaceConductiveInterface(β),),
         Nseries = NSERIES,
     )
 end

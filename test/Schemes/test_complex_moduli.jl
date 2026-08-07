@@ -18,7 +18,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
 const ATOL_FREQ = 1.0e-10

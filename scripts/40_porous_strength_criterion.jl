@@ -22,7 +22,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using ForwardDiff
 using TensND
 using Printf
@@ -50,8 +50,8 @@ function _C_hom_iso_2vec(μs::Real, ks, φ, scheme)
         fraction = convert(T, φ), symmetrize = :iso
     )
     C = homogenize(rve, scheme, :C)
-    C_iso = MeanFieldHom.Schemes._apply_symmetrize(
-        C, MeanFieldHom.Schemes.IsoSymmetrize()
+    C_iso = MeanFieldHomogenization.Schemes._apply_symmetrize(
+        C, MeanFieldHomogenization.Schemes.IsoSymmetrize()
     )
     α, β = TensND.get_data(C_iso)
     return [α, β]

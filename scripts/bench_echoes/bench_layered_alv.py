@@ -1,7 +1,7 @@
 """
 bench_layered_alv.py — minimal cross-check of per-layer ALV concentration
 tensors between the reference ECHOES Python implementation and the Julia
-`MeanFieldHom.jl` re-implementation.
+`MeanFieldHomogenization.jl` re-implementation.
 
 We pin a small, fully-explicit setup (Maxwell matrix + 2 elastic layers
 + 4 time points) so the resulting (6n x 6n) Volterra matrices fit in

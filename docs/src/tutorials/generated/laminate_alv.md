@@ -16,7 +16,7 @@ it: a stack alternating a creeping binder with an elastic reinforcement
 relaxes very differently along the layers and across them.
 
 ````@example laminate_alv
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using LinearAlgebra

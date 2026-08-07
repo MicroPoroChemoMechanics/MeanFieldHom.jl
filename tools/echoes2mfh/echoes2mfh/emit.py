@@ -45,7 +45,7 @@ import Pkg
 let d = @__DIR__
     while true
         pt = joinpath(d, "Project.toml")
-        if isfile(pt) && occursin("MeanFieldHom", read(pt, String))
+        if isfile(pt) && occursin("MeanFieldHomogenization", read(pt, String))
             Pkg.activate(d; io = devnull)
             break
         end
@@ -213,7 +213,7 @@ class Emitter:
         for line in _ACTIVATE.strip("\n").splitlines():
             self._w(f"{line}{mark}")
         self._blank()
-        order = ["MeanFieldHom", "TensND", "LinearAlgebra", "Printf", "Plots"]
+        order = ["MeanFieldHomogenization", "TensND", "LinearAlgebra", "Printf", "Plots"]
         mods = [m for m in order if m in self.s.imports]
         for m in self.s.imports:
             if m not in mods:
@@ -383,7 +383,7 @@ class Emitter:
         self._w("mfh_label(x::AbstractString) = String(x)")
         self._w("mfh_label(x::Symbol) = String(x)")
         self._w(
-            "mfh_label(s::MeanFieldHom.HomogenizationScheme) = "
+            "mfh_label(s::MeanFieldHomogenization.HomogenizationScheme) = "
             "string(nameof(typeof(s)))"
         )
         self._blank()

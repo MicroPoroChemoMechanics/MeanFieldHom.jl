@@ -1,7 +1,7 @@
 # # [Multiscale chaining: explicit and declarative, side by side](@id tut-laminate-multiscale)
 #
 # A multiscale model chains homogenizations: what one scale computes becomes a
-# phase property at the next. `MeanFieldHom` supports two ways of writing that
+# phase property at the next. `MeanFieldHomogenization` supports two ways of writing that
 # chain, and they compute the same thing to the last bit.
 #
 # - **explicit** — one call per scale, in order; the author hands each result
@@ -20,7 +20,7 @@
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using LinearAlgebra

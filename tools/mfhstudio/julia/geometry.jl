@@ -12,10 +12,10 @@
 #  returns plain arrays, so real JSON is built here instead.
 # =============================================================================
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using LinearAlgebra
 
-const DOCVIZ = joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl")
+const DOCVIZ = joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl")
 isfile(DOCVIZ) || error("mfhstudio: cannot find $DOCVIZ")
 include(DOCVIZ)
 
@@ -97,9 +97,9 @@ end
 # It used to be called here inside a `try`, so every rotated inclusion was drawn
 # unrotated — the picture disagreed with the script and nothing said so.
 _rot(b) = Matrix{Float64}(I, 3, 3)  # canonical fallback
-function _rot(ell::MeanFieldHom.Ellipsoid)
+function _rot(ell::MeanFieldHomogenization.Ellipsoid)
     try
-        return Matrix{Float64}(MeanFieldHom.TensND.vecbasis(ell.basis))
+        return Matrix{Float64}(MeanFieldHomogenization.TensND.vecbasis(ell.basis))
     catch
         return Matrix{Float64}(I, 3, 3)
     end
@@ -110,7 +110,7 @@ end
 # returns the canonical one whatever the axis. Build a frame whose third
 # vector IS that axis; the transverse plane of a body of revolution is
 # isotropic, so any orthonormal complement draws the same surface.
-function _rot(ls::MeanFieldHom.LayeredSpheroid)
+function _rot(ls::MeanFieldHomogenization.LayeredSpheroid)
     e3 = Float64.(collect(ls.axis))
     nrm = norm(e3)
     nrm ≈ 0 && return Matrix{Float64}(I, 3, 3)
@@ -128,7 +128,7 @@ end
 
 traces(x; kw...) = Dict{String, Any}[]
 
-function traces(ell::MeanFieldHom.Ellipsoid{3}; guides::Bool = true, kw...)
+function traces(ell::MeanFieldHomogenization.Ellipsoid{3}; guides::Bool = true, kw...)
     a, b, c = Float64.(ell.semi_axes)
     R = _rot(ell)
     X, Y, Z = ellipsoid_surface(a, b, c; R = R)
@@ -137,10 +137,10 @@ function traces(ell::MeanFieldHom.Ellipsoid{3}; guides::Bool = true, kw...)
     return out
 end
 
-function traces(cyl::MeanFieldHom.Cylinder; guides::Bool = true, length_shown = 6.0, kw...)
+function traces(cyl::MeanFieldHomogenization.Cylinder; guides::Bool = true, length_shown = 6.0, kw...)
     b, c = Float64.(cyl.semi_axes)
     R = try
-        Matrix{Float64}(MeanFieldHom.TensND.vecbasis(cyl.basis))
+        Matrix{Float64}(MeanFieldHomogenization.TensND.vecbasis(cyl.basis))
     catch
         Matrix{Float64}(I, 3, 3)
     end
@@ -162,18 +162,18 @@ function _crack_traces(a, b, R; guides::Bool = true, normal::Bool = true, kw...)
     return out
 end
 
-function traces(cr::MeanFieldHom.EllipticCrack; kw...)
+function traces(cr::MeanFieldHomogenization.EllipticCrack; kw...)
     R = try
-        Matrix{Float64}(MeanFieldHom.TensND.vecbasis(cr.basis))
+        Matrix{Float64}(MeanFieldHomogenization.TensND.vecbasis(cr.basis))
     catch
         Matrix{Float64}(I, 3, 3)
     end
     return _crack_traces(Float64(cr.a), Float64(cr.b), R; kw...)
 end
 
-function traces(cr::MeanFieldHom.RibbonCrack; length_shown = 6.0, kw...)
+function traces(cr::MeanFieldHomogenization.RibbonCrack; length_shown = 6.0, kw...)
     R = try
-        Matrix{Float64}(MeanFieldHom.TensND.vecbasis(cr.basis))
+        Matrix{Float64}(MeanFieldHomogenization.TensND.vecbasis(cr.basis))
     catch
         Matrix{Float64}(I, 3, 3)
     end
@@ -186,7 +186,7 @@ end
 Concentric shells. The cut-away view is what makes a layered inclusion
 readable at all -- without it only the outermost shell is visible.
 """
-function traces(ls::MeanFieldHom.LayeredSphere; cutaway::Bool = true, guides::Bool = false, kw...)
+function traces(ls::MeanFieldHomogenization.LayeredSphere; cutaway::Bool = true, guides::Bool = false, kw...)
     radii = Float64.(collect(ls.radii))
     n = length(radii)
     colors = _layer_colors(n)
@@ -209,16 +209,16 @@ function traces(ls::MeanFieldHom.LayeredSphere; cutaway::Bool = true, guides::Bo
     return out
 end
 
-function traces(ls::MeanFieldHom.LayeredSpheroid; cutaway::Bool = true, guides::Bool = false, kw...)
+function traces(ls::MeanFieldHomogenization.LayeredSpheroid; cutaway::Bool = true, guides::Bool = false, kw...)
     out = Dict{String, Any}[]
-    semi = Float64.(collect(MeanFieldHom.outer_semiaxes(ls)))
-    n = MeanFieldHom.layer_count(ls)
+    semi = Float64.(collect(MeanFieldHomogenization.outer_semiaxes(ls)))
+    n = MeanFieldHomogenization.layer_count(ls)
     colors = _layer_colors(n)
     ulim = cutaway ? 1.0π : 2.0π
     R = _rot(ls)
     for i in 1:n
         c, aeq = try
-            Float64.(MeanFieldHom.layer_semiaxes(ls, i))
+            Float64.(MeanFieldHomogenization.layer_semiaxes(ls, i))
         catch
             (semi[1] * i / n, semi[end] * i / n)
         end

@@ -1,7 +1,7 @@
 """
-    MeanFieldHom.Core
+    MeanFieldHomogenization.Core
 
-Shared abstractions and numerical kernels used throughout `MeanFieldHom`.
+Shared abstractions and numerical kernels used throughout `MeanFieldHomogenization`.
 
 Contents
 --------

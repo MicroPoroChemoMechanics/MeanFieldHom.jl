@@ -1,6 +1,6 @@
 # [Theory — reading path](@id th-index)
 
-`MeanFieldHom` computes effective properties of heterogeneous materials by
+`MeanFieldHomogenization` computes effective properties of heterogeneous materials by
 mean-field homogenization. This section states the theory it implements, in the
 order in which it is built. Every page is self-contained on notation
 ([Notation and conventions](notation.md)) and every formula is either cited or
@@ -50,12 +50,12 @@ separate sections, because the algebra is identical:
 One asymmetry is worth knowing in advance: for an **arbitrarily anisotropic**
 matrix the order-2 Hill tensor has a *closed form* (via a square-root
 transformation), whereas the order-4 one requires numerical cubature. This is
-why the conductivity paths in `MeanFieldHom` are analytical far more often than
+why the conductivity paths in `MeanFieldHomogenization` are analytical far more often than
 the elastic ones.
 
 ## Relation to the Echoes manual
 
-`MeanFieldHom` is a pure-Julia reimplementation of the Eshelby/Hill machinery of
+`MeanFieldHomogenization` is a pure-Julia reimplementation of the Eshelby/Hill machinery of
 the [Echoes manual](https://jfbarthelemy.github.io/echoes/), and the
 Hill-tensor pages follow its appendix closely — same expressions, same
 conventions, same bibliography. Two families of difference are flagged
@@ -66,7 +66,7 @@ explicitly wherever they occur:
   differentiation and symbolic number types throughout;
 - **conventions that genuinely differ**: the crack opening displacement tensor
   ``\boldsymbol{B}`` and the compliance ``\mathbb{H}`` are the notable case.
-  `MeanFieldHom` computes ``\boldsymbol{B}`` first and derives ``\mathbb{H}``
+  `MeanFieldHomogenization` computes ``\boldsymbol{B}`` first and derives ``\mathbb{H}``
   from it, where Echoes computes ``\mathbb{H}`` directly and never forms
   ``\boldsymbol{B}``. The competing normalizations are named and compared in
   [Crack opening displacement](cod_tensors.md).

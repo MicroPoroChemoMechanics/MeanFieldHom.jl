@@ -23,8 +23,8 @@ page; the confocal-harmonic series behind all of it is on
     scalar Laplace equation.
 
 ````@example layered_spheroid_effective
-using MeanFieldHom
-using MeanFieldHom.LayeredSpheroids: spheroid_ba_ratios, coupling_matrices
+using MeanFieldHomogenization
+using MeanFieldHomogenization.LayeredSpheroids: spheroid_ba_ratios, coupling_matrices
 using TensND
 using LinearAlgebra
 using Printf
@@ -158,7 +158,7 @@ const EC_KMAT = TensISO{3}(EC_KM)
 
 _ec_particle(ϖ, ρ; N = EC_N) = LayeredSpheroid(
     (ϖ,), (1.0,), (EC_KINC,);
-    interfaces = (MeanFieldHom.KapitzaInterface(ρ),), Nseries = N, axis = EC_AXIS,
+    interfaces = (MeanFieldHomogenization.KapitzaInterface(ρ),), Nseries = N, axis = EC_AXIS,
 )
 
 function _ec_series(ϖ, ρ, scheme)
@@ -247,7 +247,7 @@ function _eq_keq(ϖ, ρ)
     ϖ ≈ 1 && return (NaN, NaN)
     p = LayeredSpheroid(
         (EQ_A,), (EQ_A / ϖ,), (EQ_KINC,);
-        interfaces = (MeanFieldHom.KapitzaInterface(ρ),), Nseries = 6,
+        interfaces = (MeanFieldHomogenization.KapitzaInterface(ρ),), Nseries = 6,
     )
     A = gradient_gradient_loc(p, EQ_KINC, EQ_KM)
     B = flux_gradient_loc(p, EQ_KINC, EQ_KM)
@@ -287,7 +287,7 @@ const CV_NMAX = 15
 function _cv_sequence(ϖ)
     mk(N) = LayeredSpheroid(
         (ϖ,), (1.0,), (CV_KCORE,);
-        interfaces = (MeanFieldHom.SurfaceConductiveInterface(1.0),),
+        interfaces = (MeanFieldHomogenization.SurfaceConductiveInterface(1.0),),
         Nseries = N, axis = (1.0, 0.0, 0.0),
     )
     return [spheroid_ba_ratios(mk(N), CV_KM) for N in 2:CV_NMAX]
@@ -313,7 +313,7 @@ println()
 The original algorithm expands Legendre products into monomials, whose
 coefficients grow like ``10^{0.8n}`` while the result is ``O(1/n)`` — so it
 needs about ``0.8(2\mathcal{N}-1)`` decimal digits, past double precision from
-``\mathcal{N} \approx 12``. `MeanFieldHom` integrates the paper's own integral
+``\mathcal{N} \approx 12``. `MeanFieldHomogenization` integrates the paper's own integral
 definitions by Gauss quadrature instead and never forms that ill-conditioned
 sum. Both must still agree, since they compute the same integrals two ways:
 

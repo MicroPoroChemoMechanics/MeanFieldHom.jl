@@ -107,7 +107,7 @@ A, B = fe_axi_localization(geometry(x), C0)
 ![Learning curves](../../assets/nn/excentered_training_curve.png)
 
 ````@example neural_excentered_sphere
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -116,7 +116,7 @@ using Plots
 gr()
 default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
 
-const NI = MeanFieldHom.NeuralInclusions
+const NI = MeanFieldHomogenization.NeuralInclusions
 ````
 
 ## §3 Using it
@@ -189,7 +189,7 @@ function rve_of(incl, f)
     return r
 end
 
-iso(C) = MeanFieldHom.Core.isotropify(C)
+iso(C) = MeanFieldHomogenization.Core.isotropify(C)
 
 println("\n  Recycled-aggregate mortar, f = 0.4, w = 0.5, E₁/E₀ = 3.5, ν = 0.2")
 println("  Mori-Tanaka, effective Young modulus E_eff/E₀\n")
@@ -234,7 +234,7 @@ println("  the finite-element figure it replaces is in the table of §4.")
 
 The surrogate is smooth in its inputs, so `ForwardDiff` reaches the
 **eccentricity** — a morphology parameter — straight through the scheme.
-`MeanFieldHom.FiniteElements` refuses the same request outright, and rightly:
+`MeanFieldHomogenization.FiniteElements` refuses the same request outright, and rightly:
 its solve would silently return zero.
 
 ````@example neural_excentered_sphere

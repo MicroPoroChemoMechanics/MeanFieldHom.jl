@@ -25,7 +25,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using ForwardDiff
@@ -64,7 +64,7 @@ end
     )
     C_eff = homogenize(rve, SelfConsistent(; abstol = 1.0e-12, maxiters = 200))
     # Verify : one more SC step on C_eff itself should return ≈ C_eff
-    step_once = MeanFieldHom.Schemes._sc_step(rve, C_eff, :C)
+    step_once = MeanFieldHomogenization.Schemes._sc_step(rve, C_eff, :C)
     @test maximum(abs.(get_array(step_once) .- get_array(C_eff))) < 1.0e-9
 end
 
@@ -234,7 +234,7 @@ end
     end
 
     # The branch this test exists to cover.
-    @test MeanFieldHom.Schemes._asc_use_stiffness(build(:iso), :C) == false
+    @test MeanFieldHomogenization.Schemes._asc_use_stiffness(build(:iso), :C) == false
 
     tol = (abstol = 1.0e-13, maxiters = 600)
     C_asc = homogenize(build(:iso), AsymmetricSelfConsistent(; tol...), :C)
@@ -281,9 +281,9 @@ end
         tot = zero(C)
         for name in keys(rve.phases)
             f = name == rve.matrix_name ?
-                MeanFieldHom.Schemes.matrix_volume_fraction(rve) :
-                MeanFieldHom.Schemes.amount_value(rve.amounts[name])
-            tot += f * MeanFieldHom.Schemes._phase_dilute_concentration(rve, name, :C, C)
+                MeanFieldHomogenization.Schemes.matrix_volume_fraction(rve) :
+                MeanFieldHomogenization.Schemes.amount_value(rve.amounts[name])
+            tot += f * MeanFieldHomogenization.Schemes._phase_dilute_concentration(rve, name, :C, C)
         end
         return tot
     end

@@ -7,7 +7,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 
@@ -194,7 +194,7 @@ end
     vs = [0.3, 90.0, 12.0]
 
     # Internal helper used by gradient/jacobian
-    rve2 = MeanFieldHom.Schemes._set_many(rve, ps, vs)
+    rve2 = MeanFieldHomogenization.Schemes._set_many(rve, ps, vs)
     @test get_param(rve2, ps[1]) ≈ 0.3
     @test get_param(rve2, ps[2]) ≈ 90.0
     @test get_param(rve2, ps[3]) ≈ 12.0

@@ -1,6 +1,6 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, "..", ".."); io = devnull)
-using MeanFieldHom, LinearAlgebra, Printf
+using MeanFieldHomogenization, LinearAlgebra, Printf
 
 # Maxwell matrix M_κ and M_μ with different decay times.
 T_grid = [0.0, 0.5, 1.0, 1.5, 2.0]   # original bench_layered_alv times
@@ -21,7 +21,7 @@ num = 9 .* Matrix(I, n, n) .+ 4 .* M_μ_0
 S_b = 3 .* M_κ_0 .+ 4 .* M_μ_0
 
 # T_right = num · S_b^{-1} (volterra_divide).
-T_right = MeanFieldHom.Viscoelasticity.volterra_divide(num, S_b; block_size = 1)
+T_right = MeanFieldHomogenization.Viscoelasticity.volterra_divide(num, S_b; block_size = 1)
 # T_left = S_b^{-1} · num.
 T_left = volterra_inverse(S_b; block_size = 1) * num
 # Check.

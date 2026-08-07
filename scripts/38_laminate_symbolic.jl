@@ -26,13 +26,13 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using StaticArrays
 using SymPy
 using Printf
 
-const MFHC = MeanFieldHom.Core
+const MFHC = MeanFieldHomogenization.Core
 
 println("="^78)
 println("Periodic multilayer — symbolic derivation of the closed forms")

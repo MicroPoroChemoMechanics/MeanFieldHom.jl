@@ -1,8 +1,8 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
-import MeanFieldHom.Viscoelasticity: _is_ti_block, _is_iso_block, _ti_pair,
+import MeanFieldHomogenization.Viscoelasticity: _is_ti_block, _is_iso_block, _ti_pair,
     _ti_blocks, _ti_inv, _ti_prod, _ti_left_divide, _ti_identity, _iso_to_ti
 
 # =============================================================================

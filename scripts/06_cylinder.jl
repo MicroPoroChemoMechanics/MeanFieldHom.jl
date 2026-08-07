@@ -3,7 +3,7 @@
 #
 #  Hill polarization tensor for infinite cylindrical inclusions.
 #
-#  Run from the MeanFieldHom.jl root:
+#  Run from the MeanFieldHomogenization.jl root:
 #    julia --project=. scripts/06_cylinder.jl
 #
 #  Sections:
@@ -17,7 +17,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf

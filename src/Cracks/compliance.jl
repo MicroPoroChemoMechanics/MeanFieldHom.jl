@@ -191,7 +191,7 @@ three-argument seams
   is ``\\varepsilon^{3\\mathrm d} = N a b^{2}``;
 - `π` for a ribbon crack, whose density is ``\\varepsilon^{2\\mathrm d} = N b^{2}``.
 
-Dispatched on [`shape_trait`](@ref MeanFieldHom.Core.shape_trait), so a
+Dispatched on [`shape_trait`](@ref MeanFieldHomogenization.Core.shape_trait), so a
 user-defined crack inherits the right prefactor for free.  A flat morphology
 with a different density convention overrides this single method rather than
 the four `delta_*` ones.

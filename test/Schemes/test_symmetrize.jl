@@ -5,10 +5,10 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
-import MeanFieldHom.Schemes: _apply_symmetrize, _project_matrix
+import MeanFieldHomogenization.Schemes: _apply_symmetrize, _project_matrix
 import ForwardDiff as FD
 
 @testset "symmetrize" begin

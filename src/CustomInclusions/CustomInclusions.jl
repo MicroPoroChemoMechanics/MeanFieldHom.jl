@@ -1,8 +1,8 @@
 """
-    MeanFieldHom.CustomInclusions
+    MeanFieldHomogenization.CustomInclusions
 
 The **user-defined inclusion contract**: everything needed to plug a
-morphology `MeanFieldHom` knows nothing about into every homogenization
+morphology `MeanFieldHomogenization` knows nothing about into every homogenization
 scheme, in elasticity as in transport.
 
 Two exports:

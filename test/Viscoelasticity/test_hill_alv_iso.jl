@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -11,7 +11,7 @@ using LinearAlgebra
 
 # Convert a TensND.AbstractTens{4,3} to a 6×6 Mandel matrix using the
 # package-internal helper.
-const _to_mandel = MeanFieldHom.Viscoelasticity._tens_to_mandel66
+const _to_mandel = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66
 
 @testset "hill_kernel — sphere, elastic limit (Heaviside)" begin
     ell = Spheroid(1.0)
@@ -24,7 +24,7 @@ const _to_mandel = MeanFieldHom.Viscoelasticity._tens_to_mandel66
     @test size(P) == (6n, 6n)
 
     # Compare with analytical elastic Hill.
-    P_elas = MeanFieldHom.Elasticity.hill_tensor(Ellipsoid(1.0, 1.0, 1.0), C0)
+    P_elas = MeanFieldHomogenization.Elasticity.hill_tensor(Ellipsoid(1.0, 1.0, 1.0), C0)
     P_elas_M = _to_mandel(P_elas)
 
     # Every diagonal block must equal P_elas, off-diag must be 0.
@@ -47,7 +47,7 @@ end
     P = hill_kernel(ell, law, times)
 
     # Analytical elastic Hill in iso matrix for the same ellipsoid.
-    P_elas = MeanFieldHom.Elasticity.hill_tensor(
+    P_elas = MeanFieldHomogenization.Elasticity.hill_tensor(
         Ellipsoid(1.0, 1.0, 0.3), C0
     )
     P_elas_M = _to_mandel(P_elas)
@@ -78,7 +78,7 @@ end
     # instantaneous moduli (k, μ), since at t = t' = 0 the relaxation has
     # just been applied and the Maxwell kernel returns C_inst.
     C_inst = TensISO{3}(30.0, 8.0)
-    P_elas = MeanFieldHom.Elasticity.hill_tensor(Ellipsoid(1.0, 1.0, 1.0), C_inst)
+    P_elas = MeanFieldHomogenization.Elasticity.hill_tensor(Ellipsoid(1.0, 1.0, 1.0), C_inst)
     P_elas_M = _to_mandel(P_elas)
     @test maximum(abs.(P[1:6, 1:6] - P_elas_M)) ≤ 1.0e-10
 end

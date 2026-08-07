@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -64,11 +64,11 @@ end
     law_M = ViscoLaw(R_M, :relaxation)
 
     crack = PennyCrack(1.0)
-    cod0 = MeanFieldHom.Viscoelasticity.cod_kernel_alv(crack, law_M, times)
+    cod0 = MeanFieldHomogenization.Viscoelasticity.cod_kernel_alv(crack, law_M, times)
 
     # Rn = Rt = 0 → recovers traction-free
     law_zero = ViscoLaw((t, tp) -> 0.0, :relaxation)
-    cod_zero = MeanFieldHom.Viscoelasticity.cod_kernel_alv(
+    cod_zero = MeanFieldHomogenization.Viscoelasticity.cod_kernel_alv(
         crack, law_M, times;
         Rn = law_zero, Rt = law_zero
     )
@@ -77,7 +77,7 @@ end
 
     # Rn, Rt → ∞ → B_eff → 0
     law_huge = ViscoLaw((t, tp) -> 1.0e10, :relaxation)
-    cod_huge = MeanFieldHom.Viscoelasticity.cod_kernel_alv(
+    cod_huge = MeanFieldHomogenization.Viscoelasticity.cod_kernel_alv(
         crack, law_M, times;
         Rn = law_huge, Rt = law_huge
     )
@@ -86,7 +86,7 @@ end
 
     # Intermediate stiffness: 0 < B_n_eff < B_n_TF (componentwise on the diag)
     law_K = ViscoLaw((t, tp) -> 1.0, :relaxation)
-    cod_K = MeanFieldHom.Viscoelasticity.cod_kernel_alv(
+    cod_K = MeanFieldHomogenization.Viscoelasticity.cod_kernel_alv(
         crack, law_M, times;
         Rn = law_K, Rt = law_K
     )
@@ -95,11 +95,11 @@ end
     end
 
     # Algebraic identity check: (b·K + B^{-1})^{-vol} ≈ B ∘ (𝟙 + b·K·B)^{-vol}
-    K_M = MeanFieldHom.Viscoelasticity._trapezoidal_relaxation_scalar(law_K, times)
+    K_M = MeanFieldHomogenization.Viscoelasticity._trapezoidal_relaxation_scalar(law_K, times)
     B_n = cod0.B_n
     n = size(B_n, 1)
     Iₙ = Matrix{Float64}(LinearAlgebra.I, n, n)
-    b = MeanFieldHom.Cracks.semi_minor(crack)   # = 1.0 for penny
+    b = MeanFieldHomogenization.Cracks.semi_minor(crack)   # = 1.0 for penny
     # Form 1: (b·K + B^{-1})^{-vol}
     B_inv = volterra_inverse(B_n; block_size = 1)
     sum_form = b .* K_M .+ B_inv

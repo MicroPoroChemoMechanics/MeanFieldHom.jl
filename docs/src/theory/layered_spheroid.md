@@ -94,7 +94,7 @@ axisymmetric.
 Three interface types are available. Writing ``[\![\cdot]\!]`` for the jump
 across the interface and ``q_n`` for the normal flux:
 
-| type | condition | `MeanFieldHom` | effect on degrees |
+| type | condition | `MeanFieldHomogenization` | effect on degrees |
 | :--- | :-------- | :------------- | :---------------- |
 | **perfect** | ``[\![T]\!]=0``, ``[\![q_n]\!]=0`` | [`PerfectInterface`](@ref) | diagonal |
 | **LC** (low-conducting) | ``[\![T]\!] = \rho\,q_n``, flux continuous | [`KapitzaInterface`](@ref)`(ρ)` | couples all degrees |
@@ -124,7 +124,7 @@ and similarly ``K_{ij}``, ``L_{ij}`` for the transverse HC case. The LC
 interface couples through ``I_{ij}`` (axial) or ``J_{ij}`` (transverse); the HC
 interface through ``J_{ij}`` (axial) or
 ``K_{ij} + L_{ij}/(q^{2}-1)`` (transverse). They are assembled by
-[`coupling_matrices`](@ref MeanFieldHom.LayeredSpheroids.coupling_matrices).
+[`coupling_matrices`](@ref MeanFieldHomogenization.LayeredSpheroids.coupling_matrices).
 
 ## Transfer matrices
 
@@ -156,11 +156,11 @@ Accumulating ``S_\ell = R_\ell\cdots R_1``, imposing regularity at the core
 (``B_1 = 0``) and the unit remote field
 (``A_{N+1} = (\pm 1, 0, \dots, 0)``, ``+`` axial, ``-`` transverse) determines
 every layer's coefficients. This is what
-[`spheroid_state_sequence`](@ref MeanFieldHom.LayeredSpheroids.spheroid_state_sequence)
+[`spheroid_state_sequence`](@ref MeanFieldHomogenization.LayeredSpheroids.spheroid_state_sequence)
 computes, and what
-[`local_temperature`](@ref MeanFieldHom.LayeredSpheroids.local_temperature),
-[`local_gradient`](@ref MeanFieldHom.LayeredSpheroids.local_gradient) and
-[`local_flux`](@ref MeanFieldHom.LayeredSpheroids.local_flux) reconstruct
+[`local_temperature`](@ref MeanFieldHomogenization.LayeredSpheroids.local_temperature),
+[`local_gradient`](@ref MeanFieldHomogenization.LayeredSpheroids.local_gradient) and
+[`local_flux`](@ref MeanFieldHomogenization.LayeredSpheroids.local_flux) reconstruct
 pointwise from.
 
 ## Volume-averaged concentration tensors
@@ -275,7 +275,7 @@ thumb — a working precision of about ``0.8\,(2\mathcal{N}-1)`` decimal digits 
 is exactly this cancellation bound, and is why the reference implementation
 needs `mpmath` arbitrary precision once ``\mathcal{N}\gtrsim 10``.
 
-`MeanFieldHom` integrates the definitions above directly by Gauss quadrature
+`MeanFieldHomogenization` integrates the definitions above directly by Gauss quadrature
 (`QuadGK`), evaluating ``P_i(x)``, ``P_i^{1}(x)`` and their derivatives through
 the **stable three-term recurrence**, never through the monomial expansion:
 

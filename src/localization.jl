@@ -63,7 +63,7 @@ strain `ε∞`:
 A_εε  = [𝕀 + ℙ(incl, C₀) : (C₁ - C₀)]⁻¹.
 ```
 
-Keyword arguments are forwarded to [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor).
+Keyword arguments are forwarded to [`hill_tensor`](@ref MeanFieldHomogenization.Elasticity.hill_tensor).
 
 See also [`stress_strain_loc`](@ref), [`strain_stress_loc`](@ref),
 [`stress_stress_loc`](@ref).
@@ -88,7 +88,7 @@ Dilute **stress-strain localization tensor** `A_σε`: `σ_inc = A_σε : ε∞`
 !!! warning "The generic method assumes a homogeneous inclusion"
     It evaluates `A_σε = C₁ : A_εε`, which holds only when the inclusion
     carries a **single uniform stiffness**. An internally heterogeneous
-    inclusion — one whose [`is_homogeneous_inclusion`](@ref MeanFieldHom.Core.is_homogeneous_inclusion) is `false` — has
+    inclusion — one whose [`is_homogeneous_inclusion`](@ref MeanFieldHomogenization.Core.is_homogeneous_inclusion) is `false` — has
     no such `C₁`: its average stress has to be assembled from the local
     fields, and the type **must** provide its own method (as `LayeredSphere`
     does). [`stress_stress_loc`](@ref) is expressed in terms of this function,
@@ -155,7 +155,7 @@ A_∇∇   = [𝟙 + ℙ(incl, K₀) · (K₁ - K₀)]⁻¹.
 ```
 
 Conductivity analog of [`strain_strain_loc`](@ref).  Keyword arguments
-are forwarded to [`hill_tensor`](@ref MeanFieldHom.Elasticity.hill_tensor).
+are forwarded to [`hill_tensor`](@ref MeanFieldHomogenization.Elasticity.hill_tensor).
 """
 function gradient_gradient_loc(
         incl::AbstractInclusion,

@@ -8,7 +8,7 @@ which lenses exist — are user-interface concerns. They live here, in Python,
 and are available immediately.
 
 *Introspected facts* — the list of schemes and the solver options each one
-actually reads — are properties of the installed MeanFieldHom and can only come
+actually reads — are properties of the installed MeanFieldHomogenization and can only come
 from the sidecar. They are merged in when it is ready.
 
 The fallback scheme list below exists so the forms render before Julia has
@@ -173,7 +173,7 @@ PROPERTIES = [
     #
     # A phase carries one of these under the same key as a stiffness would be;
     # `homogenize_alv` finds it there. The signatures below are the ones
-    # MeanFieldHom actually declares — `maxwell_iso` takes two relaxation
+    # MeanFieldHomogenization actually declares — `maxwell_iso` takes two relaxation
     # times, not one, and `kelvin_iso` takes whole branch vectors.
     {
         "name": "maxwell_iso", "label": "Viscoelastic — Maxwell (relaxation)",
@@ -336,7 +336,7 @@ VISCO = [
 ]
 
 #: Used until the sidecar answers. Replaced wholesale, never merged, so a
-#: scheme MeanFieldHom drops does not linger in the interface.
+#: scheme MeanFieldHomogenization drops does not linger in the interface.
 FALLBACK_SCHEMES = [
     {"name": n, "options": [], "singleton": True}
     for n in (

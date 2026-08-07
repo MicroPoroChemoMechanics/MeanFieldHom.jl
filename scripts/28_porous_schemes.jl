@@ -1,7 +1,7 @@
 # =============================================================================
 #  28_porous_schemes.jl
 #
-#  Cross-validation of MeanFieldHom against the canonical isotropic porous
+#  Cross-validation of MeanFieldHomogenization against the canonical isotropic porous
 #  benchmark : a single solid phase (k_s, μ_s) with spherical pores (k≈0,
 #  μ≈0) varying in volume fraction φ ∈ [0, 1]. Every implemented scheme
 #  is plotted side-by-side, mirroring the reference benchmark figure for
@@ -14,7 +14,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using Plots
@@ -133,7 +133,7 @@ end
 
 p_full = plot(
     p_k, p_μ; layout = (1, 2), size = (1400, 600),
-    plot_title = "Porous benchmark (spheres) — MeanFieldHom v0.4"
+    plot_title = "Porous benchmark (spheres) — MeanFieldHomogenization v0.4"
 )
 
 figdir = joinpath(@__DIR__, "figures")
@@ -177,7 +177,7 @@ end
 
 p_full2 = plot(
     p_k2, p_μ2; layout = (1, 2), size = (1400, 600),
-    plot_title = "Porous benchmark (oblate + iso-symmetrize) — MeanFieldHom v0.4"
+    plot_title = "Porous benchmark (oblate + iso-symmetrize) — MeanFieldHomogenization v0.4"
 )
 figpath2 = joinpath(figdir, "28_porous_schemes_oblate.png")
 savefig(p_full2, figpath2)

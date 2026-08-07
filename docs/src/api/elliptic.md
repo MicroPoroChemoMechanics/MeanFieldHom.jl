@@ -1,16 +1,16 @@
 # [Elliptic integrals — API](@id api-elliptic)
 
-The [`MeanFieldHom.Elliptic`](@ref) submodule. All five public names
-are re-exported at the top level (`using MeanFieldHom` brings them
+The [`MeanFieldHomogenization.Elliptic`](@ref) submodule. All five public names
+are re-exported at the top level (`using MeanFieldHomogenization` brings them
 into scope directly).
 
 ```@docs
-MeanFieldHom.Elliptic
-MeanFieldHom.Elliptic.ell_K
-MeanFieldHom.Elliptic.ell_E
-MeanFieldHom.Elliptic.ell_F
-MeanFieldHom.Elliptic.ell_RF
-MeanFieldHom.Elliptic.ell_RD
+MeanFieldHomogenization.Elliptic
+MeanFieldHomogenization.Elliptic.ell_K
+MeanFieldHomogenization.Elliptic.ell_E
+MeanFieldHomogenization.Elliptic.ell_F
+MeanFieldHomogenization.Elliptic.ell_RF
+MeanFieldHomogenization.Elliptic.ell_RD
 ```
 
 ## Index

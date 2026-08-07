@@ -1,10 +1,10 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using ForwardDiff
 
-const _MFHC = MeanFieldHom.Core
+const _MFHC = MeanFieldHomogenization.Core
 
 @testset "Kelvin Green gradient / dipole far field (isotropic)" begin
 

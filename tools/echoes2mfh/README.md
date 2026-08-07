@@ -1,7 +1,7 @@
 # echoes2mfh
 
 A deterministic source-to-source translator from **Echoes** Python scripts to
-**MeanFieldHom.jl** Julia scripts. No AI in the loop: the same input always
+**MeanFieldHomogenization.jl** Julia scripts. No AI in the loop: the same input always
 produces the same output, and the mapping is data you can read and edit.
 
 ```bash

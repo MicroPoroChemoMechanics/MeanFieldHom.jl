@@ -17,14 +17,14 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using StaticArrays
 using Random
 using ForwardDiff
 
-const MFHC_I = MeanFieldHom.Core
+const MFHC_I = MeanFieldHomogenization.Core
 const ATOL_ITF = 1.0e-11
 
 _isoi(k, μ) = TensISO{3}(3k, 2μ)

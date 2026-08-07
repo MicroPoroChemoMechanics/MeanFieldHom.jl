@@ -137,7 +137,7 @@ _ACTIVATE = """import Pkg
 let d = @__DIR__
     while true
         pt = joinpath(d, "Project.toml")
-        if isfile(pt) && occursin("MeanFieldHom", read(pt, String))
+        if isfile(pt) && occursin("MeanFieldHomogenization", read(pt, String))
             Pkg.activate(d; io = devnull)
             break
         end
@@ -201,7 +201,7 @@ class CodeGen:
         for line in _ACTIVATE.splitlines():
             self.w(line)
         self.blank()
-        self.w("using MeanFieldHom")
+        self.w("using MeanFieldHomogenization")
         self.w("using TensND")
         self.w("using LinearAlgebra")
         self.w("using Printf")
@@ -434,7 +434,7 @@ class CodeGen:
             return f"iso_stiffness_E_nu({num('E', 1.0)}, {num('nu', 0.2)})"
         if b == "hoenig_stiffness":
             # The axis is a required argument, not a keyword with a default:
-            # MeanFieldHom declares only the six-argument method.
+            # MeanFieldHomogenization declares only the six-argument method.
             return (
                 f"hoenig_stiffness({num('E1', 30.0)}, {num('h', 0.3)}, "
                 f"{num('nu1', 0.2)}, {num('nu2', 0.25)}, {num('gamma', 0.5)}, "
@@ -560,7 +560,7 @@ class CodeGen:
     def _output_expr(self, o: dict, var: str = "C") -> str:
         """One plotted quantity.
 
-        `k`/`μ`/`E`/`ν` exist only for an isotropic tensor — MeanFieldHom's
+        `k`/`μ`/`E`/`ν` exist only for an isotropic tensor — MeanFieldHomogenization's
         `k_mu` has no method for anything else, which is exactly the error an
         oriented inclusion without an orientation average produces. Kelvin-
         Mandel components are defined whatever the symmetry, so they are the

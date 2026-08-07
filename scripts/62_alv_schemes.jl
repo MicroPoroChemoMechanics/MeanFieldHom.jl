@@ -1,6 +1,6 @@
 # # Ageing viscoelastic schemes side by side
 #
-# Every mean-field scheme `MeanFieldHom` implements in elasticity also exists on
+# Every mean-field scheme `MeanFieldHomogenization` implements in elasticity also exists on
 # the **ageing linear viscoelastic** path, where each modulus becomes a Volterra
 # operator and each product a Volterra product. This page runs four of them on
 # one composite and reads the differences off a single scalar: the effective
@@ -15,7 +15,7 @@
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf

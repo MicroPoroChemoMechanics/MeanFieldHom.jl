@@ -64,8 +64,8 @@ easier of the two to read and to modify.
 """
 struct GridapBackend <: FEBackend end
 
-_backend_extension(::FerriteBackend) = :MeanFieldHomFerriteExt
-_backend_extension(::GridapBackend) = :MeanFieldHomGridapExt
+_backend_extension(::FerriteBackend) = :MeanFieldHomogenizationFerriteExt
+_backend_extension(::GridapBackend) = :MeanFieldHomogenizationGridapExt
 
 _backend_import(::FerriteBackend) = "import Ferrite, FerriteGmsh, Gmsh"
 _backend_import(::GridapBackend) = "import Gridap, GridapGmsh"

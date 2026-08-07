@@ -29,7 +29,7 @@ E^*(p) = E_0 + \frac{E_\infty - E_0}
 ```
 
 ```@example bitumen
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

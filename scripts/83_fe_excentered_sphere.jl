@@ -41,7 +41,7 @@ import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, "fe"); io = devnull)                 #jl
 Pkg.instantiate(; io = devnull)                                      #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -57,10 +57,10 @@ const C_MORTAR = ce(8.0, 0.2)        # adhered old mortar
 const C_PASTE = ce(20.0, 0.2)        # fresh cement paste, the reference medium
 const W = 0.5                        # old aggregate / whole inclusion
 
-mand(T) = MeanFieldHom.Core.mandel66_minor(MeanFieldHom.Core._C_array(T))
+mand(T) = MeanFieldHomogenization.Core.mandel66_minor(MeanFieldHomogenization.Core._C_array(T))
 kelvinJ(M) = (M[1, 1] + 2M[1, 2]) / 3
 kelvinK(M) = M[4, 4]
-iso(C) = MeanFieldHom.Core.isotropify(C)
+iso(C) = MeanFieldHomogenization.Core.isotropify(C)
 
 # ## §1 The mesh
 #

@@ -5,7 +5,7 @@
 
 import Pkg
 Pkg.activate(joinpath(@__DIR__, "..", ".."); io = devnull)
-using MeanFieldHom, TensND, LinearAlgebra, Printf
+using MeanFieldHomogenization, TensND, LinearAlgebra, Printf
 
 const k0 = 0.555555; const mu0 = 0.4167; const eta0 = 0.2; const gamma0 = 0.133
 const ks = [0.5, 1.0, 2.0, 3.0]
@@ -23,7 +23,7 @@ sphere = LayeredSphere(radii, moduli)
 # Elastic state-space localization (uses heaviside path).
 moduli_elastic = ntuple(k -> TensISO{3}(3 * ks[k], 2 * mus[k]), N)
 sphere_elastic = LayeredSphere(radii, moduli_elastic)
-α_elastic = MeanFieldHom.LayeredSpheres._bulk_localization(sphere_elastic, k0, mu0)
+α_elastic = MeanFieldHomogenization.LayeredSpheres._bulk_localization(sphere_elastic, k0, mu0)
 println("Julia elastic (state-space) α_k:")
 for (k, αv) in enumerate(α_elastic)
     println("  Layer $k: α = ", αv)

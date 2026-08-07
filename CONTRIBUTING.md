@@ -1,4 +1,4 @@
-# Contributing to MeanFieldHom.jl
+# Contributing to MeanFieldHomogenization.jl
 
 Contributions are welcome, from a typo in the documentation to a new inclusion
 type. This file says where to go, what is expected of a change, and how to get
@@ -7,13 +7,13 @@ help.
 ## Getting help and reporting problems
 
 Use the [issue
-tracker](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/issues) for
+tracker](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/issues) for
 everything — bug reports, questions about how to model something, and feature
 requests alike. There is no separate mailing list or forum.
 
 A bug report is most useful when it contains:
 
-- the version of `MeanFieldHom.jl` and of Julia (`versioninfo()`), plus the
+- the version of `MeanFieldHomogenization.jl` and of Julia (`versioninfo()`), plus the
   output of `] status` if an extension is involved;
 - a **runnable** snippet, as short as you can make it, that produces the wrong
   answer or the error;
@@ -39,10 +39,10 @@ this purpose:
 
 | You want to add | Read |
 | --- | --- |
-| a new inclusion morphology | [Adding a new inclusion](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/dev/developer/adding_inclusion/) |
-| a new algorithm for `ℙ` | [Adding a new algorithm](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/dev/developer/adding_algorithm/) |
-| a new homogenization scheme | [Adding a scheme](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/dev/developer/adding_scheme/) |
-| anything else | [Architecture](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/dev/developer/architecture/) |
+| a new inclusion morphology | [Adding a new inclusion](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/dev/developer/adding_inclusion/) |
+| a new algorithm for `ℙ` | [Adding a new algorithm](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/dev/developer/adding_algorithm/) |
+| a new homogenization scheme | [Adding a scheme](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/dev/developer/adding_scheme/) |
+| anything else | [Architecture](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/dev/developer/architecture/) |
 
 A user-defined morphology often does **not** need a change to the package at
 all: the `CustomInclusion` contract lets external code join every scheme by
@@ -52,8 +52,8 @@ before proposing a new built-in type.
 ## Development workflow
 
 ```shell
-git clone https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl
-cd MeanFieldHom.jl
+git clone https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl
+cd MeanFieldHomogenization.jl
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
@@ -69,7 +69,7 @@ julia --project=docs docs/make.jl
 
 - **Tests.** Every behavioural change comes with a test. Tests mirror the
   source tree, one directory per sub-module; read [Testing
-  conventions](https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl/dev/developer/testing_conventions/)
+  conventions](https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl/dev/developer/testing_conventions/)
   first — it explains, among other things, why a test built only from symmetric
   configurations can be blind to a whole class of errors.
 - **A source for the formula.** The documentation rule is that no formula

@@ -1,5 +1,5 @@
 """
-    MeanFieldHom.Elliptic
+    MeanFieldHomogenization.Elliptic
 
 Type-generic complete and incomplete elliptic integrals.
 

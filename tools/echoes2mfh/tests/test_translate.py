@@ -229,7 +229,7 @@ for sch in [MT, DIFF]:
 """
     out = translate(src)
     assert (
-        "mfh_label(s::MeanFieldHom.HomogenizationScheme) = "
+        "mfh_label(s::MeanFieldHomogenization.HomogenizationScheme) = "
         "string(nameof(typeof(s)))" in out
     )
 
@@ -248,7 +248,7 @@ def test_preamble_finds_the_project_from_anywhere():
     """A translated script is dropped wherever the user wants, so a fixed
     `joinpath(@__DIR__, "..")` is wrong outside `scripts/`."""
     out = translate("x=1\n")
-    assert 'occursin("MeanFieldHom", read(pt, String))' in out
+    assert 'occursin("MeanFieldHomogenization", read(pt, String))' in out
     assert 'Pkg.activate(joinpath(@__DIR__, ".."))' not in out
 
 

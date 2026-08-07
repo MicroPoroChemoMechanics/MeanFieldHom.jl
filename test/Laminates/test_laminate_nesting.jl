@@ -20,12 +20,12 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using ForwardDiff
 
-const MFHC_N = MeanFieldHom.Core
+const MFHC_N = MeanFieldHomogenization.Core
 _ison(k, μ) = TensISO{3}(3k, 2μ)
 
 function _inner_laminate(μA = 0.8)
@@ -116,7 +116,7 @@ end
 
 # A cell that counts how many times it is homogenized, to observe the
 # memoization from the outside.
-mutable struct CountingRVE <: MeanFieldHom.Core.AbstractHomogenizationCell
+mutable struct CountingRVE <: MeanFieldHomogenization.Core.AbstractHomogenizationCell
     inner::Any
     count::Int
 end

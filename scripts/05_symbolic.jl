@@ -3,7 +3,7 @@
 #
 #  Symbolic computation with SymPy.jl.
 #
-#  Run from the MeanFieldHom.jl root:
+#  Run from the MeanFieldHomogenization.jl root:
 #    julia --project=. scripts/05_symbolic.jl
 #
 #  Prerequisites:
@@ -40,7 +40,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using SymPy
 using Printf

@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
 @testset "eshelby_tensor — sphere in isotropic conductivity" begin

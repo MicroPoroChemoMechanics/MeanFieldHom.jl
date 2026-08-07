@@ -4,7 +4,7 @@
 #  Pichler & Hellmich (CCR 2011) reference.
 #
 #  The Julia model is the SHARED implementation `scripts/common/pichler_model.jl`,
-#  built entirely on the public MeanFieldHom API : the multi-bin
+#  built entirely on the public MeanFieldHomogenization API : the multi-bin
 #  Self-Consistent hydrate foam is assembled with several non-coaxial
 #  `TISymmetrize` families whose EXACT azimuthal average (`TensTI{4,T,8}`,
 #  non-major-symmetric content preserved) now flows through the generic SC

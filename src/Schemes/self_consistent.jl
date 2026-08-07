@@ -16,13 +16,13 @@
 #                                    a globalized `NonlinearSolve.jl`
 #                                    algorithm (`TrustRegion`) when the
 #                                    weak extension
-#                                    `MeanFieldHomNonlinearSolveExt` is
+#                                    `MeanFieldHomogenizationNonlinearSolveExt` is
 #                                    loaded, else falls back to
 #                                    `NewtonDefault`. Not the default of
 #                                    `SelfConsistent` — opt in explicitly.
 #   * any algorithm from
 #     `NonlinearSolve.jl`          — handled by the weak extension
-#                                    (`MeanFieldHomNonlinearSolveExt`),
+#                                    (`MeanFieldHomogenizationNonlinearSolveExt`),
 #                                    ForwardDiff-safe via an
 #                                    implicit-function-theorem lift (see
 #                                    the extension source for details).
@@ -51,7 +51,7 @@ estimate `C^{(n)}` itself (rather than the matrix property).
 The solver algorithm is selected by `sc.algorithm`; convergence kwargs
 in `sc.options` (`abstol`, `maxiters`, `damping`, `verbose`) override
 their defaults. External algorithms from `NonlinearSolve.jl` are
-supported via the weak extension `MeanFieldHomNonlinearSolveExt`.
+supported via the weak extension `MeanFieldHomogenizationNonlinearSolveExt`.
 
 Cracks are not natively handled by this stiffness-form SC (the strain
 concentration tensor is singular). For mixed RVEs (solid + crack) use
@@ -217,7 +217,7 @@ Generic solver dispatcher for SC fixed points. Built-in:
   search. Dependency-free; ships with the package.
 - [`AutoNonlinear`](@ref) — auto-resolving marker: uses a globalized
   `NonlinearSolve.jl` algorithm (`TrustRegion`) when the weak extension
-  `MeanFieldHomNonlinearSolveExt` is loaded (`using NonlinearSolve`),
+  `MeanFieldHomogenizationNonlinearSolveExt` is loaded (`using NonlinearSolve`),
   else falls back to `NewtonDefault`.
 
 Any algorithm from `NonlinearSolve.jl` (`NewtonRaphson()`,
@@ -239,7 +239,7 @@ oscillates around the fixed point: the *last* iterate may be worse
 than an earlier one. Default is `false` (return last iterate).
 
 Non-convergence is reported via `@debug` (silent by default; set
-`JULIA_DEBUG=MeanFieldHom` to surface it) rather than `@warn`. Near
+`JULIA_DEBUG=MeanFieldHomogenization` to surface it) rather than `@warn`. Near
 bifurcation points the Picard step intrinsically slows down (the
 linearized step has a Jacobian eigenvalue ≈ 1) and the residual stalls
 above `tol_eff` while still being negligibly small compared to the
@@ -280,7 +280,7 @@ function _solve_sc(
     end
     # Non-convergence is reported as a `@debug` message rather than a
     # `@warn` so it stays out of normal output. Set
-    # `JULIA_DEBUG=MeanFieldHom` (or pass `verbose = true`) to surface
+    # `JULIA_DEBUG=MeanFieldHomogenization` (or pass `verbose = true`) to surface
     # the diagnostics. Near bifurcation points (porous SC at
     # percolation, …) the Picard step intrinsically slows down and
     # `last_resid` may stall above the requested tolerance while
@@ -305,7 +305,7 @@ estimate by its symmetry-class **canonical components**
 4. Fall back to a single Picard step when the line search fails.
 
 Compared to the SciML weak-extension path, this is dependency-free and
-specialized to the small parameter spaces of `MeanFieldHom` symmetry
+specialized to the small parameter spaces of `MeanFieldHomogenization` symmetry
 classes (≤ 21 components for the most general aniso 4-tensor); the
 Jacobian is computed once per iteration through the same `step`
 function the AndersonDefault loop calls.
@@ -422,7 +422,7 @@ end
     _solve_sc(::AutoNonlinear, step, x0::AbstractTens; kw...) -> AbstractTens
 
 Resolver for [`AutoNonlinear`](@ref): checks at runtime whether the weak
-extension `MeanFieldHomNonlinearSolveExt` is loaded
+extension `MeanFieldHomogenizationNonlinearSolveExt` is loaded
 (`Base.get_extension`) and, if so, delegates to
 `ext.default_solve_sc(step, x0; kw...)` — a globalized SciML algorithm
 (`NonlinearSolve.TrustRegion()`) run through the same
@@ -433,7 +433,7 @@ ForwardDiff-safe (implicit-function-theorem) path as any other
 without `using NonlinearSolve`.
 """
 function _solve_sc(::AutoNonlinear, step, x0::TensND.AbstractTens; kw...)
-    ext = Base.get_extension(parentmodule(@__MODULE__), :MeanFieldHomNonlinearSolveExt)
+    ext = Base.get_extension(parentmodule(@__MODULE__), :MeanFieldHomogenizationNonlinearSolveExt)
     if ext === nothing
         return _solve_sc(NewtonDefault(), step, x0; kw...)
     else

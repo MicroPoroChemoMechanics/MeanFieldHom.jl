@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 
 # =============================================================================
 #  test_orientation.jl — familles d'orientation discrétisées

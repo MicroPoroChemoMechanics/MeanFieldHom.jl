@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using ForwardDiff
@@ -14,7 +14,7 @@ using ForwardDiff
     function α1_of_κ1(κ₁)
         C₁ = TensISO{3}(3 * κ₁, 2 * 140.0)
         s = LayeredSphere((1.0,), (C₁,))
-        return MeanFieldHom.LayeredSpheres._bulk_localization(s, κ₀, μ₀)[1]
+        return MeanFieldHomogenization.LayeredSpheres._bulk_localization(s, κ₀, μ₀)[1]
     end
     κ₁ = 200.0
     d_auto = ForwardDiff.derivative(α1_of_κ1, κ₁)
@@ -27,7 +27,7 @@ end
     k₀ = 2.0
     function α1_of_k1(k₁)
         s = LayeredSphere((1.0,), (TensISO{3}(k₁),))
-        return MeanFieldHom.LayeredSpheres._cond_localization(s, k₀)[1]
+        return MeanFieldHomogenization.LayeredSpheres._cond_localization(s, k₀)[1]
     end
     k₁ = 5.0
     d_auto = ForwardDiff.derivative(α1_of_k1, k₁)
@@ -42,7 +42,7 @@ end
     C₀ = TensISO{3}(3 * kk0, 2 * mm0)
     C₁ = TensISO{3}(3 * kk1, 2 * mm1)
     s = LayeredSphere((Sym(1),), (C₁,))
-    α_sym = MeanFieldHom.LayeredSpheres._bulk_localization(s, kk0, mm0)[1]
+    α_sym = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s, kk0, mm0)[1]
     # Expected: (3k0 + 4m0)/(3k1 + 4m0)
     expected = (3 * kk0 + 4 * mm0) / (3 * kk1 + 4 * mm0)
     @test simplify(α_sym - expected) == 0
@@ -52,7 +52,7 @@ end
     using SymPy
     @syms ka kb
     s = LayeredSphere((Sym(1),), (TensISO{3}(kb),))
-    α_sym = MeanFieldHom.LayeredSpheres._cond_localization(s, ka)[1]
+    α_sym = MeanFieldHomogenization.LayeredSpheres._cond_localization(s, ka)[1]
     expected = 3 * ka / (2 * ka + kb)
     @test simplify(α_sym - expected) == 0
 end

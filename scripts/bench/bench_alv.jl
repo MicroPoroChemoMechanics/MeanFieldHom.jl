@@ -13,7 +13,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -80,7 +80,7 @@ end
 
 function run_all_benches()
     println("=" ^ 80)
-    println("  bench_alv.jl — ALV micro-benchmarks (MeanFieldHom v$(VERSION))")
+    println("  bench_alv.jl — ALV micro-benchmarks (MeanFieldHomogenization v$(VERSION))")
     println("=" ^ 80)
 
     for n in (50, 100, 200)
@@ -128,13 +128,13 @@ function run_all_benches()
 
         # Iso/TI/ortho fast path overhead — heuristic detection cost
         bench("_is_iso_block(M)") do
-            MeanFieldHom.Viscoelasticity._is_iso_block(M)
+            MeanFieldHomogenization.Viscoelasticity._is_iso_block(M)
         end
         bench("_is_ti_block(M)") do
-            MeanFieldHom.Viscoelasticity._is_ti_block(M)
+            MeanFieldHomogenization.Viscoelasticity._is_ti_block(M)
         end
         bench("_is_ortho_block(M)") do
-            MeanFieldHom.Viscoelasticity._is_ortho_block(M)
+            MeanFieldHomogenization.Viscoelasticity._is_ortho_block(M)
         end
 
         # Conversions

@@ -8,7 +8,7 @@ is implicit).
 ## Construction
 
 ```julia
-using MeanFieldHom
+using MeanFieldHomogenization
 
 # Elliptic cross-section — returns Cylinder{EllipticCylindrical, …}
 cyl_ell = Cylinder(2.0, 1.0)
@@ -30,9 +30,9 @@ first column of the basis, and the transverse semi-axes `(b, c)` (with
 third columns respectively.
 
 ```@setup cylinders
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 ```
 
 ```@example cylinders

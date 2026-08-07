@@ -5,10 +5,10 @@ EditURL = "../../../../scripts/70_symmetrization_showcase.jl"
 # Symmetrization showcase: exact average vs best-fit projection
 
 The didactic centerpiece of the symmetrization overhaul: the difference
-between the two mechanisms `echoes` (and now `MeanFieldHom`) provide, on a
+between the two mechanisms `echoes` (and now `MeanFieldHomogenization`) provide, on a
 **non-major-symmetric** strain-concentration tensor.
 
-- **(B) exact rotation-group average** — [`MeanFieldHom.Core.transverse_isotropify`](@ref) /
+- **(B) exact rotation-group average** — [`MeanFieldHomogenization.Core.transverse_isotropify`](@ref) /
   `IsoSymmetrize` / `TISymmetrize` inside scheme kernels. Preserves the
   full axially-invariant content (`TensTI{4,T,8}`): ``\ell_3 \neq \ell_4``
   and the antisymmetric azimuthal couplings ``\ell_7``, ``\ell_8``.
@@ -24,7 +24,7 @@ generally lacks major symmetry; using (A) where (B) is required silently
 discards physical couplings. This script quantifies the gap.
 
 ````@example symmetrization
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using LinearAlgebra

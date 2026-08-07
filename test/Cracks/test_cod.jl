@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
 @testset "Cracks — cod_tensor smoke tests" begin

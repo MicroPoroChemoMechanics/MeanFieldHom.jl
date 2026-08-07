@@ -12,7 +12,7 @@ A property is stored in each phase under a symbol key — `:C` for stiffness,
 `:K` for conductivity/diffusivity — and selected at homogenization time:
 
 ```@example transport
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

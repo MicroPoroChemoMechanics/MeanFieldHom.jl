@@ -1,5 +1,5 @@
 """
-    MeanFieldHom.LayeredSpheres
+    MeanFieldHomogenization.LayeredSpheres
 
 Isotropic `n`-layer spherical composite inclusion (core + concentric
 shells) embedded in an infinite matrix, with perfect or imperfect

@@ -147,7 +147,7 @@ since the dipole of a modal polarization radiates in the same mode — so
 For an isotropic reference medium both Green functions are closed forms, so the
 boundary data costs nothing. With ``r = \|x\|``, ``\hat n = x/r`` and
 ``M = V_{\mathcal D} P`` the polarization **moment**, the elastic field is
-[`dipole_displacement_iso`](@ref MeanFieldHom.Core.dipole_displacement_iso):
+[`dipole_displacement_iso`](@ref MeanFieldHomogenization.Core.dipole_displacement_iso):
 
 ```math
 u(x) = \frac{\partial G_{ij}}{\partial x_k}(x)\,M_{jk}
@@ -173,8 +173,8 @@ T(\mathbf x) = \frac{\partial G}{\partial x_k}(\mathbf x)\,M_k
      = -\frac{\boldsymbol M\cdot\mathbf x}{4\pi k_0 r^{3}} .
 ```
 
-These are [`green_gradient_iso`](@ref MeanFieldHom.Core.green_gradient_iso) and
-[`dipole_displacement_iso`](@ref MeanFieldHom.Core.dipole_displacement_iso).
+These are [`green_gradient_iso`](@ref MeanFieldHomogenization.Core.green_gradient_iso) and
+[`dipole_displacement_iso`](@ref MeanFieldHomogenization.Core.dipole_displacement_iso).
 They are also why the reference medium must be **isotropic**: for arbitrary
 anisotropy ``\nabla\mathbb G`` would come from the Willis angular integral, or
 from the Pan–Chou closed form in the transversely isotropic case, neither of

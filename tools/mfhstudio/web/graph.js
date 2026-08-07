@@ -1,6 +1,6 @@
 /* The scale graph — draggable boxes joined by connectors.
  *
- * A multiscale model in MeanFieldHom is a directed graph: a phase property may
+ * A multiscale model in MeanFieldHomogenization is a directed graph: a phase property may
  * hold `Homogenized(inner_cell, scheme)`, and the outer scheme resolves the
  * inner scale when it reads that key. A form full of dropdowns hides that
  * shape; a picture is the shape.

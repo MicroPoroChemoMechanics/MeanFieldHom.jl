@@ -8,7 +8,7 @@
 #  (same pattern as `scripts/bench_echoes/`), rather than the main
 #  package environment (where NonlinearSolve is only a weakdep).
 #
-#  Run from the MeanFieldHom.jl package root (instantiate once first):
+#  Run from the MeanFieldHomogenization.jl package root (instantiate once first):
 #    julia --project=scripts/bench -e 'using Pkg; Pkg.instantiate()'
 #    julia --project=scripts/bench scripts/bench/bench_sc_solvers.jl
 #
@@ -23,7 +23,7 @@
 import Pkg
 Pkg.activate(@__DIR__; io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using ForwardDiff
@@ -59,7 +59,7 @@ function bench(f::Function, label::String; warmups::Int = 3, samples::Int = 5)
 end
 
 println("="^78)
-println("MeanFieldHom — SC / ASC solver benchmark (Picard vs Newton vs NonlinearSolve)")
+println("MeanFieldHomogenization — SC / ASC solver benchmark (Picard vs Newton vs NonlinearSolve)")
 println("="^78)
 
 # ─── Setup: a high-contrast 2-phase iso RVE (away from percolation) ────────
@@ -177,7 +177,7 @@ function _C_hom_iso_2vec(μs::Real, scheme)
         fraction = convert(T, φ_value), symmetrize = :iso
     )
     C = homogenize(r, scheme, :C)
-    C_iso = MeanFieldHom.Schemes._apply_symmetrize(C, MeanFieldHom.Schemes.IsoSymmetrize())
+    C_iso = MeanFieldHomogenization.Schemes._apply_symmetrize(C, MeanFieldHomogenization.Schemes.IsoSymmetrize())
     α, β = TensND.get_data(C_iso)
     return [α, β]
 end

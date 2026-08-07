@@ -7,7 +7,7 @@ write the kernel, then teach the dispatcher when to pick it.
 
 ## 1. Declare the trait
 
-Algorithms are singleton types subtyping [`MeanFieldHom.AbstractAlgorithm`](@ref),
+Algorithms are singleton types subtyping [`MeanFieldHomogenization.AbstractAlgorithm`](@ref),
 declared in `src/Core/traits.jl`. The five that exist:
 
 | Trait | Selected by | Nature |

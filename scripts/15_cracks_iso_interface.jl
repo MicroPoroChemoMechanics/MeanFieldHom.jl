@@ -14,7 +14,7 @@
 #    * **Conduction side** : the crack is modeled as a thin highly-
 #      conductive inclusion `K_crack = (kt, kt, kn) · 𝟏 = K_t · 𝟏`,
 #      ECHOES uses `prop={"K": tensor(kt,kt,kn)}` on the `crack()`
-#      factory.  In MeanFieldHom we use a `Spheroid(1e-3)` with a
+#      factory.  In MeanFieldHomogenization we use a `Spheroid(1e-3)` with a
 #      `VolumeFraction = density · 4π/3 · aspect_ratio` (translation of
 #      Budiansky `density = N a b² → volume fraction (4π/3) ε ω` for a
 #      thin spheroid of aspect ratio ω).
@@ -32,7 +32,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -175,7 +175,7 @@ function _kμK_julia(scheme, d::Real)
     return (k = k_r, μ = μ_r, K = K_r)
 end
 
-println("Running MeanFieldHom.jl sweep …")
+println("Running MeanFieldHomogenization.jl sweep …")
 julia_results = Dict{String, NamedTuple}()
 for name in SCHEME_NAMES
     @printf "  Julia scheme=%s\n" name

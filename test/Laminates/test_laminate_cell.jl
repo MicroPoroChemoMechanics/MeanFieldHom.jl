@@ -12,7 +12,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using ForwardDiff
@@ -81,7 +81,7 @@ end
         nrm = sqrt(sum(x -> x^2, n))
         @test all(isapprox.(nn, n ./ nrm; atol = 1.0e-12))
         # the frame is orthonormal and right-handed
-        R = MeanFieldHom.Core._basis_matrix(laminate_basis(lam))
+        R = MeanFieldHomogenization.Core._basis_matrix(laminate_basis(lam))
         @test R' * R ≈ I atol = 1.0e-12
         @test det(R) ≈ 1 atol = 1.0e-12
     end
@@ -135,11 +135,11 @@ end
     add_layer!(lam, :A, Dict(:C => _ISO_L(2.0, 0.8)); thickness = 0.3)
     add_layer!(lam, :B, Dict(:C => _ISO_L(0.5, 0.2)); thickness = 0.7)
 
-    @test Laminate <: MeanFieldHom.Core.AbstractHomogenizationCell
-    @test MeanFieldHom.Core.cell_member_names(lam) == [:A, :B]
-    @test MeanFieldHom.Core.cell_container_property(lam, :A, :C) == _ISO_L(2.0, 0.8)
+    @test Laminate <: MeanFieldHomogenization.Core.AbstractHomogenizationCell
+    @test MeanFieldHomogenization.Core.cell_member_names(lam) == [:A, :B]
+    @test MeanFieldHomogenization.Core.cell_container_property(lam, :A, :C) == _ISO_L(2.0, 0.8)
 
-    lam2 = MeanFieldHom.Core.cell_set_property(lam, :A, :C, _ISO_L(9.0, 3.0))
+    lam2 = MeanFieldHomogenization.Core.cell_set_property(lam, :A, :C, _ISO_L(9.0, 3.0))
     @test layer_property(lam2, :A, :C) == _ISO_L(9.0, 3.0)
     @test layer_property(lam, :A, :C) == _ISO_L(2.0, 0.8)      # no mutation
     @test layer_thickness(lam2, :A) == 0.3

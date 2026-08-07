@@ -1,6 +1,6 @@
 # [Derivatives and sensitivities](@id tut-sensitivities)
 
-Every scheme in `MeanFieldHom` is ordinary, generic Julia code — no
+Every scheme in `MeanFieldHomogenization` is ordinary, generic Julia code — no
 finite differences, no symbolic engine, no hand-written Jacobians. That
 means [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) can
 differentiate **any** homogenization result with respect to **any**
@@ -10,12 +10,12 @@ instead of `Float64`.
 
 ## Parameter lenses
 
-`MeanFieldHom` exposes `derivative`, `gradient`, and `jacobian`, each
+`MeanFieldHomogenization` exposes `derivative`, `gradient`, and `jacobian`, each
 taking a *lens* describing which scalar input to differentiate against,
 plus an `indexer` selecting a scalar output from the resulting tensor:
 
 ```@example tutsens
-using MeanFieldHom
+using MeanFieldHomogenization
 using ForwardDiff
 using TensND
 using LinearAlgebra

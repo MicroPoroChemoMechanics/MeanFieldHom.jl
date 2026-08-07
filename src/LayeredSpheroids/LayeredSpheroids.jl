@@ -1,5 +1,5 @@
 """
-    MeanFieldHom.LayeredSpheroids
+    MeanFieldHomogenization.LayeredSpheroids
 
 Isotropic `n`-layer confocal spheroidal composite inclusion (core +
 concentric confocal shells), **conduction only** (thermal / electric /
@@ -9,7 +9,7 @@ equation and does not carry over to the vector elastic problem). Public
 entry points: [`LayeredSpheroid`](@ref),
 [`layered_spheroid_from_fractions`](@ref).
 
-Like [`LayeredSphere`](@ref MeanFieldHom.LayeredSpheres.LayeredSphere),
+Like [`LayeredSphere`](@ref MeanFieldHomogenization.LayeredSpheres.LayeredSphere),
 a composite spheroid has **no Hill tensor** — it plugs into the
 mean-field schemes through its volume-averaged concentration
 (gradient/flux) tensors, assembled layer by layer via a confocal
@@ -18,7 +18,7 @@ instead of the sphere's simple 2×2 state-vector propagation. Perfect
 (`PerfectInterface`), Kapitza (`KapitzaInterface`, resistance) and
 surface-conductive (`SurfaceConductiveInterface`, conductance)
 interfaces — reused from [`LayeredSpheres`](@ref
-MeanFieldHom.LayeredSpheres) — couple different harmonic degrees, unlike
+MeanFieldHomogenization.LayeredSpheres) — couple different harmonic degrees, unlike
 the sphere, requiring the truncated series machinery of
 `legendre.jl` / `coupling.jl`.
 """

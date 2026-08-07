@@ -1,4 +1,4 @@
-# Audit d'optimisation MeanFieldHom.jl / TensND.jl — diagnostic mesuré
+# Audit d'optimisation MeanFieldHomogenization.jl / TensND.jl — diagnostic mesuré
 
 État au 2026-07-27. Machine : znver3, Julia 1.12.6, `JULIA_NUM_THREADS=1`,
 `opt=2`. Baseline enregistrée sur un worktree `git` du commit `0cf9fd5`
@@ -477,7 +477,7 @@ d'instabilité sur ces chemins.
 
 | | |
 |---|---|
-| suite MeanFieldHom | **7154 / 7154** |
+| suite MeanFieldHomogenization | **7154 / 7154** |
 | suite TensND | verte (AD 63/63, projections TI/ORTHO 89/89, NLopt 46/46) |
 | `benchmark_pichler` | **24 / 24** |
 | `benchmark_hill_derivative` | **17 / 17** |

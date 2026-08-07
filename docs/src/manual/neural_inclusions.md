@@ -7,15 +7,15 @@ families, the layered patterns and the
 
 | Type | Entry gate | For |
 |---|---|---|
-| [`NeuralHillInclusion`](@ref MeanFieldHom.NeuralHillInclusion) | A — the Hill tensor | a morphology that has a Hill tensor |
-| [`NeuralLocalizationInclusion`](@ref MeanFieldHom.NeuralLocalizationInclusion) | B — both localization tensors | an internally heterogeneous morphology, which has none |
+| [`NeuralHillInclusion`](@ref MeanFieldHomogenization.NeuralHillInclusion) | A — the Hill tensor | a morphology that has a Hill tensor |
+| [`NeuralLocalizationInclusion`](@ref MeanFieldHomogenization.NeuralLocalizationInclusion) | B — both localization tensors | an internally heterogeneous morphology, which has none |
 
 **Evaluating** a surrogate needs nothing beyond the package. **Training** one
 needs three weak dependencies:
 
 ```julia
-using MeanFieldHom
-import Lux, Optimisers, Zygote        # activates MeanFieldHomLuxExt
+using MeanFieldHomogenization
+import Lux, Optimisers, Zygote        # activates MeanFieldHomogenizationLuxExt
 ```
 
 ## What it buys
@@ -30,7 +30,7 @@ cannot give:
   outright — their solve runs in `Float64` and memoizes on the reference medium,
   so the derivative would come back as a silent zero.
 - **Cost, once the teacher is expensive.** One
-  [`FEExcenteredSphere`](@ref MeanFieldHom.FEExcenteredSphere) evaluation is
+  [`FEExcenteredSphere`](@ref MeanFieldHomogenization.FEExcenteredSphere) evaluation is
   three assemblies and eight solves, and an iterative scheme changes the
   reference medium at every iteration, defeating the cache. A surrogate trained
   on that solve answers in microseconds.
@@ -45,7 +45,7 @@ something unknown. `scripts/84_neural_inclusion_ellipsoid.jl` is that check,
 Three lines:
 
 ```julia
-using MeanFieldHom
+using MeanFieldHomogenization
 
 s = load_surrogate(model_path("spheroid_hill_iso_elastic"))
 incl = NeuralHillInclusion((1.0, 1.0, 0.4); elastic = s)     # an oblate spheroid, ω = 0.4
@@ -115,7 +115,7 @@ actually intend to use.
 
 ```julia
 import Lux, Optimisers, Zygote
-const NI = MeanFieldHom.NeuralInclusions
+const NI = MeanFieldHomogenization.NeuralInclusions
 
 geometry(x) = Ellipsoid(1.0, 1.0, exp(x[1]))     # shape features → morphology
 response(g, C₀) = hill_tensor(g, C₀)             # what is to be learned
@@ -144,7 +144,7 @@ at dataset time, not a quietly bad model.
 
 ### The knobs
 
-[`TrainingOptions`](@ref MeanFieldHom.TrainingOptions) — the defaults are sized
+[`TrainingOptions`](@ref MeanFieldHomogenization.TrainingOptions) — the defaults are sized
 for a few thousand samples and a few thousand parameters, which is seconds of
 wall time:
 
@@ -192,8 +192,8 @@ This is the **shape/moduli factorization** of
 ```
 
 with the geometric auxiliaries
-[`tens_UA`](@ref MeanFieldHom.tens_UA) and
-[`tens_VA`](@ref MeanFieldHom.tens_VA) depending on the **shape alone**.
+[`tens_UA`](@ref MeanFieldHomogenization.tens_UA) and
+[`tens_VA`](@ref MeanFieldHomogenization.tens_VA) depending on the **shape alone**.
 Collecting the two terms on `𝕌ᴬ` and `𝕍ᴬ` gives
 
 ```math
@@ -202,7 +202,7 @@ Collecting the two terms on `𝕌ᴬ` and `𝕍ᴬ` gives
 ```
 
 which is affine in the two material scalars `(d, 1/μ₀)`.
-[`AffineHill`](@ref MeanFieldHom.AffineHill) exploits it: the network predicts
+[`AffineHill`](@ref MeanFieldHomogenization.AffineHill) exploits it: the network predicts
 those two tensors — twice the components, one fewer input — and the decoder
 contracts them with the exact coefficients. The whole material dependence becomes
 algebra, and the surrogate is valid at *any* `ν₀`, including values no label was
@@ -216,7 +216,7 @@ exact with no material input at all.
 
 Prefer `AffineHill` whenever the reference medium is isotropic: same cost, one
 input fewer, an order of magnitude more accurate. Prefer
-[`DimensionlessHill`](@ref MeanFieldHom.DimensionlessHill) when you will need to
+[`DimensionlessHill`](@ref MeanFieldHomogenization.DimensionlessHill) when you will need to
 transfer the recipe to an anisotropic matrix or to a localization pair, where no
 affine structure exists.
 
@@ -235,7 +235,7 @@ hill_tensor(incl, C₀)   # ArgumentError: :log_aspect is outside the box
 
 ## Heterogeneous morphologies
 
-[`NeuralLocalizationInclusion`](@ref MeanFieldHom.NeuralLocalizationInclusion)
+[`NeuralLocalizationInclusion`](@ref MeanFieldHomogenization.NeuralLocalizationInclusion)
 takes gate B, the only way in for a morphology with no Hill tensor. Since
 [`is_homogeneous_inclusion`](@ref) is `false`, it costs **two** surrogates per
 physics — the strain side and the stress side — because `𝔸_σε = ℂ₁:𝔸_εε`
@@ -247,7 +247,7 @@ Supplying `fractions` and `properties` unlocks the `Voigt` and `Reuss` bounds,
 which a heterogeneous inclusion cannot otherwise serve.
 
 No trained model ships for this type yet; it is the seam for surrogates trained
-on [`fe_axi_localization`](@ref MeanFieldHom.fe_axi_localization).
+on [`fe_axi_localization`](@ref MeanFieldHomogenization.fe_axi_localization).
 
 ## Limitations
 

@@ -5,7 +5,7 @@ EditURL = "../../../../scripts/36_laminate_multiscale.jl"
 # [Multiscale chaining: explicit and declarative, side by side](@id tut-laminate-multiscale)
 
 A multiscale model chains homogenizations: what one scale computes becomes a
-phase property at the next. `MeanFieldHom` supports two ways of writing that
+phase property at the next. `MeanFieldHomogenization` supports two ways of writing that
 chain, and they compute the same thing to the last bit.
 
 - **explicit** — one call per scale, in order; the author hands each result
@@ -22,7 +22,7 @@ Neither style is deprecated — see [Multiscale models](@ref man-multiscale)
 for when each is the right choice.
 
 ````@example laminate_multiscale
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using LinearAlgebra

@@ -1,4 +1,4 @@
-name = "MeanFieldHom"
+name = "MeanFieldHomogenization"
 uuid = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 version = "0.1.0"
 authors = ["Jean-François Barthélémy <jean-francois.barthelemy@cerema.fr>"]
@@ -34,12 +34,12 @@ SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [extensions]
-MeanFieldHomDECUHRExt = ["DECUHR", "Integrals"]
-MeanFieldHomFerriteExt = ["Ferrite", "FerriteGmsh", "Gmsh"]
-MeanFieldHomGridapExt = ["Gridap", "GridapGmsh"]
-MeanFieldHomLuxExt = ["Lux", "Optimisers", "Zygote"]
-MeanFieldHomNonlinearSolveExt = "NonlinearSolve"
-MeanFieldHomSymPyExt = "SymPy"
+MeanFieldHomogenizationDECUHRExt = ["DECUHR", "Integrals"]
+MeanFieldHomogenizationFerriteExt = ["Ferrite", "FerriteGmsh", "Gmsh"]
+MeanFieldHomogenizationGridapExt = ["Gridap", "GridapGmsh"]
+MeanFieldHomogenizationLuxExt = ["Lux", "Optimisers", "Zygote"]
+MeanFieldHomogenizationNonlinearSolveExt = "NonlinearSolve"
+MeanFieldHomogenizationSymPyExt = "SymPy"
 
 [compat]
 DECUHR = "0.2"

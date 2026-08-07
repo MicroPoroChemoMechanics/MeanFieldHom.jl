@@ -1,9 +1,9 @@
 # =============================================================================
-#  MeanFieldHomNonlinearSolveExt.jl
+#  MeanFieldHomogenizationNonlinearSolveExt.jl
 #
 #  Weak extension activated when `NonlinearSolve.jl` is loaded together
-#  with `MeanFieldHom` (`using NonlinearSolve`). It adds a
-#  `MeanFieldHom.Schemes._solve_sc` method dispatching on
+#  with `MeanFieldHomogenization` (`using NonlinearSolve`). It adds a
+#  `MeanFieldHomogenization.Schemes._solve_sc` method dispatching on
 #  `NonlinearSolve.jl`'s algorithm hierarchy, so any SC / ASC scheme can
 #  be solved with a SciML nonlinear solver:
 #
@@ -60,18 +60,18 @@
 #  derivation and cross-check against the built-in solvers.
 # =============================================================================
 
-module MeanFieldHomNonlinearSolveExt
+module MeanFieldHomogenizationNonlinearSolveExt
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using NonlinearSolve
 using TensND
 using ForwardDiff
 
-const S = MeanFieldHom.Schemes
+const S = MeanFieldHomogenization.Schemes
 
 # `NonlinearSolve` re-exports `SciMLBase` (its trigger is `using
 # NonlinearSolve`; `SciMLBase` itself is not a weak/strong dep of
-# MeanFieldHom, so we reach the type through the already-loaded
+# MeanFieldHomogenization, so we reach the type through the already-loaded
 # `NonlinearSolve` module rather than a separate `import SciMLBase`).
 const _AbstractNLSAlg = NonlinearSolve.SciMLBase.AbstractNonlinearAlgorithm
 
@@ -213,7 +213,7 @@ end
 """
     default_solve_sc(step, x0; kw...)
 
-Entry point called by `MeanFieldHom.Schemes._solve_sc(::AutoNonlinear,
+Entry point called by `MeanFieldHomogenization.Schemes._solve_sc(::AutoNonlinear,
 …)` once this extension is loaded. Uses `NonlinearSolve.TrustRegion()`
 — a globalized algorithm, more robust than a plain Newton step near the
 self-consistent bifurcation — through the exact same dispatch (and
@@ -222,4 +222,4 @@ algorithm.
 """
 default_solve_sc(step, x0; kw...) = S._solve_sc(NonlinearSolve.TrustRegion(), step, x0; kw...)
 
-end # module MeanFieldHomNonlinearSolveExt
+end # module MeanFieldHomogenizationNonlinearSolveExt

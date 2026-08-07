@@ -16,7 +16,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -75,8 +75,8 @@ end
     C_TI = tens_TI(2.179, 0.579, 0.689, 10.345, 1.0, n_axis)
 
     for c in (PennyCrack(1.0), EllipticCrack(1.0, 0.5), RibbonCrack(1.0))
-        algo = MeanFieldHom.Core._resolve_algo(Val(:auto), c, C_TI)
-        @test algo isa MeanFieldHom.Core.Analytical
+        algo = MeanFieldHomogenization.Core._resolve_algo(Val(:auto), c, C_TI)
+        @test algo isa MeanFieldHomogenization.Core.Analytical
     end
 end
 
@@ -88,10 +88,10 @@ end
     # `:auto` falls back to a CUBATURE, never to the residue algorithm: the
     # latter degenerates on a reference that is anisotropic in type and
     # isotropic in value, so it is reachable on `:residues` only.
-    algo = MeanFieldHom.Core._resolve_algo(Val(:auto), c, C_TI)
-    @test algo isa Union{MeanFieldHom.Core.DECUHR, MeanFieldHom.Core.NestedQuadGK}
-    @test MeanFieldHom.Core._resolve_algo(Val(:residues), c, C_TI) isa
-        MeanFieldHom.Core.Residue
+    algo = MeanFieldHomogenization.Core._resolve_algo(Val(:auto), c, C_TI)
+    @test algo isa Union{MeanFieldHomogenization.Core.DECUHR, MeanFieldHomogenization.Core.NestedQuadGK}
+    @test MeanFieldHomogenization.Core._resolve_algo(Val(:residues), c, C_TI) isa
+        MeanFieldHomogenization.Core.Residue
     # And the residue path still produces a finite COD tensor.
     B = cod_tensor(c, C_TI; method = :residues)
     @test all(isfinite, get_array(B))

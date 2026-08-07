@@ -20,7 +20,7 @@ geometric tensors ``\mathbb{I}^A, \mathbb{U}^A, \mathbb{V}^A`` underneath,
 for the transversely-isotropic closed form.
 
 ````@example hill_tensors
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -147,7 +147,7 @@ end
 ## §2 Anisotropic matrix — two algorithms, one answer
 
 With an anisotropic ``\mathbb{C}_0`` no closed form survives and
-``\mathbb{P}`` becomes a surface integral over the unit sphere. `MeanFieldHom`
+``\mathbb{P}`` becomes a surface integral over the unit sphere. `MeanFieldHomogenization`
 offers several independent routes to it — a residue evaluation of the
 acoustic-tensor poles, and two cubatures (`:nestedquadgk`, built in, and
 `:decuhr` when the DECUHR extension is loaded). Agreement between two of them

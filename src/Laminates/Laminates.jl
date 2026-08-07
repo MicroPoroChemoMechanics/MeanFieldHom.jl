@@ -1,5 +1,5 @@
 """
-    MeanFieldHom.Laminates
+    MeanFieldHomogenization.Laminates
 
 Periodic **multilayer** homogenization: a unit cell of parallel layers of
 common normal `n`, with no matrix, no auxiliary Eshelby problem and no
@@ -19,7 +19,7 @@ follows in closed form from two continuity conditions:
 
 The exported [`Laminate`](@ref) is therefore an
 [`AbstractHomogenizationCell`](@ref) alongside `RVE`, solved by the
-[`Laminated`](@ref MeanFieldHom.Schemes.Laminated) scheme, and it plugs into the multiscale chain like any
+[`Laminated`](@ref MeanFieldHomogenization.Schemes.Laminated) scheme, and it plugs into the multiscale chain like any
 other cell — including declaratively, as the value of a phase property (see
 [`Homogenized`](@ref)).
 
@@ -67,7 +67,7 @@ import ..Core: AbstractHomogenizationCell, AbstractParameter,
 # thing for a sphere, a spheroid and a laminate, and `LayeredSpheroids`
 # already imports them from `LayeredSpheres` for exactly this reason.
 # Declaring rival bindings here would make the names ambiguous at `using
-# MeanFieldHom`.
+# MeanFieldHomogenization`.
 import ..LayeredSpheres: AbstractInterface, PerfectInterface, SpringInterface,
     MembraneInterface, KapitzaInterface, SurfaceConductiveInterface,
     layer_count, layer_interface, layer_volume_fraction

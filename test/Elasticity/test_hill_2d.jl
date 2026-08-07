@@ -1,8 +1,8 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
-import MeanFieldHom.Elasticity: _hill_2d_iso, _hill_2d_aniso
+import MeanFieldHomogenization.Elasticity: _hill_2d_iso, _hill_2d_aniso
 
 # =============================================================================
 #  test_hill_2d.jl — tenseur de Hill 2D, forme fermée isotrope et quadrature

@@ -3,7 +3,7 @@
 A [`Laminate`](@ref) is a periodic unit cell of parallel layers of common
 normal `n`: no matrix, no reference medium, and an **exact** effective
 behavior rather than an estimate. It is an
-[`AbstractHomogenizationCell`](@ref MeanFieldHom.Core.AbstractHomogenizationCell)
+[`AbstractHomogenizationCell`](@ref MeanFieldHomogenization.Core.AbstractHomogenizationCell)
 alongside [`RVE`](@ref), solved by the [`Laminated`](@ref) scheme.
 
 The theory, including the closed forms and the corrected pseudo-inverse
@@ -14,7 +14,7 @@ argument, is on the [laminate theory page](@ref th-laminate).
 Construction mirrors an `RVE`: an empty cell, then layers in stacking order.
 
 ```julia
-using MeanFieldHom, TensND
+using MeanFieldHomogenization, TensND
 
 C_A = TensISO{3}(3 * 2.0, 2 * 0.8)      # 3κ, 2μ
 C_B = TensISO{3}(3 * 0.5, 2 * 0.2)

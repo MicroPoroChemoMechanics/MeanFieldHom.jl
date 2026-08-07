@@ -1003,18 +1003,18 @@ weakdeps = ["SparseArrays"]
     [deps.MaybeInplace.extensions]
     MaybeInplaceSparseArraysExt = "SparseArrays"
 
-[[deps.MeanFieldHom]]
+[[deps.MeanFieldHomogenization]]
 deps = ["Elliptic", "ForwardDiff", "JSON3", "LinearAlgebra", "OrdinaryDiffEq", "PolynomialRoots", "Polynomials", "QuadGK", "StaticArrays", "TensND", "Tensors"]
 path = "../.."
 uuid = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 version = "0.1.0"
 
-    [deps.MeanFieldHom.extensions]
-    MeanFieldHomDECUHRExt = ["DECUHR", "Integrals"]
-    MeanFieldHomNonlinearSolveExt = "NonlinearSolve"
-    MeanFieldHomSymPyExt = "SymPy"
+    [deps.MeanFieldHomogenization.extensions]
+    MeanFieldHomogenizationDECUHRExt = ["DECUHR", "Integrals"]
+    MeanFieldHomogenizationNonlinearSolveExt = "NonlinearSolve"
+    MeanFieldHomogenizationSymPyExt = "SymPy"
 
-    [deps.MeanFieldHom.weakdeps]
+    [deps.MeanFieldHomogenization.weakdeps]
     DECUHR = "d5c0ea0e-a2e6-4e56-a5f3-17f3ec7c9d22"
     Integrals = "de52edbc-65ea-441a-8357-d3a637375a31"
     NonlinearSolve = "8913a72c-1f9b-4ce2-8d82-65094dcecaec"

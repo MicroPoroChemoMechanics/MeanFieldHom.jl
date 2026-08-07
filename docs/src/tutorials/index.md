@@ -2,7 +2,7 @@
 
 Mean-field homogenization replaces a heterogeneous microstructure — a matrix
 carrying inclusions, pores, or cracks — by an equivalent homogeneous medium with
-the same overall response. `MeanFieldHom` computes that response from phase
+the same overall response. `MeanFieldHomogenization` computes that response from phase
 properties, geometries, volume fractions, and a **scheme** encoding an
 assumption about how the phases interact.
 

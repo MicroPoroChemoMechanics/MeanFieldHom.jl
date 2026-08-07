@@ -20,14 +20,14 @@
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
 using Plots
 gr()
 
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 
 # ## The microstructure
 #

@@ -19,7 +19,7 @@
 """
     CustomShape
 
-Neutral [`shape_trait`](@ref MeanFieldHom.Core.shape_trait) tag carried by
+Neutral [`shape_trait`](@ref MeanFieldHomogenization.Core.shape_trait) tag carried by
 [`CustomInclusion`](@ref).  No kernel dispatches on it — a custom inclusion
 supplies its own response — but the interface requires *some* shape trait.
 """
@@ -42,7 +42,7 @@ const _CUSTOM_CALLBACKS = (
 
 Inclusion whose mechanical / transport response is supplied by user
 callbacks, so that an arbitrary morphology becomes a first-class citizen of
-every [`homogenize`](@ref MeanFieldHom.Core.homogenize) scheme without
+every [`homogenize`](@ref MeanFieldHomogenization.Core.homogenize) scheme without
 defining a new type.
 
 # Construction
@@ -53,12 +53,12 @@ defining a new type.
 
 | Option | Default | Meaning |
 |---|---|---|
-| `semi_axes` | `nothing` | half-dimensions of an **equivalent ellipsoidal envelope**, *if* your morphology has one. Purely descriptive: no kernel reads it, and it only serves [`shape_tensor`](@ref MeanFieldHom.Core.shape_tensor). Leave it out for a shape that has no such envelope. |
+| `semi_axes` | `nothing` | half-dimensions of an **equivalent ellipsoidal envelope**, *if* your morphology has one. Purely descriptive: no kernel reads it, and it only serves [`shape_tensor`](@ref MeanFieldHomogenization.Core.shape_tensor). Leave it out for a shape that has no such envelope. |
 | `dim` | `3` | spatial dimension, when `semi_axes` is not given |
 | `basis` | from `euler_angles` | local frame; for a flat object column 3 is the normal |
 | `euler_angles` | `()` | ZYZ angles, ignored when `basis` is given |
-| `homogeneous` | `true` | value returned by [`is_homogeneous_inclusion`](@ref MeanFieldHom.Core.is_homogeneous_inclusion) |
-| `density_factor` | `nothing` | prefactor of the *amount × contribution* seam; set it (e.g. `4π/3`) to register the phase with a [`CrackDensity`](@ref MeanFieldHom.Schemes.CrackDensity) amount |
+| `homogeneous` | `true` | value returned by [`is_homogeneous_inclusion`](@ref MeanFieldHomogenization.Core.is_homogeneous_inclusion) |
+| `density_factor` | `nothing` | prefactor of the *amount × contribution* seam; set it (e.g. `4π/3`) to register the phase with a [`CrackDensity`](@ref MeanFieldHomogenization.Schemes.CrackDensity) amount |
 
 # Callbacks — pick **one** entry gate
 
@@ -326,10 +326,10 @@ Report which parts of the inclusion interface `incl` satisfies, and return
 
 Checks, in order:
 
-1. **Level 0** — [`dimension`](@ref MeanFieldHom.Core.dimension),
-   [`inclusion_basis`](@ref MeanFieldHom.Core.inclusion_basis),
-   [`shape_trait`](@ref MeanFieldHom.Core.shape_trait),
-   [`shape_tensor`](@ref MeanFieldHom.Core.shape_tensor).
+1. **Level 0** — [`dimension`](@ref MeanFieldHomogenization.Core.dimension),
+   [`inclusion_basis`](@ref MeanFieldHomogenization.Core.inclusion_basis),
+   [`shape_trait`](@ref MeanFieldHomogenization.Core.shape_trait),
+   [`shape_tensor`](@ref MeanFieldHomogenization.Core.shape_tensor).
 2. **Level 1** — which entry gate is available: the Hill tensor, the
    localization tensor, or the contribution tensors.
 3. **Level 2** — for `amount = :density`, the three-argument `delta_*` seams.

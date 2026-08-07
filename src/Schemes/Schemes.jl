@@ -1,5 +1,5 @@
 """
-    MeanFieldHom.Schemes
+    MeanFieldHomogenization.Schemes
 
 Mean-field homogenization schemes.  Provides the [`RVE`](@ref) container
 (matrix + named phases with their volume fractions or crack densities, plus
@@ -34,7 +34,7 @@ import ..Core: AbstractHomogenizationCell, AbstractParameter,
     Homogenized, NestedParameter, nested, resolve_property
 
 # Forward declarations of inclusion types we touch from the other sub-modules
-# (loaded earlier than Schemes by `MeanFieldHom.jl`).
+# (loaded earlier than Schemes by `MeanFieldHomogenization.jl`).
 import ..Elasticity: Ellipsoid, hill_tensor
 import ..Core: compliance_contribution, delta_compliance, delta_resistivity,
     compliance_and_stiffness_contribution

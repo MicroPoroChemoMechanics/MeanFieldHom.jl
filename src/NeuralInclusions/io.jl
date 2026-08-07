@@ -198,7 +198,7 @@ function _check_format(raw, path)
         ArgumentError(
             "$path is in surrogate format $v, incompatible with the $(SURROGATE_FORMAT) " *
                 "this version reads. Retrain the model, or install the matching " *
-                "MeanFieldHom version."
+                "MeanFieldHomogenization version."
         )
     )
     return v

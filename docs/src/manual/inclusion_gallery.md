@@ -1,6 +1,6 @@
 # [The inclusion zoo](@id man-inclusion-gallery)
 
-Every morphology `MeanFieldHom` knows, drawn from the object the code actually
+Every morphology `MeanFieldHomogenization` knows, drawn from the object the code actually
 computes with. The figures below are **interactive** — drag to rotate, scroll to
 zoom — and each one is built by passing the very same inclusion instance that a
 [`hill_tensor`](@ref) or [`homogenize`](@ref) call would receive. There is no
@@ -8,9 +8,9 @@ separate drawing to keep in sync: if a constructor sorts semi-axes or permutes a
 frame, the picture moves with it.
 
 ```@setup zoo
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 ```
 
 The zoo splits in three, along the line that matters for the theory:
@@ -41,8 +41,8 @@ what every closed form downstream assumes:
 
 ```@example zoo
 oblate, prolate = Spheroid(0.2), Spheroid(5.0)
-(oblate.semi_axes, MeanFieldHom.shape_trait(oblate)),
-(prolate.semi_axes, MeanFieldHom.shape_trait(prolate))
+(oblate.semi_axes, MeanFieldHomogenization.shape_trait(oblate)),
+(prolate.semi_axes, MeanFieldHomogenization.shape_trait(prolate))
 ```
 
 `Spheroid(5.0)` is stored as ``(a, b, c) = (5, 1, 1)`` with its frame permuted,

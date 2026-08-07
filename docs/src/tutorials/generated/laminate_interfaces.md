@@ -20,7 +20,7 @@ fractions, doubling the period halves the correction. That is why a laminate
 stores thicknesses and not just fractions.
 
 ````@example laminate_interfaces
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using LinearAlgebra

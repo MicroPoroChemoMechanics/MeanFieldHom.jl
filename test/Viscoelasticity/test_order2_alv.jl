@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -95,7 +95,7 @@ end
     α = randn(n, n)
     M = iso_order2_blocks_from_params(α)
     @test size(M) == (3n, 3n)
-    @test MeanFieldHom.Viscoelasticity._is_iso_order2_block(M)
+    @test MeanFieldHomogenization.Viscoelasticity._is_iso_order2_block(M)
     α_back = iso_order2_params_from_blocks(M)
     @test isapprox(α, α_back; atol = 1.0e-14)
 end

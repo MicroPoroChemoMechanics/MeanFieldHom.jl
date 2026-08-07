@@ -1,7 +1,7 @@
 # =============================================================================
 #  25_echoes_crosscheck.jl
 #
-#  Cross-validation of MeanFieldHom.Schemes against:
+#  Cross-validation of MeanFieldHomogenization.Schemes against:
 #   * the Christensen 1990 closed form for the iso 2-phase Mori-Tanaka bulk
 #     modulus (analytical reference);
 #   * the iso-porous self-consistent benchmark from the ECHOES reference
@@ -14,7 +14,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 

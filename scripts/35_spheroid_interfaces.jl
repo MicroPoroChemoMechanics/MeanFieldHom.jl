@@ -29,8 +29,8 @@
 import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)                 #jl
 
-using MeanFieldHom
-using MeanFieldHom.LayeredSpheroids: local_temperature, local_gradient, local_flux
+using MeanFieldHomogenization
+using MeanFieldHomogenization.LayeredSpheroids: local_temperature, local_gradient, local_flux
 using TensND
 using Printf
 using Plots
@@ -38,7 +38,7 @@ gr()
 
 ## Interactive-3-D helpers (Plotly through require.js); see the file header for
 ## why the include goes through `pkgdir` rather than `@__DIR__`.
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 
 default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
 
@@ -149,7 +149,7 @@ const PRO_C = sqrt(PRO_FOCAL2)
 
 s_pro = LayeredSpheroid(
     (PRO_A_IN, PRO_A_OUT), (PRO_B_IN, PRO_B_OUT), (PRO_KCORE, PRO_KSHELL);
-    interfaces = (MeanFieldHom.KapitzaInterface(PRO_ρ), MeanFieldHom.PerfectInterface()),
+    interfaces = (MeanFieldHomogenization.KapitzaInterface(PRO_ρ), MeanFieldHomogenization.PerfectInterface()),
     Nseries = 8,
 )
 
@@ -237,7 +237,7 @@ end
 
 _oblate_particle(β) = LayeredSpheroid(
     (OBL_A,), (OBL_T,), (TensISO{3}(OBL_KCORE),);
-    interfaces = (MeanFieldHom.SurfaceConductiveInterface(β),),
+    interfaces = (MeanFieldHomogenization.SurfaceConductiveInterface(β),),
     Nseries = 5,
 )
 

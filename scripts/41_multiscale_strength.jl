@@ -7,7 +7,7 @@
 #
 #  This is the DEMO / PLOT front-end.  The model itself lives in
 #  `scripts/common/pichler_model.jl` and is built entirely on the public
-#  MeanFieldHom API : a multi-bin Self-Consistent hydrate foam whose several
+#  MeanFieldHomogenization API : a multi-bin Self-Consistent hydrate foam whose several
 #  non-coaxial `TISymmetrize` needle families are averaged EXACTLY about the
 #  global axis (`TensTI{4,T,8}`), then two Mori-Tanaka stages (CP, MO).  The
 #  strength sensitivity is one ForwardDiff pass through the whole chain —

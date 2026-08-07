@@ -1,6 +1,6 @@
 """The Python side of the Julia sidecar.
 
-Loading MeanFieldHom costs about ten seconds, so one long-lived Julia process
+Loading MeanFieldHomogenization costs about ten seconds, so one long-lived Julia process
 serves every request over JSON lines. The bridge owns that process: it starts
 it lazily, serializes requests, and restarts it if it dies or wedges — the
 model itself lives in Python, so a restart loses nothing but time.
@@ -36,14 +36,14 @@ def _diagnose(log: str) -> str:
     hint = None
     if "does not seem to be installed" in log or "Pkg.instantiate()" in log:
         hint = (
-            "the MeanFieldHom project has not been instantiated. The sidecar "
+            "the MeanFieldHomogenization project has not been instantiated. The sidecar "
             "now does this itself on start-up; if you are seeing this, run it "
             "by hand:\n"
-            "    julia --project=<MeanFieldHom.jl> -e 'using Pkg; Pkg.instantiate()'"
+            "    julia --project=<MeanFieldHomogenization.jl> -e 'using Pkg; Pkg.instantiate()'"
         )
-    elif "MeanFieldHom" in log and "not found in current path" in log:
+    elif "MeanFieldHomogenization" in log and "not found in current path" in log:
         hint = (
-            "Julia started but could not find MeanFieldHom. Check that "
+            "Julia started but could not find MeanFieldHomogenization. Check that "
             "tools/mfhstudio sits inside the package checkout, or point the "
             "sidecar at it explicitly."
         )
@@ -165,7 +165,7 @@ class Bridge:
             if self._ready_evt.wait(0.2):
                 if not self._ready:
                     raise SidecarUnavailable(
-                        "MeanFieldHom failed to load in the sidecar:\n"
+                        "MeanFieldHomogenization failed to load in the sidecar:\n"
                         + str(self._boot_error)
                     )
                 return
@@ -236,7 +236,7 @@ class Bridge:
 
         `timeout` bounds the time the sidecar spends *answering*, so the wait
         for it to finish booting is taken first and separately.  Sending on a
-        process that is alive but still loading MeanFieldHom would spend the
+        process that is alive but still loading MeanFieldHomogenization would spend the
         whole budget waiting for a reply that cannot come yet, and report a
         wedged sidecar when nothing is wrong but a cold precompilation.
         """

@@ -1,6 +1,6 @@
 # [A first homogenization](@id tut-first-estimate)
 
-Every `MeanFieldHom` computation starts from the same three ingredients:
+Every `MeanFieldHomogenization` computation starts from the same three ingredients:
 a **representative volume element** (RVE) describing the phases, their
 **geometry**, and a **scheme** that turns the RVE into a single
 effective property. This page builds the simplest possible RVE — a
@@ -10,7 +10,7 @@ stiffness two different ways.
 ## Building an RVE
 
 ```@example tut1st
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

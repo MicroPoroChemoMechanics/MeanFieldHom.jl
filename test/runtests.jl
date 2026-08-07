@@ -1,19 +1,19 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using Random
 
-# Load DECUHR + Integrals so the `MeanFieldHomDECUHRExt` extension activates:
+# Load DECUHR + Integrals so the `MeanFieldHomogenizationDECUHRExt` extension activates:
 # several tests cross-validate the `method = :decuhr` path against the residue
-# and nested-QuadGK backends. (DECUHR is a weak dependency of MeanFieldHom.)
+# and nested-QuadGK backends. (DECUHR is a weak dependency of MeanFieldHomogenization.)
 import DECUHR, Integrals
 
-# Load NonlinearSolve so the `MeanFieldHomNonlinearSolveExt` extension
+# Load NonlinearSolve so the `MeanFieldHomogenizationNonlinearSolveExt` extension
 # activates: `test_self_consistent_nls.jl` exercises SC / ASC through
 # SciML algorithms (NewtonRaphson, TrustRegion) and `AutoNonlinear`.
-# (NonlinearSolve is a weak dependency of MeanFieldHom.)
+# (NonlinearSolve is a weak dependency of MeanFieldHomogenization.)
 import NonlinearSolve
 
-# Load Ferrite / FerriteGmsh / Gmsh so the `MeanFieldHomFerriteExt` extension
+# Load Ferrite / FerriteGmsh / Gmsh so the `MeanFieldHomogenizationFerriteExt` extension
 # activates: `test_ferrite_crack.jl` and `test_axi_excentered_sphere.jl`
 # exercise the finite-element inclusions.  They are weak dependencies, so a
 # missing stack skips those tests rather than failing the suite.
@@ -36,7 +36,7 @@ catch
     false
 end
 
-# Load Lux / Optimisers / Zygote so the `MeanFieldHomLuxExt` extension activates.
+# Load Lux / Optimisers / Zygote so the `MeanFieldHomogenizationLuxExt` extension activates.
 # Only *training* a neural surrogate needs them: loading a committed model,
 # running it through every scheme and differentiating it need nothing beyond the
 # package, so almost all of `test_neural_inclusion.jl` runs unconditionally and
@@ -53,7 +53,7 @@ end
 # reproducible locally instead of depending on the draw.
 Random.seed!(20260723)
 
-@testset "MeanFieldHom" begin
+@testset "MeanFieldHomogenization" begin
     @testset "Elliptic" begin
         include("Elliptic/test_elliptic.jl")
     end

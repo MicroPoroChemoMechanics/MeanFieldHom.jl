@@ -13,7 +13,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 
@@ -224,30 +224,30 @@ end
 #  fonctionner sans modification de `parameters.jl` — seule la réflexion via
 #  `_replace_geom_field` est nécessaire.
 
-# Étendre `MeanFieldHom.Schemes._replace_geom_field` n'est PAS nécessaire ici
+# Étendre `MeanFieldHomogenization.Schemes._replace_geom_field` n'est PAS nécessaire ici
 # car `Blob` a un constructeur paramétrique auto-généré compatible avec le
 # fallback @generated.
-struct Blob{T <: Number, B} <: MeanFieldHom.AbstractEllipsoidalInclusion{3, T}
+struct Blob{T <: Number, B} <: MeanFieldHomogenization.AbstractEllipsoidalInclusion{3, T}
     radius::T
     basis::B
 end
 
 # Make a Blob act exactly like a sphere of the same radius for hill_tensor.
-function MeanFieldHom.hill_tensor(b::Blob, C₀::TensND.AbstractTens; kw...)
-    return MeanFieldHom.hill_tensor(Ellipsoid(b.radius, b.radius, b.radius), C₀; kw...)
+function MeanFieldHomogenization.hill_tensor(b::Blob, C₀::TensND.AbstractTens; kw...)
+    return MeanFieldHomogenization.hill_tensor(Ellipsoid(b.radius, b.radius, b.radius), C₀; kw...)
 end
 
 # Required AbstractInclusion interface bits — defer to spherical equivalent
-MeanFieldHom.material_symmetry(b::Blob) =
-    MeanFieldHom.material_symmetry(Ellipsoid(b.radius, b.radius, b.radius))
-MeanFieldHom.dimension(b::Blob) = 3
-MeanFieldHom.shape_trait(b::Blob) =
-    MeanFieldHom.shape_trait(Ellipsoid(b.radius, b.radius, b.radius))
-MeanFieldHom.shape_tensor(b::Blob) =
-    MeanFieldHom.shape_tensor(Ellipsoid(b.radius, b.radius, b.radius))
-MeanFieldHom.inclusion_basis(b::Blob) = b.basis
-MeanFieldHom.eshelby_tensor(b::Blob, C₀; kw...) =
-    MeanFieldHom.eshelby_tensor(Ellipsoid(b.radius, b.radius, b.radius), C₀; kw...)
+MeanFieldHomogenization.material_symmetry(b::Blob) =
+    MeanFieldHomogenization.material_symmetry(Ellipsoid(b.radius, b.radius, b.radius))
+MeanFieldHomogenization.dimension(b::Blob) = 3
+MeanFieldHomogenization.shape_trait(b::Blob) =
+    MeanFieldHomogenization.shape_trait(Ellipsoid(b.radius, b.radius, b.radius))
+MeanFieldHomogenization.shape_tensor(b::Blob) =
+    MeanFieldHomogenization.shape_tensor(Ellipsoid(b.radius, b.radius, b.radius))
+MeanFieldHomogenization.inclusion_basis(b::Blob) = b.basis
+MeanFieldHomogenization.eshelby_tensor(b::Blob, C₀; kw...) =
+    MeanFieldHomogenization.eshelby_tensor(Ellipsoid(b.radius, b.radius, b.radius), C₀; kw...)
 
 @testset "User-defined inclusion (Blob) — geometry derivative works without code change" begin
     rve = RVE(:M)

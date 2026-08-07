@@ -6,7 +6,7 @@ equally to a new built-in family and to a user-defined morphology living
 outside the package — there is no privileged path.
 
 For the user-facing tutorial (including the ready-made
-[`CustomInclusion`](@ref MeanFieldHom.CustomInclusion) callback type), see
+[`CustomInclusion`](@ref MeanFieldHomogenization.CustomInclusion) callback type), see
 [Custom inclusions](@ref man-custom-inclusions).
 
 Where the answer comes from is free. Four routes already use this contract: the
@@ -47,12 +47,12 @@ Then implement — but only two of these are actually *load-bearing*:
 
 | Function | Returns | Status |
 |---|---|---|
-| [`shape_trait`](@ref MeanFieldHom.Core.shape_trait) | a `Type` | **required.** Holy-style tag. For a flat object it is more than decoration: the crack algebra (``\mathbb H`` from the COD tensor, and the Budiansky prefactors) is keyed on it — `EllipticShape` / `Penny` buy the elliptical convention, `Ribbon` the ribbon one (see level 2). |
+| [`shape_trait`](@ref MeanFieldHomogenization.Core.shape_trait) | a `Type` | **required.** Holy-style tag. For a flat object it is more than decoration: the crack algebra (``\mathbb H`` from the COD tensor, and the Budiansky prefactors) is keyed on it — `EllipticShape` / `Penny` buy the elliptical convention, `Ribbon` the ribbon one (see level 2). |
 | [`is_homogeneous_inclusion`](@ref) | `Bool` | **defaults to `true`**; override it — and mind level 1 — when the inclusion has no single uniform property. The scheme kernels branch on it. |
-| [`dimension`](@ref MeanFieldHom.Core.dimension) | `Int` | accessor. No kernel reads it, but downstream code and scripts do. Already defined for every `AbstractCrack`. |
-| [`inclusion_basis`](@ref MeanFieldHom.Core.inclusion_basis) | `TensND.AbstractBasis` | accessor; for a flat object **column 3 is the normal**. Already defined for every `AbstractCrack` with a `basis` field. |
-| [`shape_tensor`](@ref MeanFieldHom.Core.shape_tensor) | `Tens{2,dim}` | **optional.** It describes an *equivalent ellipsoidal envelope*, ``\mathbf A = \mathbf R\,\mathrm{diag}(a_i)\,\mathbf R^{T}``. Nothing in the package consumes it, and a morphology that has no such envelope simply does not have one. Implement it when the notion is meaningful — the degenerate conventions are tabulated in its docstring. |
-| [`element_type`](@ref MeanFieldHom.Core.element_type) | `Type` | **default provided** from the type parameter — do not implement it. |
+| [`dimension`](@ref MeanFieldHomogenization.Core.dimension) | `Int` | accessor. No kernel reads it, but downstream code and scripts do. Already defined for every `AbstractCrack`. |
+| [`inclusion_basis`](@ref MeanFieldHomogenization.Core.inclusion_basis) | `TensND.AbstractBasis` | accessor; for a flat object **column 3 is the normal**. Already defined for every `AbstractCrack` with a `basis` field. |
+| [`shape_tensor`](@ref MeanFieldHomogenization.Core.shape_tensor) | `Tens{2,dim}` | **optional.** It describes an *equivalent ellipsoidal envelope*, ``\mathbf A = \mathbf R\,\mathrm{diag}(a_i)\,\mathbf R^{T}``. Nothing in the package consumes it, and a morphology that has no such envelope simply does not have one. Implement it when the notion is meaningful — the degenerate conventions are tabulated in its docstring. |
+| [`element_type`](@ref MeanFieldHomogenization.Core.element_type) | `Type` | **default provided** from the type parameter — do not implement it. |
 
 The point of the distinction: an inclusion that supplies its own response
 tensors owes the package nothing about its *outer shape*. `shape_tensor` is
@@ -218,11 +218,11 @@ matrix property found under it.
 The scheme picks its branch from the **amount type** registered on the RVE,
 not from the geometry type.
 
-**`fraction = f`** ([`VolumeFraction`](@ref MeanFieldHom.Schemes.VolumeFraction))
+**`fraction = f`** ([`VolumeFraction`](@ref MeanFieldHomogenization.Schemes.VolumeFraction))
 uses the three-argument contributions and the generic two-argument
 `delta_*(X, f) = f * X`. **Nothing to implement.**
 
-**`density = ε`** ([`CrackDensity`](@ref MeanFieldHom.Schemes.CrackDensity))
+**`density = ε`** ([`CrackDensity`](@ref MeanFieldHomogenization.Schemes.CrackDensity))
 uses the two-argument contributions and the **three-argument** seams
 
 ```julia
@@ -237,7 +237,7 @@ correction lives — `4π/3` for an elliptical crack of Budiansky density
 
 For anything subtyping [`AbstractCrack`](@ref) you do **not** write those four
 methods: they are dispatched on `shape_trait` through the single hook
-[`crack_density_factor`](@ref MeanFieldHom.Cracks.crack_density_factor).
+[`crack_density_factor`](@ref MeanFieldHomogenization.Cracks.crack_density_factor).
 Override that one method if your flat morphology uses a different density
 convention.
 
@@ -249,9 +249,9 @@ well — it then owns the four `delta_*` methods itself.
 
 ## Level 3 — optional refinements
 
-- **Bundled seams.** [`loc_and_stiffness`](@ref MeanFieldHom.loc_and_stiffness),
-  [`loc_and_stress_average`](@ref MeanFieldHom.loc_and_stress_average) and
-  [`compliance_and_stiffness_contribution`](@ref MeanFieldHom.compliance_and_stiffness_contribution)
+- **Bundled seams.** [`loc_and_stiffness`](@ref MeanFieldHomogenization.loc_and_stiffness),
+  [`loc_and_stress_average`](@ref MeanFieldHomogenization.loc_and_stress_average) and
+  [`compliance_and_stiffness_contribution`](@ref MeanFieldHomogenization.compliance_and_stiffness_contribution)
   let a scheme obtain two objects from one expensive solve. Generic fallbacks
   exist, so specializing is purely a performance decision — and the result
   must be **bitwise identical** to calling the two functions separately.

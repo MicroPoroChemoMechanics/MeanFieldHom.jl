@@ -1,9 +1,9 @@
 """
-    MeanFieldHom
+    MeanFieldHomogenization
 
 Julia package for mean-field homogenization of heterogeneous materials.
 
-`MeanFieldHom` unifies the computation of Hill polarization tensors for
+`MeanFieldHomogenization` unifies the computation of Hill polarization tensors for
 ellipsoidal inhomogeneities, crack opening displacement (COD) tensors, stress
 and displacement intensity factors, homogenization schemes over representative
 volume elements (RVEs), and ageing viscoelastic constitutive laws, sharing a
@@ -11,37 +11,37 @@ common abstraction for inclusions, algorithms, and material symmetry classes.
 
 # Sub-modules
 
-- `MeanFieldHom.Elliptic`     — type-generic Legendre and Carlson elliptic
+- `MeanFieldHomogenization.Elliptic`     — type-generic Legendre and Carlson elliptic
   integrals (`ForwardDiff`- and `Sym`-compatible).
-- `MeanFieldHom.Core`         — abstractions (`AbstractInclusion`,
+- `MeanFieldHomogenization.Core`         — abstractions (`AbstractInclusion`,
   `AbstractAlgorithm`, `MaterialSymmetry`), shared numerics
   (Green / Newton kernels, Masson-style residue, DECUHR integrand), modulus
   extractors, and central dispatch.
-- `MeanFieldHom.Elasticity`   — Hill polarization for ellipsoidal inclusions
+- `MeanFieldHomogenization.Elasticity`   — Hill polarization for ellipsoidal inclusions
   and infinite cylinders (2D / 3D, isotropic and anisotropic matrix).
-- `MeanFieldHom.Cracks`       — COD tensors, compliance contributions, SIF
+- `MeanFieldHomogenization.Cracks`       — COD tensors, compliance contributions, SIF
   and DIF for elliptic and ribbon cracks.
-- `MeanFieldHom.Conductivity` — 2nd-order Hill tensor for conductivity /
+- `MeanFieldHomogenization.Conductivity` — 2nd-order Hill tensor for conductivity /
   diffusion problems.
-- `MeanFieldHom.LayeredSpheres`   — `n`-layer composite spheres with five
+- `MeanFieldHomogenization.LayeredSpheres`   — `n`-layer composite spheres with five
   interface types, volume-average and pointwise localization.
-- `MeanFieldHom.LayeredSpheroids` — `n`-layer confocal spheroids in
+- `MeanFieldHomogenization.LayeredSpheroids` — `n`-layer confocal spheroids in
   conduction, with imperfect interfaces.
-- `MeanFieldHom.Schemes`      — RVEs, amounts, symmetrization and the
+- `MeanFieldHomogenization.Schemes`      — RVEs, amounts, symmetrization and the
   homogenization schemes themselves (dilute, Mori–Tanaka, self-consistent,
   PCW, Maxwell, differential).
-- `MeanFieldHom.Viscoelasticity`  — ageing linear viscoelasticity through
+- `MeanFieldHomogenization.Viscoelasticity`  — ageing linear viscoelasticity through
   Volterra operators, available to every scheme.
-- `MeanFieldHom.CustomInclusions` — the user-defined inclusion contract:
+- `MeanFieldHomogenization.CustomInclusions` — the user-defined inclusion contract:
   `CustomInclusion` and `check_inclusion_interface`.
-- `MeanFieldHom.FiniteElements`   — inclusions whose response comes out of a
+- `MeanFieldHomogenization.FiniteElements`   — inclusions whose response comes out of a
   finite-element resolution of the Eshelby problem (`FEEllipticCrack`,
   `FEExcenteredSphere`); the discretization comes from a backend extension,
-  `MeanFieldHomFerriteExt` or `MeanFieldHomGridapExt`.
-- `MeanFieldHom.NeuralInclusions` — inclusions whose response comes out of a
+  `MeanFieldHomogenizationFerriteExt` or `MeanFieldHomogenizationGridapExt`.
+- `MeanFieldHomogenization.NeuralInclusions` — inclusions whose response comes out of a
   trained neural network (`NeuralHillInclusion`, `NeuralLocalizationInclusion`),
   together with the sampling and fitting machinery; the optimizer comes from
-  `MeanFieldHomLuxExt`, evaluation needs no extra dependency.
+  `MeanFieldHomogenizationLuxExt`, evaluation needs no extra dependency.
 
 # Shared generic interface
 
@@ -60,7 +60,7 @@ All high-level entry points share the same algorithmic traits
 rules. See the developer documentation (`docs/src/developer/`) for guidance
 on extending the package with new inclusions, algorithms or schemes.
 """
-module MeanFieldHom
+module MeanFieldHomogenization
 
 using TensND
 

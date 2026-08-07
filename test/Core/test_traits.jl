@@ -1,15 +1,15 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
 @testset "Core — traits" begin
     C_iso = TensISO{3}(3.0, 2.0)
-    @test MeanFieldHom.material_symmetry(C_iso) isa MeanFieldHom.IsotropicSym
+    @test MeanFieldHomogenization.material_symmetry(C_iso) isa MeanFieldHomogenization.IsotropicSym
 
     # Analytical / Residue / DECUHR singletons
-    @test MeanFieldHom.Analytical() isa MeanFieldHom.AbstractAlgorithm
-    @test MeanFieldHom.Residue() isa MeanFieldHom.AbstractAlgorithm
-    @test MeanFieldHom.DECUHR() isa MeanFieldHom.AbstractAlgorithm
+    @test MeanFieldHomogenization.Analytical() isa MeanFieldHomogenization.AbstractAlgorithm
+    @test MeanFieldHomogenization.Residue() isa MeanFieldHomogenization.AbstractAlgorithm
+    @test MeanFieldHomogenization.DECUHR() isa MeanFieldHomogenization.AbstractAlgorithm
 end
 
 # =============================================================================
@@ -29,15 +29,15 @@ end
 
     # An anisotropically-TYPED tensor holding isotropic VALUES.
     N = stiffness_contribution(tri, C_i, C_iso)
-    aniso_typed = MeanFieldHom.Schemes._diff_embed(C_iso, C_iso + N)
+    aniso_typed = MeanFieldHomogenization.Schemes._diff_embed(C_iso, C_iso + N)
     @test !(aniso_typed isa TensND.TensISO)
     @test Array(aniso_typed) ≈ Array(C_iso) atol = 1.0e-10
 
     for C₀ in (aniso_typed, C_iso + 0.35 * N)
-        @test MeanFieldHom.Core._resolve_algo(Val(:auto), tri, C₀) isa
-            Union{MeanFieldHom.Core.DECUHR, MeanFieldHom.Core.NestedQuadGK}
-        @test MeanFieldHom.Core._resolve_algo(Val(:residues), tri, C₀) isa
-            MeanFieldHom.Core.Residue
+        @test MeanFieldHomogenization.Core._resolve_algo(Val(:auto), tri, C₀) isa
+            Union{MeanFieldHomogenization.Core.DECUHR, MeanFieldHomogenization.Core.NestedQuadGK}
+        @test MeanFieldHomogenization.Core._resolve_algo(Val(:residues), tri, C₀) isa
+            MeanFieldHomogenization.Core.Residue
     end
 
     # …and the default actually returns the right number on the degenerate
@@ -48,8 +48,8 @@ end
     @test_throws Exception hill_tensor(tri, aniso_typed; method = :residues)
 
     # Non-Float64 coefficients keep the type-generic cubature.
-    @test MeanFieldHom.Core._aniso_default_algo(ComplexF64(1) * (C_iso + 0.35 * N)) isa
-        MeanFieldHom.Core.NestedQuadGK
+    @test MeanFieldHomogenization.Core._aniso_default_algo(ComplexF64(1) * (C_iso + 0.35 * N)) isa
+        MeanFieldHomogenization.Core.NestedQuadGK
 end
 
 # Regression: `:nestedquadgk` used to be missing from the `TensISO`
@@ -59,8 +59,8 @@ end
     C_iso = TensISO{3}(3 * 20.0, 2 * 8.0)
     for incl in (Ellipsoid(1.0, 0.6, 0.3), Ellipsoid(1.0), PennyCrack(1.0))
         for m in (:auto, :analytical, :residues, :decuhr, :nestedquadgk)
-            @test MeanFieldHom.Core._resolve_algo(Val(m), incl, C_iso) isa
-                MeanFieldHom.Core.AbstractAlgorithm
+            @test MeanFieldHomogenization.Core._resolve_algo(Val(m), incl, C_iso) isa
+                MeanFieldHomogenization.Core.AbstractAlgorithm
         end
     end
     @test all(isfinite, get_array(hill_tensor(Ellipsoid(1.0, 0.6, 0.3), C_iso; method = :nestedquadgk)))

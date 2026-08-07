@@ -2,7 +2,7 @@
 #  60_alv_cracks_interface.jl
 #
 #  Cross-check **ALV penny cracks with finite interface stiffness
-#  `(Rn(t,t'), Rt(t,t'))`** between MeanFieldHom.jl and the ECHOES
+#  `(Rn(t,t'), Rt(t,t'))`** between MeanFieldHomogenization.jl and the ECHOES
 #  reference implementation.
 #
 #  Same parameters on both sides (matrix V, interface laws Rn / Rt,
@@ -31,7 +31,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -118,7 +118,7 @@ for name in SCHEME_NAMES
     println("  ECHOES ε_xx(t_max)  [$name] = ", ε_echoes[name][end])
 end
 
-# ─── Julia side : MeanFieldHom.jl ──────────────────────────────────────────
+# ─── Julia side : MeanFieldHomogenization.jl ──────────────────────────────────────────
 
 function R_matrix(t, tp)
     α₀ = 3 * k₀ * (1 + 0.2 * sqrt(max(tp, 0.0)))
@@ -162,7 +162,7 @@ end
 
 ε_julia = Dict{String, Vector{Float64}}()
 for name in SCHEME_NAMES
-    println("Running MeanFieldHom.jl ($name, t₀=$(t₀), density=$(DENSITY))…")
+    println("Running MeanFieldHomogenization.jl ($name, t₀=$(t₀), density=$(DENSITY))…")
     ε_julia[name] = julia_creep_response(JULIA_SCHEME_OBJ[name])
     println("  Julia  ε_xx(t_max)  [$name] = ", ε_julia[name][end])
 end
@@ -200,7 +200,7 @@ for name in SCHEME_NAMES
     )
     scatter!(
         plt, TIMES[keep], ε_julia[name][keep];
-        label = "MeanFieldHom.jl ($name)", color = col, marker = :circle,
+        label = "MeanFieldHomogenization.jl ($name)", color = col, marker = :circle,
         markersize = 4, markerstrokecolor = col, alpha = 0.6
     )
 end

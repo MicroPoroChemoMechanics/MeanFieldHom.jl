@@ -123,7 +123,7 @@ element type; it is exercised with `Float64`, `BigFloat`,
 ```julia
 using SymPy; @syms κ₀ μ₀ κ₁ μ₁
 s = LayeredSphere((Sym(1),), (TensISO{3}(3κ₁, 2μ₁),))
-simplify(MeanFieldHom.LayeredSpheres._bulk_localization(s, κ₀, μ₀)[1])
+simplify(MeanFieldHomogenization.LayeredSpheres._bulk_localization(s, κ₀, μ₀)[1])
 # → (3κ₀ + 4μ₀) / (3κ₁ + 4μ₀)
 ```
 

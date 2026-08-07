@@ -22,14 +22,14 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using StaticArrays
 using ForwardDiff
 using Random
 
-const MFHC = MeanFieldHom.Core
+const MFHC = MeanFieldHomogenization.Core
 const ATOL_KM = 1.0e-12
 
 # A fully triclinic, symmetric-positive-definite Kelvin-Mandel matrix.

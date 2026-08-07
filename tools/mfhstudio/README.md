@@ -1,9 +1,9 @@
 # MFH Studio
 
-A local web interface for building MeanFieldHom scripts: draw the shape of each
+A local web interface for building MeanFieldHomogenization scripts: draw the shape of each
 phase, run the model, and read existing scripts back without damaging them.
 
-From Julia, once `using MeanFieldHom` (the studio ships with the checkout):
+From Julia, once `using MeanFieldHomogenization` (the studio ships with the checkout):
 
 ```julia
 mfhstudio()                  # start and open a browser
@@ -37,7 +37,7 @@ streams redirected, because it is a Node script that otherwise prints a
 failure of ours.
 
 Requires Python 3.10+ (standard library only — no `pip install`) and a `julia`
-on `PATH` able to load MeanFieldHom. Set `JULIA` to point at a specific
+on `PATH` able to load MeanFieldHomogenization. Set `JULIA` to point at a specific
 executable.
 
 ### Getting the Julia side to start
@@ -52,7 +52,7 @@ then dies with a stack trace whose only advice is to run `Pkg.instantiate()`.
 The sidecar now runs it itself on first start, which takes a few minutes once.
 By hand:
 
-    julia --project=<MeanFieldHom.jl> -e 'using Pkg; Pkg.instantiate()'
+    julia --project=<MeanFieldHomogenization.jl> -e 'using Pkg; Pkg.instantiate()'
 
 **The clone's local `Manifest.toml` pins dependencies to sibling checkouts.**
 That file is untracked (`.gitignore`) and specific to each development machine;
@@ -61,19 +61,19 @@ on one of ours it records, for instance:
     [[deps.TensND]]
     path = "../TensND.jl"
 
-which only resolves when `TensND.jl` sits next to `MeanFieldHom.jl`. That is a
+which only resolves when `TensND.jl` sits next to `MeanFieldHomogenization.jl`. That is a
 development override, and the way out is a separate environment resolved from
-the General registry, where MeanFieldHom itself now lives:
+the General registry, where MeanFieldHomogenization itself now lives:
 
     julia -e 'using Pkg; Pkg.activate("mfhstudio", shared=true); \
-              Pkg.add("MeanFieldHom")'
+              Pkg.add("MeanFieldHomogenization")'
 
 then `python -m mfhstudio --project @mfhstudio`. To point that environment at a
 clone you are editing instead of the released version, add the dependencies
 first and develop the clone on top —
 
     julia -e 'using Pkg; Pkg.activate("mfhstudio", shared=true); \
-              Pkg.add("TensND"); Pkg.develop(path=raw"<MeanFieldHom.jl>")'
+              Pkg.add("TensND"); Pkg.develop(path=raw"<MeanFieldHomogenization.jl>")'
 
 — the `Pkg.add` before the develop being what stops the resolver from turning
 those dependencies back into path entries. `--check` reads the manifest and
@@ -123,7 +123,7 @@ restarted after a wedge without losing work.
 needs, which lenses exist — are interface concerns and live in Python, so they
 are there immediately. Only the scheme list and each scheme's solver options
 come from the sidecar, and they replace the fallback wholesale rather than
-merging, so a scheme MeanFieldHom drops disappears. Putting the forms behind
+merging, so a scheme MeanFieldHomogenization drops disappears. Putting the forms behind
 the sidecar is what once made every control dead on a machine where Julia
 failed to start.
 
@@ -193,7 +193,7 @@ and written back, and no line may be lost.
 - Sensitivities, laminates and custom/FE/neural inclusions are not modeled.
   Scripts using them open and are preserved, but those parts are not editable.
 
-- An inner `Homogenized` cannot sit inside an ALV chain (MeanFieldHom cannot
+- An inner `Homogenized` cannot sit inside an ALV chain (MeanFieldHomogenization cannot
   re-express a homogenized result as a `ViscoLaw`); the interface blocks the
   combination.
 - `web/vendor/plotly.min.js` is the official *plotly-gl3d* partial bundle,

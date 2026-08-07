@@ -5,7 +5,7 @@
 #  works: the options, the box → surrogate assembly, and the reporting.  The
 #  optimizer itself is a **weak dependency**, exactly like the finite-element
 #  backends: `train_surrogate` below is the informative fallback, and
-#  `MeanFieldHomLuxExt` supplies the real method.
+#  `MeanFieldHomogenizationLuxExt` supplies the real method.
 #
 #  The split is deliberate and it is what makes a trained surrogate cheap:
 #  fitting needs Lux, Zygote and Optimisers, but *evaluating* needs nothing at

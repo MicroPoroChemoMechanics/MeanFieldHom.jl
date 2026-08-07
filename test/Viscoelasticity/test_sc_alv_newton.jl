@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -13,8 +13,8 @@ using LinearAlgebra
 #  limite de Heaviside, et le SC ALV Anderson-Picard en viscoélastique.
 # =============================================================================
 
-const _sc_newton = MeanFieldHom.Viscoelasticity.self_consistent_alv_newton
-const _to_mandel66 = MeanFieldHom.Viscoelasticity._tens_to_mandel66
+const _sc_newton = MeanFieldHomogenization.Viscoelasticity.self_consistent_alv_newton
+const _to_mandel66 = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66
 
 @testset "sc_alv_newton — limite élastique (Heaviside)" begin
     rve = RVE(:M)
@@ -129,7 +129,7 @@ end
 
     # Les fissures assouplissent : à t = 0 la rigidité effective doit être
     # strictement inférieure à celle de la matrice seule.
-    C_M = MeanFieldHom.Viscoelasticity._trapezoidal_relaxation(
+    C_M = MeanFieldHomogenization.Viscoelasticity._trapezoidal_relaxation(
         matrix_property(rve, :C), times, 6
     )
     @test C[1, 1] < C_M[1, 1]

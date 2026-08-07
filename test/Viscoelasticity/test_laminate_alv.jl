@@ -15,7 +15,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -87,7 +87,7 @@ end
     lam = Laminate()
     add_layer!(lam, :A, Dict(:C => law); thickness = 1.0)
     M = homogenize_alv(lam, Laminated(), :C; times = times)
-    M1 = MeanFieldHom.Viscoelasticity._trapezoidal_relaxation(law, times, 6)
+    M1 = MeanFieldHomogenization.Viscoelasticity._trapezoidal_relaxation(law, times, 6)
     @test M ≈ M1 atol = ATOL_LALV
 end
 

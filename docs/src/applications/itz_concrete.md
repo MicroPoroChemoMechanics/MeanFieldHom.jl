@@ -11,7 +11,7 @@ stiffness does that cost? Microstructural model of
     [konigsberger2013](@cite) go further and use the ITZ to explain the **elastic
     limit** of concrete: the ITZ is where local failure initiates, so the
     macroscopic proportionality limit is reached long before the bulk paste
-    fails. That criterion needs two ingredients `MeanFieldHom` does not provide
+    fails. That criterion needs two ingredients `MeanFieldHomogenization` does not provide
     — an orientation-resolved Drucker-Prager check with strain second moments,
     and the Hadamard jump conditions across a plane aggregate/paste interface.
     Only the elastic part of the model is reproduced here. The strength side of
@@ -22,7 +22,7 @@ stiffness does that cost? Microstructural model of
 
 The paste scale is the one used in [Quasi-brittle strength](strength.md) — the
 hydrate foam and cement paste model of [pichler2011](@cite), shared as
-[`scripts/common/pichler_model.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/common/pichler_model.jl).
+[`scripts/common/pichler_model.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/blob/main/scripts/common/pichler_model.jl).
 The new ingredient is the fourth phase geometry: **coated** aggregates.
 
 | Scale | RVE | Phases | Scheme |
@@ -33,7 +33,7 @@ The new ingredient is the fourth phase geometry: **coated** aggregates.
 | 4 | Concrete | CP matrix + ITZ-coated aggregates | Mori-Tanaka |
 
 ```@example itz
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -151,7 +151,7 @@ end
 
 An aggregate of radius ``R`` surrounded by an ITZ of thickness ``t`` is a
 two-layer [`LayeredSphere`](@ref) — a *composite sphere*, which
-`MeanFieldHom` accepts as an RVE phase directly: it enters the scheme through
+`MeanFieldHomogenization` accepts as an RVE phase directly: it enters the scheme through
 its concentration tensors, with no Hill tensor of its own.
 
 Two bookkeeping points, both easy to get wrong:

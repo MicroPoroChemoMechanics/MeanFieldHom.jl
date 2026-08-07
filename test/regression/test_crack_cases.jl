@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -7,14 +7,14 @@ using LinearAlgebra
     # ── Crack geometry ────────────────────────────────────────────────────
     @testset "Crack geometry" begin
         c_penny = PennyCrack(1.0)
-        @test c_penny isa EllipticCrack{Float64, MeanFieldHom.Cracks.Penny}
+        @test c_penny isa EllipticCrack{Float64, MeanFieldHomogenization.Cracks.Penny}
         @test aspect_ratio(c_penny) == 1.0
         @test semi_major(c_penny) == 1.0
         @test semi_minor(c_penny) == 1.0
-        @test MeanFieldHom.Cracks.crack_chi(c_penny) ≈ 2 / 3
+        @test MeanFieldHomogenization.Cracks.crack_chi(c_penny) ≈ 2 / 3
 
         c_ell = EllipticCrack(2.0, 0.5)
-        @test c_ell isa EllipticCrack{Float64, MeanFieldHom.Cracks.EllipticShape}
+        @test c_ell isa EllipticCrack{Float64, MeanFieldHomogenization.Cracks.EllipticShape}
         @test semi_major(c_ell) == 2.0
         @test semi_minor(c_ell) == 0.5
         @test aspect_ratio(c_ell) == 0.25
@@ -27,7 +27,7 @@ using LinearAlgebra
         @test r isa RibbonCrack{Float64}
         @test semi_minor(r) == 0.3
         @test aspect_ratio(r) == 0.0
-        @test MeanFieldHom.Cracks.crack_chi(r) ≈ π / 4
+        @test MeanFieldHomogenization.Cracks.crack_chi(r) ≈ π / 4
 
         c_rot = EllipticCrack(1.0, 0.5; euler_angles = (π / 4, π / 6, 0.0))
         @test c_rot isa EllipticCrack
@@ -197,12 +197,12 @@ using LinearAlgebra
         @test (3π / 8) * B_e[3, 3] ≈ B_r[3, 3] rtol = 1.0e-2
     end
 
-    # The B → H factor is the one place where MeanFieldHom's convention
+    # The B → H factor is the one place where MeanFieldHomogenization's convention
     # deliberately differs from the Echoes / Kachanov one, so it gets its own
     # test rather than relying on the internal-consistency checks above (which
     # hold for *any* value of the factor, since it appears on both sides).
     #
-    # MeanFieldHom normalizes the flat limit by the in-plane half-width b,
+    # MeanFieldHomogenization normalizes the flat limit by the in-plane half-width b,
     # uniformly for 3D and 2D:  H = lim (c/b) Q⁻¹ = (cS/V) n ⊗ˢ B ⊗ˢ n,
     # giving 3/4 for an ellipse and 2/π for a ribbon — both INDEPENDENT of η.
     # Echoes normalizes the elliptic case by the major semi-axis a instead, so

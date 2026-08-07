@@ -2,13 +2,13 @@
 
 When a morphology has no closed-form Eshelby solution, its response can be
 computed numerically and fed to the schemes through the
-[custom-inclusion contract](@ref man-custom-inclusions). `MeanFieldHom` ships
-one such inclusion: [`FEEllipticCrack`](@ref MeanFieldHom.FEEllipticCrack),
+[custom-inclusion contract](@ref man-custom-inclusions). `MeanFieldHomogenization` ships
+one such inclusion: [`FEEllipticCrack`](@ref MeanFieldHomogenization.FEEllipticCrack),
 whose crack-opening-displacement tensor comes out of a `Ferrite.jl` solve.
 
 ```julia
-using MeanFieldHom
-import Ferrite, FerriteGmsh, Gmsh      # activates MeanFieldHomFerriteExt
+using MeanFieldHomogenization
+import Ferrite, FerriteGmsh, Gmsh      # activates MeanFieldHomogenizationFerriteExt
 ```
 
 Either backend serves it — `import Gridap, GridapGmsh` and
@@ -85,13 +85,13 @@ homogenize(rve, MoriTanaka(), :C)
 
 That is the point of the contract: only `cod_tensor` is implemented, and
 because the type subtypes `AbstractCrack` with a standard
-[`shape_trait`](@ref MeanFieldHom.Core.shape_trait), ℍ, ℕ, 𝐑, 𝐍_K, the bundled
+[`shape_trait`](@ref MeanFieldHomogenization.Core.shape_trait), ℍ, ℕ, 𝐑, 𝐍_K, the bundled
 pair and the four `delta_*` with their Budiansky ``4\pi/3`` prefactor all
 follow. Orientation averaging is applied by the scheme afterwards.
 
 ### Discretization
 
-[`FEMeshOptions`](@ref MeanFieldHom.FEMeshOptions) — passed as keywords to the
+[`FEMeshOptions`](@ref MeanFieldHomogenization.FEMeshOptions) — passed as keywords to the
 constructor:
 
 | Keyword | Default | Meaning |

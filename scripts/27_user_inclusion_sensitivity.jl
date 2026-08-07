@@ -17,7 +17,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using ForwardDiff
 using TensND
 using Printf
@@ -33,7 +33,7 @@ sensitivity to either `radius` or `eccentricity` non-trivial (the aspect
 ratio depends explicitly on `e`).
 """
 struct MyBlob{T <: Number, B <: TensND.AbstractBasis} <:
-    MeanFieldHom.AbstractEllipsoidalInclusion{3, T}
+    MeanFieldHomogenization.AbstractEllipsoidalInclusion{3, T}
     radius::T
     eccentricity::T
     basis::B
@@ -46,23 +46,23 @@ _blob_as_ellipsoid(b::MyBlob) =
 # Delegate accessors and kernels to the equivalent `Ellipsoid`. Signatures
 # are made as specific as the generic `Elasticity` ones to avoid dispatch
 # ambiguities.
-MeanFieldHom.hill_tensor(b::MyBlob, C₀::TensND.AbstractTens; kw...) =
-    MeanFieldHom.hill_tensor(_blob_as_ellipsoid(b), C₀; kw...)
-MeanFieldHom.eshelby_tensor(b::MyBlob, C₀::TensND.AbstractTens; kw...) =
-    MeanFieldHom.eshelby_tensor(_blob_as_ellipsoid(b), C₀; kw...)
-MeanFieldHom.material_symmetry(b::MyBlob) =
-    MeanFieldHom.material_symmetry(_blob_as_ellipsoid(b))
-MeanFieldHom.dimension(::MyBlob) = 3
-MeanFieldHom.shape_trait(b::MyBlob) = MeanFieldHom.shape_trait(_blob_as_ellipsoid(b))
-MeanFieldHom.shape_tensor(b::MyBlob) = MeanFieldHom.shape_tensor(_blob_as_ellipsoid(b))
-MeanFieldHom.inclusion_basis(b::MyBlob) = b.basis
+MeanFieldHomogenization.hill_tensor(b::MyBlob, C₀::TensND.AbstractTens; kw...) =
+    MeanFieldHomogenization.hill_tensor(_blob_as_ellipsoid(b), C₀; kw...)
+MeanFieldHomogenization.eshelby_tensor(b::MyBlob, C₀::TensND.AbstractTens; kw...) =
+    MeanFieldHomogenization.eshelby_tensor(_blob_as_ellipsoid(b), C₀; kw...)
+MeanFieldHomogenization.material_symmetry(b::MyBlob) =
+    MeanFieldHomogenization.material_symmetry(_blob_as_ellipsoid(b))
+MeanFieldHomogenization.dimension(::MyBlob) = 3
+MeanFieldHomogenization.shape_trait(b::MyBlob) = MeanFieldHomogenization.shape_trait(_blob_as_ellipsoid(b))
+MeanFieldHomogenization.shape_tensor(b::MyBlob) = MeanFieldHomogenization.shape_tensor(_blob_as_ellipsoid(b))
+MeanFieldHomogenization.inclusion_basis(b::MyBlob) = b.basis
 
 # ── RVE with a `MyBlob` inclusion ───────────────────────────────────────────
 
 basis = TensND.CanonicalBasis{3, Float64}()
 
 println("="^78)
-println("MeanFieldHom — sensitivity on a user-defined inclusion type (MyBlob)")
+println("MeanFieldHomogenization — sensitivity on a user-defined inclusion type (MyBlob)")
 println("="^78)
 
 rve = RVE(:M)

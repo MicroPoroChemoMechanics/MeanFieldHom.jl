@@ -2,7 +2,7 @@
 
 Timings from `scripts/bench_echoes/benchmark.jl`: `@belapsed` on both sides,
 same machine, Echoes called through its Python API. `t(E)/t(J)` > 1 means
-`MeanFieldHom` is faster. Accuracy for the same runs is in
+`MeanFieldHomogenization` is faster. Accuracy for the same runs is in
 [Cross-validation](validation.md).
 
 ## Hill tensor ``\mathbb P``

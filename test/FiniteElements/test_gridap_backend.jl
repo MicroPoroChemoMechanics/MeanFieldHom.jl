@@ -15,7 +15,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -27,7 +27,7 @@ const GX_K_SHELL = TensISO{3}(1.0)
 const GX_K_MAT = TensISO{3}(3.0)
 const GX_W = 0.5
 
-gx_mandel(T) = MeanFieldHom.Core.mandel66_minor(MeanFieldHom.Core._C_array(T))
+gx_mandel(T) = MeanFieldHomogenization.Core.mandel66_minor(MeanFieldHomogenization.Core._C_array(T))
 gx_bulk(M) = M[1, 1] + 2M[1, 2]
 gx_shear(M) = M[4, 4]
 gx_rel(X, Y) = maximum(abs, X - Y) / maximum(abs, X)
@@ -39,7 +39,7 @@ gx_incl(backend, props; kw...) = FEExcenteredSphere(
 @testset "Backend resolution" begin
     # Both stacks are loaded here, so `AutoBackend` must pick the documented
     # first choice rather than error or flip-flop.
-    FE = MeanFieldHom.FiniteElements
+    FE = MeanFieldHomogenization.FiniteElements
     @test FE._resolve_backend(AutoBackend()) === FerriteBackend()
     @test FE._resolve_backend(GridapBackend()) === GridapBackend()
     @test FE._resolve_backend(FerriteBackend()) === FerriteBackend()
@@ -118,7 +118,7 @@ end
     # free they cost an order of convergence while looking like discretization
     # error, so the mesh declares them and both backends must see the same
     # prescribed set. Three dofs on the outer sphere, six on the axis.
-    FE = MeanFieldHom.FiniteElements
+    FE = MeanFieldHomogenization.FiniteElements
     order = 2
     for (backend, ncomp, axis_zeros) in (
             (FerriteBackend(), 2, (1,)), (GridapBackend(), 2, (1,)),
@@ -170,7 +170,7 @@ end
     # The seam curves and poles of the OCC sphere belong to entities of their
     # own, which the surface physical group does not cover. Eleven nodes here —
     # enough to skew the opening, not enough to look like a bug.
-    FE = MeanFieldHom.FiniteElements
+    FE = MeanFieldHomogenization.FiniteElements
     n = Int[]
     for b in (FerriteBackend(), GridapBackend())
         s = FE._crack_setup(FEEllipticCrack(1.0, 0.5; backend = b))

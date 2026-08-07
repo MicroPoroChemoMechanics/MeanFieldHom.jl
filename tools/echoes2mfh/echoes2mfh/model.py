@@ -295,7 +295,7 @@ class Script:
     body: list[Stmt] = field(default_factory=list)
     findings: list[Untranslated] = field(default_factory=list)
     #: modules the emitter must `using`
-    imports: set[str] = field(default_factory=lambda: {"MeanFieldHom", "TensND"})
+    imports: set[str] = field(default_factory=lambda: {"MeanFieldHomogenization", "TensND"})
     #: True when any output is a plot
     needs_plots: bool = False
     #: True when a matplotlib format string had to be decoded at run time

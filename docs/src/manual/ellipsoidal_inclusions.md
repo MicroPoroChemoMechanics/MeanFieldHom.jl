@@ -8,7 +8,7 @@ sorts them decreasing and permutes the local frame to match, so ``a \ge b \ge c`
 always holds downstream.
 
 ```julia
-using MeanFieldHom, TensND
+using MeanFieldHomogenization, TensND
 E, ν = 210e3, 0.3
 λ = E*ν/((1+ν)*(1-2ν)); μ = E/(2*(1+ν))
 C₀ = TensISO{3}(3*(λ+2μ/3), 2μ)
@@ -27,15 +27,15 @@ The two aspect ratios that recur everywhere are the in-plane ``\eta = b/a`` and
 the flatness ``\omega = c/a``; both are read off the stored semi-axes:
 
 ```@setup ellipsoids
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 ```
 
 ```@example ellipsoids
 ell = Ellipsoid(3.0, 1.5, 0.8)
 a, b, c = ell.semi_axes
-(a = a, b = b, c = c, η = b / a, ω = c / a, shape = MeanFieldHom.shape_trait(ell))
+(a = a, b = b, c = c, η = b / a, ω = c / a, shape = MeanFieldHomogenization.shape_trait(ell))
 ```
 
 ```@example ellipsoids

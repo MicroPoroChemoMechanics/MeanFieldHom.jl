@@ -1,7 +1,7 @@
 # =============================================================================
 #  benchmark_porous.jl
 #
-#  Cross-validation of every MeanFieldHom porous scheme against the C++
+#  Cross-validation of every MeanFieldHomogenization porous scheme against the C++
 #  porous reference called via PyCall. Two geometric
 #  cases:
 #
@@ -22,7 +22,7 @@
 import Pkg
 Pkg.activate(@__DIR__; io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using PyCall

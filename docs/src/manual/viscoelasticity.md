@@ -23,7 +23,7 @@ a mode flag (`:relaxation` for the relaxation kernel `R(t, t')`,
 ### 1.1 Hand-rolled Maxwell isotropic relaxation
 
 ```julia
-using MeanFieldHom, TensND
+using MeanFieldHomogenization, TensND
 
 # Iso Maxwell relaxation:
 #   R(t,t') = (3 K∞ + (3 K₀ - 3 K∞) exp(-(t-t')/τ_K)) 𝕁

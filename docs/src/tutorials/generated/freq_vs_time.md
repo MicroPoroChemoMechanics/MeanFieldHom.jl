@@ -4,7 +4,7 @@ EditURL = "../../../../scripts/61_freq_vs_time.jl"
 
 # Frequency or time? Two routes to the same viscoelastic composite
 
-`MeanFieldHom` reaches the effective behavior of a linear viscoelastic
+`MeanFieldHomogenization` reaches the effective behavior of a linear viscoelastic
 composite by two entirely separate roads:
 
 - the **frequency route** — replace every modulus by its complex counterpart
@@ -36,7 +36,7 @@ is a plain quadrature. Evaluated at ``p = i\omega`` it is exactly what the
 frequency route computes directly.
 
 ````@example freq_vs_time
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using QuadGK

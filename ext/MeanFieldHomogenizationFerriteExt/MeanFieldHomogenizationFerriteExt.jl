@@ -1,14 +1,14 @@
 """
-    MeanFieldHomFerriteExt
+    MeanFieldHomogenizationFerriteExt
 
 Finite-element resolution of the Eshelby problem, activated by
 `import Ferrite, FerriteGmsh, Gmsh`.
 
-Two things live here. [`MeanFieldHom.FEEllipticCrack`](@ref) is implemented in
+Two things live here. [`MeanFieldHomogenization.FEEllipticCrack`](@ref) is implemented in
 full — mesh, solver and the 3+3 corrected scheme — because the gmsh `Crack`
 plugin and the front welding it requires are Ferrite-grid surgery. For
-[`MeanFieldHom.FEExcenteredSphere`](@ref) only the nine methods of the
-[`MeanFieldHom.FEBackend`](@ref) contract are supplied, in `axi_backend.jl`;
+[`MeanFieldHomogenization.FEExcenteredSphere`](@ref) only the nine methods of the
+[`MeanFieldHomogenization.FEBackend`](@ref) contract are supplied, in `axi_backend.jl`;
 the physics of that solve lives in `src/FiniteElements/`.
 
 Both use the finite Eshelby cell with a first-order corrected boundary
@@ -21,9 +21,9 @@ subtypes `AbstractCrack` and declares a standard `shape_trait`, supplying
 `delta_*` to be inherited, and the crack drops into every scheme —
 `symmetrize` included.
 """
-module MeanFieldHomFerriteExt
+module MeanFieldHomogenizationFerriteExt
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Ferrite
 using FerriteGmsh
@@ -31,7 +31,7 @@ using Gmsh: gmsh
 using Tensors
 using LinearAlgebra
 
-const FE = MeanFieldHom.FiniteElements
+const FE = MeanFieldHomogenization.FiniteElements
 
 
 include("crack_backend.jl")

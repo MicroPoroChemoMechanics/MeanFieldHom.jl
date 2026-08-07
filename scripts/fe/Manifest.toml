@@ -1340,21 +1340,21 @@ git-tree-sha1 = "ff69a2b1330bcb730b9ac1ab7dd680176f5896b8"
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
 version = "2.28.1010+0"
 
-[[deps.MeanFieldHom]]
+[[deps.MeanFieldHomogenization]]
 deps = ["Dates", "Elliptic", "ForwardDiff", "JSON3", "LinearAlgebra", "OrdinaryDiffEq", "PolynomialRoots", "Polynomials", "Printf", "QuadGK", "Random", "StaticArrays", "TensND", "Tensors"]
 path = "../.."
 uuid = "c1e5f8a3-7b2d-4a6c-9e4f-3b8a2c5d7e9f"
 version = "0.1.0"
 
-    [deps.MeanFieldHom.extensions]
-    MeanFieldHomDECUHRExt = ["DECUHR", "Integrals"]
-    MeanFieldHomFerriteExt = ["Ferrite", "FerriteGmsh", "Gmsh"]
-    MeanFieldHomGridapExt = ["Gridap", "GridapGmsh"]
-    MeanFieldHomLuxExt = ["Lux", "Optimisers", "Zygote"]
-    MeanFieldHomNonlinearSolveExt = "NonlinearSolve"
-    MeanFieldHomSymPyExt = "SymPy"
+    [deps.MeanFieldHomogenization.extensions]
+    MeanFieldHomogenizationDECUHRExt = ["DECUHR", "Integrals"]
+    MeanFieldHomogenizationFerriteExt = ["Ferrite", "FerriteGmsh", "Gmsh"]
+    MeanFieldHomogenizationGridapExt = ["Gridap", "GridapGmsh"]
+    MeanFieldHomogenizationLuxExt = ["Lux", "Optimisers", "Zygote"]
+    MeanFieldHomogenizationNonlinearSolveExt = "NonlinearSolve"
+    MeanFieldHomogenizationSymPyExt = "SymPy"
 
-    [deps.MeanFieldHom.weakdeps]
+    [deps.MeanFieldHomogenization.weakdeps]
     DECUHR = "d5c0ea0e-a2e6-4e56-a5f3-17f3ec7c9d22"
     Ferrite = "c061ca5d-56c9-439f-9c0e-210fe06d3992"
     FerriteGmsh = "4f95f4f8-b27c-4ae5-9a39-ea55e634e36b"

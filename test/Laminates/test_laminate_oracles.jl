@@ -22,13 +22,13 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using StaticArrays
 using Random
 
-const MFHC_O = MeanFieldHom.Core
+const MFHC_O = MeanFieldHomogenization.Core
 const ATOL_LAM = 1.0e-11
 
 _iso(k, μ) = TensISO{3}(3k, 2μ)

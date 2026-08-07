@@ -3,18 +3,18 @@
 ## The cell
 
 ```@docs
-MeanFieldHom.Laminates
-MeanFieldHom.Laminates.Laminate
-MeanFieldHom.Laminates.Layer
-MeanFieldHom.Laminates.add_layer!
-MeanFieldHom.Laminates.layer_names
-MeanFieldHom.Laminates.layer_property
-MeanFieldHom.Laminates.layer_property_raw
-MeanFieldHom.Laminates.layer_thickness
-MeanFieldHom.Laminates.laminate_period
-MeanFieldHom.Laminates.laminate_basis
-MeanFieldHom.Laminates.laminate_normal
-MeanFieldHom.Laminates.validate_laminate
+MeanFieldHomogenization.Laminates
+MeanFieldHomogenization.Laminates.Laminate
+MeanFieldHomogenization.Laminates.Layer
+MeanFieldHomogenization.Laminates.add_layer!
+MeanFieldHomogenization.Laminates.layer_names
+MeanFieldHomogenization.Laminates.layer_property
+MeanFieldHomogenization.Laminates.layer_property_raw
+MeanFieldHomogenization.Laminates.layer_thickness
+MeanFieldHomogenization.Laminates.laminate_period
+MeanFieldHomogenization.Laminates.laminate_basis
+MeanFieldHomogenization.Laminates.laminate_normal
+MeanFieldHomogenization.Laminates.validate_laminate
 ```
 
 ## Anisotropic interfaces
@@ -23,35 +23,35 @@ A plane, unlike a sphere, imposes no symmetry on the interface, so a laminate
 also accepts tensor-valued interface properties.
 
 ```@docs
-MeanFieldHom.Laminates.AnisotropicSpringInterface
-MeanFieldHom.Laminates.AnisotropicMembraneInterface
-MeanFieldHom.Laminates.AnisotropicSurfaceConductiveInterface
+MeanFieldHomogenization.Laminates.AnisotropicSpringInterface
+MeanFieldHomogenization.Laminates.AnisotropicMembraneInterface
+MeanFieldHomogenization.Laminates.AnisotropicSurfaceConductiveInterface
 ```
 
 ## Fields and per-layer tensors
 
 ```@docs
-MeanFieldHom.Laminates.laminate_hill
-MeanFieldHom.Laminates.layer_strain_localization
-MeanFieldHom.Laminates.layer_stress_localization
-MeanFieldHom.Laminates.layer_gradient_localization
-MeanFieldHom.Laminates.layer_flux_localization
-MeanFieldHom.Laminates.interface_jump
+MeanFieldHomogenization.Laminates.laminate_hill
+MeanFieldHomogenization.Laminates.layer_strain_localization
+MeanFieldHomogenization.Laminates.layer_stress_localization
+MeanFieldHomogenization.Laminates.layer_gradient_localization
+MeanFieldHomogenization.Laminates.layer_flux_localization
+MeanFieldHomogenization.Laminates.interface_jump
 ```
 
 ## Parameter lenses
 
 ```@docs
-MeanFieldHom.Laminates.ThicknessParameter
-MeanFieldHom.Laminates.thickness
-MeanFieldHom.Laminates.InterfaceParameter
-MeanFieldHom.Laminates.interface_param
+MeanFieldHomogenization.Laminates.ThicknessParameter
+MeanFieldHomogenization.Laminates.thickness
+MeanFieldHomogenization.Laminates.InterfaceParameter
+MeanFieldHomogenization.Laminates.interface_param
 ```
 
 ## Ageing viscoelasticity
 
 ```@docs
-MeanFieldHom.Viscoelasticity.laminate_alv
+MeanFieldHomogenization.Viscoelasticity.laminate_alv
 ```
 
 ## The block algebra
@@ -60,34 +60,34 @@ The kernel behind the cell, in `Core`, so that the ageing-viscoelastic
 laminate reuses it with the Volterra inversion substituted.
 
 ```@docs
-MeanFieldHom.Core.KM_IP
-MeanFieldHom.Core.KM_OP
-MeanFieldHom.Core.plane_pinv
-MeanFieldHom.Core.plane_pinv2
-MeanFieldHom.Core._inv_km6
-MeanFieldHom.Core.flat_hill
-MeanFieldHom.Core.acoustic_tensor
-MeanFieldHom.Core.compliance_op_block
-MeanFieldHom.Core.laminate_stiffness
-MeanFieldHom.Core.laminate_conductivity
-MeanFieldHom.Core.laminate_strain_localization
-MeanFieldHom.Core.laminate_stress_localization
-MeanFieldHom.Core.laminate_gradient_localization
-MeanFieldHom.Core.laminate_flux_localization
+MeanFieldHomogenization.Core.KM_IP
+MeanFieldHomogenization.Core.KM_OP
+MeanFieldHomogenization.Core.plane_pinv
+MeanFieldHomogenization.Core.plane_pinv2
+MeanFieldHomogenization.Core._inv_km6
+MeanFieldHomogenization.Core.flat_hill
+MeanFieldHomogenization.Core.acoustic_tensor
+MeanFieldHomogenization.Core.compliance_op_block
+MeanFieldHomogenization.Core.laminate_stiffness
+MeanFieldHomogenization.Core.laminate_conductivity
+MeanFieldHomogenization.Core.laminate_strain_localization
+MeanFieldHomogenization.Core.laminate_stress_localization
+MeanFieldHomogenization.Core.laminate_gradient_localization
+MeanFieldHomogenization.Core.laminate_flux_localization
 ```
 
 ## The cell contract and declarative nesting
 
 ```@docs
-MeanFieldHom.Core.AbstractHomogenizationCell
-MeanFieldHom.Core.validate_cell
-MeanFieldHom.Core.cell_member_names
-MeanFieldHom.Core.cell_container_property
-MeanFieldHom.Core.cell_set_property
-MeanFieldHom.Core.Homogenized
-MeanFieldHom.Core.NestedParameter
-MeanFieldHom.Core.nested
-MeanFieldHom.Core.resolve_property
-MeanFieldHom.Core.has_nested_property
-MeanFieldHom.Core.MAX_NESTING
+MeanFieldHomogenization.Core.AbstractHomogenizationCell
+MeanFieldHomogenization.Core.validate_cell
+MeanFieldHomogenization.Core.cell_member_names
+MeanFieldHomogenization.Core.cell_container_property
+MeanFieldHomogenization.Core.cell_set_property
+MeanFieldHomogenization.Core.Homogenized
+MeanFieldHomogenization.Core.NestedParameter
+MeanFieldHomogenization.Core.nested
+MeanFieldHomogenization.Core.resolve_property
+MeanFieldHomogenization.Core.has_nested_property
+MeanFieldHomogenization.Core.MAX_NESTING
 ```

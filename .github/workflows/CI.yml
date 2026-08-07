@@ -60,11 +60,11 @@ jobs:
                   end
               end
           end
-      # MeanFieldHom loads TensND, which does an unconditional `using SymPy`,
+      # MeanFieldHomogenization loads TensND, which does an unconditional `using SymPy`,
       # which in turn needs the Python `sympy` module.  The runner's
       # /usr/bin/python3 does not have it, so point PyCall at the private
       # Conda.jl Python and install sympy there.  Without this the whole test
-      # run dies at `using MeanFieldHom` with `ModuleNotFoundError: sympy`.
+      # run dies at `using MeanFieldHomogenization` with `ModuleNotFoundError: sympy`.
       - name: Install dependencies (PyCall/SymPy)
         run: |
           julia -e '

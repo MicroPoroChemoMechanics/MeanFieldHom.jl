@@ -118,7 +118,7 @@ const SCHEME_ALIAS = Dict{Symbol, Type{<:HomogenizationScheme}}(
 
 function homogenize(cell::AbstractHomogenizationCell, scheme::Symbol, property::Symbol; kw...)
     haskey(SCHEME_ALIAS, scheme) ||
-        throw(ArgumentError("unknown scheme :$(scheme); see MeanFieldHom.Schemes.SCHEME_ALIAS"))
+        throw(ArgumentError("unknown scheme :$(scheme); see MeanFieldHomogenization.Schemes.SCHEME_ALIAS"))
     return homogenize(cell, SCHEME_ALIAS[scheme](), property; kw...)
 end
 

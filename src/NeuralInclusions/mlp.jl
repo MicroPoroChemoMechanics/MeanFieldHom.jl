@@ -2,7 +2,7 @@
 #  mlp.jl — the dependency-free, type-generic multilayer perceptron used to
 #  *evaluate* a trained surrogate.
 #
-#  Training happens elsewhere (`MeanFieldHomLuxExt`); what lives here is the
+#  Training happens elsewhere (`MeanFieldHomogenizationLuxExt`); what lives here is the
 #  smallest object able to reproduce a trained network's forward pass, so that
 #  a surrogate loaded from disk needs nothing beyond `LinearAlgebra`.
 #

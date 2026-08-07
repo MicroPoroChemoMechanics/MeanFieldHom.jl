@@ -5,14 +5,14 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Random
-import MeanFieldHom.Viscoelasticity: _iso_project_blocks, _ti_project_blocks,
+import MeanFieldHomogenization.Viscoelasticity: _iso_project_blocks, _ti_project_blocks,
     _maybe_symmetrize_alv, _iso_project_mandel66,
     _iso_project_blocks3, _ti_project_blocks3, _maybe_symmetrize_alv2
-const MCr = MeanFieldHom.Core
+const MCr = MeanFieldHomogenization.Core
 
 function _rand_minor_mandel(rng)
     a = randn(rng, 3, 3, 3, 3)

@@ -7,7 +7,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
 @testset "Scheme types — hierarchy and constructors" begin
@@ -49,24 +49,24 @@ end
         DifferentialScheme,
     ]
     for T in expected
-        @test T in values(MeanFieldHom.Schemes.SCHEME_ALIAS)
+        @test T in values(MeanFieldHomogenization.Schemes.SCHEME_ALIAS)
     end
 
     # Canonical lowercase aliases (consistency with :auto / :residues / :decuhr)
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:voigt] === Voigt
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:mori_tanaka] === MoriTanaka
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:mt] === MoriTanaka
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:self_consistent] === SelfConsistent
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:sc] === SelfConsistent
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:differential] === DifferentialScheme
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:diff] === DifferentialScheme
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:pcw] === PonteCastanedaWillis
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:voigt] === Voigt
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:mori_tanaka] === MoriTanaka
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:mt] === MoriTanaka
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:self_consistent] === SelfConsistent
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:sc] === SelfConsistent
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:differential] === DifferentialScheme
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:diff] === DifferentialScheme
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:pcw] === PonteCastanedaWillis
 
     # CamelCase / ECHOES-compatible aliases still accepted for backwards compat
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:MT] === MoriTanaka
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:SC] === SelfConsistent
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:DIFF] === DifferentialScheme
-    @test MeanFieldHom.Schemes.SCHEME_ALIAS[:PCW] === PonteCastanedaWillis
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:MT] === MoriTanaka
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:SC] === SelfConsistent
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:DIFF] === DifferentialScheme
+    @test MeanFieldHomogenization.Schemes.SCHEME_ALIAS[:PCW] === PonteCastanedaWillis
 
     # Unknown alias raises a clear error
     rve = RVE(:M)

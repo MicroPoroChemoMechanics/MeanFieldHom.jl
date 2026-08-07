@@ -415,7 +415,7 @@ def test_catalog_is_complete_without_julia():
 
 
 def test_introspected_schemes_replace_the_fallback_wholesale():
-    """A scheme MeanFieldHom drops must disappear, not linger from a merge."""
+    """A scheme MeanFieldHomogenization drops must disappear, not linger from a merge."""
     from mfhstudio import catalog as catalog_module
 
     merged = catalog_module.merge({
@@ -467,7 +467,7 @@ def _bridge():
 
 
 def test_catalog_covers_every_exported_scheme():
-    """The interface must not fall behind MeanFieldHom."""
+    """The interface must not fall behind MeanFieldHomogenization."""
     b = _bridge()
     try:
         cat = b.catalog()

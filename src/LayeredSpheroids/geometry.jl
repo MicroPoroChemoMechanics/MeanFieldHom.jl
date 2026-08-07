@@ -38,7 +38,7 @@ parameters:
 - `Cs`, `Is` — concrete types of the `moduli` / `interfaces` tuples.
 
 Use the keyword constructor
-[`LayeredSpheroid`](@ref MeanFieldHom.LayeredSpheroids.LayeredSpheroid)`(axis_radii,
+[`LayeredSpheroid`](@ref MeanFieldHomogenization.LayeredSpheroids.LayeredSpheroid)`(axis_radii,
 disk_radii, moduli; interfaces, Nseries, axis)` for the common case, or
 [`layered_spheroid_from_fractions`](@ref) to specify layers by volume
 fraction.

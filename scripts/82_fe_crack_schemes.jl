@@ -12,7 +12,7 @@ import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, "fe"); io = devnull)                 #jl
 Pkg.instantiate(; io = devnull)                                      #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -37,7 +37,7 @@ an = EllipticCrack(1.0, 0.25)
 
 println("="^78)
 check_inclusion_interface(fe; amount = :density)
-@printf "\ncrack_density_factor = %.6f   (4π/3 = %.6f)\n" MeanFieldHom.Cracks.crack_density_factor(fe) 4π / 3
+@printf "\ncrack_density_factor = %.6f   (4π/3 = %.6f)\n" MeanFieldHomogenization.Cracks.crack_density_factor(fe) 4π / 3
 
 # ## Parallel cracks: the effective stiffness against crack density
 

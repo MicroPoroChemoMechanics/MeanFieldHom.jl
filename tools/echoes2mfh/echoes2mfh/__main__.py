@@ -142,7 +142,7 @@ def cmd_check_drift(args: argparse.Namespace) -> int:
     else:
         print(f"(skipping Echoes side: {args.pybind} not found)")
 
-    mfh_src = os.path.join(args.mfh, "src", "MeanFieldHom.jl")
+    mfh_src = os.path.join(args.mfh, "src", "MeanFieldHomogenization.jl")
     if os.path.isfile(mfh_src):
         exported: set[str] = set()
         for line in open(mfh_src, encoding="utf-8"):

@@ -22,7 +22,7 @@ read the partial of the final `C_mo`. Both routes agree to the tolerances of
 [Cross-validation](../developer/validation.md).
 
 The code below is the model of
-[`scripts/common/pichler_model.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/common/pichler_model.jl),
+[`scripts/common/pichler_model.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/blob/main/scripts/common/pichler_model.jl),
 reproduced inline.
 
 ## Constants and volume fractions
@@ -34,7 +34,7 @@ degree ``\alpha`` (``\alpha_{\max} = \min(1, w/c / 0.42)``); the sand fraction
 follows from the sand-to-cement ratio ``s/c``.
 
 ```@example strength
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 using LinearAlgebra

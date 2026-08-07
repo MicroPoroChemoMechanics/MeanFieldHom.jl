@@ -1,13 +1,13 @@
 # [Sensitivities — autodiff via ForwardDiff](@id man-sensitivities)
 
-`MeanFieldHom` differentiates `homogenize(rve, scheme)` with respect to any
+`MeanFieldHomogenization` differentiates `homogenize(rve, scheme)` with respect to any
 scalar input — physical (stiffness coefficients, conductivities), geometric
 (radii, aspect ratios, volume fractions, crack densities, distribution-shape
 envelopes), including fields of user-defined inclusion types.
 
 The whole machinery is a thin convenience layer on top of [ForwardDiff.jl];
 ForwardDiff is shipped as a [weak dependency](https://pkgdocs.julialang.org/v1/creating-packages/#Conditional-loading-of-code-in-packages-(Extensions))
-so the API only activates when you `using ForwardDiff` alongside `MeanFieldHom`.
+so the API only activates when you `using ForwardDiff` alongside `MeanFieldHomogenization`.
 
 ## Why autodiff
 
@@ -34,7 +34,7 @@ Practical consequences:
 ## Quick start
 
 ```julia
-using MeanFieldHom, ForwardDiff, TensND
+using MeanFieldHomogenization, ForwardDiff, TensND
 
 rve = RVE(:M)
 add_matrix!(rve, Ellipsoid(1.0), Dict(:C => TensISO{3}(30.0, 10.0)))
@@ -116,14 +116,14 @@ from the shape of `x₀` and the return type of `f(x₀)`. Pass
 
 ```julia
 struct MyBlob{T <: Number, B <: TensND.AbstractBasis} <:
-       MeanFieldHom.AbstractEllipsoidalInclusion{3, T}
+       MeanFieldHomogenization.AbstractEllipsoidalInclusion{3, T}
     radius::T
     eccentricity::T
     basis::B
 end
 # Register hill_tensor / eshelby_tensor (delegate to an equivalent Ellipsoid)
-MeanFieldHom.hill_tensor(b::MyBlob, C₀::TensND.AbstractTens; kw...) =
-    MeanFieldHom.hill_tensor(Ellipsoid(b.radius, b.radius*(1-b.eccentricity),
+MeanFieldHomogenization.hill_tensor(b::MyBlob, C₀::TensND.AbstractTens; kw...) =
+    MeanFieldHomogenization.hill_tensor(Ellipsoid(b.radius, b.radius*(1-b.eccentricity),
                                         b.radius*(1-b.eccentricity)^2), C₀; kw...)
 
 # Differentiate w.r.t. any scalar field — no library change required.
@@ -139,7 +139,7 @@ the parametric inner constructor of `MyBlob{T,B}` resolves cleanly.
 
 Composing several `homogenize` calls in one closure applies the chain rule
 automatically.
-[`scripts/28_multiscale_strength.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/28_multiscale_strength.jl)
+[`scripts/28_multiscale_strength.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/blob/main/scripts/28_multiscale_strength.jl)
 follows Pichler & Hellmich (CCR 2011) — a three-scale cement-paste / mortar
 upscaling (SC hydrate foam + two Mori-Tanaka stages) requiring
 `∂C_mortar / ∂μ_hyd` through the full chain — in two styles:
@@ -198,11 +198,11 @@ projection automatically.
   the localization-tensor computation through an isotropic projection —
   the result still satisfies the outer `TI(axis)` projection, and is
   exact at the iso fixed-point of the SC iteration. This is documented
-  in [`src/Schemes/symmetrize.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/src/Schemes/symmetrize.jl).
+  in [`src/Schemes/symmetrize.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/blob/main/src/Schemes/symmetrize.jl).
 
 ## Validation
 
-[`test/Schemes/test_sensitivities.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/test/Schemes/test_sensitivities.jl)
+[`test/Schemes/test_sensitivities.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/blob/main/test/Schemes/test_sensitivities.jl)
 compares every sensitivity against centered finite differences on every scheme,
 plus the Christensen 1990 closed form for `∂k_MT/∂f`: `rtol ≈ 1e-6`
 (closed-form schemes), `rtol ≈ 1e-4` (iterative, limited by the fixed-point

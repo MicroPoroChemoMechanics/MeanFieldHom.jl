@@ -38,7 +38,7 @@ end
 
 # ─── Mesh ────────────────────────────────────────────────────────────────────
 
-function FE.fe_axi_grid(::FE.FerriteBackend, incl::MeanFieldHom.FEExcenteredSphere)
+function FE.fe_axi_grid(::FE.FerriteBackend, incl::MeanFieldHomogenization.FEExcenteredSphere)
     a = Float64(incl.a)
     a_core = Float64(FE.core_radius(incl))
     d = Float64(FE.core_offset(incl))

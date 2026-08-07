@@ -31,7 +31,7 @@ Two C-S-H types coexist at the paste scale:
   porosity ``\varphi_o`` decreases as hydration proceeds.
 
 ```@example paste
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

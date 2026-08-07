@@ -26,7 +26,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -72,8 +72,8 @@ const Jk_inc, Jg_inc = granger_Jk_Jg(
 
 # Iso projectors in Mandel form (constant 6×6 matrices).
 const _, 𝕁₄, 𝕂₄ = TensND.iso_projectors(Val(3), Val(Float64))
-const _J_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(𝕁₄)
-const _K_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(𝕂₄)
+const _J_M = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(𝕁₄)
+const _K_M = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(𝕂₄)
 
 # ALV laws (creep mode, 6×6 matrix-valued).
 make_iso_law(Jk, Jg) = ViscoLaw(
@@ -105,7 +105,7 @@ end
 
 # Per-phase shear creep (matrix or inclusion alone).
 function phase_shear_curve(law_creep, T)
-    R̃ = MeanFieldHom.Viscoelasticity._trapezoidal_relaxation(law_creep, T, 6)
+    R̃ = MeanFieldHomogenization.Viscoelasticity._trapezoidal_relaxation(law_creep, T, 6)
     return shear_creep_curve(R̃)
 end
 

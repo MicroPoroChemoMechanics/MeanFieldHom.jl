@@ -14,7 +14,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -26,7 +26,7 @@ const AX_K_SHELL = TensISO{3}(1.0)
 const AX_K_MAT = TensISO{3}(3.0)
 const AX_W = 0.5                                 # core volume fraction
 
-ax_mandel(T) = MeanFieldHom.Core.mandel66_minor(MeanFieldHom.Core._C_array(T))
+ax_mandel(T) = MeanFieldHomogenization.Core.mandel66_minor(MeanFieldHomogenization.Core._C_array(T))
 ax_bulk(M) = M[1, 1] + 2M[1, 2]                  # 3× the 𝕁-eigenvalue
 ax_shear(M) = M[4, 4]                            # the 𝕂-eigenvalue
 
@@ -43,9 +43,9 @@ ax_shear(M) = M[4, 4]                            # the 𝕂-eigenvalue
     @test rep.volume_shell ≈ rep.volume_shell_exact rtol = 5.0e-3
     @test rep.volume_cell ≈ rep.volume_cell_exact rtol = 5.0e-3
     # Geometry: `core_fraction` fixes the radius, `eccentricity` the offset.
-    @test MeanFieldHom.FiniteElements.core_radius(incl) ≈ cbrt(AX_W)
-    @test MeanFieldHom.FiniteElements.core_offset(incl) ≈ 0.4 * (1 - cbrt(AX_W))
-    @test MeanFieldHom.FiniteElements.tensor_order(incl) == 4
+    @test MeanFieldHomogenization.FiniteElements.core_radius(incl) ≈ cbrt(AX_W)
+    @test MeanFieldHomogenization.FiniteElements.core_offset(incl) ≈ 0.4 * (1 - cbrt(AX_W))
+    @test MeanFieldHomogenization.FiniteElements.tensor_order(incl) == 4
 end
 
 @testset "Modal boundary data equals the Cartesian closed form" begin
@@ -54,7 +54,7 @@ end
     # against their Cartesian expressions, rebuilt from the modal amplitudes at
     # several azimuths — a failure here would otherwise surface only as a
     # plausible-looking few-percent drift in the localization tensors.
-    FE = MeanFieldHom.FiniteElements
+    FE = MeanFieldHomogenization.FiniteElements
     s2 = sqrt(2.0)
     basis = (
         (0, 1, [1.0 0 0; 0 1 0; 0 0 0] ./ s2),      # m₁, mode 0
@@ -77,7 +77,7 @@ end
         x = [ρ * cos(θ), ρ * sin(θ), z]
         @test to_cart(m, FE._axi_bc_affine(m, j, ρ, z), θ) ≈ Mt * x atol = 1.0e-12
         @test to_cart(m, FE._axi_bc_dipole(m, j, ρ, z, μ, ν, V), θ) ≈
-            MeanFieldHom.Core._dipole_displacement_iso(μ, ν, x, V * Mt) rtol = 1.0e-12
+            MeanFieldHomogenization.Core._dipole_displacement_iso(μ, ν, x, V * Mt) rtol = 1.0e-12
     end
 end
 
@@ -117,7 +117,7 @@ end
         1.0, (AX_K_CORE, AX_K_SHELL); core_fraction = AX_W,
         eccentricity = 0.0, nradial = 24, radius_ratio = 4.0
     )
-    @test MeanFieldHom.FiniteElements.tensor_order(incl) == 2
+    @test MeanFieldHomogenization.FiniteElements.tensor_order(incl) == 2
     A, B = fe_axi_localization(incl, AX_K_MAT)
     sph = LayeredSphere((cbrt(AX_W), 1.0), (AX_K_CORE, AX_K_SHELL))
     Aex = TensND.components_canon(gradient_gradient_loc(sph, AX_K_MAT, AX_K_MAT))
@@ -217,8 +217,8 @@ end
         add_phase!(rve_ex, :i, sph, Dict(:C => AX_C_MAT); fraction = 0.2)
         # The finite-element estimate is isotropic in *content* but not in
         # type, so both are projected before comparison.
-        kf, μf = k_mu(MeanFieldHom.Core.isotropify(homogenize(rve_fe, scheme, :C)))
-        ke, μe = k_mu(MeanFieldHom.Core.isotropify(homogenize(rve_ex, scheme, :C)))
+        kf, μf = k_mu(MeanFieldHomogenization.Core.isotropify(homogenize(rve_fe, scheme, :C)))
+        ke, μe = k_mu(MeanFieldHomogenization.Core.isotropify(homogenize(rve_ex, scheme, :C)))
         @test kf ≈ ke rtol = 3.0e-3
         @test μf ≈ μe rtol = 5.0e-3
     end
@@ -259,7 +259,7 @@ end
         add_matrix!(rve, Ellipsoid(1.0), Dict(:C => AX_C_MAT))
         add_phase!(rve, :i, geom, Dict(:C => AX_C_MAT); fraction = 0.25)
         res[(tag, nameof(typeof(scheme)))] =
-            k_mu(MeanFieldHom.Core.isotropify(homogenize(rve, scheme, :C)))
+            k_mu(MeanFieldHomogenization.Core.isotropify(homogenize(rve, scheme, :C)))
     end
     for scheme in (:SelfConsistent, :AsymmetricSelfConsistent)
         @test res[(:fe, scheme)][1] ≈ res[(:exact, scheme)][1] rtol = 5.0e-3
@@ -296,7 +296,7 @@ end
         1.0, (C_ti, AX_C_SHELL); core_fraction = AX_W, nradial = 10
     )
     C_ortho = TensND.Tens(
-        MeanFieldHom.Core.array_from_mandel66(
+        MeanFieldHomogenization.Core.array_from_mandel66(
             diagm([20.0, 25.0, 30.0, 8.0, 9.0, 10.0])
         )
     )
@@ -314,7 +314,7 @@ end
     # derivative would come out as exactly zero, with no warning. (It would be
     # zero anyway: the solve converts to `Float64` on entry, so a `Dual` loses
     # its perturbation at the door.) Refusing is the only honest answer.
-    Sch = MeanFieldHom.Schemes
+    Sch = MeanFieldHomogenization.Schemes
     incl = FEExcenteredSphere(
         1.0, (AX_C_CORE, AX_C_SHELL); core_fraction = AX_W, nradial = 10
     )

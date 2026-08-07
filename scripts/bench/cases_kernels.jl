@@ -31,7 +31,7 @@ bcase(
     group = :kernels, tags = [:hill, :quadrature, :decuhr],
     setup = () -> (Ellipsoid(3.0, 2.0, 1.0), C_tri()),
     body = ctx -> hill_tensor(ctx[1], ctx[2]; method = :decuhr, reltol = 1.0e-10),
-    skip_if = () -> Base.get_extension(MeanFieldHom, :MeanFieldHomDECUHRExt) === nothing,
+    skip_if = () -> Base.get_extension(MeanFieldHomogenization, :MeanFieldHomogenizationDECUHRExt) === nothing,
 )
 
 # Oblate spheroid: exercises the `α = max(1, -log10(ω))` change of variable.

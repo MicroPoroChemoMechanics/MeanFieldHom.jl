@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -73,8 +73,8 @@ end
     s = LayeredSpheroid((2.9, 3.0), (sqrt(2.9^2 - 8.0), 1.0), (K1, K2); Nseries = 6)
     f1 = layer_volume_fraction(s, 1)
     f2 = layer_volume_fraction(s, 2)
-    voigt = MeanFieldHom.LayeredSpheroids.layer_conductivity_average(s)
-    reuss = MeanFieldHom.LayeredSpheroids.layer_resistivity_average(s)
+    voigt = MeanFieldHomogenization.LayeredSpheroids.layer_conductivity_average(s)
+    reuss = MeanFieldHomogenization.LayeredSpheroids.layer_resistivity_average(s)
     @test voigt.data[1] ≈ f1 * 5.0 + f2 * 20.0
     @test reuss.data[1] ≈ f1 / 5.0 + f2 / 20.0
 end

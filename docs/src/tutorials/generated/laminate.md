@@ -17,7 +17,7 @@ and *exactly* Reuss across them, simultaneously.
 Theory: the [laminate page](@ref th-laminate).
 
 ````@example laminate
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using LinearAlgebra

@@ -1,5 +1,5 @@
 """
-    MeanFieldHom.Elasticity
+    MeanFieldHomogenization.Elasticity
 
 Hill polarization tensors for ellipsoidal inclusions (2D / 3D,
 isotropic / anisotropic matrix).  Public entry point:
@@ -19,7 +19,7 @@ using ..Core
 const MFH_Core = Core
 
 # Re-export the abstract inclusion supertype so that users can write
-# `AbstractEllipsoidalInclusion` directly through `MeanFieldHom`.
+# `AbstractEllipsoidalInclusion` directly through `MeanFieldHomogenization`.
 import ..Core: AbstractEllipsoidalInclusion
 
 include("ellipsoid.jl")

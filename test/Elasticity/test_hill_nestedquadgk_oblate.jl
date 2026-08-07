@@ -11,7 +11,7 @@
 # ω = a₃/a₁ ≤ 1 are guaranteed on entry — the axis-sort inside the backend
 # is always a no-op for Float64 inputs.
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
 const ATOL4 = 5.0e-6   # looser than spheroidal due to near-singular kernel at z≈1

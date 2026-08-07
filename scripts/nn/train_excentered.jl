@@ -21,7 +21,7 @@ import Pkg
 Pkg.activate(@__DIR__; io = devnull)
 Pkg.instantiate(; io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Printf
 using Plots
@@ -35,7 +35,7 @@ default(;
     left_margin = 5Plots.mm, bottom_margin = 5Plots.mm,
 )
 
-const NI = MeanFieldHom.NeuralInclusions
+const NI = MeanFieldHomogenization.NeuralInclusions
 const OUT = NI.MODEL_DIR
 const ASSET = normpath(joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "nn"))
 mkpath(OUT)

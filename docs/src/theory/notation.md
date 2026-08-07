@@ -104,8 +104,8 @@ closed form on the following pages is written in. Semi-axes
 ``(a, b, c) = (3, 1.5, 0.8)``, hence ``\eta = 0.5`` and ``\omega \approx 0.27``.
 
 ```@setup notation
-using MeanFieldHom
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+using MeanFieldHomogenization
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 ```
 
 ```@example notation
@@ -139,4 +139,4 @@ introduced only on another page, even at the cost of repeating a definition.
     expressions that are. Where a convention differs between references — the
     crack opening displacement tensor ``\boldsymbol{B}`` is the notable case,
     see [Crack opening displacement](cod_tensors.md) — the competing
-    conventions are named and the one implemented by `MeanFieldHom` is stated.
+    conventions are named and the one implemented by `MeanFieldHomogenization` is stated.

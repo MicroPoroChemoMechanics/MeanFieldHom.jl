@@ -4,7 +4,7 @@ using DocumenterCitations
 # page itself, so the architecture picture is edited by editing text — no
 # regenerated asset to keep in sync.
 using DocumenterMermaid
-using MeanFieldHom
+using MeanFieldHomogenization
 
 # GR needs a headless display driver on CI runners; without this the figures in
 # the Applications pages fail to render.
@@ -23,34 +23,34 @@ bib = CitationBibliography(
 )
 
 DocMeta.setdocmeta!(
-    MeanFieldHom,
+    MeanFieldHomogenization,
     :DocTestSetup,
-    :(using MeanFieldHom);
+    :(using MeanFieldHomogenization);
     recursive = true,
 )
 
 makedocs(;
     clean    = false,
-    modules  = [MeanFieldHom,
-                MeanFieldHom.Elliptic,
-                MeanFieldHom.Core,
-                MeanFieldHom.Elasticity,
-                MeanFieldHom.Cracks,
-                MeanFieldHom.Conductivity,
-                MeanFieldHom.LayeredSpheres,
-                MeanFieldHom.LayeredSpheroids,
-                MeanFieldHom.Schemes,
-                MeanFieldHom.Laminates,
-                MeanFieldHom.Viscoelasticity,
-                MeanFieldHom.CustomInclusions,
-                MeanFieldHom.FiniteElements,
-                MeanFieldHom.NeuralInclusions],
+    modules  = [MeanFieldHomogenization,
+                MeanFieldHomogenization.Elliptic,
+                MeanFieldHomogenization.Core,
+                MeanFieldHomogenization.Elasticity,
+                MeanFieldHomogenization.Cracks,
+                MeanFieldHomogenization.Conductivity,
+                MeanFieldHomogenization.LayeredSpheres,
+                MeanFieldHomogenization.LayeredSpheroids,
+                MeanFieldHomogenization.Schemes,
+                MeanFieldHomogenization.Laminates,
+                MeanFieldHomogenization.Viscoelasticity,
+                MeanFieldHomogenization.CustomInclusions,
+                MeanFieldHomogenization.FiniteElements,
+                MeanFieldHomogenization.NeuralInclusions],
     remotes  = nothing,
     authors  = "Jean-François Barthélémy",
-    sitename = "MeanFieldHom.jl",
+    sitename = "MeanFieldHomogenization.jl",
     format   = Documenter.HTML(;
-        canonical        = "https://MicroPoroChemoMechanics.github.io/MeanFieldHom.jl",
-        repolink         = "https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl",
+        canonical        = "https://MicroPoroChemoMechanics.github.io/MeanFieldHomogenization.jl",
+        repolink         = "https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl",
         edit_link        = "main",
         assets           = ["assets/favicon.ico", "assets/custom.css"],
         prettyurls       = (get(ENV, "CI", nothing) == "true"),
@@ -167,7 +167,7 @@ makedocs(;
             "applications/bituminous.md",
             "applications/ageing_creep.md",
         ],
-        # Getting work into and out of MeanFieldHom. These are companions to
+        # Getting work into and out of MeanFieldHomogenization. These are companions to
         # the library rather than chapters about it, which is why they sit
         # together at the end of the user-facing material instead of
         # interrupting the manual.
@@ -207,7 +207,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo         = "github.com/MicroPoroChemoMechanics/MeanFieldHom.jl.git",
+    repo         = "github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl.git",
     devbranch    = "main",
     push_preview = false,
 )

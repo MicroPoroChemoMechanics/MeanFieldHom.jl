@@ -4,7 +4,7 @@
 #  Julia reproduction of the ageing-creep penny-crack benchmark —
 #  pure penny crack (no interface stiffness) in an iso ALV matrix,
 #  using all the crack-aware homogenization schemes available in
-#  `MeanFieldHom`:  Dilute, Mori-Tanaka, Maxwell, Self-Consistent,
+#  `MeanFieldHomogenization`:  Dilute, Mori-Tanaka, Maxwell, Self-Consistent,
 #  Asymmetric Self-Consistent, Ponte-Castañeda Willis, Differential.
 #
 #  The Python benchmark uses cracks **with interface stiffness**
@@ -30,7 +30,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -47,8 +47,8 @@ const τ = 1.0
 const C_inf_t = TensISO{3}(3 * k_inf, 2 * μ_inf)
 
 const _, 𝕁₄, 𝕂₄ = TensND.iso_projectors(Val(3), Val(Float64))
-const _J_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(𝕁₄)
-const _K_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(𝕂₄)
+const _J_M = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(𝕁₄)
+const _K_M = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(𝕂₄)
 
 # Iso relaxation kernel of the matrix.
 function R_M(t, tp)

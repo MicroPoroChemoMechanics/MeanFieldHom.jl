@@ -22,7 +22,7 @@ test/
   not exist and the tests silently cover less than they appear to;
 - it calls `Random.seed!` once, so a CI failure is reproducible locally instead
   of depending on the draw;
-- it wraps everything in a single top-level `@testset "MeanFieldHom"`.
+- it wraps everything in a single top-level `@testset "MeanFieldHomogenization"`.
 
 ## What a good test looks like here
 
@@ -48,7 +48,7 @@ three kinds:
     Degenerate cases hide convention errors, because competing conventions tend
     to *agree* there. A penny crack has ``\eta = 1``, and at ``\eta = 1`` the
     normalizations of the crack compliance ``\mathbb{H}`` used by
-    `MeanFieldHom`, by Echoes and by the literature all coincide (see
+    `MeanFieldHomogenization`, by Echoes and by the literature all coincide (see
     [Crack opening displacement](../theory/cod_tensors.md), section
     *Conventions*). A suite covering only the penny therefore cannot detect a
     wrong ``\eta``-dependence.

@@ -1,13 +1,13 @@
 # [Porous benchmark: all schemes](@id tut-porous-benchmark)
 
 A solid matrix with spherical pores, porosity sweeping the *entire* range
-``\varphi \in [0, 1]``, run through every scheme `MeanFieldHom` implements —
+``\varphi \in [0, 1]``, run through every scheme `MeanFieldHomogenization` implements —
 the porous benchmark of the Echoes book [echoes](@cite).
 
 ## The benchmark problem
 
 ```@example tutporousbench
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots
@@ -27,8 +27,8 @@ to ``\omega = 0.2``, which is the same picture with squashed pores and a very
 different answer:
 
 ```@setup tutporousbenchviz
-using MeanFieldHom
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+using MeanFieldHomogenization
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 ```
 
 ```@example tutporousbenchviz

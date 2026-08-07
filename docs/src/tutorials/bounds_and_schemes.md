@@ -53,7 +53,7 @@ picture.
 ## Putting them on one graph
 
 ```@example tutbounds
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

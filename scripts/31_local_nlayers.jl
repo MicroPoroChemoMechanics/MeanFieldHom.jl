@@ -7,11 +7,11 @@
 #  rather than uniaxial loading: the displacement field is purely
 #  radial `u_r = A_k r + B_k / r²`, every quantity is axisymmetric and
 #  reduces to a single 2×2 state-vector recurrence already implemented
-#  in `MeanFieldHom.LayeredSpheres.bulk_recurrence`.
+#  in `MeanFieldHomogenization.LayeredSpheres.bulk_recurrence`.
 #
 #  The deviatoric (Y₂-harmonic) profile under a uniaxial far-field
 #  needs the per-radius evaluation of the 4×4 shear-recurrence state
-#  vector, which is not yet exposed by `MeanFieldHom`.  This script
+#  vector, which is not yet exposed by `MeanFieldHomogenization`.  This script
 #  intentionally restricts itself to the bulk part — see
 #  `scripts/bench_echoes/benchmark_nlayers.jl` for a cross-check of
 #  effective and per-layer averages against the C++ reference.
@@ -23,7 +23,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -32,8 +32,8 @@ using Plots
 default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
 
 # Internal helpers we reuse for the local-state evaluation.
-const LS = MeanFieldHom.LayeredSpheres
-import MeanFieldHom.LayeredSpheres: _iso_bulk_shear, _bulk_state_seq,
+const LS = MeanFieldHomogenization.LayeredSpheres
+import MeanFieldHomogenization.LayeredSpheres: _iso_bulk_shear, _bulk_state_seq,
     _bulk_layer_transfer, _bulk_extract_AB
 
 # ─── Per-layer (A, B) coefficients under unit far-field A_∞ = 1 ─────────────

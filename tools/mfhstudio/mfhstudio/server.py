@@ -2,7 +2,7 @@
 
 Deliberately built on `http.server` from the standard library rather than a
 framework: the interface must start with `python3 -m mfhstudio` on any machine
-that already runs MeanFieldHom, and adding a dependency tree to achieve that
+that already runs MeanFieldHomogenization, and adding a dependency tree to achieve that
 would be a poor trade. The API is small — a handful of JSON endpoints and the
 static files.
 """
@@ -55,7 +55,7 @@ class Session:
     def catalog(self) -> dict:
         """The form definitions, upgraded with live facts once Julia answers.
 
-        This never raises. The interface has to be usable while MeanFieldHom
+        This never raises. The interface has to be usable while MeanFieldHomogenization
         is still loading — otherwise every control is dead and the only clue
         is a `TypeError` in the browser console.
         """
@@ -432,7 +432,7 @@ def serve(
             "and `ssh -L` both forward the port)",
             flush=True,
         )
-    print("Starting the Julia sidecar (MeanFieldHom takes ~10 s to load)…", flush=True)
+    print("Starting the Julia sidecar (MeanFieldHomogenization takes ~10 s to load)…", flush=True)
 
     def warm() -> None:
         # Reading the manifest is instant and names a missing local checkout

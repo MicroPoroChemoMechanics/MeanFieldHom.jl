@@ -1,6 +1,6 @@
 # =============================================================================
 #  test_self_consistent_nls.jl — SelfConsistent / AsymmetricSelfConsistent
-#  through the `MeanFieldHomNonlinearSolveExt` weak extension.
+#  through the `MeanFieldHomogenizationNonlinearSolveExt` weak extension.
 #
 #  Coverage:
 #   1. SC via `NewtonRaphson()` / `TrustRegion()` agrees with the built-in
@@ -28,7 +28,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using ForwardDiff
@@ -107,9 +107,9 @@ end
     # Extension-absent fallback: unit-test the resolver's other branch
     # directly (the extension is process-global and cannot be unloaded
     # once `using NonlinearSolve` has run in this session).
-    step = C -> MeanFieldHom.Schemes._sc_step(rve, C, :C)
-    C_m = MeanFieldHom.Schemes.matrix_property(rve, :C)
-    C_fallback = MeanFieldHom.Schemes._solve_sc(NewtonDefault(), step, C_m)
+    step = C -> MeanFieldHomogenization.Schemes._sc_step(rve, C, :C)
+    C_m = MeanFieldHomogenization.Schemes.matrix_property(rve, :C)
+    C_fallback = MeanFieldHomogenization.Schemes._solve_sc(NewtonDefault(), step, C_m)
     C_newton = homogenize(rve, SelfConsistent(; algorithm = NewtonDefault()))
     @test _cmp(C_fallback, C_newton)
 end

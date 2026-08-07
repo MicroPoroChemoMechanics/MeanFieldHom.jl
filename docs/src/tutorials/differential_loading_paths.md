@@ -14,7 +14,7 @@ inclusions here are a genuinely stiff and a genuinely soft phase — a
 in the previous tutorial:
 
 ```@example loadpath
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Plots
 gr()  # headless backend; GKSwstype is set to "100" in make.jl
@@ -109,4 +109,4 @@ end
 A standalone, plain-Julia version of this comparison — same RVE, same
 four trajectories, writing a PNG instead of embedding it in the docs —
 lives in
-[`scripts/24_differential_loading_paths.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/24_differential_loading_paths.jl).
+[`scripts/24_differential_loading_paths.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/blob/main/scripts/24_differential_loading_paths.jl).

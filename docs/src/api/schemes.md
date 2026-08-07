@@ -1,7 +1,7 @@
 # [API — Schemes](@id api-schemes)
 
 ```@docs
-MeanFieldHom.Schemes
+MeanFieldHomogenization.Schemes
 ```
 
 ## RVE / Phase / Amount
@@ -63,14 +63,14 @@ AutoNonlinear
 ```@docs
 homogenize
 differential_path
-MeanFieldHom.Schemes.SCHEME_ALIAS
+MeanFieldHomogenization.Schemes.SCHEME_ALIAS
 ```
 
 ## Symmetry projections
 
 Best-fit projection of a tensor onto a symmetry class. These force major
 symmetry, unlike the exact rotation-group averages
-[`MeanFieldHom.Core.isotropify`](@ref) / [`MeanFieldHom.Core.transverse_isotropify`](@ref) in
+[`MeanFieldHomogenization.Core.isotropify`](@ref) / [`MeanFieldHomogenization.Core.transverse_isotropify`](@ref) in
 [API — Core](core.md); the two differ whenever the input is not
 major-symmetric, and the difference is worked through in
 [Symmetrization showcase](../tutorials/generated/symmetrization.md).

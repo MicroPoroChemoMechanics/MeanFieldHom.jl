@@ -15,12 +15,12 @@ is shared (a *series* arrangement → harmonic mean). This page makes that
 statement literal, on matrices.
 
 Terser script:
-[`scripts/38_laminate_symbolic.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/38_laminate_symbolic.jl).
+[`scripts/38_laminate_symbolic.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/blob/main/scripts/38_laminate_symbolic.jl).
 
 ## Setup
 
 ```@example tutsymlam
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using SymPy
 

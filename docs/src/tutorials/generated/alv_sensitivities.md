@@ -24,7 +24,7 @@ scheme; the second is the only route to a material parameter, because the
 kernel is a user function the package never inspects.
 
 ````@example alv_sensitivities
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 using LinearAlgebra

@@ -1,11 +1,11 @@
 """
-    MeanFieldHom.NeuralInclusions
+    MeanFieldHomogenization.NeuralInclusions
 
 Inclusions whose response is produced by a **trained neural network** instead of
 a closed form or a finite-element solve — a fourth route into the
-[`CustomInclusions`](@ref MeanFieldHom.CustomInclusions) contract, alongside the
+[`CustomInclusions`](@ref MeanFieldHomogenization.CustomInclusions) contract, alongside the
 analytic families, the layered patterns and
-[`FiniteElements`](@ref MeanFieldHom.FiniteElements).
+[`FiniteElements`](@ref MeanFieldHomogenization.FiniteElements).
 
 | Type | Entry gate | For |
 |---|---|---|
@@ -44,7 +44,7 @@ checked against a closed form before being pointed at something unknown.
 - `dataset.jl` — Halton sampling of a [`SampleBox`](@ref) and labeling by a
   **teacher**, the one seam that changes between morphologies.
 - `training.jl` — [`TrainingOptions`](@ref) and the fallback
-  [`train_surrogate`](@ref); the optimizer lives in `MeanFieldHomLuxExt`.
+  [`train_surrogate`](@ref); the optimizer lives in `MeanFieldHomogenizationLuxExt`.
 - `io.jl` — [`save_surrogate`](@ref) / [`load_surrogate`](@ref), JSON.
 
 Fitting needs `Lux`, `Zygote` and `Optimisers` (weak dependencies, as for the

@@ -75,7 +75,7 @@ center**, resolved by axisymmetric Fourier finite elements.
 | `α = eccentricity` | offset of the core center, as a fraction of the largest offset that keeps the core inside: `d = α·(a − a_core)` |
 
 `α = 0` is the concentric two-layer sphere, for which
-[`LayeredSphere`](@ref MeanFieldHom.LayeredSpheres.LayeredSphere) gives the
+[`LayeredSphere`](@ref MeanFieldHomogenization.LayeredSpheres.LayeredSphere) gives the
 exact Hervé-Zaoui answer — the reference this type is validated against.
 `α → 1` brings the core tangent to the outer surface. The symmetry axis is
 `axis`; the response is transversely isotropic about it (and isotropic at
@@ -98,7 +98,7 @@ whatever the eccentricity — so the type implements `Schemes._layer_voigt` /
 
 # Properties
 
-Like [`LayeredSphere`](@ref MeanFieldHom.LayeredSpheres.LayeredSphere), the
+Like [`LayeredSphere`](@ref MeanFieldHomogenization.LayeredSpheres.LayeredSphere), the
 constituent properties live **in the geometry object**, core first then shell,
 and the `Dict` handed to `add_phase!` is a placeholder that the kernel ignores.
 Build one object per physics: a pair of `Tens{4,3}` for elasticity, a pair of
@@ -114,7 +114,7 @@ isotropic about the symmetry axis.
 # Example
 
 ```julia
-using MeanFieldHom
+using MeanFieldHomogenization
 import Ferrite, FerriteGmsh, Gmsh        # or: import Gridap, GridapGmsh
 
 C_core, C_shell = iso_stiffness(20.0, 12.0), iso_stiffness(6.0, 4.0)
@@ -188,7 +188,7 @@ _tens_order(::TensND.AbstractTens{O, 3}) where {O} = O
 """
     ExcenteredSphereShape
 
-[`shape_trait`](@ref MeanFieldHom.Core.shape_trait) of
+[`shape_trait`](@ref MeanFieldHomogenization.Core.shape_trait) of
 [`FEExcenteredSphere`](@ref). No kernel dispatches on it — the inclusion
 supplies its own localization tensors.
 """

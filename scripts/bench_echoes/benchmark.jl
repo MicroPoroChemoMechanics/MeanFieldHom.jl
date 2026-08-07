@@ -1,7 +1,7 @@
 # =============================================================================
 #  scripts/bench_echoes/benchmark.jl
 #
-#  Side-by-side benchmark of MeanFieldHom.jl (Julia) vs Echoes (C++ via
+#  Side-by-side benchmark of MeanFieldHomogenization.jl (Julia) vs Echoes (C++ via
 #  PyCall).
 #
 #  Sections:
@@ -21,14 +21,14 @@
 #  Echoes must be importable as `import echoes` from the Python
 #  interpreter pointed to by PyCall (see README.md).
 #
-#  Run from the MeanFieldHom.jl package root:
+#  Run from the MeanFieldHomogenization.jl package root:
 #    julia --project=scripts/bench_echoes scripts/bench_echoes/benchmark.jl
 # =============================================================================
 
 import Pkg
 Pkg.activate(@__DIR__; io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -244,7 +244,7 @@ println("="^78)
     bench_hill(label, ell_jl, C_jl, C_py; jl_method = :auto,
                is_iso = false, echoes_algos = ("RESIDUES", "NUMINT3D"))
 
-Compute P with MeanFieldHom (one call), then with Echoes.  When
+Compute P with MeanFieldHomogenization (one call), then with Echoes.  When
 `is_iso = true`, a single "analytical" row is printed (Echoes uses the
 closed-form path regardless of the declared algorithm).  Otherwise only
 the algorithms listed in `echoes_algos` are tested.  Pass
@@ -432,15 +432,15 @@ println("="^78)
 # Both libraries build H from the SAME COD tensor B (normalized by the in-plane
 # half-width b), but they normalize the flat limit differently:
 #
-#   MeanFieldHom :  H = lim (c/b) Q⁻¹ = (3/4)  n̂ ⊗ˢ B ⊗ˢ n̂   (ellipse)
+#   MeanFieldHomogenization :  H = lim (c/b) Q⁻¹ = (3/4)  n̂ ⊗ˢ B ⊗ˢ n̂   (ellipse)
 #                                     = (2/π)  n̂ ⊗ˢ B ⊗ˢ n̂   (ribbon)
 #   Echoes       :  H = lim (c/a) Q⁻¹ = (3η/4) n̂ ⊗ˢ B ⊗ˢ n̂   (ellipse)
 #                                     = (2/π)  n̂ ⊗ˢ B ⊗ˢ n̂   (ribbon)
 #
 # so for an elliptic crack of in-plane aspect ratio η = b/a:
 #
-#   H_echoes = η · H_MeanFieldHom        (ellipse)
-#   H_echoes =     H_MeanFieldHom        (ribbon — normalized by b in both)
+#   H_echoes = η · H_MeanFieldHomogenization        (ellipse)
+#   H_echoes =     H_MeanFieldHomogenization        (ribbon — normalized by b in both)
 #
 # Verified against Echoes on 2026-07-25 at η = 0.7, 0.5, 0.3, 0.1: the ratio is
 # η to four decimals. The two coincide at η = 1, which is why the penny-crack
@@ -471,7 +471,7 @@ function bench_crack(
         # The (3,3,3,3) slot: H[3,3,3,3] = (3/4) * B_nn = 4(1-ν²)/(πE).
         H3333_th = 4 * (1 - ν_iso^2) / (π * E_iso)
         @printf "    Analytical H[3,3,3,3] (Echoes convention) = %.4e\n" H3333_th
-        @printf "      MeanFieldHom H[3,3,3,3] = %.4e   err = %.2e\n" H_jl[3, 3, 3, 3] abs(H_jl[3, 3, 3, 3] - H3333_th)
+        @printf "      MeanFieldHomogenization H[3,3,3,3] = %.4e   err = %.2e\n" H_jl[3, 3, 3, 3] abs(H_jl[3, 3, 3, 3] - H3333_th)
 
         H_py = to_jlmat(py_crack(C_py, "DEFAULT"))
         if H_py === nothing
@@ -538,11 +538,11 @@ bench_crack("Penny / triclinic", C_tric, C_tric_py; jl_method = :residues)
 #        normalization conventions (see the note at the top of § 2).
 #
 #  The penny comparisons above cannot detect a wrong η-dependence, because at
-#  η = 1 the MeanFieldHom (uniform-b) and Echoes (a-normalized) conventions
+#  η = 1 the MeanFieldHomogenization (uniform-b) and Echoes (a-normalized) conventions
 #  coincide. This sweep applies the documented factor explicitly and checks
 #  that the two libraries then agree:
 #
-#        H_echoes  ==  η · H_MeanFieldHom
+#        H_echoes  ==  η · H_MeanFieldHomogenization
 # -----------------------------------------------------------------------------
 
 function bench_crack_elliptic(C_jl, C_py; ωflat = 1.0e-5, ηs = (1.0, 0.7, 0.5, 0.3, 0.1))

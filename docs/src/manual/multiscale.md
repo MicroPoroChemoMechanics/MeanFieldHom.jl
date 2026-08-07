@@ -1,7 +1,7 @@
 # [Multiscale models](@id man-multiscale)
 
 A multiscale model chains homogenizations: the effective property computed at
-one scale becomes a phase property at the next. `MeanFieldHom` supports two
+one scale becomes a phase property at the next. `MeanFieldHomogenization` supports two
 ways of writing that chain, and **both are fully supported** — they differ in
 what is an object, not in what they compute.
 
@@ -41,7 +41,7 @@ makes the two writing styles equivalent.
 ## The cell abstraction
 
 Everything `homogenize` accepts is an
-[`AbstractHomogenizationCell`](@ref MeanFieldHom.Core.AbstractHomogenizationCell):
+[`AbstractHomogenizationCell`](@ref MeanFieldHomogenization.Core.AbstractHomogenizationCell):
 
 | Cell | Morphology | Schemes |
 | :--- | :--- | :--- |
@@ -148,7 +148,7 @@ with different `ForwardDiff` tags, from ever seeing each other's values. When
 no property is a `Homogenized`, the resolution is the identity and costs
 nothing.
 
-Cells nested more than `MeanFieldHom.Core.MAX_NESTING` deep raise, rather than
+Cells nested more than `MeanFieldHomogenization.Core.MAX_NESTING` deep raise, rather than
 looping: the usual cause is a cell nested inside itself.
 
 ## Choosing between the two
@@ -179,7 +179,7 @@ typically when it is to be differentiated, fitted or swept.
 ## Writing a new cell type
 
 A new cell subtypes
-[`AbstractHomogenizationCell`](@ref MeanFieldHom.Core.AbstractHomogenizationCell)
+[`AbstractHomogenizationCell`](@ref MeanFieldHomogenization.Core.AbstractHomogenizationCell)
 and provides:
 
 - `validate_cell(cell)` — the structural check `homogenize` runs first;

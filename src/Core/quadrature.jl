@@ -16,7 +16,7 @@
 
 Backend seam for the optional **DECUHR** cubature path. The real
 implementation (via `Integrals.solve(prob, DECUHR.DecuhrAlgorithm(...))`)
-lives in the package extension `MeanFieldHomDECUHRExt`, which is loaded only
+lives in the package extension `MeanFieldHomogenizationDECUHRExt`, which is loaded only
 when both `DECUHR` and `Integrals` are available. Returns the raw solution
 vector `sol.u`.
 

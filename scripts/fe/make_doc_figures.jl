@@ -23,7 +23,7 @@ import Pkg
 Pkg.activate(@__DIR__; io = devnull)
 Pkg.instantiate(; io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -49,8 +49,8 @@ diag3(B) = diag(Matrix(get_array(B)))
 # detail rather than public API — this is a maintenance script, so it reaches in
 # deliberately. Since the `src/FiniteElements` reorganization the mesh and the
 # facet-set names belong to the package, and only the lip split is the backend's.
-const FE = MeanFieldHom.FiniteElements
-const EXT = Base.get_extension(MeanFieldHom, :MeanFieldHomFerriteExt)
+const FE = MeanFieldHomogenization.FiniteElements
+const EXT = Base.get_extension(MeanFieldHomogenization, :MeanFieldHomogenizationFerriteExt)
 
 "Grid of a crack, and the `+` lip facets of its crack plane."
 function crack_mesh(crack)

@@ -27,7 +27,7 @@ import Pkg
 Pkg.activate(@__DIR__; io = devnull)
 Pkg.instantiate(; io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -44,12 +44,12 @@ default(;
 const OUT = normpath(joinpath(@__DIR__, "..", "..", "docs", "src", "assets", "fe"))
 mkpath(OUT)
 
-const FE = MeanFieldHom.FiniteElements
+const FE = MeanFieldHomogenization.FiniteElements
 
-mand(T) = MeanFieldHom.Core.mandel66_minor(MeanFieldHom.Core._C_array(T))
+mand(T) = MeanFieldHomogenization.Core.mandel66_minor(MeanFieldHomogenization.Core._C_array(T))
 kelvin_J(M) = (M[1, 1] + 2M[1, 2]) / 3        # 𝕁-eigenvalue of a TI/iso tensor
 kelvin_K(M) = M[4, 4]                          # 𝕂-eigenvalue
-iso(C) = MeanFieldHom.Core.isotropify(C)
+iso(C) = MeanFieldHomogenization.Core.isotropify(C)
 
 # ── The recycled-concrete aggregate of Adessina et al. (2017) ────────────────
 #  A stiff old natural aggregate (the core) inside a shell of adhered old

@@ -1,6 +1,6 @@
 # [MFH Studio: building scripts graphically](@id tools-mfhstudio)
 
-MFH Studio is a local web interface that builds MeanFieldHom scripts. It draws
+MFH Studio is a local web interface that builds MeanFieldHomogenization scripts. It draws
 the shape of the phase being edited, runs the model, and — the part that makes
 it safe to use on existing work — **reads a script back** and preserves
 everything it does not recognize.
@@ -10,11 +10,11 @@ format to be locked into.
 
 ## Starting the studio
 
-From a Julia session with MeanFieldHom loaded — the studio ships with the
+From a Julia session with MeanFieldHomogenization loaded — the studio ships with the
 checkout you develop:
 
 ```julia
-using MeanFieldHom
+using MeanFieldHomogenization
 mfhstudio()                  # starts the server and opens a browser
 mfhstudio(port = 9000)       # pick a different port
 mfhstudio(no_browser = true) # stay in the terminal
@@ -44,7 +44,7 @@ python3 -m mfhstudio --check        # verify the Julia side and exit
 On Windows, `python -m mfhstudio`.
 
 It needs Python 3.10+ (standard library only) and a `julia` on `PATH` able to
-load MeanFieldHom. Loading the package takes about ten seconds, paid once when
+load MeanFieldHomogenization. Loading the package takes about ten seconds, paid once when
 the interface starts; the badge in the top-right turns green when it is ready.
 On a fresh checkout the sidecar instantiates the package environment first,
 which takes a few minutes once.
@@ -58,20 +58,20 @@ One failure is worth knowing about. A development machine's local
 `Manifest.toml` — untracked, one per clone — may pin some dependencies to
 sibling checkouts (`path = "../TensND.jl"`), which only resolve when those
 siblings are there. If yours does and they are not, the studio does not need
-the clone's environment at all: MeanFieldHom is registered in General, so a
+the clone's environment at all: MeanFieldHomogenization is registered in General, so a
 shared environment resolves everything from the registry.
 
 ```julia
 using Pkg
 Pkg.activate("mfhstudio", shared = true)
-Pkg.add("MeanFieldHom")
+Pkg.add("MeanFieldHomogenization")
 ```
 
 To run the studio against a clone you are editing rather than the released
 version, develop it into that same environment instead:
 
 ```julia
-Pkg.develop(path = raw"<path to MeanFieldHom.jl>")
+Pkg.develop(path = raw"<path to MeanFieldHomogenization.jl>")
 ```
 
 Either way, start the studio against that shared environment —
@@ -96,11 +96,11 @@ checking that the shape you described is the shape you meant.
 The screenshot shows the porous benchmark after pressing **Run** — a solid
 matrix ``(k, \mu) = (72, 32)`` with spherical pores swept over
 ``\varphi \in [0, 0.9]``. The numbers reproduce the reference values captured
-from Echoes 1.0 (see [From Echoes to MeanFieldHom](@ref tools-from-echoes)).
+from Echoes 1.0 (see [From Echoes to MeanFieldHomogenization](@ref tools-from-echoes)).
 
 Two conventions the interface removes rather than documents:
 
-- The matrix phase has **no amount field**. MeanFieldHom derives it as
+- The matrix phase has **no amount field**. MeanFieldHomogenization derives it as
   ``1 - \sum f_{\text{inclusions}}`` and raises if it is set, so offering the
   field would only invite an error.
 - Moduli are entered as physical ``(k, \mu)`` or ``(E, \nu)`` and emitted
@@ -117,7 +117,7 @@ come out wrong.
 Solver options follow the scheme rather than `homogenize`, and the list offered
 for each scheme is read from the scheme itself — `SelfConsistent` shows
 `abstol`, `maxiters`, `damping`, `select_best`; `DifferentialScheme` shows
-`nsteps` and `formulation`. The interface cannot fall behind MeanFieldHom
+`nsteps` and `formulation`. The interface cannot fall behind MeanFieldHomogenization
 because it never hard-codes that list.
 
 ## Layered inclusions
@@ -144,7 +144,7 @@ a conduction geometry, so its layers carry a conductivity rather than moduli.
 
 ![A two-scale model with the seam drawn](../assets/mfhstudio/multiscale.png)
 
-This is where the interface earns the most. MeanFieldHom chains scales
+This is where the interface earns the most. MeanFieldHomogenization chains scales
 declaratively: a phase property may hold a `Homogenized(inner_cell, scheme)`
 instead of a tensor, and the outer scheme resolves the inner scale when it
 reads that key (see [Multiscale models](@ref man-multiscale)).
@@ -209,7 +209,7 @@ plot components, which are defined whatever the symmetry.
 A phase becomes viscoelastic through its **property**, not through a separate
 panel: in Scales → Properties → Parametrization, choose Maxwell, a Kelvin
 chain, an elastic (Heaviside) phase, or a custom ``J(t, t')``. The generated
-call uses MeanFieldHom's own signatures — `maxwell_iso(k, μ, η_k, η_μ)` takes
+call uses MeanFieldHomogenization's own signatures — `maxwell_iso(k, μ, η_k, η_μ)` takes
 *two* relaxation times, `kelvin_iso` takes whole branch vectors.
 
 ![A creeping mortar under two schemes](../assets/mfhstudio/viscoelastic.png)

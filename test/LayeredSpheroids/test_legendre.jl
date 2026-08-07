@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom.LayeredSpheroids: legendre_odd
+using MeanFieldHomogenization.LayeredSpheroids: legendre_odd
 
 # =============================================================================
 #  test_legendre.jl — associated Legendre recurrences (`legendre.jl`).

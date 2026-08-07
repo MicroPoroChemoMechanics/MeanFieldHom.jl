@@ -8,7 +8,7 @@
 #
 #  Included by `scripts/40_multiscale_strength.jl` (plots / tables) and
 #  `scripts/bench_echoes/benchmark_pichler.jl` (cross-validation against the
-#  echoes Python reference).  Built ENTIRELY on the public MeanFieldHom API :
+#  echoes Python reference).  Built ENTIRELY on the public MeanFieldHomogenization API :
 #
 #  * Hydrate Foam (HF)  — Self-Consistent over NTHETA needle families
 #    (`Spheroid(ω; euler_angles = (θᵢ, 0, 0))`), each with
@@ -27,7 +27,7 @@
 #    (multi-bin SC included) — no hand-rolled IFT, no Mandel bypass.
 # =============================================================================
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using ForwardDiff
 using TensND
 using LinearAlgebra
@@ -156,7 +156,7 @@ end
 
 # ── Iso bulk / shear moduli of a (nearly) iso 4-tensor ─────────────────────
 # `proj_tens(:ISO, ...)` is TensND's paramsym-style best-fit projection
-# (echoes' `.paramsym(sym=ISO)` analog); `k_mu` is MeanFieldHom's
+# (echoes' `.paramsym(sym=ISO)` analog); `k_mu` is MeanFieldHomogenization's
 # stiffness-role interpretation of the resulting (α,β) = (3k,2μ) coefficients.
 extract_kμ(arr::AbstractArray) = k_mu(TensND.proj_tens(Val(:ISO), arr)[1])
 

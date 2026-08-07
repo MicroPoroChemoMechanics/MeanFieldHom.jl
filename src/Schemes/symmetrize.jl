@@ -100,7 +100,7 @@ end
 Orthogonal (Frobenius) projection of `t` onto the isotropic basis — thin
 wrapper over `TensND.proj_tens``(Val(:ISO), t)`, TensND's canonical
 "paramsym"-style extraction. For minor-symmetric tensors this coincides with
-the exact SO(3) average [`MeanFieldHom.Core.isotropify`](@ref) (the isotropic subspace is
+the exact SO(3) average [`MeanFieldHomogenization.Core.isotropify`](@ref) (the isotropic subspace is
 `{𝕁, 𝕂}` either way).
 """
 best_fit_iso(t::TensND.AbstractTens) = TensND.proj_tens(Val(:ISO), t)[1]
@@ -119,7 +119,7 @@ extraction. Numerically identical to the previous in-house implementation
     This is a reporting utility, NOT the orientation average : it forces
     major symmetry (ℓ₃+ℓ₄)/2 and drops the antisymmetric azimuthal
     couplings.  Inside scheme kernels use `_apply_symmetrize` /
-    [`MeanFieldHom.Core.transverse_isotropify`](@ref) instead.
+    [`MeanFieldHomogenization.Core.transverse_isotropify`](@ref) instead.
 """
 best_fit_ti(t::TensND.AbstractTens{4, 3}, axis) = TensND.proj_tens(Val(:TI), t, axis)[1]
 best_fit_ti(t::TensND.AbstractTens{2, 3}, axis) = TensND.proj_tens(Val(:TI), t, axis)[1]
@@ -131,7 +131,7 @@ best_fit_ti(t::TensND.AbstractTens{2, 3}, axis) = TensND.proj_tens(Val(:TI), t, 
 Orthogonal (Frobenius) projection of `t` onto the orthotropic span in the
 given material `frame` — thin wrapper over `TensND.proj_tens``(
 Val(:ORTHO), t, frame)`, the analog of echoes' `.paramsym(sym=ORTHO)`.
-There was previously no orthotropic parameter extraction in MeanFieldHom.jl;
+There was previously no orthotropic parameter extraction in MeanFieldHomogenization.jl;
 this closes that gap using the TI/ORTHO projection machinery already tested
 in TensND (`test/test_tens_projection.jl`).
 """

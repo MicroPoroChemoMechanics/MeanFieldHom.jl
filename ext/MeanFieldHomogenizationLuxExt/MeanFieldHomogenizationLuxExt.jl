@@ -1,5 +1,5 @@
 # =============================================================================
-#  MeanFieldHomLuxExt — the optimizer half of the neural-surrogate pipeline.
+#  MeanFieldHomogenizationLuxExt — the optimizer half of the neural-surrogate pipeline.
 #
 #  This extension owns exactly one thing: `NeuralInclusions.train_surrogate`.
 #  Everything else — the network, the physics of the decode, the sampling, the
@@ -20,16 +20,16 @@
 #  training loss and the validation error reported by the package.
 # =============================================================================
 
-module MeanFieldHomLuxExt
+module MeanFieldHomogenizationLuxExt
 
-import MeanFieldHom
+import MeanFieldHomogenization
 import Lux
 import Optimisers
 import Zygote
 import Random
 import Dates
 
-const NI = MeanFieldHom.NeuralInclusions
+const NI = MeanFieldHomogenization.NeuralInclusions
 
 # ─── The isomorphic Lux chain ────────────────────────────────────────────────
 

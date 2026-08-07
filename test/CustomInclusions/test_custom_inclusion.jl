@@ -21,7 +21,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using ForwardDiff
@@ -49,19 +49,19 @@ end
 
     gate_A = CustomInclusion(
         (3.0, 1.0, 1.0);
-        basis = MeanFieldHom.inclusion_basis(ell),
+        basis = MeanFieldHomogenization.inclusion_basis(ell),
         hill_tensor = (P₀; kw...) -> hill_tensor(ell, P₀; kw...),
     )
     gate_B = CustomInclusion(
         (3.0, 1.0, 1.0);
-        basis = MeanFieldHom.inclusion_basis(ell),
+        basis = MeanFieldHomogenization.inclusion_basis(ell),
         strain_strain_loc = (P₁, P₀; kw...) -> strain_strain_loc(ell, P₁, P₀; kw...),
         gradient_gradient_loc = (P₁, P₀; kw...) ->
         gradient_gradient_loc(ell, P₁, P₀; kw...),
     )
     gate_C = CustomInclusion(
         (3.0, 1.0, 1.0);
-        basis = MeanFieldHom.inclusion_basis(ell),
+        basis = MeanFieldHomogenization.inclusion_basis(ell),
         stiffness_contribution = (P₁, P₀; kw...) ->
         stiffness_contribution(ell, P₁, P₀; kw...),
         compliance_contribution = (P₁, P₀; kw...) ->
@@ -141,7 +141,7 @@ end
 
     flat = CustomInclusion(
         (a, b, 0.0);
-        basis = MeanFieldHom.inclusion_basis(crack),
+        basis = MeanFieldHomogenization.inclusion_basis(crack),
         density_factor = 4π / 3,
         compliance_contribution = (P₀; kw...) -> compliance_contribution(crack, P₀; kw...),
         stiffness_contribution = (P₀; kw...) -> stiffness_contribution(crack, P₀; kw...),
@@ -174,7 +174,7 @@ end
         # A wrong prefactor must show up as a different effective compliance.
         wrong = CustomInclusion(
             (a, b, 0.0);
-            basis = MeanFieldHom.inclusion_basis(crack),
+            basis = MeanFieldHomogenization.inclusion_basis(crack),
             density_factor = 1.0,
             compliance_contribution = (P₀; kw...) ->
             compliance_contribution(crack, P₀; kw...),
@@ -190,7 +190,7 @@ end
     @testset "a density amount without a density_factor is refused" begin
         nofactor = CustomInclusion(
             (a, b, 0.0);
-            basis = MeanFieldHom.inclusion_basis(crack),
+            basis = MeanFieldHomogenization.inclusion_basis(crack),
             compliance_contribution = (P₀; kw...) ->
             compliance_contribution(crack, P₀; kw...),
             stiffness_contribution = (P₀; kw...) ->
@@ -206,7 +206,7 @@ end
 #  inherited through `shape_trait`.
 # =============================================================================
 
-struct DelegatingCrack{T, B <: TensND.AbstractBasis} <: MeanFieldHom.AbstractCrack{T}
+struct DelegatingCrack{T, B <: TensND.AbstractBasis} <: MeanFieldHomogenization.AbstractCrack{T}
     a::T
     b::T
     basis::B
@@ -214,16 +214,16 @@ end
 
 _as_elliptic(c::DelegatingCrack) = EllipticCrack(c.a, c.b, c.basis)
 
-MeanFieldHom.shape_trait(::DelegatingCrack) = MeanFieldHom.EllipticShape
-MeanFieldHom.shape_tensor(c::DelegatingCrack) =
-    MeanFieldHom.shape_tensor(_as_elliptic(c))
+MeanFieldHomogenization.shape_trait(::DelegatingCrack) = MeanFieldHomogenization.EllipticShape
+MeanFieldHomogenization.shape_tensor(c::DelegatingCrack) =
+    MeanFieldHomogenization.shape_tensor(_as_elliptic(c))
 # One method per tensor order: the generic `cod_tensor` is declared separately
 # for `AbstractTens{4,3}` and `AbstractTens{2,3}`, so a single method typed on
 # `AbstractTens` would be ambiguous with both.
-MeanFieldHom.Cracks.cod_tensor(
+MeanFieldHomogenization.Cracks.cod_tensor(
     c::DelegatingCrack, C₀::TensND.AbstractTens{4, 3}; kw...
 ) = cod_tensor(_as_elliptic(c), C₀; kw...)
-MeanFieldHom.Cracks.cod_tensor(
+MeanFieldHomogenization.Cracks.cod_tensor(
     c::DelegatingCrack, K₀::TensND.AbstractTens{2, 3}; kw...
 ) = cod_tensor(_as_elliptic(c), K₀; kw...)
 
@@ -241,7 +241,7 @@ MeanFieldHom.Cracks.cod_tensor(
         get_array(compliance_contribution(ref, CI_K_M))
     @test get_array(conductivity_contribution(mine, CI_K_M)) ≈
         get_array(conductivity_contribution(ref, CI_K_M))
-    @test MeanFieldHom.Cracks.crack_density_factor(mine) ≈ 4π / 3
+    @test MeanFieldHomogenization.Cracks.crack_density_factor(mine) ≈ 4π / 3
 
     H = compliance_contribution(mine, CI_C_M)
     N = stiffness_contribution(mine, CI_C_M)
@@ -258,7 +258,7 @@ MeanFieldHom.Cracks.cod_tensor(
         struct WeirdShape end
         weird = DelegatingCrack(a, b, basis)
         # Locally override the trait for a throw-away type.
-        @test_throws ArgumentError MeanFieldHom.Cracks._compliance_from_B(
+        @test_throws ArgumentError MeanFieldHomogenization.Cracks._compliance_from_B(
             WeirdShape, weird, cod_tensor(ref, CI_C_M)
         )
     end
@@ -269,20 +269,20 @@ end
 #  open `_kernel` table rather than by overriding `hill_tensor`.
 # =============================================================================
 
-struct KernelBlob{T, B <: TensND.AbstractBasis} <: MeanFieldHom.AbstractCustomInclusion{T}
+struct KernelBlob{T, B <: TensND.AbstractBasis} <: MeanFieldHomogenization.AbstractCustomInclusion{T}
     radius::T
     basis::B
 end
 
 _blob_ell(b::KernelBlob) = Ellipsoid(b.radius, b.radius, b.radius)
 
-MeanFieldHom.dimension(::KernelBlob) = 3
-MeanFieldHom.inclusion_basis(b::KernelBlob) = b.basis
-MeanFieldHom.shape_trait(::KernelBlob) = MeanFieldHom.Spherical
-MeanFieldHom.shape_tensor(b::KernelBlob) = MeanFieldHom.shape_tensor(_blob_ell(b))
+MeanFieldHomogenization.dimension(::KernelBlob) = 3
+MeanFieldHomogenization.inclusion_basis(b::KernelBlob) = b.basis
+MeanFieldHomogenization.shape_trait(::KernelBlob) = MeanFieldHomogenization.Spherical
+MeanFieldHomogenization.shape_tensor(b::KernelBlob) = MeanFieldHomogenization.shape_tensor(_blob_ell(b))
 
-MeanFieldHom.Elasticity._kernel(
-    b::KernelBlob, C₀::TensND.AbstractTens, ::MeanFieldHom.Analytical; kw...
+MeanFieldHomogenization.Elasticity._kernel(
+    b::KernelBlob, C₀::TensND.AbstractTens, ::MeanFieldHomogenization.Analytical; kw...
 ) = hill_tensor(_blob_ell(b), C₀; kw...)
 
 @testset "AbstractCustomInclusion subtype through the `_kernel` table" begin
@@ -329,8 +329,8 @@ end
         compliance_contribution(sphere, P₁, P₀; kw...),
     )
 
-    @test !MeanFieldHom.is_homogeneous_inclusion(het)
-    @test MeanFieldHom.is_homogeneous_inclusion(
+    @test !MeanFieldHomogenization.is_homogeneous_inclusion(het)
+    @test MeanFieldHomogenization.is_homogeneous_inclusion(
         CustomInclusion(; hill_tensor = (P₀; kw...) -> hill_tensor(Ellipsoid(1.0), P₀; kw...))
     )
 
@@ -361,7 +361,7 @@ end
     # error rather than a `MethodError` three frames down.
     for scheme in (Voigt(), Reuss())
         @test_throws ArgumentError homogenize(ok, scheme, :C)
-        @test !MeanFieldHom.Schemes.has_layer_average(het)
+        @test !MeanFieldHomogenization.Schemes.has_layer_average(het)
     end
 
     # `AsymmetricSelfConsistent`, on the other hand, must *not* inherit that
@@ -395,8 +395,8 @@ end
     # about an equivalent ellipsoidal envelope.
     ell = Ellipsoid(1.0)
     shapeless = CustomInclusion(; hill_tensor = (P₀; kw...) -> hill_tensor(ell, P₀; kw...))
-    @test MeanFieldHom.dimension(shapeless) == 3
-    @test_throws ArgumentError MeanFieldHom.shape_tensor(shapeless)
+    @test MeanFieldHomogenization.dimension(shapeless) == 3
+    @test_throws ArgumentError MeanFieldHomogenization.shape_tensor(shapeless)
     @test check_inclusion_interface(shapeless; verbose = false)
 
     # ... and it works in the schemes all the same.
@@ -409,7 +409,7 @@ end
     shaped = CustomInclusion(
         (2.0, 1.0, 0.5); hill_tensor = (P₀; kw...) -> hill_tensor(ell, P₀; kw...)
     )
-    @test diag(Matrix(get_array(MeanFieldHom.shape_tensor(shaped)))) ≈ [2.0, 1.0, 0.5]
+    @test diag(Matrix(get_array(MeanFieldHomogenization.shape_tensor(shaped)))) ≈ [2.0, 1.0, 0.5]
     @test_throws ArgumentError CustomInclusion(
         (2.0, 1.0); dim = 3, hill_tensor = (P₀; kw...) -> hill_tensor(ell, P₀; kw...)
     )
@@ -419,7 +419,7 @@ end
     ell = Ellipsoid(4.0, 1.0, 1.0)
     custom = CustomInclusion(
         (4.0, 1.0, 1.0);
-        basis = MeanFieldHom.inclusion_basis(ell),
+        basis = MeanFieldHomogenization.inclusion_basis(ell),
         hill_tensor = (P₀; kw...) -> hill_tensor(ell, P₀; kw...),
     )
     for sym in (IsoSymmetrize(), TISymmetrize((0.0, 0.0, 1.0)))
@@ -443,17 +443,17 @@ end
 #  Sensitivities through a geometric field of a user struct.
 # =============================================================================
 
-struct SensBlob{T, B <: TensND.AbstractBasis} <: MeanFieldHom.AbstractCustomInclusion{T}
+struct SensBlob{T, B <: TensND.AbstractBasis} <: MeanFieldHomogenization.AbstractCustomInclusion{T}
     aspect::T
     basis::B
 end
 
-MeanFieldHom.dimension(::SensBlob) = 3
-MeanFieldHom.inclusion_basis(b::SensBlob) = b.basis
-MeanFieldHom.shape_trait(::SensBlob) = MeanFieldHom.Prolate
-MeanFieldHom.shape_tensor(b::SensBlob) =
-    MeanFieldHom.shape_tensor(Ellipsoid(b.aspect, 1.0, 1.0))
-MeanFieldHom.Elasticity.hill_tensor(b::SensBlob, C₀::TensND.AbstractTens; kw...) =
+MeanFieldHomogenization.dimension(::SensBlob) = 3
+MeanFieldHomogenization.inclusion_basis(b::SensBlob) = b.basis
+MeanFieldHomogenization.shape_trait(::SensBlob) = MeanFieldHomogenization.Prolate
+MeanFieldHomogenization.shape_tensor(b::SensBlob) =
+    MeanFieldHomogenization.shape_tensor(Ellipsoid(b.aspect, 1.0, 1.0))
+MeanFieldHomogenization.Elasticity.hill_tensor(b::SensBlob, C₀::TensND.AbstractTens; kw...) =
     hill_tensor(Ellipsoid(b.aspect, one(b.aspect), one(b.aspect)), C₀; kw...)
 
 @testset "ForwardDiff through a user geometric parameter" begin
@@ -517,13 +517,13 @@ end
     @test_throws ArgumentError compliance_contribution(only_A, CI_C_M)
 
     # Level-0 interface.
-    @test MeanFieldHom.dimension(only_A) == 3
-    @test MeanFieldHom.shape_trait(only_A) === CustomShape
-    @test get_array(MeanFieldHom.shape_tensor(only_A)) ≈ Matrix(1.0I, 3, 3)
-    @test MeanFieldHom.element_type(only_A) === Float64
+    @test MeanFieldHomogenization.dimension(only_A) == 3
+    @test MeanFieldHomogenization.shape_trait(only_A) === CustomShape
+    @test get_array(MeanFieldHomogenization.shape_tensor(only_A)) ≈ Matrix(1.0I, 3, 3)
+    @test MeanFieldHomogenization.element_type(only_A) === Float64
 
     # Scalar-varargs constructor.
-    @test MeanFieldHom.dimension(
+    @test MeanFieldHomogenization.dimension(
         CustomInclusion(2.0, 1.0, 1.0; hill_tensor = (P₀; kw...) -> hill_tensor(ell, P₀; kw...))
     ) == 3
 end

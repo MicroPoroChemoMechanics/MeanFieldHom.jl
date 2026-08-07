@@ -22,14 +22,14 @@ Both act on the same output, the effective uniaxial creep function
 ``J_E^{\hom}(t, t')``, and the point of the figure is how differently.
 
 ````@example ageing_ages_aspect
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
 using Plots
 gr()
 
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 ````
 
 ## The microstructure

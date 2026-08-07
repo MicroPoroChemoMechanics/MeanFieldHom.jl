@@ -1059,7 +1059,7 @@ end
     stiffness_contribution_alv_at(sphere::LayeredSphere, C_ref::AbstractMatrix, times)
 
 Layered-sphere counterpart of
-[`stiffness_contribution_alv_at`](@ref MeanFieldHom.Viscoelasticity.stiffness_contribution_alv_at)
+[`stiffness_contribution_alv_at`](@ref MeanFieldHomogenization.Viscoelasticity.stiffness_contribution_alv_at)
 for cracks: the same size-independent ALV contribution, but against a
 pre-discretized `(6n × 6n)` reference — the *running* effective medium
 of the differential (or self-consistent) ODE rather than the matrix law.

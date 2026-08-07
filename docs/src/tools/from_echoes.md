@@ -1,6 +1,6 @@
-# [From Echoes to MeanFieldHom](@id tools-from-echoes)
+# [From Echoes to MeanFieldHomogenization](@id tools-from-echoes)
 
-`MeanFieldHom` (MFH) is a Julia port of **Echoes** [echoes](@cite), the C++
+`MeanFieldHomogenization` (MFH) is a Julia port of **Echoes** [echoes](@cite), the C++
 mean-field homogenization library (with a Python interface) developed at
 Cerema. If you already have Echoes scripts, this page is a direct
 translation guide: the same RVE/scheme/homogenize concepts, a line-by-line
@@ -18,9 +18,9 @@ Both libraries share the same mental model: an RVE holding a matrix phase
 and inclusion/crack phases, each with a geometry and property dictionary,
 homogenized by a named scheme. Only the surface syntax differs.
 
-| Echoes (Python) | MeanFieldHom (Julia) |
+| Echoes (Python) | MeanFieldHomogenization (Julia) |
 |---|---|
-| `from echoes import *` | `using MeanFieldHom, TensND` |
+| `from echoes import *` | `using MeanFieldHomogenization, TensND` |
 | `rve(matrix="SOLID")` | `RVE(:SOLID)` |
 | `myrve["SOLID"] = ellipsoid(shape=spheroidal(1.), symmetrize=[ISO], prop={"C": stiff_kmu(k, μ)})` | `add_matrix!(rve, Spheroid(1.0), Dict(:C => iso_stiffness(k, μ)); symmetrize = IsoSymmetrize())` |
 | `myrve["PORE"] = ellipsoid(...)` then `myrve["PORE"].fraction = φ` | `add_phase!(rve, :PORE, Spheroid(1.0), Dict(:C => ...); fraction = φ, symmetrize = IsoSymmetrize())` |
@@ -84,7 +84,7 @@ def Chom_porous(phi, scheme):
 The same problem, live, in MFH:
 
 ```@example tut-echoes
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

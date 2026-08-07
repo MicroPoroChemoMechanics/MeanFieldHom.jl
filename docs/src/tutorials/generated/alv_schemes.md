@@ -4,7 +4,7 @@ EditURL = "../../../../scripts/62_alv_schemes.jl"
 
 # Ageing viscoelastic schemes side by side
 
-Every mean-field scheme `MeanFieldHom` implements in elasticity also exists on
+Every mean-field scheme `MeanFieldHomogenization` implements in elasticity also exists on
 the **ageing linear viscoelastic** path, where each modulus becomes a Volterra
 operator and each product a Volterra product. This page runs four of them on
 one composite and reads the differences off a single scalar: the effective
@@ -17,7 +17,7 @@ polarizes against, and **what shape** it assumes for the spatial distribution
 of the inclusions, which is not the same thing as the shape of an inclusion.
 
 ````@example alv_schemes
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf

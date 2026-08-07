@@ -1,5 +1,5 @@
 # =============================================================================
-#  harness.jl — benchmark harness for the MeanFieldHom / TensND optimization
+#  harness.jl — benchmark harness for the MeanFieldHomogenization / TensND optimization
 #  campaign.
 #
 #  Why three independent channels per case (see README.md for the full
@@ -35,11 +35,11 @@ using Printf
 using Statistics
 using Dates
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
-const MFH = MeanFieldHom
-const MFHC = MeanFieldHom.Core
+const MFH = MeanFieldHomogenization
+const MFHC = MeanFieldHomogenization.Core
 
 # The work counters (`src/Core/counters.jl`) are part of the campaign's
 # instrumentation.  Guard on their presence so this harness can also be run
@@ -141,7 +141,7 @@ checksum_sha(v::AbstractVector{Float64}) = bytes2hex(sha256(canonical(v)))
 
 function _git(args...)
     try
-        return strip(read(`git -C $(pkgdir(MeanFieldHom)) $(collect(args))`, String))
+        return strip(read(`git -C $(pkgdir(MeanFieldHomogenization)) $(collect(args))`, String))
     catch
         return ""
     end
@@ -159,8 +159,8 @@ function env_fingerprint()
         threads = Threads.nthreads(),
         opt_level = Int(Base.JLOptions().opt_level),
         check_bounds = Int(Base.JLOptions().check_bounds),
-        ext_decuhr = Base.get_extension(MeanFieldHom, :MeanFieldHomDECUHRExt) !== nothing,
-        ext_nonlinearsolve = Base.get_extension(MeanFieldHom, :MeanFieldHomNonlinearSolveExt) !== nothing,
+        ext_decuhr = Base.get_extension(MeanFieldHomogenization, :MeanFieldHomogenizationDECUHRExt) !== nothing,
+        ext_nonlinearsolve = Base.get_extension(MeanFieldHomogenization, :MeanFieldHomogenizationNonlinearSolveExt) !== nothing,
     )
 end
 

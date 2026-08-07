@@ -7,7 +7,7 @@
 #  isotropic tensor, the Walpole (ℓ₁..ℓ₆) for a TI tensor, the 9 Cᵢⱼ for an
 #  orthotropic one — it has no notion of "stiffness" vs "compliance": a
 #  `TensISO` could equally represent either. The physical INTERPRETATION
-#  belongs here, in MeanFieldHom, which knows which role a given tensor
+#  belongs here, in MeanFieldHomogenization, which knows which role a given tensor
 #  plays in a given computation.
 #
 #  For a COMPLIANCE tensor S = C⁻¹, do NOT duplicate every function below

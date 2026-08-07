@@ -4,7 +4,7 @@ EditURL = "../../../../scripts/84_neural_inclusion_ellipsoid.jl"
 
 # An inclusion whose response is a neural network
 
-`MeanFieldHom` lets a morphology take part in every homogenization scheme
+`MeanFieldHomogenization` lets a morphology take part in every homogenization scheme
 provided it can answer one of three questions — the Hill tensor, the
 localization tensors, or the contribution tensors. Nothing says the answer has
 to come from a formula. It can come from a finite-element solve
@@ -28,7 +28,7 @@ What a surrogate buys, and what it does not:
 The middle column is why this exists. A finite-element inclusion cannot be
 differentiated with respect to an aspect ratio — its solve runs in `Float64`
 and memoizes on the reference medium, so the derivative would come back as a
-silent zero, and `MeanFieldHom.FiniteElements` refuses the request outright. A
+silent zero, and `MeanFieldHomogenization.FiniteElements` refuses the request outright. A
 surrogate trained on that same solve is smooth, cheap, and differentiable.
 
 The models are loaded from `src/NeuralInclusions/models/`, trained once by
@@ -36,7 +36,7 @@ The models are loaded from `src/NeuralInclusions/models/`, trained once by
 machine-learning dependency at all.
 
 ````@example neural_inclusion
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -46,7 +46,7 @@ gr()
 
 default(; left_margin = 5Plots.mm, bottom_margin = 5Plots.mm)
 
-const NI = MeanFieldHom.NeuralInclusions
+const NI = MeanFieldHomogenization.NeuralInclusions
 ````
 
 ## §1 The two phases
@@ -125,7 +125,7 @@ The call itself, for the record — **not run here**, since fitting needs `Lux`,
 `Optimisers` and `Zygote` and this page must not train anything:
 
 ```julia
-import Lux, Optimisers, Zygote                    # activates MeanFieldHomLuxExt
+import Lux, Optimisers, Zygote                    # activates MeanFieldHomogenizationLuxExt
 
 geometry(x) = Ellipsoid(1.0, 1.0, exp(x[1]))      # shape features → morphology
 response(g, C₀) = hill_tensor(g, C₀)              # what is to be learned
@@ -420,7 +420,7 @@ K_M, K_I = TensISO{3}(2.0), TensISO{3}(7.0)
 
 ell = spheroid(0.4; euler_angles = (0.3, 0.7, 0.0))
 nn = NeuralHillInclusion(
-    ell.semi_axes; basis = MeanFieldHom.inclusion_basis(ell),
+    ell.semi_axes; basis = MeanFieldHomogenization.inclusion_basis(ell),
     elastic, transport = conduction, guard = :error
 )
 
@@ -510,7 +510,7 @@ end
 ell_at(θ) = spheroid(0.4; euler_angles = (θ, 0.0, 0.0))
 nn_at(θ) = let e = ell_at(θ)
     NeuralHillInclusion(
-        e.semi_axes; basis = MeanFieldHom.inclusion_basis(e), elastic, guard = :error
+        e.semi_axes; basis = MeanFieldHomogenization.inclusion_basis(e), elastic, guard = :error
     )
 end
 

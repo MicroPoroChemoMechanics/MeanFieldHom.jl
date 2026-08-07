@@ -3,7 +3,7 @@
 #
 #  Numerical automatic differentiation (AD) via ForwardDiff.jl.
 #
-#  Run from the MeanFieldHom.jl root:
+#  Run from the MeanFieldHomogenization.jl root:
 #    julia --project=. scripts/04_forwarddiff.jl
 #
 #  Prerequisites:
@@ -20,7 +20,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 using LinearAlgebra

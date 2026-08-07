@@ -11,7 +11,7 @@
 # implemented formulas (or PolynomialRoots fails to converge), silently
 # falls back to the DECUHR backend.
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
 const ATOL = 5.0e-7

@@ -8,12 +8,12 @@ form**, with numbers substituted only at the end.
 Running example: a single sphere in an isotropic matrix, in three regimes —
 general inclusion, **porous** limit (``k_i,\mu_i \to 0``) and **rigid** limit
 (``k_i,\mu_i \to \infty``). Terser script:
-[`scripts/29_symbolic_schemes.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHom.jl/blob/main/scripts/29_symbolic_schemes.jl).
+[`scripts/29_symbolic_schemes.jl`](https://github.com/MicroPoroChemoMechanics/MeanFieldHomogenization.jl/blob/main/scripts/29_symbolic_schemes.jl).
 
 ## Setup
 
 ```@example tutsymsph
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using SymPy
 using Plots
@@ -169,7 +169,7 @@ k_{\text{MT}}^{\text{rig}} = k_0 + \frac{f(3k_0+4\mu_0)}{3(1-f)}.
 ## Self-consistent: derived by hand, solved with `solve`
 
 [`SelfConsistent`](@ref) and [`AsymmetricSelfConsistent`](@ref) are
-intrinsically **numerical** in `MeanFieldHom` — a damped Picard/Anderson
+intrinsically **numerical** in `MeanFieldHomogenization` — a damped Picard/Anderson
 fixed-point iteration with convergence tests and positive-definiteness
 guards, none of which can run on a `Sym` scalar (a comparison like `r <
 abstol` simply has no meaning for a symbolic residual). So instead of

@@ -1,6 +1,6 @@
 # =============================================================================
 #  test_ferrite_crack.jl — the finite-element elliptical crack
-#  (`MeanFieldHomFerriteExt`).
+#  (`MeanFieldHomogenizationFerriteExt`).
 #
 #  Slow by nature: every case meshes a ball and factorizes a ~10⁵-dof system.
 #  Kept to penny-shaped cracks on deliberately coarse meshes; the accuracy
@@ -21,7 +21,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using Tensors
 using LinearAlgebra
@@ -105,13 +105,13 @@ using LinearAlgebra
     @testset "the whole contribution chain is inherited" begin
         # Only `cod_tensor` is implemented; everything below follows from
         # `shape_trait == Penny`.
-        @test MeanFieldHom.shape_trait(crack6) === MeanFieldHom.Penny
-        @test MeanFieldHom.Cracks.crack_density_factor(crack6) ≈ 4π / 3
+        @test MeanFieldHomogenization.shape_trait(crack6) === MeanFieldHomogenization.Penny
+        @test MeanFieldHomogenization.Cracks.crack_density_factor(crack6) ≈ 4π / 3
 
         H = compliance_contribution(crack6, C₀_fe)
         N = stiffness_contribution(crack6, C₀_fe)
         @test N ≈ -(C₀_fe ⊡ H ⊡ C₀_fe)
-        Hb, Nb = MeanFieldHom.compliance_and_stiffness_contribution(crack6, C₀_fe)
+        Hb, Nb = MeanFieldHomogenization.compliance_and_stiffness_contribution(crack6, C₀_fe)
         @test get_array(Hb) == get_array(H)
         @test get_array(Nb) == get_array(N)
 

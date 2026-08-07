@@ -14,7 +14,7 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 
@@ -199,14 +199,14 @@ end
     @test CrackDensity(0.05) isa CrackDensity{Float64}
 
     # _sums_to_unit dispatch
-    @test MeanFieldHom.Schemes._sums_to_unit(VolumeFraction(0.3))
-    @test !MeanFieldHom.Schemes._sums_to_unit(CrackDensity(0.05))
+    @test MeanFieldHomogenization.Schemes._sums_to_unit(VolumeFraction(0.3))
+    @test !MeanFieldHomogenization.Schemes._sums_to_unit(CrackDensity(0.05))
 
     # eltype
     @test eltype(VolumeFraction(0.3)) === Float64
     @test eltype(CrackDensity{Complex{Float64}}(0.0 + 0.0im)) === Complex{Float64}
 
     # amount_value
-    @test MeanFieldHom.Schemes.amount_value(VolumeFraction(0.3)) ≈ 0.3
-    @test MeanFieldHom.Schemes.amount_value(CrackDensity(0.05)) ≈ 0.05
+    @test MeanFieldHomogenization.Schemes.amount_value(VolumeFraction(0.3)) ≈ 0.3
+    @test MeanFieldHomogenization.Schemes.amount_value(CrackDensity(0.05)) ≈ 0.05
 end

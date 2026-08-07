@@ -133,11 +133,11 @@ struct NewtonDefault end
 
 Marker selecting an **auto-resolving** nonlinear solver: at each call it
 checks, at runtime, whether the weak extension
-`MeanFieldHomNonlinearSolveExt` is active (`Base.get_extension`) — i.e.
+`MeanFieldHomogenizationNonlinearSolveExt` is active (`Base.get_extension`) — i.e.
 whether `NonlinearSolve.jl` has been loaded into the session, whether by
 an explicit `using NonlinearSolve` or transitively through some other
 dependency (empirically, on a typical installation today the extension
-is already active as soon as `MeanFieldHom` itself is loaded — the
+is already active as soon as `MeanFieldHomogenization` itself is loaded — the
 exact transitive path depends on the resolved dependency graph and is
 not guaranteed across versions).
 
@@ -169,7 +169,7 @@ struct AutoNonlinear end
 Self-consistent scheme. The `algorithm` selects the non-linear solver;
 default is the built-in Anderson acceleration. Any solver from the
 SciML `NonlinearSolve.jl` package can be passed once `using NonlinearSolve`
-activates the weak extension `MeanFieldHomNonlinearSolveExt`.
+activates the weak extension `MeanFieldHomogenizationNonlinearSolveExt`.
 
 Standard kwargs forwarded to the solver: `abstol`, `reltol`,
 `maxiters`, `damping`, `verbose`.

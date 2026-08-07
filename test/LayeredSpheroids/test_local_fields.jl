@@ -1,6 +1,6 @@
 using Test
-using MeanFieldHom
-using MeanFieldHom.LayeredSpheroids: _base_fond
+using MeanFieldHomogenization
+using MeanFieldHomogenization.LayeredSpheroids: _base_fond
 using TensND
 
 # =============================================================================

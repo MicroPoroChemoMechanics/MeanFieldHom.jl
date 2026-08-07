@@ -18,7 +18,7 @@ Both viscoelastic phases obey a **Maxwell** relaxation law with separate bulk an
 shear characteristic times.
 
 ```@example creep
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots
@@ -86,7 +86,7 @@ nothing # hide
 
 [sanahuja2013](@cite)'s key contribution is that the ``N`` solidifying shells and
 the pore can be packed into a **single composite sphere** instead of ``N+1``
-separate inclusions — reducing ``N+1`` Eshelby problems to one. `MeanFieldHom`
+separate inclusions — reducing ``N+1`` Eshelby problems to one. `MeanFieldHomogenization`
 supports both: `:whole_pores` (``N`` separate spherical inclusions) and `:layers`
 (one [`LayeredSphere`](@ref) whose per-layer moduli are ageing relaxation laws).
 
@@ -208,7 +208,7 @@ the solidifying shells concentrically (as hydrates deposit around a pore), the
 second scatters them independently in the matrix.
 
 !!! note "Reproducing Echoes: the two topologies genuinely differ"
-    `MeanFieldHom` reproduces Echoes for **both** topologies to better than 1 %
+    `MeanFieldHomogenization` reproduces Echoes for **both** topologies to better than 1 %
     (`:layers` ``E_0 J`` ≈ 1.60 → 11.06; `:whole_pores` ≈ 1.96 → 17.54 at
     ``t_0 = 2/3``), and the two differ by ``\approx 6.5`` in ``E_0 J``.
 

@@ -22,7 +22,7 @@ homogenization schemes. The derivations are those of [barthelemyIJSS2016](@cite)
     loading time — and is written in the same typeface as its elastic
     counterpart. ``\circ`` denotes the Volterra product defined in the next
     section, ``\bullet^{-\circ}`` the Volterra inverse — never the ordinary
-    tensor inverse. In `MeanFieldHom` these two operations are
+    tensor inverse. In `MeanFieldHomogenization` these two operations are
     [`volterra_product`](@ref) and [`volterra_inverse`](@ref).
 
 ## The ageing linear viscoelastic behavior
@@ -107,7 +107,7 @@ block-triangular** matrix ``\widetilde{\mathbb{C}}`` of size
 The pay-off of this representation is that the Volterra product becomes an
 ordinary matrix product and the Volterra inverse an ordinary matrix inverse
 ([sanahuja2013](@cite); [barthelemyIJES2019](@cite), Appendix). In
-`MeanFieldHom` the discretization is [`trapezoidal_matrix`](@ref) and the
+`MeanFieldHomogenization` the discretization is [`trapezoidal_matrix`](@ref) and the
 inverse [`volterra_inverse`](@ref).
 
 ## The Eshelby problem in ALV

@@ -9,7 +9,7 @@
 #
 #  Include it with
 #
-#      include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+#      include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 #
 #  — the only form that works both in a standalone `julia scripts/NN_*.jl` run
 #  and inside a Documenter `@example` block, where `@__DIR__` points at the
@@ -21,7 +21,7 @@
 #  The knobs that matter are the mesh resolution (`nu`, `nv`) and `DIGITS`.
 # =============================================================================
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Random
@@ -469,7 +469,7 @@ function rve_traces(;
     ]
 end
 
-# ── Adapters: draw the MeanFieldHom geometry objects themselves ──────────────
+# ── Adapters: draw the MeanFieldHomogenization geometry objects themselves ──────────────
 
 """
     frame_matrix(basis) -> Matrix{Float64}
@@ -485,7 +485,7 @@ end
 """
     shape_traces(x; kwargs...) -> Vector{String}
 
-Draw a `MeanFieldHom` inclusion object.  Implemented for [`Ellipsoid`](@ref),
+Draw a `MeanFieldHomogenization` inclusion object.  Implemented for [`Ellipsoid`](@ref),
 [`Cylinder`](@ref), [`EllipticCrack`](@ref), [`RibbonCrack`](@ref),
 [`LayeredSphere`](@ref) and [`LayeredSpheroid`](@ref), so a figure and the
 computation it illustrates are driven by the *same* object.
@@ -493,7 +493,7 @@ computation it illustrates are driven by the *same* object.
 function shape_traces end
 
 function shape_traces(
-        ell::MeanFieldHom.Ellipsoid{3};
+        ell::MeanFieldHomogenization.Ellipsoid{3};
         color::AbstractString = "#4a90d9", opacity::Real = 0.55,
         axes_guides::Bool = true, labels = ("a", "b", "c"),
         nu::Integer = 41, nv::Integer = 21,
@@ -507,7 +507,7 @@ function shape_traces(
 end
 
 function shape_traces(
-        cyl::MeanFieldHom.Cylinder;
+        cyl::MeanFieldHomogenization.Cylinder;
         color::AbstractString = "#4a90d9", opacity::Real = 0.55,
         length_shown::Real = 6.0, labels = ("L → ∞", "b", "c"),
         axes_guides::Bool = true,
@@ -523,7 +523,7 @@ function shape_traces(
 end
 
 function shape_traces(
-        cr::MeanFieldHom.EllipticCrack;
+        cr::MeanFieldHomogenization.EllipticCrack;
         color::AbstractString = "#8a6d3b", opacity::Real = 0.9,
         normal::Bool = true, axes_guides::Bool = true,
         labels = ("a", "b", "n̂"),
@@ -548,7 +548,7 @@ function shape_traces(
 end
 
 function shape_traces(
-        cr::MeanFieldHom.RibbonCrack;
+        cr::MeanFieldHomogenization.RibbonCrack;
         color::AbstractString = "#8a6d3b", opacity::Real = 0.9,
         length_shown::Real = 6.0, normal::Bool = true,
     )
@@ -571,7 +571,7 @@ function shape_traces(
 end
 
 function shape_traces(
-        ls::MeanFieldHom.LayeredSphere;
+        ls::MeanFieldHomogenization.LayeredSphere;
         colors = nothing, cutaway::Bool = true,
         opacity::Real = 0.85, nu::Integer = 41, nv::Integer = 21,
     )
@@ -590,7 +590,7 @@ function shape_traces(
 end
 
 function shape_traces(
-        sp::MeanFieldHom.LayeredSpheroid;
+        sp::MeanFieldHomogenization.LayeredSpheroid;
         colors = nothing, cutaway::Bool = true,
         opacity::Real = 0.8, nu::Integer = 41, nv::Integer = 21,
     )
@@ -600,7 +600,7 @@ function shape_traces(
     umax = cutaway ? 1.5π : 2π
     traces = String[]
     for k in 1:N
-        ax, disk = Float64.(MeanFieldHom.layer_semiaxes(sp, k))
+        ax, disk = Float64.(MeanFieldHomogenization.layer_semiaxes(sp, k))
         f = function (u, v)
             p = (disk * cos(v) * cos(u), disk * cos(v) * sin(u), ax * sin(v))
             return Tuple(R * collect(Float64, p))

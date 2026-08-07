@@ -7,9 +7,9 @@ frame ``(\hat{\underline{\ell}}, \hat{\underline{m}}, \hat{\underline{n}})``,
 whose third vector is the normal.
 
 ```@setup mancracks
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 ```
 
 ```@example mancracks
@@ -27,7 +27,7 @@ The full set of shapes, tilted cracks included, is in
 are defined in [Crack opening displacement](../theory/cod_tensors.md).
 
 ```julia
-using MeanFieldHom, TensND
+using MeanFieldHomogenization, TensND
 E, ν = 210.0, 0.3
 k = E/(3*(1-2ν)); μ = E/(2*(1+ν))
 C₀ = TensISO{3}(3k, 2μ)

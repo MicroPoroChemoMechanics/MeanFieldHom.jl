@@ -27,7 +27,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -48,8 +48,8 @@ const fμ = t -> 0.5 * exp(-t / 20.0) + 0.5
 
 # Iso projectors in Mandel form.
 const _, 𝕁₄, 𝕂₄ = TensND.iso_projectors(Val(3), Val(Float64))
-const _J_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(𝕁₄)
-const _K_M = MeanFieldHom.Viscoelasticity._tens_to_mandel66(𝕂₄)
+const _J_M = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(𝕁₄)
+const _K_M = MeanFieldHomogenization.Viscoelasticity._tens_to_mandel66(𝕂₄)
 
 # Matrix law (Js, CREEP).
 const Js = (t, tp) -> begin
@@ -123,7 +123,7 @@ plt = plot(
 # scheme as the ALV run).
 function elastic_compliance(omega, f, t, sch::HomogenizationScheme)
     C_M_arr = inv(Js(t, t))   # 6×6
-    C_M_t = best_fit_iso(TensND.Tens(MeanFieldHom.Core.array_from_mandel66(C_M_arr)))
+    C_M_t = best_fit_iso(TensND.Tens(MeanFieldHomogenization.Core.array_from_mandel66(C_M_arr)))
     rve_e = RVE(:M)
     add_matrix!(rve_e, Ellipsoid(1.0, 1.0, 1.0), Dict(:C => C_M_t))
     sh = omega == 1.0 ? Ellipsoid(1.0, 1.0, 1.0) : Spheroid(omega)

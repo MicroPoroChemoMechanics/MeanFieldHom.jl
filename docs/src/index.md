@@ -1,11 +1,11 @@
-# MeanFieldHom.jl
+# MeanFieldHomogenization.jl
 
 Julia framework for **mean-field homogenization** of heterogeneous materials:
 predict the effective elastic, transport and viscoelastic properties of a
 microstructure from the properties, shapes, orientations and volume fractions
 of its phases.
 
-Given a reference medium and an inclusion shape, `MeanFieldHom` builds the
+Given a reference medium and an inclusion shape, `MeanFieldHomogenization` builds the
 Hill polarization tensor ``\mathbb{P}`` (Eshelby's result), derives the
 localization tensor for each phase, and assembles a **homogenization scheme**
 — dilute, Mori–Tanaka, self-consistent, differential, PCW, or the classical
@@ -15,9 +15,9 @@ handles flat cracks (opening-displacement and intensity factors), composite
 ageing linear viscoelasticity, all under one abstraction hierarchy, a shared
 numerical core, and forward-mode automatic differentiation throughout.
 
-`MeanFieldHom` is a pure-Julia reimplementation of the Eshelby/Hill machinery
+`MeanFieldHomogenization` is a pure-Julia reimplementation of the Eshelby/Hill machinery
 of the [Echoes](https://jfbarthelemy.github.io/echoes/) C++/Python
-codebase; see [From Echoes to MeanFieldHom](@ref tools-from-echoes) for the translation guide
+codebase; see [From Echoes to MeanFieldHomogenization](@ref tools-from-echoes) for the translation guide
 and [Theory — reading path](theory/index.md) for the shared conventions and
 bibliography.
 
@@ -65,14 +65,14 @@ flowchart TB
 ```
 
 **The three green gates are the extension mechanism.** A morphology
-`MeanFieldHom` knows nothing about becomes a first-class citizen of *every*
+`MeanFieldHomogenization` knows nothing about becomes a first-class citizen of *every*
 scheme by answering one of them — implement the lowest you can reach and the
 package derives the rest algebraically. Four routes already use them:
 
 | Route | Gate | Where the answer comes from |
 | :--- | :---: | :--- |
 | ellipsoids, cylinders, cracks | A | closed forms, quadrature or residues |
-| [composite spheres and spheroids](@ref MeanFieldHom.LayeredSpheres) | B | the Hervé–Zaoui recurrences — a layered pattern has no Hill tensor |
+| [composite spheres and spheroids](@ref MeanFieldHomogenization.LayeredSpheres) | B | the Hervé–Zaoui recurrences — a layered pattern has no Hill tensor |
 | [finite elements](@ref man-fe-inclusions) | B / COD | a `Ferrite` or `Gridap` solve of the Eshelby problem |
 | [neural surrogates](@ref man-neural-inclusions) | A / B | a trained network, differentiable in the morphology |
 | [your own](@ref man-custom-inclusions) | A, B or C | a formula, a solver, a table — anything callable |
@@ -85,10 +85,10 @@ Volterra products in place of tensor products. The contract is written up in
 
 ## Installation
 
-`MeanFieldHom` is registered in Julia's General registry.
+`MeanFieldHomogenization` is registered in Julia's General registry.
 
 ```julia
-julia> import Pkg; Pkg.add("MeanFieldHom")
+julia> import Pkg; Pkg.add("MeanFieldHomogenization")
 ```
 
 Six optional package extensions cover the cubature backend, the SciML fixed-point
@@ -110,23 +110,23 @@ training — see [Installation](@ref man-installation).
 
 | Module | Responsibility |
 | :--- | :--- |
-| [`MeanFieldHom.Elliptic`](@ref) | Type-generic Legendre and Carlson elliptic integrals (`ForwardDiff`/`Sym` compatible). |
-| [`MeanFieldHom.Core`](@ref) | Abstractions, traits, shared numerics (Green/Newton kernels, Masson residue algorithm, DECUHR seam). |
-| [`MeanFieldHom.Elasticity`](@ref) | Hill polarization tensor for ellipsoidal inclusions and infinite cylinders (2D/3D, iso/aniso/TI-coaxial). |
-| [`MeanFieldHom.Cracks`](@ref) | Crack-opening-displacement (COD) tensor, compliance contribution, stress/displacement intensity factors. |
-| [`MeanFieldHom.Conductivity`](@ref) | Second-order Hill tensor for transport problems (diffusion, conduction, Darcy flow), closed form for any matrix anisotropy. |
-| [`MeanFieldHom.LayeredSpheres`](@ref) | `n`-layer composite spheres (Hervé–Zaoui, Christensen–Lo), five interface types, volume-average and pointwise localization. |
-| [`MeanFieldHom.LayeredSpheroids`](@ref) | `n`-layer confocal spheroids, conduction, Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
-| [`MeanFieldHom.Schemes`](@ref) | RVE container and `homogenize`; Voigt, Reuss, Dilute, Mori–Tanaka, Maxwell, PCW, self-consistent, asymmetric SC, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
-| [`MeanFieldHom.Viscoelasticity`](@ref) | Ageing linear viscoelasticity via Volterra operators — every scheme, cracks and layered spheres included. |
-| [`MeanFieldHom.CustomInclusions`](@ref) | The user-defined inclusion contract: `CustomInclusion` (callback-driven) and `check_inclusion_interface`. |
-| [`MeanFieldHom.FiniteElements`](@ref) | Inclusions whose response comes out of a finite-element solve of the Eshelby problem, behind a backend contract (`Ferrite` or `Gridap`). |
-| [`MeanFieldHom.NeuralInclusions`](@ref) | Inclusions whose response comes out of a trained network, with the sampling and fitting machinery; differentiable in the morphology. |
+| [`MeanFieldHomogenization.Elliptic`](@ref) | Type-generic Legendre and Carlson elliptic integrals (`ForwardDiff`/`Sym` compatible). |
+| [`MeanFieldHomogenization.Core`](@ref) | Abstractions, traits, shared numerics (Green/Newton kernels, Masson residue algorithm, DECUHR seam). |
+| [`MeanFieldHomogenization.Elasticity`](@ref) | Hill polarization tensor for ellipsoidal inclusions and infinite cylinders (2D/3D, iso/aniso/TI-coaxial). |
+| [`MeanFieldHomogenization.Cracks`](@ref) | Crack-opening-displacement (COD) tensor, compliance contribution, stress/displacement intensity factors. |
+| [`MeanFieldHomogenization.Conductivity`](@ref) | Second-order Hill tensor for transport problems (diffusion, conduction, Darcy flow), closed form for any matrix anisotropy. |
+| [`MeanFieldHomogenization.LayeredSpheres`](@ref) | `n`-layer composite spheres (Hervé–Zaoui, Christensen–Lo), five interface types, volume-average and pointwise localization. |
+| [`MeanFieldHomogenization.LayeredSpheroids`](@ref) | `n`-layer confocal spheroids, conduction, Kapitza / surface-conductive interfaces, series or quadrature evaluation. |
+| [`MeanFieldHomogenization.Schemes`](@ref) | RVE container and `homogenize`; Voigt, Reuss, Dilute, Mori–Tanaka, Maxwell, PCW, self-consistent, asymmetric SC, differential; exact vs. best-fit symmetrization; `ForwardDiff` sensitivities. |
+| [`MeanFieldHomogenization.Viscoelasticity`](@ref) | Ageing linear viscoelasticity via Volterra operators — every scheme, cracks and layered spheres included. |
+| [`MeanFieldHomogenization.CustomInclusions`](@ref) | The user-defined inclusion contract: `CustomInclusion` (callback-driven) and `check_inclusion_interface`. |
+| [`MeanFieldHomogenization.FiniteElements`](@ref) | Inclusions whose response comes out of a finite-element solve of the Eshelby problem, behind a backend contract (`Ferrite` or `Gridap`). |
+| [`MeanFieldHomogenization.NeuralInclusions`](@ref) | Inclusions whose response comes out of a trained network, with the sampling and fitting machinery; differentiable in the morphology. |
 
 ## Quick example
 
 ```julia
-using MeanFieldHom, TensND
+using MeanFieldHomogenization, TensND
 
 # Isotropic matrix, bulk/shear moduli (k, μ) = (30, 10) GPa
 C₀ = iso_stiffness(30.0, 10.0)

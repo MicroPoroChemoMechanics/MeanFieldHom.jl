@@ -14,7 +14,7 @@ stiffness**. Strictly zero stiffness makes the Reuss bound singular
 used instead:
 
 ```@example tutporous
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

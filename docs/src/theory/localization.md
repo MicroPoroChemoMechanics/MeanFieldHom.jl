@@ -1,6 +1,6 @@
 # [Localization and contribution tensors](@id th-localization)
 
-MeanFieldHom exposes the four **dilute localization tensors** of the
+MeanFieldHomogenization exposes the four **dilute localization tensors** of the
 Eshelby problem, together with the size-independent **stiffness and
 compliance contribution tensors** of Kachanov–Sevostianov.
 
@@ -54,7 +54,7 @@ where ``\mathbb P`` is the Hill polarization tensor
 ```
 
 with ``\mathbb S_0 = \mathbb C_0^{-1}``.  The four functions exposed by
-MeanFieldHom are:
+MeanFieldHomogenization are:
 
 | Function                                     | Return value                               |
 | -------------------------------------------- | ------------------------------------------ |

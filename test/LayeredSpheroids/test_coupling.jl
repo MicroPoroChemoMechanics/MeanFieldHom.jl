@@ -1,6 +1,6 @@
 using Test
 using LinearAlgebra
-using MeanFieldHom.LayeredSpheroids: coupling_matrices, _gamma_table
+using MeanFieldHomogenization.LayeredSpheroids: coupling_matrices, _gamma_table
 
 # =============================================================================
 #  test_coupling.jl — interface coupling matrices I, J, K, L.

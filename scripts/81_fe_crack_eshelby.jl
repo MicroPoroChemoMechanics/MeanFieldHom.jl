@@ -33,7 +33,7 @@ import Pkg                                                          #jl
 Pkg.activate(joinpath(@__DIR__, "fe"); io = devnull)                 #jl
 Pkg.instantiate(; io = devnull)                                      #jl
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf

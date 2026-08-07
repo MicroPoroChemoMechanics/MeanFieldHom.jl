@@ -1,7 +1,7 @@
 # =============================================================================
 #  cases_tensnd.jl — TensND primitives.
 #
-#  Every MeanFieldHom case is downstream of these, so a TensND-side change
+#  Every MeanFieldHomogenization case is downstream of these, so a TensND-side change
 #  should show up here first and in the scheme cases second — that pair is
 #  the cross-check that a measured gain is real.
 #

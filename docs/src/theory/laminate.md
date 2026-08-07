@@ -31,8 +31,8 @@ and periodic of period ``L`` along ``\underline{n}``. One period contains
 thickness ``h_i`` and volume fraction ``f_i = h_i/L``.
 
 ```@setup laminate
-using MeanFieldHom
-include(joinpath(pkgdir(MeanFieldHom), "scripts", "common", "docviz.jl"))
+using MeanFieldHomogenization
+include(joinpath(pkgdir(MeanFieldHomogenization), "scripts", "common", "docviz.jl"))
 ```
 
 ```@example laminate

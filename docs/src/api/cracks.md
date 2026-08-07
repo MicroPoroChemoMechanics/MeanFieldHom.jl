@@ -6,15 +6,15 @@ documented under
 [API — Localization & contribution](@ref api-localization).
 
 ```@docs
-MeanFieldHom.Cracks
-MeanFieldHom.EllipticCrack
-MeanFieldHom.RibbonCrack
-MeanFieldHom.PennyCrack
-MeanFieldHom.cod_tensor
-MeanFieldHom.B_tensor
-MeanFieldHom.Cracks.crack_density_factor
-MeanFieldHom.sif
-MeanFieldHom.dif
-MeanFieldHom.compliance_from_cod
-MeanFieldHom.cod_from_compliance
+MeanFieldHomogenization.Cracks
+MeanFieldHomogenization.EllipticCrack
+MeanFieldHomogenization.RibbonCrack
+MeanFieldHomogenization.PennyCrack
+MeanFieldHomogenization.cod_tensor
+MeanFieldHomogenization.B_tensor
+MeanFieldHomogenization.Cracks.crack_density_factor
+MeanFieldHomogenization.sif
+MeanFieldHomogenization.dif
+MeanFieldHomogenization.compliance_from_cod
+MeanFieldHomogenization.cod_from_compliance
 ```

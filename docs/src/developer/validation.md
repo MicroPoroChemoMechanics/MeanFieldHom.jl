@@ -1,9 +1,9 @@
 # [Cross-validation against Echoes](@id dev-validation)
 
-`MeanFieldHom` is a port of the C++ [`Echoes`](@cite echoes) code, so nearly
+`MeanFieldHomogenization` is a port of the C++ [`Echoes`](@cite echoes) code, so nearly
 every quantity has an independent reference. The cross-checks live in
 `scripts/bench_echoes/` and call Echoes through `PyCall`
-(setup: [From Echoes to MeanFieldHom](../tools/from_echoes.md)); the ALV
+(setup: [From Echoes to MeanFieldHomogenization](../tools/from_echoes.md)); the ALV
 ones also ship `*_python.json` dumps so they run without an Echoes install.
 
 ## Cross-checks
@@ -46,7 +46,7 @@ Conventions and formulation choices, not numerical error — do not "fix" them.
 | DifferentialScheme, porous ``\varphi \ge 0.5`` | pre-existing gap, 2.6e-3 → 6.2e-2, reproducible | `benchmark_porous.jl` |
 | Strength ``f_c`` (2 %) | water/air regularized to a small positive stiffness | [Strength](../applications/strength.md) |
 
-`MeanFieldHom` normalizes the crack compliance by the **minor** semi-axis
+`MeanFieldHomogenization` normalizes the crack compliance by the **minor** semi-axis
 ``b``, Echoes by the **major** semi-axis ``a``, so for an in-plane aspect
 ratio ``\eta = b/a``:
 

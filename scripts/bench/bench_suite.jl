@@ -1,7 +1,7 @@
 # =============================================================================
 #  bench_suite.jl — entry point of the optimization-campaign benchmark suite.
 #
-#  Run from the MeanFieldHom.jl package root (instantiate once first):
+#  Run from the MeanFieldHomogenization.jl package root (instantiate once first):
 #
 #    julia --project=scripts/bench -e 'using Pkg; Pkg.instantiate()'
 #
@@ -24,7 +24,7 @@
 import Pkg
 Pkg.activate(@__DIR__; io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Random

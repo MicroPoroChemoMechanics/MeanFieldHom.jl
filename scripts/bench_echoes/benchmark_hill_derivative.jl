@@ -1,10 +1,10 @@
 # =============================================================================
 #  benchmark_hill_derivative.jl — cross-validation of Hill-tensor derivatives
-#  ∂P/∂C between an analytical `hill_derivative` reference and MeanFieldHom
+#  ∂P/∂C between an analytical `hill_derivative` reference and MeanFieldHomogenization
 #  (ForwardDiff through `hill_tensor`).
 #
 #  The reference hand-codes `hill_derivative(ell, C, index, sym[, algo])` per
-#  material-symmetry class ; MeanFieldHom obtains the SAME derivative by
+#  material-symmetry class ; MeanFieldHomogenization obtains the SAME derivative by
 #  automatic differentiation of the Hill kernel — for any reference type,
 #  including the fully triclinic case a symmetry-typed routine cannot
 #  represent.
@@ -24,7 +24,7 @@ import Pkg
 Pkg.activate(@__DIR__; io = devnull)
 
 using PyCall
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 using Printf
@@ -37,7 +37,7 @@ const echoes = pyimport("echoes")
 # MFH Hill tensor as a 6×6 Kelvin-Mandel matrix, minor-symmetrised (so the
 # Dual and Float64 paths agree — `tomandel` on a general Tensor would give
 # 9×9). `Core.mandel66_minor` forces the 6×6 form from the component array.
-P_KM(ell, C) = MeanFieldHom.Core.mandel66_minor(
+P_KM(ell, C) = MeanFieldHomogenization.Core.mandel66_minor(
     TensND.get_array(change_tens_canon(hill_tensor(ell, C)))
 )
 to_jlmat(x) = x === nothing ? nothing : convert(Array{Float64, 2}, x)
@@ -74,7 +74,7 @@ const py_hill_deriv_ortho = py"hill_deriv_ortho"
 #  ISO reference
 # =============================================================================
 println("="^80)
-println("  Hill derivative ∂P/∂C — echoes (analytical) vs MeanFieldHom (ForwardDiff)")
+println("  Hill derivative ∂P/∂C — echoes (analytical) vs MeanFieldHomogenization (ForwardDiff)")
 println("="^80)
 
 const k_iso, μ_iso = 10.0, 10.0
@@ -149,14 +149,14 @@ end
 # =============================================================================
 #  Triclinic reference — MFH ForwardDiff only (no echoes counterpart)
 # =============================================================================
-println("\n  Fully triclinic reference — MeanFieldHom ForwardDiff only")
+println("\n  Fully triclinic reference — MeanFieldHomogenization ForwardDiff only")
 println("  (echoes hill_derivative has no triclinic parameterization)")
 let ell_jl = Ellipsoid(3.0, 2.0, 1.0; euler_angles = (0.2, 0.3, 0.1))
     C_KM = collect(KM(TensISO{3}(3 * 60.0e3, 2 * 40.0e3)))
     C_KM[1, 1] += 8.0e3; C_KM[1, 4] += 3.0e3; C_KM[4, 1] += 3.0e3   # break symmetry class
     build(t) = begin
         M = C_KM .+ zero(t); M[1, 1] += t     # eltype promotes to typeof(t) (Dual-safe)
-        MeanFieldHom.Core.array_from_mandel66(M) |> a -> TensND.Tens(a)
+        MeanFieldHomogenization.Core.array_from_mandel66(M) |> a -> TensND.Tens(a)
     end
     dP = ForwardDiff.derivative(t -> P_KM(ell_jl, build(t)), 0.0)
     h = 1.0e-2

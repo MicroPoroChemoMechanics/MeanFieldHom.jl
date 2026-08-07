@@ -1,7 +1,7 @@
 # =============================================================================
 #  scripts/bench_echoes/benchmark_nlayers.jl
 #
-#  Verification of MeanFieldHom.jl `LayeredSphere` against four
+#  Verification of MeanFieldHomogenization.jl `LayeredSphere` against four
 #  independent references:
 #
 #   § 1  **Bulk α_k and shear β_k** vs `echoes.layer_eE` (volume-averaged
@@ -40,14 +40,14 @@
 #  β_k is therefore compared against ECHOES in §1, like α_k. §3's analytical
 #  limits are kept as an independent check, not as a substitute.
 #
-#  Run from the `MeanFieldHom.jl` package root:
+#  Run from the `MeanFieldHomogenization.jl` package root:
 #    julia --project=scripts/bench_echoes scripts/bench_echoes/benchmark_nlayers.jl
 # =============================================================================
 
 import Pkg
 Pkg.activate(@__DIR__; io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf
@@ -56,7 +56,7 @@ using PyCall
 using Plots
 
 # Internal helpers reused for the local-bulk profile (mirrors script 32).
-import MeanFieldHom.LayeredSpheres: _iso_bulk_shear, _bulk_state_seq,
+import MeanFieldHomogenization.LayeredSpheres: _iso_bulk_shear, _bulk_state_seq,
     _bulk_extract_AB, _shear_M_matrix, _layer_avg_dev_shear_factor
 
 # ─── Python-side wrappers ────────────────────────────────────────────────────

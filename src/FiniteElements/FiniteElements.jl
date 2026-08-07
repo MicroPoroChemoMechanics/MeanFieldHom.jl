@@ -1,9 +1,9 @@
 """
-    MeanFieldHom.FiniteElements
+    MeanFieldHomogenization.FiniteElements
 
 Inclusions whose response is obtained from a **finite-element resolution of the
 Eshelby problem** rather than from a closed form — the package's own
-demonstration that the [`CustomInclusions`](@ref MeanFieldHom.CustomInclusions)
+demonstration that the [`CustomInclusions`](@ref MeanFieldHomogenization.CustomInclusions)
 contract is enough to reach every scheme.
 
 | Type | Morphology | Discretization | Entry gate |

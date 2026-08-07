@@ -1,7 +1,7 @@
 # Compare timing: iso fast path vs generic 6n×6n in homogenize_alv.
 import Pkg
 Pkg.activate(joinpath(@__DIR__, "..", ".."); io = devnull)
-using MeanFieldHom, TensND, LinearAlgebra, Printf
+using MeanFieldHomogenization, TensND, LinearAlgebra, Printf
 
 # Setup similar to script 37 (whole_pores, all-iso phases).
 const E0 = 1.0; const ν0 = 0.2
@@ -38,7 +38,7 @@ println("=== Iso fast path vs generic 6n×6n in `homogenize_alv` (MT) ===")
 const _iso_fastpath_disabled = Ref(false)
 # Toggle: when true, every iso-form check returns false → forces the
 # generic 6n×6n algebra everywhere.
-function MeanFieldHom.Viscoelasticity._is_iso_block(M::AbstractMatrix; tol::Real = 1.0e-12)
+function MeanFieldHomogenization.Viscoelasticity._is_iso_block(M::AbstractMatrix; tol::Real = 1.0e-12)
     _iso_fastpath_disabled[] && return false
     sz = size(M, 1)
     sz == size(M, 2) || return false
@@ -47,7 +47,7 @@ function MeanFieldHom.Viscoelasticity._is_iso_block(M::AbstractMatrix; tol::Real
     iszero(n) && return true
     scale = max(maximum(abs, M), one(real(eltype(M))))
     abstol = tol * scale
-    α, β = MeanFieldHom.Viscoelasticity.iso_params_from_blocks(M)
+    α, β = MeanFieldHomogenization.Viscoelasticity.iso_params_from_blocks(M)
     @inbounds for i in 1:n, j in 1:n
         a = α[i, j]; b = β[i, j]
         diag_top = (a + 2b) / 3

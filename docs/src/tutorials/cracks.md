@@ -1,7 +1,7 @@
 # [Cracks and crack density](@id tut-cracks)
 
 Cracks are inclusions with **zero volume** — a pore flattened to a
-surface. `MeanFieldHom` handles them with the same [`RVE`](@ref)/
+surface. `MeanFieldHomogenization` handles them with the same [`RVE`](@ref)/
 [`homogenize`](@ref) machinery as ordinary inclusions, but parameterized
 by **crack density** instead of volume fraction, and characterized by a
 **crack-opening-displacement (COD) tensor** rather than an Eshelby
@@ -14,7 +14,7 @@ displacement jump across the crack faces under remote stress is linear
 in that stress through the COD tensor **B**:
 
 ```@example tutcracks
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

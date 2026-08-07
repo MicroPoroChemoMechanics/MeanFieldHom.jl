@@ -1,6 +1,6 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, "..", ".."); io = devnull)
-using MeanFieldHom, TensND, LinearAlgebra, JSON3, Printf
+using MeanFieldHomogenization, TensND, LinearAlgebra, JSON3, Printf
 
 ref = JSON3.read(read(joinpath(@__DIR__, "bench_layered_alv_nostep_python.json"), String))
 T_grid = collect(Float64.(ref.T))

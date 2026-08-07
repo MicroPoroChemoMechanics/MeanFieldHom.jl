@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 
 @testset "Cracks — :residues accuracy (post polish + vectorised QuadGK)" begin
@@ -72,10 +72,10 @@ using TensND
         end
         α0 = [0.6, 0.3, 0.2]
         α1 = [0.1, 0.2, 0.9]
-        sys = MeanFieldHom.Core._build_poly_system(Cr, α0, α1)
+        sys = MeanFieldHomogenization.Core._build_poly_system(Cr, α0, α1)
         @test !isempty(sys.roots_uhp)
         max_resid = maximum(abs(sys.Q(zr)) for zr in sys.roots_uhp)
-        Qscale = maximum(abs, MeanFieldHom.Core.Polynomials.coeffs(sys.Q))
+        Qscale = maximum(abs, MeanFieldHomogenization.Core.Polynomials.coeffs(sys.Q))
         @test max_resid < 1.0e-10 * Qscale
     end
 end

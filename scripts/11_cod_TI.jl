@@ -3,13 +3,13 @@
 #
 #  Analytical COD tensor of an elliptical / ribbon crack whose plane is
 #  orthogonal to the isotropy axis of a transversely isotropic matrix.
-#  Demonstrates MeanFieldHom.jl's high-level API.
+#  Demonstrates MeanFieldHomogenization.jl's high-level API.
 # =============================================================================
 
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Plots

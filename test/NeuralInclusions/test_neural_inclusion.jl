@@ -28,13 +28,13 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Random
 using ForwardDiff
 
-const NI = MeanFieldHom.NeuralInclusions
+const NI = MeanFieldHomogenization.NeuralInclusions
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -228,7 +228,7 @@ end
     ω = 0.4
     ell = _nn_spheroid(ω; euler_angles = (0.3, 0.7, 0.0))
     incl = NeuralHillInclusion(
-        ell.semi_axes; basis = MeanFieldHom.inclusion_basis(ell),
+        ell.semi_axes; basis = MeanFieldHomogenization.inclusion_basis(ell),
         elastic = NN_ELASTIC, transport = NN_CONDUCTION, guard = :error
     )
 
@@ -309,7 +309,7 @@ end
     ell_at(θ) = _nn_spheroid(ω; euler_angles = (θ, 0.0, 0.0))
     nn_at(θ) = let e = ell_at(θ)
         NeuralHillInclusion(
-            e.semi_axes; basis = MeanFieldHom.inclusion_basis(e),
+            e.semi_axes; basis = MeanFieldHomogenization.inclusion_basis(e),
             elastic = NN_ELASTIC, guard = :error
         )
     end
@@ -433,8 +433,8 @@ end
     )
 
     @test !is_homogeneous_inclusion(incl)
-    @test MeanFieldHom.shape_trait(incl) === NI.NeuralShape
-    @test MeanFieldHom.dimension(incl) == 3
+    @test MeanFieldHomogenization.shape_trait(incl) === NI.NeuralShape
+    @test MeanFieldHomogenization.dimension(incl) == 3
 
     @testset "the four localization methods answer" begin
         @test strain_strain_loc(incl, NN_C_I, NN_C_M) isa TensND.AbstractTens{4, 3}
@@ -459,15 +459,15 @@ end
     end
 
     @testset "bounds follow the internal fractions" begin
-        @test !MeanFieldHom.Schemes.has_layer_average(incl)
+        @test !MeanFieldHomogenization.Schemes.has_layer_average(incl)
         bounded = NeuralLocalizationInclusion(
             (1.0, 1.0, 0.4); strain = s4, stress = s4b, guard = :none,
             fractions = (0.3, 0.7), properties = (NN_C_I, NN_C_M)
         )
-        @test MeanFieldHom.Schemes.has_layer_average(bounded)
-        v = MeanFieldHom.Schemes._layer_voigt(bounded, NN_C_M)
+        @test MeanFieldHomogenization.Schemes.has_layer_average(bounded)
+        v = MeanFieldHomogenization.Schemes._layer_voigt(bounded, NN_C_M)
         @test get_array(v) ≈ get_array(0.3 * NN_C_I + 0.7 * NN_C_M) atol = 1.0e-12
-        r = MeanFieldHom.Schemes._layer_reuss(bounded, NN_C_M)
+        r = MeanFieldHomogenization.Schemes._layer_reuss(bounded, NN_C_M)
         @test get_array(r) ≈ get_array(0.3 * inv(NN_C_I) + 0.7 * inv(NN_C_M)) atol = 1.0e-12
     end
 
@@ -530,7 +530,7 @@ end
 
     @testset "the antisymmetric couplings vanish" begin
         for t in (P, A, stress_strain_loc(ell, NN_C_I, NN_C_M))
-            l8 = TensND.get_ℓ8(MeanFieldHom.transverse_isotropify(t, axis))
+            l8 = TensND.get_ℓ8(MeanFieldHomogenization.transverse_isotropify(t, axis))
             @test abs(l8[7]) < 1.0e-14
             @test abs(l8[8]) < 1.0e-14
         end

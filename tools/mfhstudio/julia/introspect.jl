@@ -2,12 +2,12 @@
 #  introspect.jl — the MFH feature catalog, discovered at run time.
 #
 #  Hard-coding the list of schemes, interfaces and inclusion types in the web
-#  UI would make the interface silently fall behind MeanFieldHom. Everything
+#  UI would make the interface silently fall behind MeanFieldHomogenization. Everything
 #  the UI offers is therefore enumerated from the loaded package, in the same
 #  spirit as `echoes2mfh check-drift`.
 # =============================================================================
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using InteractiveUtils: subtypes
 
@@ -134,10 +134,10 @@ here -- they are a UI concern and live in `mfhstudio/catalog.py`, so the
 interface stays usable while this side is still loading.
 """
 function catalog()
-    schemes = [scheme_entry(S) for S in concrete_subtypes(MeanFieldHom.HomogenizationScheme)]
+    schemes = [scheme_entry(S) for S in concrete_subtypes(MeanFieldHomogenization.HomogenizationScheme)]
     sort!(schemes; by = d -> d["name"])
     return Dict(
-        "mfh_version" => string(pkgversion(MeanFieldHom)),
+        "mfh_version" => string(pkgversion(MeanFieldHomogenization)),
         "julia_version" => string(VERSION),
         "schemes" => schemes,
     )

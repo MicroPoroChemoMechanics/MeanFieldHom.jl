@@ -2,11 +2,11 @@
 #  08_hill_derivatives.jl
 #
 #  Derivatives of the Hill polarization tensor P with respect to the reference
-#  medium — the MeanFieldHom counterpart of a hand-coded `hill_derivative`.
+#  medium — the MeanFieldHomogenization counterpart of a hand-coded `hill_derivative`.
 #
 #  The classical approach hand-codes an analytical `hill_derivative(ell, C,
 #  index, sym)` for each material-symmetry class (ISO, TI, ORTHO).
-#  MeanFieldHom gets the SAME derivative for free by ForwardDiff through the
+#  MeanFieldHomogenization gets the SAME derivative for free by ForwardDiff through the
 #  `hill_tensor` kernel — for ANY parametrization, including fully triclinic
 #  references that a symmetry-typed routine cannot handle.
 #
@@ -17,14 +17,14 @@
 #    * differentiates a TI reference (`tensor([5,3,4,8,3])`) w.r.t. its five
 #      Walpole coefficients, on a coaxial spheroid (analytical Hill).
 #
-#  The live echoes-vs-MeanFieldHom cross-check (PyCall, incl. the ORTHO and
+#  The live echoes-vs-MeanFieldHomogenization cross-check (PyCall, incl. the ORTHO and
 #  triclinic cases) lives in `scripts/bench_echoes/benchmark_hill_derivative.jl`.
 # =============================================================================
 
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 using LinearAlgebra
@@ -46,7 +46,7 @@ const k0, μ0 = 10.0, 10.0
 const α0, β0 = 3k0, 2μ0            # 𝕁 and 𝕂 coefficients of the iso reference
 
 println("="^74)
-println("  Hill tensor derivatives ∂P/∂C — MeanFieldHom (ForwardDiff)")
+println("  Hill tensor derivatives ∂P/∂C — MeanFieldHomogenization (ForwardDiff)")
 println("  reference: analytical hill_derivative")
 println("="^74)
 @printf "  ellipsoid semi-axes (3, 2.5, 1.6), Euler (0.1, 0.2, 0.3)\n"

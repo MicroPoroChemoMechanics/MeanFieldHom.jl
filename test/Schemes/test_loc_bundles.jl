@@ -20,12 +20,12 @@
 # =============================================================================
 
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 import ForwardDiff as FD
 
-const MFHC_B = MeanFieldHom.Core
+const MFHC_B = MeanFieldHomogenization.Core
 
 _vals(t) = vec(collect(TensND.get_array(t)))
 
@@ -148,7 +148,7 @@ end
             ("penny/tri", PennyCrack(1.0), C_tri),
             ("ellipse/iso", EllipticCrack(1.0, 0.4), C_iso),
         ]
-        H, N = MeanFieldHom.Cracks.compliance_and_stiffness_contribution(crack, C₀)
+        H, N = MeanFieldHomogenization.Cracks.compliance_and_stiffness_contribution(crack, C₀)
         @test _vals(H) == _vals(compliance_contribution(crack, C₀))
         @test _vals(N) == _vals(stiffness_contribution(crack, C₀))
     end
@@ -156,7 +156,7 @@ end
     @testset "conductivity" begin
         K₀ = TensISO{3}(2.0)
         crack = PennyCrack(1.0)
-        R, N = MeanFieldHom.Cracks.compliance_and_stiffness_contribution(crack, K₀)
+        R, N = MeanFieldHomogenization.Cracks.compliance_and_stiffness_contribution(crack, K₀)
         @test _vals(R) == _vals(compliance_contribution(crack, K₀))
         @test _vals(N) == _vals(conductivity_contribution(crack, K₀))
     end
@@ -231,15 +231,15 @@ end
 
     # Independent reference for the stress average of that phase, built from
     # the raw localization exactly as the slow branch prescribes.
-    sym = MeanFieldHom.Schemes.phase_symmetrize(rve, :I)
-    P₀_proj = MeanFieldHom.Schemes._project_matrix(C_m, sym)
+    sym = MeanFieldHomogenization.Schemes.phase_symmetrize(rve, :I)
+    P₀_proj = MeanFieldHomogenization.Schemes._project_matrix(C_m, sym)
     geom = rve.phases[:I].geometry
     A_raw = strain_strain_loc(geom, C_ti, P₀_proj)
-    CA_ref = MeanFieldHom.Schemes._apply_symmetrize(C_ti ⊡ A_raw, sym)
+    CA_ref = MeanFieldHomogenization.Schemes._apply_symmetrize(C_ti ⊡ A_raw, sym)
 
-    A_dil, CA = MeanFieldHom.Schemes._phase_dilute_and_stress_average(rve, :I, :C, C_m)
+    A_dil, CA = MeanFieldHomogenization.Schemes._phase_dilute_and_stress_average(rve, :I, :C, C_m)
     @test _vals(CA) == _vals(CA_ref)
-    @test _vals(A_dil) == _vals(MeanFieldHom.Schemes._apply_symmetrize(A_raw, sym))
+    @test _vals(A_dil) == _vals(MeanFieldHomogenization.Schemes._apply_symmetrize(A_raw, sym))
 
     # And it really is the non-commuting branch: the shortcut form differs.
     @test _vals(CA) != _vals(C_ti ⊡ A_dil)
@@ -288,8 +288,8 @@ end
     # ~1e-16), which is why every pre-existing `symmetrize` test missed it.
     # These cases use an ANISOTROPIC matrix, where the projection really bites.
     C_tri = TensND.inv_KM(_KM_TRI_B, CanonicalBasis{3, Float64}())
-    sym = MeanFieldHom.Schemes.IsoSymmetrize()
-    C_proj = MeanFieldHom.Schemes._project_matrix(C_tri, sym)
+    sym = MeanFieldHomogenization.Schemes.IsoSymmetrize()
+    C_proj = MeanFieldHomogenization.Schemes._project_matrix(C_tri, sym)
     @test maximum(abs, _vals(C_proj) .- _vals(C_tri)) > 1.0        # really differs
 
     @testset "crack phase, 4th order" begin
@@ -299,27 +299,27 @@ end
             rve, :CR, PennyCrack(1.0), Dict(:C => C_tri);
             density = 0.08, symmetrize = :iso
         )
-        H = MeanFieldHom.Schemes._phase_compliance_contribution(rve, :CR, :C, C_tri)
-        N = MeanFieldHom.Schemes._phase_stiffness_contribution(rve, :CR, :C, C_tri)
+        H = MeanFieldHomogenization.Schemes._phase_compliance_contribution(rve, :CR, :C, C_tri)
+        N = MeanFieldHomogenization.Schemes._phase_stiffness_contribution(rve, :CR, :C, C_tri)
 
         # Both must now be built on the PROJECTED reference.
         ε = 0.08
-        Href, Nref = MeanFieldHom.Cracks.compliance_and_stiffness_contribution(
+        Href, Nref = MeanFieldHomogenization.Cracks.compliance_and_stiffness_contribution(
             PennyCrack(1.0), C_proj
         )
         @test _vals(H) == _vals(
-            MeanFieldHom.Schemes._apply_symmetrize(
+            MeanFieldHomogenization.Schemes._apply_symmetrize(
                 delta_compliance(PennyCrack(1.0), Href, ε), sym
             )
         )
         @test _vals(N) == _vals(
-            MeanFieldHom.Schemes._apply_symmetrize(
-                MeanFieldHom.Core.delta_stiffness(PennyCrack(1.0), Nref, ε), sym
+            MeanFieldHomogenization.Schemes._apply_symmetrize(
+                MeanFieldHomogenization.Core.delta_stiffness(PennyCrack(1.0), Nref, ε), sym
             )
         )
 
         # …and the bundle agrees with the two separate calls, bitwise.
-        Hb, Nb = MeanFieldHom.Schemes._phase_compliance_and_contribution(rve, :CR, :C, C_tri)
+        Hb, Nb = MeanFieldHomogenization.Schemes._phase_compliance_and_contribution(rve, :CR, :C, C_tri)
         @test _vals(Hb) == _vals(H)
         @test _vals(Nb) == _vals(N)
 
@@ -328,28 +328,28 @@ end
 
     @testset "solid phase, 2nd order" begin
         K_aniso = TensND.Tens([3.0 0.5 0.3; 0.5 2.0 0.2; 0.3 0.2 1.5])
-        symK = MeanFieldHom.Schemes.IsoSymmetrize()
-        K_proj = MeanFieldHom.Schemes._project_matrix(K_aniso, symK)
+        symK = MeanFieldHomogenization.Schemes.IsoSymmetrize()
+        K_proj = MeanFieldHomogenization.Schemes._project_matrix(K_aniso, symK)
         rve = RVE(:M)
         add_matrix!(rve, Ellipsoid(1.0), Dict(:K => K_aniso))
         add_phase!(
             rve, :I, Spheroid(0.3), Dict(:K => TensISO{3}(20.0));
             fraction = 0.2, symmetrize = :iso
         )
-        A = MeanFieldHom.Schemes._phase_dilute_concentration(rve, :I, :K, K_aniso)
-        N = MeanFieldHom.Schemes._phase_stiffness_contribution(rve, :I, :K, K_aniso)
+        A = MeanFieldHomogenization.Schemes._phase_dilute_concentration(rve, :I, :K, K_aniso)
+        N = MeanFieldHomogenization.Schemes._phase_stiffness_contribution(rve, :I, :K, K_aniso)
         geom = rve.phases[:I].geometry
         @test _vals(A) == _vals(
-            MeanFieldHom.Schemes._apply_symmetrize(
+            MeanFieldHomogenization.Schemes._apply_symmetrize(
                 gradient_gradient_loc(geom, TensISO{3}(20.0), K_proj), symK
             )
         )
         @test _vals(N) == _vals(
-            0.2 * MeanFieldHom.Schemes._apply_symmetrize(
+            0.2 * MeanFieldHomogenization.Schemes._apply_symmetrize(
                 conductivity_contribution(geom, TensISO{3}(20.0), K_proj), symK
             )
         )
-        Ab, Nb = MeanFieldHom.Schemes._phase_dilute_and_contribution(rve, :I, :K, K_aniso)
+        Ab, Nb = MeanFieldHomogenization.Schemes._phase_dilute_and_contribution(rve, :I, :K, K_aniso)
         @test _vals(Ab) == _vals(A)
         @test _vals(Nb) == _vals(N)
     end

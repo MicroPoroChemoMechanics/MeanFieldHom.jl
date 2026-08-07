@@ -29,19 +29,19 @@
 - User-defined inclusions and algorithms: a leveled, documented contract
   ([Adding a new inclusion](@ref dev-adding-inclusion)), the neutral
   [`AbstractCustomInclusion`](@ref) branch, the callback-driven
-  [`CustomInclusion`](@ref MeanFieldHom.CustomInclusion), the
-  [`check_inclusion_interface`](@ref MeanFieldHom.check_inclusion_interface)
+  [`CustomInclusion`](@ref MeanFieldHomogenization.CustomInclusion), the
+  [`check_inclusion_interface`](@ref MeanFieldHomogenization.check_inclusion_interface)
   conformance checker, and `shape_trait`-based inheritance of the crack
   algebra (a user crack needs only `cod_tensor`).
 - Real-space Kelvin Green gradient and dipole far field for an isotropic
-  matrix ([`green_gradient_iso`](@ref MeanFieldHom.Core.green_gradient_iso),
-  [`dipole_displacement_iso`](@ref MeanFieldHom.Core.dipole_displacement_iso)) —
+  matrix ([`green_gradient_iso`](@ref MeanFieldHomogenization.Core.green_gradient_iso),
+  [`dipole_displacement_iso`](@ref MeanFieldHomogenization.Core.dipole_displacement_iso)) —
   the boundary correction that makes a finite numerical Eshelby cell behave
   like an infinite medium.
 - ForwardDiff sensitivities across all elastic and ALV schemes (fractions,
   moduli, and inclusion geometry).
 - NonlinearSolve.jl backend for the self-consistent fixed point
-  (`MeanFieldHomNonlinearSolveExt`): any SciML algorithm
+  (`MeanFieldHomogenizationNonlinearSolveExt`): any SciML algorithm
   (`NewtonRaphson`, `TrustRegion`, …) can solve `SelfConsistent` /
   `AsymmetricSelfConsistent`, through an implicit-function-theorem lift
   that keeps `derivative`/`gradient`/`jacobian` exact and free of nested
@@ -64,7 +64,7 @@
 - Optional structured `TensTI{4,T,8}` fast path for the ALV TI schemes.
 - Viscoelastic constitutive laws in the Laplace–Carson domain.
 - Finite-element inclusions, behind the `FEBackend` contract
-  (`MeanFieldHomFerriteExt`, `MeanFieldHomGridapExt`), both with the
+  (`MeanFieldHomogenizationFerriteExt`, `MeanFieldHomogenizationGridapExt`), both with the
   first-order corrected boundary condition of
   [adessinaIJES2017](@cite) and an
   isotropic reference medium: the **elliptical crack** in 3-D tetrahedra
@@ -76,7 +76,7 @@
 - Neural-surrogate inclusions (`NeuralHillInclusion`,
   `NeuralLocalizationInclusion`), with the sampling, fitting and serialization
   machinery; the optimizer is the weak-dependency extension
-  `MeanFieldHomLuxExt`, evaluation needs nothing extra. Four models ship,
+  `MeanFieldHomogenizationLuxExt`, evaluation needs nothing extra. Four models ship,
   validated against the analytic ellipsoid. This is also the answer to
   "automatic differentiation through the solve", which the finite-element
   inclusions cannot offer: a surrogate *is* differentiable in the morphology.

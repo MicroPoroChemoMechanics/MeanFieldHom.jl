@@ -13,7 +13,7 @@ infinite cylinder — is one column of the same two tables.
 This page follows the appendix *Hill polarization tensors* of the
 [Echoes manual](https://jfbarthelemy.github.io/echoes/); expressions,
 conventions and bibliography are aligned on it. Extensions specific to
-`MeanFieldHom` are flagged as such.
+`MeanFieldHomogenization` are flagged as such.
 
 Those columns are the shapes below — meridian sections, drawn to scale from the
 semi-axes each closed form is written in. Every one of them is a limit of the
@@ -138,7 +138,7 @@ the component reasoning of [mura1987](@cite). Both forms are useful: the
 ``\underline{\xi}`` form makes the geometry explicit, the ``\underline{\zeta}``
 form is the one that degenerates cleanly in the cylinder limit below.
 
-In `MeanFieldHom` these are [`tens_IA`](@ref), [`tens_UA`](@ref) and
+In `MeanFieldHomogenization` these are [`tens_IA`](@ref), [`tens_UA`](@ref) and
 [`tens_VA`](@ref).
 
 ### Principal coefficients
@@ -337,7 +337,7 @@ its axis**. For the circular cylinder ``b=c`` the non-zero entries reduce to
 ``\underline{\xi}\cdot\mathbb{C}\cdot\underline{\xi}`` pointwise is the source of
 all the computational work: in general no closed form exists and one resorts to
 numerical cubature [ghahremani1977](@cite), [gavazzi1990](@cite),
-[masson2008](@cite). `MeanFieldHom` offers three algorithm traits, mirroring the
+[masson2008](@cite). `MeanFieldHomogenization` offers three algorithm traits, mirroring the
 Echoes `NUMINT` / `RESIDUES` options:
 
 - **`DECUHR`** — the surface integral is evaluated by the adaptive cubature for

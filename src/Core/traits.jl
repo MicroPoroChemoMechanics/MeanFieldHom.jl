@@ -2,7 +2,7 @@
 #  traits.jl
 #
 #  Holy-style traits shared by every high-level entry point of
-#  `MeanFieldHom`:
+#  `MeanFieldHomogenization`:
 #
 #    - Algorithm traits     (`AbstractAlgorithm`, `Analytical`, `Residue`,
 #                            `DECUHR`, `Auto`) — drive `_resolve_algo`.
@@ -20,7 +20,7 @@
     AbstractAlgorithm
 
 Abstract supertype for computation algorithms exposed through
-`MeanFieldHom`. The subtypes are plain singleton structs used as
+`MeanFieldHomogenization`. The subtypes are plain singleton structs used as
 dispatch tags by the internal `_kernel(...)` machinery.
 """
 abstract type AbstractAlgorithm end

@@ -4,7 +4,7 @@
 
 ## v0.1.0 — 2026-08-07
 
-First public release of MeanFieldHom.jl — a mean-field homogenization toolkit
+First public release of MeanFieldHomogenization.jl — a mean-field homogenization toolkit
 for elasticity, conductivity and ageing linear viscoelasticity, ported from and
 cross-validated against the C++ ECHOES code.
 
@@ -49,7 +49,7 @@ cross-validated against the C++ ECHOES code.
 
 ### Added
 
-- **Periodic multilayer homogenization**, `MeanFieldHom.Laminates` — a second
+- **Periodic multilayer homogenization**, `MeanFieldHomogenization.Laminates` — a second
   kind of microstructure, next to the random morphologies the Eshelby-based
   schemes describe:
   - `Laminate`, a periodic unit cell of parallel layers with **no matrix, no
@@ -128,7 +128,7 @@ cross-validated against the C++ ECHOES code.
     next to their production (explicit) model, and say when each is preferable.
 
 - **Inclusions whose response is a trained neural network**,
-  `MeanFieldHom.NeuralInclusions` — a fourth route into the custom-inclusion
+  `MeanFieldHomogenization.NeuralInclusions` — a fourth route into the custom-inclusion
   contract, after the analytic families, the layered patterns and the
   finite-element solves:
   - `NeuralHillInclusion` (gate A, the Hill tensor) and
@@ -163,12 +163,12 @@ cross-validated against the C++ ECHOES code.
     JSON, validated against the analytic ellipsoid; `scripts/nn/train_models.jl`
     regenerates them and `scripts/84_neural_inclusion_ellipsoid.jl` is the
     published tutorial. Nothing is trained at test or documentation-build time.
-- **`MeanFieldHomLuxExt`** (`Lux` + `Optimisers` + `Zygote`, weak dependencies) —
+- **`MeanFieldHomogenizationLuxExt`** (`Lux` + `Optimisers` + `Zygote`, weak dependencies) —
   the optimizer, and the only part of the surrogate pipeline that needs one. It
   writes its result back into a dependency-free `MLP`, so evaluating a trained
   model needs nothing beyond the package.
 
-- **Inclusions solved by finite elements**, `MeanFieldHom.FiniteElements`, both
+- **Inclusions solved by finite elements**, `MeanFieldHomogenization.FiniteElements`, both
   using the finite Eshelby cell with the first-order corrected boundary
   condition of
   [Adessina et al. 2017](https://doi.org/10.1016/j.ijengsci.2017.03.015):
@@ -194,9 +194,9 @@ cross-validated against the C++ ECHOES code.
   Fourier operators, boundary data, the polarization fixed point, the
   memoization — lives in `src/FiniteElements/`; a backend supplies only the
   discretization, through nine generics (`FEBackend`, `backends.jl`).
-  - `FerriteBackend` (`MeanFieldHomFerriteExt`, needs `Ferrite`, `FerriteGmsh`,
+  - `FerriteBackend` (`MeanFieldHomogenizationFerriteExt`, needs `Ferrite`, `FerriteGmsh`,
     `Gmsh`) serves both morphologies.
-  - `GridapBackend` (`MeanFieldHomGridapExt`, needs `Gridap`, `GridapGmsh`)
+  - `GridapBackend` (`MeanFieldHomogenizationGridapExt`, needs `Gridap`, `GridapGmsh`)
     serves both as well, stating the weak form directly rather than looping
     over elements: `∫( ε(v) ⊙ (σ∘ε(u)) )dΩ` for the crack,
     `∫( Eᵐ(v) ⋅ (D ⋅ Eᵐ(u)) * ρ )dΩ` for the axisymmetric modes.
@@ -744,7 +744,7 @@ stiffness from 1 % off to 1.4·10⁻⁴ at d = 0.30.
 **ForwardDiff promoted to a strong dependency.**  The four
 `derivative` / `gradient` / `jacobian` / `sensitivity` autodiff
 entry points are now available out of the box (no `using ForwardDiff`
-needed) — the previous weak extension `MeanFieldHomForwardDiffExt` is
+needed) — the previous weak extension `MeanFieldHomogenizationForwardDiffExt` is
 removed.  This also enables the new built-in Newton-Raphson SC solver
 below.
 
@@ -1031,7 +1031,7 @@ precision (1e-16 on the diagonal, 1e-6 on the off-diagonal blocks).
 
 ### v0.5.0 — Ageing linear viscoelasticity (ALV) module
 
-A new `MeanFieldHom.Viscoelasticity` sub-module brings time-domain
+A new `MeanFieldHomogenization.Viscoelasticity` sub-module brings time-domain
 viscoelastic homogenization to the package, mirroring the capabilities
 of the C++ ECHOES `viscoelasticity/visco_law.h` and
 `homogenization_maxwell.h`.  Reference: Sanahuja IJSS 2013 ;
@@ -1181,7 +1181,7 @@ mirrors the C++ reference's behaviour at percolation thresholds.
   promotion to integrate `ForwardDiff.Dual` cleanly.
 - **Public autodiff entry points** `derivative`, `gradient`, `jacobian`
   and the closure fallback `sensitivity(f, x₀)`. They become available
-  after `using ForwardDiff` (weak extension `MeanFieldHomForwardDiffExt`).
+  after `using ForwardDiff` (weak extension `MeanFieldHomogenizationForwardDiffExt`).
 - **Generic geometry-field reflection** `_replace_geom_field` based on
   `@generated` reconstruction with uniform sibling-field eltype
   promotion. User-defined inclusions whose constructor follows the
@@ -1191,7 +1191,7 @@ mirrors the C++ reference's behaviour at percolation thresholds.
   (`:bulk`, `:shear`, `:transverse`, `:axial`, `:ℓ₁`..`:ℓ₆`) to the
   positional indices of `get_data(tensor)` for `TensISO{2}`,
   `TensISO{4,3}`, `TensTI{2}` and `TensTI{4}`.
-- **`MeanFieldHomForwardDiffExt`** weak extension activating the public
+- **`MeanFieldHomogenizationForwardDiffExt`** weak extension activating the public
   API on `using ForwardDiff`. ForwardDiff is registered in `[weakdeps]`
   alongside NonlinearSolve and SymPy; no new hard dependency.
 - **RVE-level orientation symmetrize** via the `symmetrize` keyword on
@@ -1311,7 +1311,7 @@ Total: 3421 tests pass.
 
 ### v0.3.0 — RVE container + 10 homogenization schemes
 
-New `MeanFieldHom.Schemes` sub-module: a Representative Volume Element
+New `MeanFieldHomogenization.Schemes` sub-module: a Representative Volume Element
 container plus the ten classical mean-field homogenization schemes ported
 from C++ ECHOES, with a few Julia-idiomatic improvements.
 
@@ -1344,7 +1344,7 @@ from C++ ECHOES, with a few Julia-idiomatic improvements.
 - **Differential trajectories**: `Proportional` (default), `Sequential`
   (phase-by-phase), `CustomPath` (per-phase explicit trajectory) — all
   validated for monotonicity and boundary conditions.
-- **SciML weak extension** `MeanFieldHomNonlinearSolveExt` (active once
+- **SciML weak extension** `MeanFieldHomogenizationNonlinearSolveExt` (active once
   `NonlinearSolve.jl` is loaded into the session) makes every algorithm
   of `NonlinearSolve.jl` available to `SelfConsistent` /
   `AsymmetricSelfConsistent` via the `algorithm` keyword, through a
@@ -1388,7 +1388,7 @@ shortcuts, and CustomPath validation. Total 3312 tests passing.
 
 ### v0.2.0 — alignment with TensND 0.2 (breaking)
 
-Follow-up to TensND 0.2's API unification. MeanFieldHom is iso-functional —
+Follow-up to TensND 0.2's API unification. MeanFieldHomogenization is iso-functional —
 all outputs are unchanged — but every mention of a TensND symbol now uses
 the new snake_case + UPPERCASE-acronym convention.
 
@@ -1412,6 +1412,6 @@ None — functional surface unchanged.
 
 #### Migration guide
 
-If you have your own code depending on MeanFieldHom dispatch, apply the
-same renames as listed in TensND's v0.2 changelog. All MeanFieldHom tests
+If you have your own code depending on MeanFieldHomogenization dispatch, apply the
+same renames as listed in TensND's v0.2 changelog. All MeanFieldHomogenization tests
 (2865) pass without behavioural change after migration.

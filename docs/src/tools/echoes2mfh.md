@@ -1,6 +1,6 @@
 # [Translating Echoes scripts: `echoes2mfh`](@id tools-echoes2mfh)
 
-[From Echoes to MeanFieldHom](@ref tools-from-echoes) explains the correspondence
+[From Echoes to MeanFieldHomogenization](@ref tools-from-echoes) explains the correspondence
 between the two APIs. `tools/echoes2mfh/` automates it: point it at an Echoes
 Python script and it writes the Julia one.
 
@@ -150,12 +150,12 @@ captured Echoes 1.0 values exactly (Mori-Tanaka at ``\varphi = 0.3``:
 
 `check-drift` compares the mapping tables against both live APIs: it scrapes
 the Echoes symbol list from the pybind11 sources and the MFH export list from
-`src/MeanFieldHom.jl`, then reports any symbol that is neither mapped nor
+`src/MeanFieldHomogenization.jl`, then reports any symbol that is neither mapped nor
 explicitly refused, and any mapping target MFH no longer exports.
 
 ## See also
 
-- [From Echoes to MeanFieldHom](@ref tools-from-echoes) — the API correspondence
+- [From Echoes to MeanFieldHomogenization](@ref tools-from-echoes) — the API correspondence
   the tool automates.
 - [Cross-validation against Echoes](@ref dev-validation) — the deliberate
   divergences, including the crack-compliance normalization

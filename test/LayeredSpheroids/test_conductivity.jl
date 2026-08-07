@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -69,20 +69,20 @@ end
 
     s_lc_tiny = LayeredSpheroid(
         (3.0,), (1.0,), (K1,);
-        interfaces = (MeanFieldHom.KapitzaInterface(1.0e-9),), Nseries = 6
+        interfaces = (MeanFieldHomogenization.KapitzaInterface(1.0e-9),), Nseries = 6
     )
     @test get_array(gradient_gradient_loc(s_lc_tiny, K1, K0)) ≈ get_array(A_perfect) atol = 1.0e-6
 
     s_hc_tiny = LayeredSpheroid(
         (3.0,), (1.0,), (K1,);
-        interfaces = (MeanFieldHom.SurfaceConductiveInterface(1.0e-9),), Nseries = 6
+        interfaces = (MeanFieldHomogenization.SurfaceConductiveInterface(1.0e-9),), Nseries = 6
     )
     @test get_array(gradient_gradient_loc(s_hc_tiny, K1, K0)) ≈ get_array(A_perfect) atol = 1.0e-6
 
     # Kapitza resistance → ∞ ⟺ fully insulated (impermeable) core.
     s_lc_big = LayeredSpheroid(
         (3.0,), (1.0,), (K1,);
-        interfaces = (MeanFieldHom.KapitzaInterface(1.0e10),), Nseries = 6
+        interfaces = (MeanFieldHomogenization.KapitzaInterface(1.0e10),), Nseries = 6
     )
     s_insulated = LayeredSpheroid((3.0,), (1.0,), (TensISO{3}(1.0e-14),); Nseries = 6)
     A_lc_big = gradient_gradient_loc(s_lc_big, K1, K0)

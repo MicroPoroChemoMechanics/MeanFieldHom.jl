@@ -62,7 +62,7 @@ inclusion rather than the strain gives the dual statement
 becomes flat, which is why the crack theory is built on it rather than on
 ``\mathbb{P}`` — see [Crack opening displacement](cod_tensors.md).
 
-In `MeanFieldHom`, ``\mathbb{P}`` and ``\mathbb{S}`` are [`hill_tensor`](@ref)
+In `MeanFieldHomogenization`, ``\mathbb{P}`` and ``\mathbb{S}`` are [`hill_tensor`](@ref)
 and [`eshelby_tensor`](@ref). There is no public accessor for ``\mathbb{Q}``:
 assemble it from ``\mathbb{P}`` when you need it,
 
@@ -92,7 +92,7 @@ ellipsoid produces a **uniform gradient** inside it, and an order-2 Hill tensor
 \boldsymbol{Q} = \boldsymbol{K} - \boldsymbol{K}\cdot\boldsymbol{P}\cdot\boldsymbol{K}.
 ```
 
-The two problems are handled by the same functions in `MeanFieldHom`, which
+The two problems are handled by the same functions in `MeanFieldHomogenization`, which
 dispatch on the order of the property tensor passed in: an order-4
 ``\mathbb{C}`` selects the elastic path, an order-2 ``\boldsymbol{K}`` the
 transport one.

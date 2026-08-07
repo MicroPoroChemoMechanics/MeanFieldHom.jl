@@ -1,13 +1,13 @@
 """Check the Julia environment before paying ten seconds to find out.
 
-MeanFieldHom's committed `Manifest.toml` records some dependencies by
+MeanFieldHomogenization's committed `Manifest.toml` records some dependencies by
 *relative path* to a sibling checkout:
 
     [[deps.TensND]]
     path = "../TensND.jl"
 
 which resolves only when those siblings are actually there. On a machine where
-someone cloned MeanFieldHom.jl alone, `Pkg.instantiate()` fails and the sidecar
+someone cloned MeanFieldHomogenization.jl alone, `Pkg.instantiate()` fails and the sidecar
 dies with a message about a package that "does not seem to be installed" —
 true, but not the useful part.
 
@@ -92,7 +92,7 @@ def check_project(project: str) -> Report:
     if not os.path.isfile(proj_toml):
         rep.fail(
             f"no Project.toml in {project}",
-            "Point the studio at the MeanFieldHom checkout with "
+            "Point the studio at the MeanFieldHomogenization checkout with "
             "`--project <path>`.",
         )
         return rep
@@ -124,9 +124,9 @@ def check_project(project: str) -> Report:
         adds = "; ".join(f'Pkg.add("{n}")' for n, _ in rep.missing_paths)
         rep.hints.append(
             "These are development overrides pinning *published* packages to "
-            "local checkouts. MeanFieldHom itself is not registered, but its "
+            "local checkouts. MeanFieldHomogenization itself is not registered, but its "
             "dependencies are, so the fix is a separate environment that takes "
-            "them from the registry and develops only MeanFieldHom by path:\n"
+            "them from the registry and develops only MeanFieldHomogenization by path:\n"
             '      julia -e \'using Pkg; Pkg.activate("mfhstudio", shared=true); '
             f'{adds}; Pkg.develop(path=raw"{project}")\'\n'
             "    then start the studio with `--project @mfhstudio`.\n"
@@ -134,7 +134,7 @@ def check_project(project: str) -> Report:
             "from turning them back into path entries.)"
         )
         rep.hints.append(
-            f"Alternatively, clone {names} next to the MeanFieldHom checkout "
+            f"Alternatively, clone {names} next to the MeanFieldHomogenization checkout "
             f"(inside {parent}), which is the layout the committed manifest "
             f"assumes."
         )

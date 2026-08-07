@@ -3,7 +3,7 @@
 #
 #  Demonstration of the structured ALV kernel types
 #  `ALVKernelISO / ALVKernelTI / ALVKernelOrtho` (`<: AbstractMatrix{T}`)
-#  introduced in v0.7.0 of `MeanFieldHom.jl`.
+#  introduced in v0.7.0 of `MeanFieldHomogenization.jl`.
 #
 #  These types parallel `TensND.TensISO / TensTI / TensOrtho` for the
 #  *time-discretized Volterra* algebra.  Each one stores the symmetry
@@ -18,7 +18,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 using Printf

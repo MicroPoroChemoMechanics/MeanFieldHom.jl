@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -56,16 +56,16 @@ end
     κ₀, μ₀ = 120.0, 80.0
     C₀ = TensISO{3}(3κ₀, 2μ₀)
     s = LayeredSphere((0.4, 0.7, 1.0), (C₀, C₀, C₀))
-    α = MeanFieldHom.LayeredSpheres._bulk_localization(s, κ₀, μ₀)
+    α = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s, κ₀, μ₀)
     @test all(≈(1), α)
-    κ_eff = MeanFieldHom.LayeredSpheres._effective_bulk(s, κ₀, μ₀)
+    κ_eff = MeanFieldHomogenization.LayeredSpheres._effective_bulk(s, κ₀, μ₀)
     @test κ_eff ≈ κ₀ rtol = 1.0e-12
 
     # Monolithic composite (all layers = C₁ ≠ C₀): reduces to single-layer
     κ₁, μ₁ = 3κ₀, 2μ₀
     C₁ = TensISO{3}(3κ₁, 2μ₁)
     s_mono = LayeredSphere((0.4, 0.7, 1.0), (C₁, C₁, C₁))
-    α_mono = MeanFieldHom.LayeredSpheres._bulk_localization(s_mono, κ₀, μ₀)
+    α_mono = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s_mono, κ₀, μ₀)
     α_expected = (3κ₀ + 4μ₀) / (3κ₁ + 4μ₀)
     for k in 1:3
         @test α_mono[k] ≈ α_expected rtol = 1.0e-10
@@ -80,7 +80,7 @@ end
     s = LayeredSphere((0.5, 1.0), (C_in, C₀))
     ε∞ = TensND.Tens(Matrix(Diagonal([0.1, 0.1, 0.1])))
 
-    α = MeanFieldHom.LayeredSpheres._bulk_localization(s, κ₀, μ₀)
+    α = MeanFieldHomogenization.LayeredSpheres._bulk_localization(s, κ₀, μ₀)
     # Layer 2 (shell = matrix): α[2] should be close to 1 for this case
     # (consistent with the generalized self-consistent ... the shell's
     # average strain is not exactly 1 because the core perturbs it,

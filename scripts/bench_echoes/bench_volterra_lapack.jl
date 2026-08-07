@@ -10,7 +10,7 @@ Pkg.activate(@__DIR__; io = devnull)
 using LinearAlgebra
 using Printf
 using BenchmarkTools
-using MeanFieldHom
+using MeanFieldHomogenization
 
 # Build a well-conditioned lower-triangular Volterra-like matrix of size n.
 function build_lower(n::Int; T::Type = Float64, scale = T(1.0))

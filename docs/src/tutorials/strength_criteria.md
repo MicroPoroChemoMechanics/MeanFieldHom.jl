@@ -17,7 +17,7 @@ homogenized stiffness is isotropic. The solid is much stiffer than the
 pore, at a fixed porosity ``\varphi = 0.15``:
 
 ```@example tutstrength
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using ForwardDiff
 using LinearAlgebra

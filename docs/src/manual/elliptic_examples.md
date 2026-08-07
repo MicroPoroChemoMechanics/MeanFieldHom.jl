@@ -1,13 +1,13 @@
 # [Elliptic integrals — examples](@id man-elliptic-examples)
 
-`MeanFieldHom` re-exports the five entry points of the
-[`MeanFieldHom.Elliptic`](@ref) submodule: `ell_K`, `ell_E`, `ell_F`,
+`MeanFieldHomogenization` re-exports the five entry points of the
+[`MeanFieldHomogenization.Elliptic`](@ref) submodule: `ell_K`, `ell_E`, `ell_F`,
 `ell_RF`, `ell_RD`.
 
 ## Basic calls
 
 ```@example ell_basic
-using MeanFieldHom
+using MeanFieldHomogenization
 
 # Complete integrals, Float64 fast path
 m = 0.5
@@ -50,7 +50,7 @@ The elliptic submodule is designed to flow through `ForwardDiff`. The
 AGM / Carlson code whenever the input is a `ForwardDiff.Dual`:
 
 ```@example ell_ad
-using MeanFieldHom, ForwardDiff
+using MeanFieldHomogenization, ForwardDiff
 
 # Derivative of K(m) at m = 0.3
 dKdm = ForwardDiff.derivative(ell_K, 0.3)
@@ -74,7 +74,7 @@ Using `BigFloat` gives access to the full precision of the AGM
 recursion:
 
 ```@example ell_big
-using MeanFieldHom
+using MeanFieldHomogenization
 
 setprecision(BigFloat, 128)    # 128 mantissa bits
 m = BigFloat("0.25")
@@ -93,7 +93,7 @@ With the optional `SymPy` extension loaded (the package declares
 closed-form expressions:
 
 ```julia
-using MeanFieldHom, SymPy
+using MeanFieldHomogenization, SymPy
 
 @syms m
 ell_K(m)       # → K(m) as a SymPy expression
@@ -104,7 +104,7 @@ With `Symbolics` (no extension required — the pure-arithmetic AGM path
 is used):
 
 ```julia
-using MeanFieldHom, Symbolics
+using MeanFieldHomogenization, Symbolics
 
 @variables m
 expr = ell_K(m)
@@ -124,8 +124,8 @@ end
 Base.float(s::MyScalar) = s.x
 
 # Route K and E through the fast Float64 path
-MeanFieldHom.Elliptic.ell_K(s::MyScalar) = ell_K(s.x)
-MeanFieldHom.Elliptic.ell_E(s::MyScalar) = ell_E(s.x)
+MeanFieldHomogenization.Elliptic.ell_K(s::MyScalar) = ell_K(s.x)
+MeanFieldHomogenization.Elliptic.ell_E(s::MyScalar) = ell_E(s.x)
 ```
 
 Downstream code that calls `ell_K`, `ell_E`, `ell_F`, `ell_RF`,

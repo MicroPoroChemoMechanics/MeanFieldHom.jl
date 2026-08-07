@@ -1,5 +1,5 @@
 using Test
-using MeanFieldHom
+using MeanFieldHomogenization
 using TensND
 using LinearAlgebra
 
@@ -28,12 +28,12 @@ end
     K_shell = TensISO{3}(k_shell)
     s = LayeredSphere((0.5, 1.0), (K_core, K_shell))
 
-    α = MeanFieldHom.LayeredSpheres._cond_localization(s, k₀)
+    α = MeanFieldHomogenization.LayeredSpheres._cond_localization(s, k₀)
     @test all(isfinite, α)
     @test all(α .> 0)
 
     # Sum rule: Σ f_k · k_k · α_k should equal k_eff of the composite.
-    k_eff = MeanFieldHom.LayeredSpheres._effective_conductivity(s, k₀)
+    k_eff = MeanFieldHomogenization.LayeredSpheres._effective_conductivity(s, k₀)
     @test isfinite(k_eff) && k_eff > 0
 end
 
@@ -45,7 +45,7 @@ end
     K₀ = TensISO{3}(k₀)
     s = LayeredSphere((1.0, 1.01), (TensISO{3}(0.0), TensISO{3}(k_shell)))
 
-    α = MeanFieldHom.LayeredSpheres._cond_localization(s, k₀)
+    α = MeanFieldHomogenization.LayeredSpheres._cond_localization(s, k₀)
     @test all(isfinite, α)
     N = conductivity_contribution(s, K₀)
     @test isfinite(N[1, 1])
@@ -105,12 +105,12 @@ end
     K₁ = TensISO{3}(5.0)
 
     s_perfect = LayeredSphere((0.5, 1.0), (K₁, K₀))
-    α_perfect = MeanFieldHom.LayeredSpheres._cond_localization(s_perfect, 2.0)
+    α_perfect = MeanFieldHomogenization.LayeredSpheres._cond_localization(s_perfect, 2.0)
 
     # ρ → 0 recovers perfect
     intf = (KapitzaInterface(1.0e-14), PerfectInterface{Float64}())
     s = LayeredSphere((0.5, 1.0), (K₁, K₀); interfaces = intf)
-    α = MeanFieldHom.LayeredSpheres._cond_localization(s, 2.0)
+    α = MeanFieldHomogenization.LayeredSpheres._cond_localization(s, 2.0)
     for k in 1:2
         @test α[k] ≈ α_perfect[k] rtol = 1.0e-9
     end
@@ -118,7 +118,7 @@ end
     # ρ → ∞ decouples core (α_1 → 0)
     intf_loose = (KapitzaInterface(1.0e9), PerfectInterface{Float64}())
     s_loose = LayeredSphere((0.5, 1.0), (K₁, K₀); interfaces = intf_loose)
-    α_loose = MeanFieldHom.LayeredSpheres._cond_localization(s_loose, 2.0)
+    α_loose = MeanFieldHomogenization.LayeredSpheres._cond_localization(s_loose, 2.0)
     @test abs(α_loose[1]) < 1.0e-6
 end
 
@@ -127,12 +127,12 @@ end
     K₁ = TensISO{3}(5.0)
 
     s_perfect = LayeredSphere((0.5, 1.0), (K₁, K₀))
-    α_perfect = MeanFieldHom.LayeredSpheres._cond_localization(s_perfect, 2.0)
+    α_perfect = MeanFieldHomogenization.LayeredSpheres._cond_localization(s_perfect, 2.0)
 
     # conductance = 0 recovers perfect
     intf = (SurfaceConductiveInterface(0.0), PerfectInterface{Float64}())
     s = LayeredSphere((0.5, 1.0), (K₁, K₀); interfaces = intf)
-    α = MeanFieldHom.LayeredSpheres._cond_localization(s, 2.0)
+    α = MeanFieldHomogenization.LayeredSpheres._cond_localization(s, 2.0)
     for k in 1:2
         @test α[k] ≈ α_perfect[k] rtol = 1.0e-12
     end
@@ -140,7 +140,7 @@ end
     # Large conductance modifies localization
     intf_large = (SurfaceConductiveInterface(1.0), PerfectInterface{Float64}())
     s_large = LayeredSphere((0.5, 1.0), (K₁, K₀); interfaces = intf_large)
-    α_large = MeanFieldHom.LayeredSpheres._cond_localization(s_large, 2.0)
+    α_large = MeanFieldHomogenization.LayeredSpheres._cond_localization(s_large, 2.0)
     @test α_large[1] != α_perfect[1]
 end
 

@@ -1,5 +1,5 @@
 """
-    MeanFieldHom.Cracks
+    MeanFieldHomogenization.Cracks
 
 COD tensors, compliance contributions, SIF and DIF for flat cracks
 embedded in an elastic matrix of arbitrary anisotropy.  Public entry
@@ -51,7 +51,7 @@ export crack_basis, aspect_ratio, semi_major, semi_minor, crack_normal
 export cod_tensor, B_tensor
 export cod_from_compliance, compliance_from_cod
 export crack_density_factor
-# Internal perf seam consumed by `Schemes` (not re-exported by MeanFieldHom).
+# Internal perf seam consumed by `Schemes` (not re-exported by MeanFieldHomogenization).
 export compliance_and_stiffness_contribution
 # (`compliance_contribution`, `delta_compliance`, `delta_resistivity`,
 # `stiffness_contribution`, `conductivity_contribution`, `delta_stiffness`

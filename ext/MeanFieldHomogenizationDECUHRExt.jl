@@ -1,8 +1,8 @@
 # =============================================================================
-#  MeanFieldHomDECUHRExt.jl
+#  MeanFieldHomogenizationDECUHRExt.jl
 #
 #  Weak extension activated when both `DECUHR` and `Integrals` are loaded.
-#  It implements the backend seam `MeanFieldHom.Core._decuhr_cubature`, which
+#  It implements the backend seam `MeanFieldHomogenization.Core._decuhr_cubature`, which
 #  is a fallback error stub in the core package (see `src/Core/quadrature.jl`).
 #
 #  With this extension loaded, the `method = :decuhr` path of `hill_tensor`
@@ -11,16 +11,16 @@
 #  alternative (QuadGK-based, ForwardDiff-compatible, no extra dependency).
 # =============================================================================
 
-module MeanFieldHomDECUHRExt
+module MeanFieldHomogenizationDECUHRExt
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using DECUHR: DecuhrAlgorithm
 import Integrals
 
 # Real implementation of the DECUHR cubature seam. More specific than the
 # core `_decuhr_cubature(args...; kwargs...)` fallback, so it is selected
 # whenever this extension is loaded.
-function MeanFieldHom.Core._decuhr_cubature(
+function MeanFieldHomogenization.Core._decuhr_cubature(
         integrand, lb::AbstractVector, ub::AbstractVector;
         singul::Int = 1,
         alpha::Float64 = 0.0,
@@ -42,4 +42,4 @@ function MeanFieldHom.Core._decuhr_cubature(
     return sol.u
 end
 
-end # module MeanFieldHomDECUHRExt
+end # module MeanFieldHomogenizationDECUHRExt

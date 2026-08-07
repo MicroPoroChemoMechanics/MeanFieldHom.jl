@@ -23,7 +23,7 @@
 import Pkg
 Pkg.activate(joinpath(@__DIR__, ".."); io = devnull)
 
-using MeanFieldHom
+using MeanFieldHomogenization
 using LinearAlgebra
 using Printf
 using Plots
@@ -84,7 +84,7 @@ end
 
 # Per-phase response (no homogenization).
 function phase_response(law_creep, T)
-    R̃ = MeanFieldHom.Viscoelasticity._trapezoidal_relaxation(law_creep, T, 3)
+    R̃ = MeanFieldHomogenization.Viscoelasticity._trapezoidal_relaxation(law_creep, T, 3)
     return resistance_curve(R̃)
 end
 
