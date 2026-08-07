@@ -116,6 +116,9 @@ using .CustomInclusions
 using .FiniteElements
 using .NeuralInclusions
 
+# ─── MFH Studio launcher ─────────────────────────────────────────────────────
+include("Studio.jl")
+
 # ── Abstractions ─────────────────────────────────────────────────────────────
 export AbstractInclusion, AbstractEllipsoidalInclusion, AbstractCrack
 export AbstractLayeredInclusion, AbstractCustomInclusion
@@ -277,6 +280,9 @@ export dilute_concentration_alv_order2, dilute_contribution_alv_order2
 export homogenize_alv_order2
 export cod_kernel_alv, compliance_contribution_alv, delta_compliance_alv
 export stiffness_contribution_alv, stiffness_contribution_alv_at, delta_stiffness_alv
+
+# ── MFH Studio launcher ──────────────────────────────────────────────────────
+export mfhstudio
 
 # ── Backwards-compat aliases ─────────────────────────────────────────────────
 const HillAlgorithm = AbstractAlgorithm

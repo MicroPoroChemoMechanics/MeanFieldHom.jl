@@ -160,6 +160,13 @@ ALVKernelTI
 ALVKernelOrtho
 ```
 
+## Orientation symmetrization
+
+```@docs
+_maybe_symmetrize_alv
+_maybe_symmetrize_alv2
+```
+
 ## Public dispatcher
 
 ```@docs

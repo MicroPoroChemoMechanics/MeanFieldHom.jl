@@ -372,7 +372,8 @@ _neural_hill(_incl, ::Nothing, _P₀, which) = throw(
 Inclusion whose **localization tensors** are produced by trained surrogates —
 entry gate B, the only way in for an internally heterogeneous morphology, which
 has no Hill tensor at all. This is the shape a surrogate trained on
-[`fe_axi_localization`](@ref MeanFieldHom.fe_axi_localization) takes.
+[`fe_axi_localization`](@ref MeanFieldHom.FiniteElements.fe_axi_localization)
+takes.
 
 Because [`is_homogeneous_inclusion`](@ref MeanFieldHom.Core.is_homogeneous_inclusion) is `false`, gate B costs **two**
 tensors per physics: the strain side *and* the stress side, since

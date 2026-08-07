@@ -16,7 +16,7 @@
     Layer(properties)
 
 One layer of a [`Laminate`](@ref). Carries only material properties: unlike
-a [`Phase`](@ref), a layer has no inclusion geometry of its own — its
+a [`Phase`](@ref MeanFieldHom.Schemes.Phase), a layer has no inclusion geometry of its own — its
 geometry is the stacking direction, shared by the whole cell.
 
 A property value may itself be a [`Homogenized`](@ref) cell + scheme,

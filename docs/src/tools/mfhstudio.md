@@ -8,10 +8,37 @@ everything it does not recognize.
 The script stays the deliverable. The studio is a way of writing one, not a
 format to be locked into.
 
+## Starting the studio
+
+From a Julia session with MeanFieldHom loaded — the studio ships with the
+checkout you develop:
+
+```julia
+using MeanFieldHom
+mfhstudio()                  # starts the server and opens a browser
+mfhstudio(port = 9000)       # pick a different port
+mfhstudio(no_browser = true) # stay in the terminal
+mfhstudio(check = true)      # verify the Julia side and exit
+```
+
+`mfhstudio` blocks the REPL, like `Pluto.run()`, until the studio stops:
+Ctrl-C in the REPL shuts the server and its Julia sidecar down cleanly. Pass
+`wait = false` to keep working while the studio runs — it returns the process
+handle, and `wait(p)` / `kill(p)` take it down again. `host`, `port`,
+`project`, `julia` and `python` map onto the Python app's command-line options
+below; `project = "@mfhstudio"` uses a shared environment, `julia = ...` /
+`python = ...` point at a specific executable (or set the `MFHSTUDIO_PROJECT`
+/ `MFHSTUDIO_PYTHON` environment variables).
+
+The same tool starts from a shell — Python 3.10+ underneath, standard library
+only:
+
 ```bash
 cd tools/mfhstudio
-python3 -m mfhstudio            # starts the server and opens a browser
-python3 -m mfhstudio --check    # verify the Julia side and exit
+python3 -m mfhstudio                # starts the server and opens a browser
+python3 -m mfhstudio --port 9000    # pick the port
+python3 -m mfhstudio --no-browser   # stay in the terminal
+python3 -m mfhstudio --check        # verify the Julia side and exit
 ```
 
 On Windows, `python -m mfhstudio`.
@@ -47,8 +74,9 @@ version, develop it into that same environment instead:
 Pkg.develop(path = raw"<path to MeanFieldHom.jl>")
 ```
 
-Either way, start the studio with `--project @mfhstudio`. `--check` reads the
-manifest and names the missing checkouts itself.
+Either way, start the studio against that shared environment —
+`mfhstudio(project = "@mfhstudio")`, or `--project @mfhstudio` from the shell.
+`--check` reads the manifest and names the missing checkouts itself.
 
 ## The layout
 
@@ -170,7 +198,7 @@ The **outputs** are chosen too, and this matters more than it looks:
 | tensor component `C[i,j]` | 2nd-order properties (conduction) |
 | `tr/3` | mean conductivity |
 
-`k_mu` has a method for [`TensISO`](@ref) and nothing else. An oriented
+`k_mu` has a method for `TensISO` (a TensND type) and nothing else. An oriented
 inclusion with no orientation average does not give an isotropic effective
 tensor, so asking for `k` there fails deep inside the run with a `MethodError`.
 The interface says so before you run: either pick a reporting projection, or
@@ -191,7 +219,7 @@ lists which phases carry a law, so a run with nothing to age says so rather
 than failing later. `homogenize_alv` returns the effective relaxation operator
 as a ``6n \times 6n`` block matrix; the curve is its Volterra inverse read on
 one Kelvin-Mandel component — `(1, 1)` is the uniaxial creep response, the
-extraction used in [`scripts/62_alv_schemes.jl`](@ref).
+extraction used in [`scripts/62_alv_schemes.jl`](../tutorials/generated/alv_schemes.md).
 
 ## Anisotropic properties
 

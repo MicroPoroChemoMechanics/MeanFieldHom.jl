@@ -64,6 +64,7 @@ MeanFieldHom.Core.KM_IP
 MeanFieldHom.Core.KM_OP
 MeanFieldHom.Core.plane_pinv
 MeanFieldHom.Core.plane_pinv2
+MeanFieldHom.Core._inv_km6
 MeanFieldHom.Core.flat_hill
 MeanFieldHom.Core.acoustic_tensor
 MeanFieldHom.Core.compliance_op_block

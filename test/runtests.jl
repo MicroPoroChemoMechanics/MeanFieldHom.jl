@@ -205,4 +205,8 @@ Random.seed!(20260723)
         include("regression/test_crack_cases.jl")
         include("regression/test_anisotropic.jl")
     end
+
+    @testset "Studio" begin
+        include("Studio/test_studio.jl")
+    end
 end

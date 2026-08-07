@@ -3,6 +3,20 @@
 A local web interface for building MeanFieldHom scripts: draw the shape of each
 phase, run the model, and read existing scripts back without damaging them.
 
+From Julia, once `using MeanFieldHom` (the studio ships with the checkout):
+
+```julia
+mfhstudio()                  # start and open a browser
+mfhstudio(port = 9000)       # pick the port
+mfhstudio(no_browser = true) # stay in the terminal
+mfhstudio(check = true)      # verify the Julia side and exit
+```
+
+`mfhstudio` blocks like `Pluto.run()`; Ctrl-C stops the server and its sidecar
+cleanly. `wait = false` returns the process handle to keep the REPL free.
+
+The same tool starts from a shell:
+
 ```bash
 cd tools/mfhstudio
 python3 -m mfhstudio                 # start and open a browser
