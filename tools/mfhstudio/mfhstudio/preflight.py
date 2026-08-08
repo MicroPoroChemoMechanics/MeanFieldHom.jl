@@ -124,9 +124,9 @@ def check_project(project: str) -> Report:
         adds = "; ".join(f'Pkg.add("{n}")' for n, _ in rep.missing_paths)
         rep.hints.append(
             "These are development overrides pinning *published* packages to "
-            "local checkouts. MeanFieldHomogenization itself is not registered, but its "
-            "dependencies are, so the fix is a separate environment that takes "
-            "them from the registry and develops only MeanFieldHomogenization by path:\n"
+            "local checkouts. If you are developing MeanFieldHomogenization itself, "
+            "the fix is a separate environment that takes the siblings from the "
+            "registry and develops only MeanFieldHomogenization by path:\n"
             '      julia -e \'using Pkg; Pkg.activate("mfhstudio", shared=true); '
             f'{adds}; Pkg.develop(path=raw"{project}")\'\n'
             "    then start the studio with `--project @mfhstudio`.\n"
